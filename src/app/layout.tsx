@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Mark Sorting Management System",
+  title: "Mark Sorter",
   description: "Enterprise-grade Mark Sorting Management System",
   icons: {
     icon: "/assets/favion.png",

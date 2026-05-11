@@ -113,11 +113,12 @@ export function Sidebar() {
       {/* Collapse Toggle */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-24 w-6 h-6 bg-[#f8f9fa] rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 transition-all z-50 border border-gray-100"
+        className="absolute -right-4 top-20 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-2xl text-primary hover:scale-110 active:scale-95 transition-all z-50 border-2 border-primary/10"
       >
         <ChevronRight 
-          size={14} 
-          className={cn("transition-transform duration-300", !isCollapsed && "rotate-180")} 
+          size={20} 
+          strokeWidth={3}
+          className={cn("transition-transform duration-500", !isCollapsed && "rotate-180")} 
         />
       </button>
     </motion.div>
