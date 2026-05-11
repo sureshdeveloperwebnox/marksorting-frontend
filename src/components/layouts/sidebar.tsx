@@ -33,94 +33,121 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <motion.div 
-      initial={false}
-      animate={{ width: isCollapsed ? 80 : 280 }}
-      className="relative h-screen bg-primary flex flex-col z-40 transition-colors duration-300 overflow-hidden shadow-2xl"
-    >
-      <div className="p-4 mb-4 mt-2">
-        <Logo 
-          isCollapsed={isCollapsed}
-          className="transition-all duration-300" 
-        />
-      </div>
-
-      <div className="px-4 mb-2">
-        {!isCollapsed && <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] ml-4 mb-4">Management</p>}
-      </div>
-
-      <nav className="flex-1 space-y-1 relative">
-        {items.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="relative block"
-            >
-              <div
-                className={cn(
-                  'flex items-center gap-4 py-4 px-8 transition-all duration-300 relative',
-                  isActive
-                    ? 'bg-[#f8f9fa] rounded-l-[30px] ml-4 text-primary'
-                    : 'text-white/70 hover:text-white hover:bg-white/5'
-                )}
-              >
-                {/* Inverted Corners Effect */}
-                {isActive && (
-                  <>
-                    <div className="absolute -top-[30px] right-0 w-[30px] h-[30px] bg-[#f8f9fa] pointer-events-none">
-                      <div className="w-full h-full bg-primary rounded-br-[30px]" />
-                    </div>
-                    <div className="absolute -bottom-[30px] right-0 w-[30px] h-[30px] bg-[#f8f9fa] pointer-events-none">
-                      <div className="w-full h-full bg-primary rounded-tr-[30px]" />
-                    </div>
-                  </>
-                )}
-
-                <div className="relative z-10 flex items-center justify-center w-6 h-6">
-                  <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                </div>
-                
-                {!isCollapsed && (
-                  <motion.span 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="relative z-10 font-bold text-[15px] tracking-tight"
-                  >
-                    {item.label}
-                  </motion.span>
-                )}
-              </div>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 mt-auto border-t border-white/10">
-        <button
-          onClick={logout}
-          className={cn(
-            "flex items-center gap-3 px-8 py-4 w-full text-white/80 hover:text-white hover:bg-white/5 rounded-2xl transition-all duration-300",
-            isCollapsed && "justify-center"
-          )}
-        >
-          <LogOut size={22} />
-          {!isCollapsed && <span className="font-bold text-sm">Logout</span>}
-        </button>
-      </div>
-
-      {/* Collapse Toggle */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-4 top-20 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-2xl text-primary hover:scale-110 active:scale-95 transition-all z-50 border-2 border-primary/10"
+    <div className="relative p-4 h-screen">
+      <motion.div 
+        initial={false}
+        animate={{ width: isCollapsed ? 80 : 280 }}
+        className="h-full bg-gradient-to-b from-primary to-primary/90 flex flex-col z-40 rounded-[32px] overflow-hidden shadow-2xl relative border border-white/10"
       >
-        <ChevronRight 
-          size={20} 
-          strokeWidth={3}
-          className={cn("transition-transform duration-500", !isCollapsed && "rotate-180")} 
-        />
-      </button>
-    </motion.div>
+        <div className="p-6 mb-2">
+          <Logo 
+            isCollapsed={isCollapsed}
+            className="transition-all duration-300" 
+          />
+        </div>
+
+        <div className="px-6 mb-4">
+          {!isCollapsed && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-white/40 text-[11px] font-black uppercase tracking-[0.2em] ml-4"
+            >
+              Management
+            </motion.p>
+          )}
+        </div>
+
+        <nav className="flex-1 px-4 space-y-2 relative pt-4">
+          {items.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="relative block group"
+              >
+                <div
+                  className={cn(
+                    'flex items-center gap-4 py-3.5 transition-all duration-300 relative',
+                    isCollapsed ? 'px-0 justify-center' : 'px-6',
+                    isActive
+                      ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                      : 'text-white/60 hover:text-white hover:bg-white/5 rounded-2xl'
+                  )}
+                >
+                  {isActive && (
+                    <>
+                      {/* Inverted Corner Top */}
+                      <div className="absolute -top-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
+                        <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                        <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
+                      </div>
+                      
+                      {/* Inverted Corner Bottom */}
+                      <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
+                        <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                        <div className="absolute inset-0 bg-primary rounded-tr-[20px]" />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="relative z-10 flex items-center justify-center w-6 h-6">
+                    <item.icon 
+                      size={20} 
+                      strokeWidth={isActive ? 2.5 : 2} 
+                      className={cn("transition-colors", isActive ? "text-primary" : "group-hover:text-white")}
+                    />
+                  </div>
+                  
+                  {!isCollapsed && (
+                    <motion.span 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative z-10 font-black text-[14px] tracking-tight"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+
+                  {isActive && !isCollapsed && (
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
+                    />
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-4 mt-auto">
+          <button
+            onClick={logout}
+            className={cn(
+              "flex items-center gap-3 px-6 py-4 w-full text-white/60 hover:text-white hover:bg-white/10 rounded-2xl transition-all duration-300 group",
+              isCollapsed && "justify-center px-0"
+            )}
+          >
+            <LogOut size={20} className="group-hover:rotate-12 transition-transform" />
+            {!isCollapsed && <span className="font-bold text-[14px]">Logout</span>}
+          </button>
+        </div>
+
+        {/* Collapse Toggle */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-1 top-20 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 active:scale-95 transition-all z-50 translate-x-1/2 border-2 border-primary/10"
+        >
+          <ChevronRight 
+            size={16} 
+            strokeWidth={3}
+            className={cn("transition-transform duration-500", !isCollapsed && "rotate-180")} 
+          />
+        </button>
+      </motion.div>
+    </div>
   );
 }
