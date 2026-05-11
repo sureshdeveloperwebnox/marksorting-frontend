@@ -38,11 +38,10 @@ export function Sidebar() {
       animate={{ width: isCollapsed ? 80 : 280 }}
       className="relative h-screen bg-primary flex flex-col z-40 transition-colors duration-300 overflow-hidden shadow-2xl"
     >
-      <div className="p-6 mb-4">
+      <div className="p-4 mb-4 mt-2">
         <Logo 
-          showText={!isCollapsed} 
-          className={cn("transition-all duration-300", isCollapsed && "justify-center")} 
-          variant="white"
+          isCollapsed={isCollapsed}
+          className="transition-all duration-300" 
         />
       </div>
 

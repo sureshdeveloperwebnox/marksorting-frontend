@@ -10,6 +10,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Mark Sorting Management System",
   description: "Enterprise-grade Mark Sorting Management System",
+  icons: {
+    icon: "/assets/favion.png",
+    shortcut: "/assets/favion.png",
+    apple: "/assets/favion.png",
+  },
 };
 
 export default function RootLayout({
