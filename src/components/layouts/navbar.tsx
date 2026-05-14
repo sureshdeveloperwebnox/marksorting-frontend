@@ -11,12 +11,12 @@ export function Navbar() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   return (
-    <div className="px-6 pt-6">
+    <div className="sticky top-0 z-50 w-full transition-all duration-300">
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="h-20 bg-white/80 dark:bg-[#0f1110]/80 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 px-8 flex items-center justify-between sticky top-0 z-30 transition-all duration-300 shadow-xl rounded-[32px]"
+        className="h-20 bg-white/70 dark:bg-gray-950/40 backdrop-blur-3xl border border-white/40 dark:border-white/5 px-8 flex items-center justify-between shadow-[0_12px_32px_-12px_rgba(0,0,0,0.1)] rounded-[24px]"
       >
         <div className="flex items-center gap-6 flex-1 max-w-xl">
           <motion.div 
