@@ -1,19 +1,28 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { DataTable } from "@/components/tables/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { useUsers, User, useDeleteUser } from "@/services/user-service";
 import { useUserStore } from "@/store/useUserStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2, UserPlus, Eye } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, UserPlus, Eye, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -21,7 +30,15 @@ import { cn } from "@/lib/utils";
 import { PageShell, PageShellHeader, PageShellContent } from "@/components/layouts/PageShell";
 
 export default function UsersPage() {
-  const { pagination, setPagination, search, setSearch } = useUserStore();
+  const { 
+    pagination, 
+    setPagination, 
+    search, 
+    setSearch,
+    deleteId,
+    setDeleteId
+  } = useUserStore();
+
   const { data, isLoading } = useUsers({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
@@ -30,14 +47,15 @@ export default function UsersPage() {
 
   const deleteUserMutation = useDeleteUser();
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this user?")) {
-      try {
-        await deleteUserMutation.mutateAsync(id);
-        toast.success("User deleted successfully");
-      } catch (error) {
-        toast.error("Failed to delete user");
-      }
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await deleteUserMutation.mutateAsync(deleteId);
+      toast.success("User deleted successfully");
+    } catch (error) {
+      // Error handled in mutation
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -121,14 +139,17 @@ export default function UsersPage() {
           <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/5 transition-all">
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/5 transition-all">
-            <Edit className="h-4 w-4" />
-          </Button>
+          <Link href={`/users/new?id=${row.original.id}`}>
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/5 transition-all">
+              <Edit className="h-4 w-4" />
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
             className="h-10 w-10 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-500/5 transition-all"
-            onClick={() => handleDelete(row.original.id)}
+            onClick={() => setDeleteId(row.original.id)}
+            disabled={deleteUserMutation.isPending}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -143,10 +164,12 @@ export default function UsersPage() {
         title="User Management"
         subtitle="Monitor and manage your mill operation team members."
         action={
-          <Button className="rounded-[16px] h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 font-black transition-all hover:scale-105 active:scale-95">
-            <UserPlus className="h-4 w-4" />
-            Add New User
-          </Button>
+          <Link href="/users/new">
+            <Button className="rounded-[16px] h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 font-black transition-all hover:scale-105 active:scale-95">
+              <UserPlus className="h-4 w-4" />
+              Add New User
+            </Button>
+          </Link>
         }
       />
 
@@ -162,6 +185,35 @@ export default function UsersPage() {
           searchPlaceholder="Search team members..."
         />
       </PageShellContent>
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
+          <DialogHeader className="space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
+              <Trash2 size={32} />
+            </div>
+            <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">Confirm Deletion</DialogTitle>
+            <DialogDescription className="text-center text-gray-500 font-bold">
+              This action cannot be undone. This will permanently deactivate the user account from the system.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:justify-center pt-6">
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteId(null)}
+              className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={deleteUserMutation.isPending}
+              className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
+            >
+              {deleteUserMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }

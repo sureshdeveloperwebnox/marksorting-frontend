@@ -1,9 +1,13 @@
 import { LoginForm } from '@/features/auth/components/login-form';
+import { AuthLayout } from '@/features/auth/components/auth-layout';
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <AuthLayout 
+      title="Welcome Back" 
+      subtitle="Sign in to your dashboard to manage mill operations"
+    >
       <LoginForm />
-    </div>
+    </AuthLayout>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
@@ -13,7 +13,7 @@ import {
   ClipboardList,
   PieChart
 } from 'lucide-react';
-import { useAuthStore } from '@/store/auth-store';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
@@ -29,8 +29,12 @@ const items = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const logout = useAuthStore((state) => state.logout);
+  const { logout, isLoggingOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className="relative p-4 h-screen">
@@ -125,14 +129,16 @@ export function Sidebar() {
 
         <div className="p-4 mt-auto">
           <button
-            onClick={logout}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
             className={cn(
               "flex items-center gap-3 px-6 py-4 w-full text-white/60 hover:text-white hover:bg-white/10 rounded-2xl transition-all duration-300 group",
-              isCollapsed && "justify-center px-0"
+              isCollapsed && "justify-center px-0",
+              isLoggingOut && "opacity-50 cursor-not-allowed"
             )}
           >
-            <LogOut size={20} className="group-hover:rotate-12 transition-transform" />
-            {!isCollapsed && <span className="font-bold text-[14px]">Logout</span>}
+            <LogOut size={20} className={cn("group-hover:rotate-12 transition-transform", isLoggingOut && "animate-pulse")} />
+            {!isCollapsed && <span className="font-bold text-[14px]">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
           </button>
         </div>
 

@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils';
 interface PageShellProps {
   children: React.ReactNode;
   className?: string;
+  contentClassName?: string;
 }
 
-export function PageShell({ children, className }: PageShellProps) {
+export function PageShell({ children, className, contentClassName }: PageShellProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.99 }}
@@ -17,7 +18,10 @@ export function PageShell({ children, className }: PageShellProps) {
       transition={{ duration: 0.8, ease: "easeOut" }}
       className={cn("min-h-full", className)}
     >
-      <div className="bg-white/70 dark:bg-gray-950/40 backdrop-blur-3xl border border-white dark:border-white/5 rounded-[32px] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.06)] p-6 md:p-8 space-y-8 h-full">
+      <div className={cn(
+        "bg-white/70 dark:bg-gray-950/40 backdrop-blur-3xl border border-white dark:border-white/5 rounded-[32px] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.06)] p-6 md:p-8 space-y-8 h-full",
+        contentClassName
+      )}>
         {children}
       </div>
     </motion.div>

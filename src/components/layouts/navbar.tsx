@@ -1,14 +1,22 @@
 'use client';
 
 import { useAuthStore } from '@/store/auth-store';
-import { Search, Bell, Settings, CircleHelp, Mail } from 'lucide-react';
+import { Search, Bell, Settings, CircleHelp, Mail, Sun, Moon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 export function Navbar() {
   const user = useAuthStore((state) => state.user);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="sticky top-0 z-50 w-full transition-all duration-300">
@@ -57,6 +65,27 @@ export function Navbar() {
             >
               <Bell size={18} />
               <span className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full ring-2 ring-white dark:ring-[#0f1110]" />
+            </motion.button>
+
+            <motion.button 
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-11 h-11 flex items-center justify-center bg-white dark:bg-white/5 text-gray-500 hover:text-primary rounded-full transition-all shadow-sm border border-gray-100 dark:border-white/5"
+            >
+              {mounted && (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={theme === 'dark' ? 'dark' : 'light'}
+                    initial={{ scale: 0, rotate: -90 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    exit={{ scale: 0, rotate: 90 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+                  </motion.div>
+                </AnimatePresence>
+              )}
             </motion.button>
           </div>
 

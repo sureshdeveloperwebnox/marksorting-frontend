@@ -12,35 +12,18 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User) => void;
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      setAuth: (user, token) => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('access_token', token);
-          Cookies.set('access_token', token, { expires: 7 }); // Set cookie for middleware
-        }
-        set({ user, token, isAuthenticated: true });
-      },
-      logout: () => {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('access_token');
-          Cookies.remove('access_token');
-        }
-        set({ user: null, token: null, isAuthenticated: false });
-      },
-    }),
-    {
-      name: 'auth-storage',
-    }
-  )
-);
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isAuthenticated: false,
+  setAuth: (user) => {
+    set({ user, isAuthenticated: true });
+  },
+  logout: () => {
+    set({ user: null, isAuthenticated: false });
+  },
+}));

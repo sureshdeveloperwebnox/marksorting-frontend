@@ -11,6 +11,9 @@ interface UserState {
   setSearch: (search: string) => void;
   setStatusFilter: (status: string) => void;
   resetFilters: () => void;
+  // UI State
+  deleteId: string | null;
+  setDeleteId: (id: string | null) => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -29,4 +32,6 @@ export const useUserStore = create<UserState>((set) => ({
       search: "",
       statusFilter: "",
     }),
+  deleteId: null,
+  setDeleteId: (id) => set({ deleteId: id }),
 }));
