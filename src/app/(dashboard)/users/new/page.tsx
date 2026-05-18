@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Camera, ArrowLeft, Globe, User as UserIcon, Save, Trash2, RefreshCcw, Loader2, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { PageShell } from '@/components/layouts/PageShell';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useCreateUser, useUpdateUser, useRoles, useUser } from '@/services/user-service';
@@ -26,6 +26,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ImageUpload } from '@/components/common/image-upload';
 import { useAuthStore } from '@/store/auth-store';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 
 const userSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -37,7 +39,13 @@ const userSchema = z.object({
     .regex(/[^A-Za-z0-9]/, 'Include at least one special character')
     .optional()
     .or(z.literal('')),
-  phone_number: z.string().optional().or(z.literal('')),
+  phone_number: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || isValidPhoneNumber(val),
+      { message: 'Please enter a valid phone number with correct country code' }
+    ),
   role_id: z.string().min(1, 'Please select a role'),
   account_status: z.string().min(1, 'Status is required'),
   profile_image: z.string().optional().or(z.literal('')),
@@ -62,6 +70,7 @@ function UserForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     watch,
@@ -91,10 +100,19 @@ function UserForm() {
 
   React.useEffect(() => {
     if (userData) {
+      let phone = userData.phone_number || '';
+      if (phone && !phone.startsWith('+')) {
+        if (phone.length === 10) {
+          phone = `+91${phone}`;
+        } else {
+          phone = `+${phone}`;
+        }
+      }
+
       reset({
         full_name: userData.full_name,
         email: userData.email,
-        phone_number: userData.phone_number || '',
+        phone_number: phone,
         role_id: userData.role.id || '',
         account_status: userData.account_status,
         profile_image: userData.profile_image || '',
@@ -299,12 +317,23 @@ function UserForm() {
                   <Phone size={16} className="text-primary/70" />
                   Phone Number
                 </Label>
-                <div className="md:col-span-2 space-y-1">
-                  <Input 
-                    {...register('phone_number')}
-                    placeholder="+1 234 567 890" 
-                    className="h-12 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                <div className="md:col-span-2 space-y-1.5">
+                  <Controller
+                    name="phone_number"
+                    control={control}
+                    render={({ field }) => (
+                      <PhoneInput
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="Enter phone number"
+                      />
+                    )}
                   />
+                  {errors.phone_number && (
+                    <p className="text-xs text-rose-500 font-bold ml-1">
+                      {errors.phone_number.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

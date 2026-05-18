@@ -28,7 +28,31 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { PageShell, PageShellHeader, PageShellContent } from "@/components/layouts/PageShell";
-import { FilterDrawer } from "@/components/users/FilterDrawer";
+import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+
+const formatPhoneNumber = (phone?: string) => {
+  if (!phone) return "";
+  if (!phone.startsWith("+")) return phone;
+  const parsed = parsePhoneNumberFromString(phone);
+  if (parsed) {
+    return `+${parsed.countryCallingCode} ${parsed.nationalNumber}`;
+  }
+  return phone;
+};
+
+const userFilterFields: FilterField[] = [
+  {
+    id: "status",
+    label: "Account Status",
+    options: [
+      { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+      { value: "ACTIVE", label: "Active Only", iconColor: "bg-emerald-500", animatePulse: true },
+      { value: "INACTIVE", label: "Inactive Only", iconColor: "bg-amber-500", animatePulse: true },
+      { value: "LOCKED", label: "Locked Only", iconColor: "bg-rose-500", animatePulse: true },
+    ]
+  }
+];
 
 export default function UsersPage() {
   const { 
@@ -37,6 +61,8 @@ export default function UsersPage() {
     search, 
     setSearch,
     statusFilter,
+    setStatusFilter,
+    resetFilters,
     deleteId,
     setDeleteId
   } = useUserStore();
@@ -86,17 +112,23 @@ export default function UsersPage() {
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-[15px] text-primary dark:text-primary tracking-tight">{row.original.full_name}</span>
-            <span className="text-[11px] text-gray-400/80 font-medium uppercase tracking-widest">User ID: #{row.original.id.slice(-4)}</span>
           </div>
         </div>
       ),
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: "Contact",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium text-sm">
-          {row.original.email}
+        <div className="flex flex-col gap-1">
+          <span className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
+            {row.original.email}
+          </span>
+          {row.original.phone_number && (
+            <span className="text-primary dark:text-primary/80 font-bold text-xs bg-primary/5 dark:bg-primary/10 px-2 py-0.5 rounded w-fit border border-primary/5">
+              {formatPhoneNumber(row.original.phone_number)}
+            </span>
+          )}
         </div>
       ),
     },
@@ -146,21 +178,22 @@ export default function UsersPage() {
     },
     {
       id: "actions",
-      header: () => <div className="text-right w-full">Actions</div>,
+      header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/5 transition-all">
-            <Eye className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-end gap-2.5">
           <Link href={`/users/new?id=${row.original.id}`}>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-gray-400 hover:text-emerald-500 hover:bg-emerald-500/5 transition-all">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 dark:hover:bg-amber-950/50 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            >
               <Edit className="h-4 w-4" />
             </Button>
           </Link>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-500/5 transition-all"
+            className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 dark:hover:bg-rose-950/50 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
             onClick={() => setDeleteId(row.original.id)}
             disabled={deleteUserMutation.isPending}
           >
@@ -201,9 +234,18 @@ export default function UsersPage() {
           activeFiltersCount={statusFilter ? 1 : 0}
         />
       </PageShellContent>
-      <FilterDrawer 
+      <GenericFilterDrawer 
         isOpen={isFilterDrawerOpen} 
         onClose={() => setIsFilterDrawerOpen(false)} 
+        fields={userFilterFields}
+        activeValues={{ status: statusFilter || "ALL" }}
+        onApply={(values) => {
+          setStatusFilter(values.status === "ALL" ? "" : values.status);
+        }}
+        onReset={() => {
+          setStatusFilter("");
+          resetFilters();
+        }}
       />
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">

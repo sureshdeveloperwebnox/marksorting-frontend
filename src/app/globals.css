@@ -128,3 +128,74 @@
     @apply font-sans;
   }
 }
+
+/* Custom styles for react-phone-number-input */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3rem; /* 48px */
+  padding: 0 0.875rem;
+  background-color: rgba(249, 250, 251, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.75rem; /* rounded-xl */
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.dark .PhoneInputCountry {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.PhoneInputCountry:hover {
+  background-color: rgba(249, 250, 251, 0.8);
+  border-color: rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
+}
+
+.dark .PhoneInputCountry:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.PhoneInputCountrySelect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.PhoneInputCountryIcon {
+  width: 1.5rem; /* 24px */
+  height: 1.125rem; /* 18px */
+  border-radius: 0.125rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  display: block;
+}
+
+.PhoneInputCountrySelectArrow {
+  margin-left: 0.375rem;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #6b7280;
+  width: 0;
+  height: 0;
+  transition: transform 0.2s ease;
+}
+
+.PhoneInputCountry:hover .PhoneInputCountrySelectArrow {
+  transform: translateY(1px);
+}
