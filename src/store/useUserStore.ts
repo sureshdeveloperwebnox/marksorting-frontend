@@ -19,16 +19,16 @@ interface UserState {
 export const useUserStore = create<UserState>((set) => ({
   pagination: {
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 5,
   },
   search: "",
   statusFilter: "",
   setPagination: (pagination) => set({ pagination }),
-  setSearch: (search) => set({ search, pagination: { pageIndex: 0, pageSize: 10 } }),
-  setStatusFilter: (status) => set({ statusFilter: status, pagination: { pageIndex: 0, pageSize: 10 } }),
+  setSearch: (search) => set((state) => ({ search, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
+  setStatusFilter: (status) => set((state) => ({ statusFilter: status, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
   resetFilters: () =>
     set({
-      pagination: { pageIndex: 0, pageSize: 10 },
+      pagination: { pageIndex: 0, pageSize: 5 },
       search: "",
       statusFilter: "",
     }),

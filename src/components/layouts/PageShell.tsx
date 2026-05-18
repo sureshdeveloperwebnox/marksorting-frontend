@@ -36,14 +36,21 @@ interface PageShellHeaderProps {
 }
 
 export function PageShellHeader({ title, subtitle, action, className }: PageShellHeaderProps) {
+  const words = title.split(' ');
+  const lastWord = words[words.length - 1];
+  const mainTitle = words.slice(0, -1).join(' ');
+
   return (
     <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-6", className)}>
       <div className="space-y-1">
-        <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-          {title} <span className="text-primary text-4xl leading-none">.</span>
+        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">
+          {mainTitle && `${mainTitle} `}
+          <span className="bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">
+            {lastWord}
+          </span>
         </h1>
         {subtitle && (
-          <p className="text-gray-500 dark:text-gray-400 font-bold">
+          <p className="text-gray-500 dark:text-gray-400 font-semibold text-sm">
             {subtitle}
           </p>
         )}

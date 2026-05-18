@@ -67,7 +67,7 @@ export default function UsersPage() {
         <div className="flex items-center gap-4">
           <div className="relative group">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-md group-hover:bg-primary/30 transition-all duration-500 opacity-0 group-hover:opacity-100" />
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-black text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-110 overflow-hidden">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-semibold text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-110 overflow-hidden">
               {row.original.profile_image_url ? (
                 <img 
                   src={row.original.profile_image_url} 
@@ -80,8 +80,8 @@ export default function UsersPage() {
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-[15px] text-gray-900 dark:text-white tracking-tight">{row.original.full_name}</span>
-            <span className="text-[12px] text-gray-400 font-bold uppercase tracking-wider">User ID: #{row.original.id.slice(-4)}</span>
+            <span className="font-semibold text-[15px] text-primary dark:text-primary tracking-tight">{row.original.full_name}</span>
+            <span className="text-[11px] text-gray-400/80 font-medium uppercase tracking-widest">User ID: #{row.original.id.slice(-4)}</span>
           </div>
         </div>
       ),
@@ -90,7 +90,7 @@ export default function UsersPage() {
       accessorKey: "email",
       header: "Email",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-sm">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium text-sm">
           {row.original.email}
         </div>
       ),
@@ -99,7 +99,7 @@ export default function UsersPage() {
       accessorKey: "role.name",
       header: "Role",
       cell: ({ row }) => (
-        <Badge variant="outline" className="bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300 border-gray-100 dark:border-white/10 font-black text-[10px] uppercase tracking-[0.1em] px-3 py-1 rounded-lg">
+        <Badge variant="outline" className="bg-primary/5 dark:bg-primary/10 text-primary border-primary/10 font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 rounded-md shadow-sm">
           {row.original.role.name}
         </Badge>
       ),
@@ -118,7 +118,7 @@ export default function UsersPage() {
             )} />
             <Badge
               className={cn(
-                "rounded-lg font-black text-[10px] uppercase tracking-[0.1em] px-3 py-1 border-none shadow-sm",
+                "rounded-md font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 border-none shadow-sm",
                 isActive
                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                   : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
@@ -134,16 +134,16 @@ export default function UsersPage() {
       accessorKey: "created_at",
       header: "Joined Date",
       cell: ({ row }) => (
-        <span className="text-gray-400 dark:text-gray-500 font-bold text-sm">
+        <span className="text-gray-400 dark:text-gray-500 font-medium text-sm">
           {format(new Date(row.original.created_at), "MMM dd, yyyy")}
         </span>
       ),
     },
     {
       id: "actions",
-      header: "Actions",
+      header: () => <div className="text-right w-full">Actions</div>,
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/5 transition-all">
             <Eye className="h-4 w-4" />
           </Button>
@@ -172,7 +172,7 @@ export default function UsersPage() {
         title="User Management"
         action={
           <Link href="/users/new">
-            <Button className="rounded-[16px] h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 font-black transition-all hover:scale-105 active:scale-95">
+            <Button className="border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white rounded-[16px] h-12 px-6 gap-2 transition-all hover:scale-105 active:scale-95 font-semibold shadow-sm hover:shadow-lg hover:shadow-primary/20">
               <UserPlus className="h-4 w-4" />
               Add New User
             </Button>

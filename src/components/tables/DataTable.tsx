@@ -28,6 +28,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { ChevronLeft, ChevronRight, Settings2, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -97,21 +98,21 @@ export function DataTable<TData, TValue>({
           />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm">
+          <Button variant="outline" className="h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm">
             <Filter className="h-4 w-4" />
             Filter
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="outline" className="h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm">
+                <Button variant="outline" className="h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm">
                   <Settings2 className="h-4 w-4" />
                   Columns
                 </Button>
               }
             />
             <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90">
-              <div className="px-2 py-1.5 text-xs font-black text-gray-400 uppercase tracking-widest">Toggle Columns</div>
+              <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Toggle Columns</div>
               {table
                 .getAllColumns()
                 .filter((column) => column.getCanHide())
@@ -119,7 +120,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
-                      className="capitalize rounded-xl font-bold text-sm my-1 focus:bg-primary/10 focus:text-primary"
+                      className="capitalize rounded-xl font-medium text-sm my-1 focus:bg-primary/10 focus:text-primary"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) => column.toggleVisibility(!!value)}
                     >
@@ -133,13 +134,13 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table Body */}
-      <div className="rounded-[32px] overflow-hidden">
+      <div className="rounded-[24px] border border-gray-100 dark:border-white/5 overflow-hidden bg-white/50 dark:bg-black/5 backdrop-blur-xl shadow-md shadow-gray-100/10">
         <Table>
-          <TableHeader className="bg-gray-50/50 dark:bg-black/20 border-b border-gray-100 dark:border-white/5">
+          <TableHeader className="bg-primary/[0.02] dark:bg-primary/[0.04] border-b border-primary/10">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="h-16 text-gray-400 font-black uppercase tracking-[0.15em] text-[11px] px-8">
+                  <TableHead key={header.id} className="h-16 text-primary/80 dark:text-primary/90 font-semibold uppercase tracking-[0.12em] text-[11px] px-8">
                     {header.isPlaceholder ? null : (
                       <div
                         className={
@@ -187,7 +188,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-white/5 last:border-0 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-all duration-300 group/row"
+                  className="border-b border-gray-50 dark:border-white/5 last:border-0 hover:bg-primary/[0.015] dark:hover:bg-primary/[0.035] transition-all duration-300 group/row"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-8 py-5 transition-all duration-300">
@@ -211,40 +212,59 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-6 py-4 bg-white/30 dark:bg-white/5 backdrop-blur-md rounded-[32px] border border-gray-100 dark:border-white/5 shadow-sm">
-        <div className="text-sm text-gray-500 font-bold">
-          <span className="text-primary">{table.getFilteredSelectedRowModel().rows.length}</span> of{" "}
-          <span className="text-gray-900 dark:text-white">{table.getFilteredRowModel().rows.length}</span> rows selected
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-6 py-4 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm transition-all">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-2.5 w-2.5 rounded-full bg-primary/70 animate-pulse" />
+          <div className="text-sm text-gray-500 font-semibold tracking-wide">
+            Selected <span className="text-primary font-bold">{table.getFilteredSelectedRowModel().rows.length}</span> of{" "}
+            <span className="text-gray-900 dark:text-white font-bold">{table.getFilteredRowModel().rows.length}</span> users
+          </div>
         </div>
         <div className="flex items-center gap-8">
           <div className="hidden lg:flex items-center gap-3">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Rows per page</p>
-            <select
-              className="h-10 w-20 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 text-sm font-black outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer px-3"
-              value={table.getState().pagination.pageSize}
-              onChange={(e) => {
-                table.setPageSize(Number(e.target.value));
-                onPaginationChange?.({
-                  pageIndex: 0,
-                  pageSize: Number(e.target.value),
-                });
-              }}
-            >
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
-              ))}
-            </select>
+            <p className="text-[11px] font-semibold text-primary/80 dark:text-primary/90 uppercase tracking-[0.12em]">Rows per page</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    className="h-10 w-20 rounded-xl border border-gray-100 dark:border-white/10 bg-white/80 dark:bg-gray-900 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all cursor-pointer px-3 shadow-sm flex items-center justify-between gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5"
+                  >
+                    <span>{table.getState().pagination.pageSize}</span>
+                    <ChevronRight className="h-4 w-4 rotate-90 text-gray-400" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-20 rounded-xl p-1.5 border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90">
+                {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                  <DropdownMenuItem
+                    key={pageSize}
+                    className="capitalize rounded-lg font-semibold text-xs my-0.5 focus:bg-primary/10 focus:text-primary cursor-pointer text-center justify-center py-2 transition-colors"
+                    onClick={() => {
+                      table.setPageSize(pageSize);
+                      onPaginationChange?.({
+                        pageIndex: 0,
+                        pageSize: pageSize,
+                      });
+                    }}
+                  >
+                    {pageSize}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-sm font-black text-gray-900 dark:text-white bg-gray-50 dark:bg-white/5 px-4 py-2 rounded-xl border border-gray-100 dark:border-white/5">
-              <span className="text-gray-400 mr-1">PAGE</span> {table.getState().pagination.pageIndex + 1} <span className="text-gray-400 mx-1">OF</span> {pageCount}
+            <div className="text-xs font-semibold text-primary bg-primary/5 px-4 py-2.5 rounded-xl border border-primary/10 tracking-widest uppercase flex items-center gap-1.5 shadow-sm">
+              <span className="text-primary/60 font-medium tracking-normal">PAGE</span> 
+              <span>{table.getState().pagination.pageIndex + 1}</span> 
+              <span className="text-primary/60 font-medium tracking-normal">OF</span> 
+              <span>{pageCount}</span>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                className="h-10 w-10 p-0 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm hover:scale-105 active:scale-95 transition-all"
+                className="h-10 w-10 p-0 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 text-primary hover:bg-primary hover:text-white hover:border-primary disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:hover:border-gray-100 shadow-sm hover:scale-105 active:scale-95 transition-all"
                 onClick={() => {
                   const newIndex = table.getState().pagination.pageIndex - 1;
                   table.previousPage();
@@ -259,7 +279,7 @@ export function DataTable<TData, TValue>({
               </Button>
               <Button
                 variant="outline"
-                className="h-10 w-10 p-0 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm hover:scale-105 active:scale-95 transition-all"
+                className="h-10 w-10 p-0 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 text-primary hover:bg-primary hover:text-white hover:border-primary disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400 disabled:hover:border-gray-100 shadow-sm hover:scale-105 active:scale-95 transition-all"
                 onClick={() => {
                   const newIndex = table.getState().pagination.pageIndex + 1;
                   table.nextPage();
