@@ -39,6 +39,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   loading?: boolean;
   pageCount?: number;
+  totalCount?: number;
   pagination?: {
     pageIndex: number;
     pageSize: number;
@@ -46,6 +47,8 @@ interface DataTableProps<TData, TValue> {
   onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void;
   onGlobalFilterChange?: (value: string) => void;
   searchPlaceholder?: string;
+  showRowSelection?: boolean;
+  entityName?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -53,10 +56,13 @@ export function DataTable<TData, TValue>({
   data,
   loading = false,
   pageCount = 1,
+  totalCount,
   pagination,
   onPaginationChange,
   onGlobalFilterChange,
   searchPlaceholder = "Search...",
+  showRowSelection = false,
+  entityName = "records",
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -216,8 +222,16 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center gap-2.5">
           <span className="flex h-2.5 w-2.5 rounded-full bg-primary/70 animate-pulse" />
           <div className="text-sm text-gray-500 font-semibold tracking-wide">
-            Selected <span className="text-primary font-bold">{table.getFilteredSelectedRowModel().rows.length}</span> of{" "}
-            <span className="text-gray-900 dark:text-white font-bold">{table.getFilteredRowModel().rows.length}</span> users
+            {showRowSelection ? (
+              <>
+                Selected <span className="text-primary font-bold">{table.getFilteredSelectedRowModel().rows.length}</span> of{" "}
+                <span className="text-gray-900 dark:text-white font-bold">{totalCount ?? table.getFilteredRowModel().rows.length}</span> {entityName}
+              </>
+            ) : (
+              <>
+                Total <span className="text-primary font-bold">{totalCount ?? table.getFilteredRowModel().rows.length}</span> {entityName}
+              </>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-8">

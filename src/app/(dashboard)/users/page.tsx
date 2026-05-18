@@ -186,6 +186,8 @@ export default function UsersPage() {
           data={data?.users || []}
           loading={isLoading}
           pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
+          totalCount={data?.total || 0}
+          entityName="users"
           pagination={pagination}
           onPaginationChange={setPagination}
           onGlobalFilterChange={setSearch}
