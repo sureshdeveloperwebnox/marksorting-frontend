@@ -229,6 +229,7 @@ export default function UsersPage() {
           pagination={pagination}
           onPaginationChange={setPagination}
           onGlobalFilterChange={setSearch}
+          globalFilterValue={search}
           searchPlaceholder="Search team members..."
           onFilterClick={() => setIsFilterDrawerOpen(true)}
           activeFiltersCount={statusFilter ? 1 : 0}

@@ -47,6 +47,7 @@ interface DataTableProps<TData, TValue> {
   };
   onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void;
   onGlobalFilterChange?: (value: string) => void;
+  globalFilterValue?: string;
   searchPlaceholder?: string;
   showRowSelection?: boolean;
   entityName?: string;
@@ -63,6 +64,7 @@ export function DataTable<TData, TValue>({
   pagination,
   onPaginationChange,
   onGlobalFilterChange,
+  globalFilterValue = "",
   searchPlaceholder = "Search...",
   showRowSelection = false,
   entityName = "records",
@@ -73,6 +75,22 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+
+  const [searchValue, setSearchValue] = React.useState(globalFilterValue);
+
+  React.useEffect(() => {
+    setSearchValue(globalFilterValue);
+  }, [globalFilterValue]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchValue !== globalFilterValue) {
+        onGlobalFilterChange?.(searchValue);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, onGlobalFilterChange, globalFilterValue]);
 
   const table = useReactTable({
     data,
@@ -105,7 +123,8 @@ export function DataTable<TData, TValue>({
           <Input
             placeholder={searchPlaceholder}
             className="pl-12 h-12 bg-gray-50/50 dark:bg-black/20 border-none rounded-[16px] focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-400 shadow-inner"
-            onChange={(event) => onGlobalFilterChange?.(event.target.value)}
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
           />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
