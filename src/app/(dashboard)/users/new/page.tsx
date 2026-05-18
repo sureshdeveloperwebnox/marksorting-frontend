@@ -186,7 +186,7 @@ function UserForm() {
                 <Button 
                   type="submit"
                   disabled={isCreating || isUpdating}
-                  className="bg-[#2D334A] hover:bg-[#1A1F2F] text-white rounded-xl h-12 px-8 font-black shadow-lg transition-all hover:scale-105 active:scale-95 gap-2"
+                  className="border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white rounded-xl h-12 px-8 font-black transition-all hover:scale-105 active:scale-95 gap-2 shadow-sm hover:shadow-lg hover:shadow-primary/20"
                 >
                   {isCreating || isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={18} />}
                   {isEdit ? 'Update Changes' : 'Save User'}
@@ -199,8 +199,8 @@ function UserForm() {
               
               {/* Name Field */}
               <div className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <Label className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
-                  <UserIcon size={16} className="text-gray-300" />
+                <Label className="text-sm font-semibold text-primary uppercase tracking-widest flex items-center gap-3">
+                  <UserIcon size={16} className="text-primary/70" />
                   Full Name
                 </Label>
                 <div className="md:col-span-2 space-y-1">
@@ -215,8 +215,8 @@ function UserForm() {
 
               {/* Email Field */}
               <div className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <Label className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
-                  <Mail size={16} className="text-gray-300" />
+                <Label className="text-sm font-semibold text-primary uppercase tracking-widest flex items-center gap-3">
+                  <Mail size={16} className="text-primary/70" />
                   Email Address
                 </Label>
                 <div className="md:col-span-2 space-y-1">
@@ -231,8 +231,8 @@ function UserForm() {
 
               {/* Password Field */}
               <div className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <Label className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
-                  <Lock size={16} className="text-gray-300" />
+                <Label className="text-sm font-semibold text-primary uppercase tracking-widest flex items-center gap-3">
+                  <Lock size={16} className="text-primary/70" />
                   Password
                 </Label>
                 <div className="md:col-span-2 space-y-1 relative">
@@ -269,8 +269,8 @@ function UserForm() {
 
               {/* Role Selection */}
               <div className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <Label className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
-                  <Globe size={16} className="text-gray-300" />
+                <Label className="text-sm font-semibold text-primary uppercase tracking-widest flex items-center gap-3">
+                  <Globe size={16} className="text-primary/70" />
                   User Role
                 </Label>
                 <div className="md:col-span-2 space-y-1">
@@ -295,8 +295,8 @@ function UserForm() {
 
               {/* Phone Number */}
               <div className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <Label className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
-                  <Phone size={16} className="text-gray-300" />
+                <Label className="text-sm font-semibold text-primary uppercase tracking-widest flex items-center gap-3">
+                  <Phone size={16} className="text-primary/70" />
                   Phone Number
                 </Label>
                 <div className="md:col-span-2 space-y-1">
@@ -310,9 +310,9 @@ function UserForm() {
 
               {/* Photo Upload Section */}
               <div className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <Label className="text-sm font-black text-gray-400 uppercase tracking-widest">
+                <Label className="text-sm font-semibold text-primary uppercase tracking-widest">
                   Profile Photo
-                  <p className="text-[10px] lowercase text-gray-300 font-bold mt-1 normal-case tracking-normal">Upload a clear face photo.</p>
+                  <p className="text-[10px] lowercase text-primary/50 font-semibold mt-1 normal-case tracking-normal">Upload a clear face photo.</p>
                 </Label>
                 <div className="md:col-span-2">
                   <ImageUpload
@@ -327,8 +327,8 @@ function UserForm() {
 
               {/* Account Status */}
               <div className="py-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <Label className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
-                  <RefreshCcw size={16} className="text-gray-300" />
+                <Label className="text-sm font-semibold text-primary uppercase tracking-widest flex items-center gap-3">
+                  <RefreshCcw size={16} className="text-primary/70" />
                   Account Status
                 </Label>
                 <div className="md:col-span-2">

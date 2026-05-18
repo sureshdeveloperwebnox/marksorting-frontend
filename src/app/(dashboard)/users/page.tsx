@@ -170,7 +170,6 @@ export default function UsersPage() {
     <PageShell>
       <PageShellHeader
         title="User Management"
-        subtitle="Monitor and manage your mill operation team members."
         action={
           <Link href="/users/new">
             <Button className="rounded-[16px] h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 font-black transition-all hover:scale-105 active:scale-95">
