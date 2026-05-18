@@ -67,8 +67,16 @@ export default function UsersPage() {
         <div className="flex items-center gap-4">
           <div className="relative group">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-md group-hover:bg-primary/30 transition-all duration-500 opacity-0 group-hover:opacity-100" />
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-black text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-110">
-              {row.original.full_name.charAt(0)}
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-black text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-110 overflow-hidden">
+              {row.original.profile_image_url ? (
+                <img 
+                  src={row.original.profile_image_url} 
+                  alt={row.original.full_name} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                row.original.full_name.charAt(0)
+              )}
             </div>
           </div>
           <div className="flex flex-col">

@@ -24,6 +24,8 @@ import { useCreateUser, useUpdateUser, useRoles, useUser } from '@/services/user
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ImageUpload } from '@/components/common/image-upload';
+import { useAuthStore } from '@/store/auth-store';
 
 const userSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -55,6 +57,9 @@ function UserForm() {
   const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateUser();
   const [showPassword, setShowPassword] = React.useState(false);
 
+  const currentUser = useAuthStore((state) => state.user);
+  const setAuth = useAuthStore((state) => state.setAuth);
+
   const {
     register,
     handleSubmit,
@@ -65,7 +70,13 @@ function UserForm() {
   } = useForm<UserFormValues>({
     resolver: zodResolver(userSchema) as any,
     defaultValues: {
+      full_name: '',
+      email: '',
+      password: '',
+      phone_number: '',
+      role_id: '',
       account_status: 'ACTIVE',
+      profile_image: '',
     }
   });
 
@@ -94,7 +105,19 @@ function UserForm() {
   const onSubmit: SubmitHandler<UserFormValues> = async (data) => {
     try {
       if (isEdit) {
-        await updateUser({ id: userId, ...data });
+        const updatedUser = await updateUser({ id: userId, ...data });
+        
+        // Sync auth store immediately if updating own profile
+        if (currentUser && currentUser.id === userId) {
+          setAuth({
+            ...currentUser,
+            full_name: updatedUser.full_name,
+            email: updatedUser.email,
+            profile_image: updatedUser.profile_image,
+            profile_image_url: updatedUser.profile_image_url,
+          });
+        }
+        
         toast.success('User updated successfully');
       } else {
         if (!data.password) {
@@ -144,18 +167,12 @@ function UserForm() {
           <div className="px-8 md:px-12 pb-12 -mt-16 md:-mt-20 relative z-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-                <div className="relative group">
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[6px] border-white dark:border-gray-900 shadow-xl overflow-hidden bg-gray-100 relative">
-                    <img 
-                      src={watch('profile_image') || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&h=256&auto=format&fit=crop"} 
-                      alt="Profile"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                      <Camera className="text-white" size={24} />
-                    </div>
-                  </div>
-                </div>
+                <ImageUpload
+                  value={watch('profile_image')}
+                  previewUrl={userData?.profile_image_url}
+                  onChange={(url) => setValue('profile_image', url)}
+                  className="w-32 h-32 md:w-40 md:h-40"
+                />
                 <div className="text-center md:text-left space-y-1 pb-2">
                   <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
                     {isEdit ? 'Edit User' : 'New User'} <span className="text-primary leading-none">.</span>
@@ -258,13 +275,11 @@ function UserForm() {
                 </Label>
                 <div className="md:col-span-2 space-y-1">
                   <Select 
-                    onValueChange={(val) => setValue('role_id', val ?? '')} 
-                    value={watch('role_id')}
+                    onValueChange={(val) => setValue('role_id', val ?? '', { shouldValidate: true })} 
+                    value={watch('role_id') || undefined}
                   >
                     <SelectTrigger className="h-12 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                      <SelectValue placeholder={isLoadingRoles ? "Loading roles..." : "Select a role"}>
-                        {roles?.find(r => r.id === watch('role_id'))?.name}
-                      </SelectValue>
+                      <SelectValue placeholder={isLoadingRoles ? "Loading roles..." : "Select a role"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                       {roles?.map((role) => (
@@ -299,20 +314,14 @@ function UserForm() {
                   Profile Photo
                   <p className="text-[10px] lowercase text-gray-300 font-bold mt-1 normal-case tracking-normal">Upload a clear face photo.</p>
                 </Label>
-                <div className="md:col-span-2 flex items-center justify-between gap-6">
-                  <div className="h-14 w-14 rounded-full bg-[#2D334A] flex items-center justify-center text-white shadow-lg">
-                    <Camera size={20} />
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Button type="button" variant="ghost" className="text-gray-400 hover:text-rose-500 font-bold text-sm gap-2">
-                      <Trash2 size={16} />
-                      Delete
-                    </Button>
-                    <Button type="button" variant="ghost" className="text-gray-400 hover:text-primary font-bold text-sm gap-2">
-                      <RefreshCcw size={16} />
-                      Update
-                    </Button>
-                  </div>
+                <div className="md:col-span-2">
+                  <ImageUpload
+                    value={watch('profile_image')}
+                    previewUrl={userData?.profile_image_url}
+                    onChange={(url) => setValue('profile_image', url)}
+                    shape="rectangle"
+                    className="max-w-xs"
+                  />
                 </div>
               </div>
 

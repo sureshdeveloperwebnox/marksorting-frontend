@@ -94,17 +94,17 @@ export function Navbar() {
             whileHover={{ x: 2 }}
           >
             <Avatar className="h-11 w-11 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all duration-300 shadow-md">
-              <AvatarImage src="/avatars/admin.png" />
+              <AvatarImage src={user?.profile_image_url || '/avatars/admin.png'} />
               <AvatarFallback className="bg-primary/5 text-primary font-bold">
                 {user?.full_name?.charAt(0) || 'A'}
               </AvatarFallback>
             </Avatar>
             <div className="text-left hidden lg:block">
               <p className="text-sm font-black text-gray-900 dark:text-white leading-none mb-1">
-                {user?.full_name || 'Totok Michael'}
+                {user?.full_name || 'Team Member'}
               </p>
               <p className="text-[11px] text-gray-400 font-medium">
-                {user?.email || 'tmichael20@mail.com'}
+                {user?.email || ''}
               </p>
             </div>
           </motion.div>

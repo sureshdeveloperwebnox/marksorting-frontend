@@ -8,6 +8,8 @@ interface User {
   email: string;
   role: string;
   permissions?: string[];
+  profile_image?: string;
+  profile_image_url?: string;
 }
 
 interface AuthState {
