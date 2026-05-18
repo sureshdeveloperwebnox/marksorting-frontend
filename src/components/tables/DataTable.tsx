@@ -33,6 +33,7 @@ import {
 import { ChevronLeft, ChevronRight, Settings2, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -49,6 +50,8 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string;
   showRowSelection?: boolean;
   entityName?: string;
+  onFilterClick?: () => void;
+  activeFiltersCount?: number;
 }
 
 export function DataTable<TData, TValue>({
@@ -63,6 +66,8 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Search...",
   showRowSelection = false,
   entityName = "records",
+  onFilterClick,
+  activeFiltersCount = 0,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -104,9 +109,23 @@ export function DataTable<TData, TValue>({
           />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm">
+          <Button
+            variant="outline"
+            onClick={onFilterClick}
+            className={cn(
+              "h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold transition-all shadow-sm relative overflow-visible cursor-pointer",
+              activeFiltersCount > 0
+                ? "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/30"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+            )}
+          >
             <Filter className="h-4 w-4" />
             Filter
+            {activeFiltersCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md shadow-primary/20 animate-in zoom-in duration-300">
+                {activeFiltersCount}
+              </span>
+            )}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger

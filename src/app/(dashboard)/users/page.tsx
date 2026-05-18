@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { PageShell, PageShellHeader, PageShellContent } from "@/components/layouts/PageShell";
+import { FilterDrawer } from "@/components/users/FilterDrawer";
 
 export default function UsersPage() {
   const { 
@@ -35,14 +36,18 @@ export default function UsersPage() {
     setPagination, 
     search, 
     setSearch,
+    statusFilter,
     deleteId,
     setDeleteId
   } = useUserStore();
+
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
 
   const { data, isLoading } = useUsers({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search: search,
+    status: statusFilter || undefined,
   });
 
   const deleteUserMutation = useDeleteUser();
@@ -192,8 +197,14 @@ export default function UsersPage() {
           onPaginationChange={setPagination}
           onGlobalFilterChange={setSearch}
           searchPlaceholder="Search team members..."
+          onFilterClick={() => setIsFilterDrawerOpen(true)}
+          activeFiltersCount={statusFilter ? 1 : 0}
         />
       </PageShellContent>
+      <FilterDrawer 
+        isOpen={isFilterDrawerOpen} 
+        onClose={() => setIsFilterDrawerOpen(false)} 
+      />
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
           <DialogHeader className="space-y-4">
