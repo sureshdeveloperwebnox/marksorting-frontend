@@ -40,7 +40,13 @@ const items: SidebarItem[] = [
       { label: 'Users', href: '/users', icon: Users }
     ]
   },
-  { label: 'Mills', href: '/mills', icon: Factory },
+  { 
+    label: 'Mill Management', 
+    icon: Factory,
+    subItems: [
+      { label: 'Mills', href: '/mills', icon: Factory }
+    ]
+  },
   { label: 'Orders', href: '/orders', icon: ClipboardList },
   { label: 'Analytics', href: '/analytics', icon: PieChart },
   { label: 'Settings', href: '/settings', icon: Settings },
