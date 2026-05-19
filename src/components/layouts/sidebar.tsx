@@ -37,7 +37,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="relative p-4 h-screen">
+    <div className="relative p-4 h-screen hidden md:block">
       <motion.div 
         initial={false}
         animate={{ width: isCollapsed ? 80 : 280 }}

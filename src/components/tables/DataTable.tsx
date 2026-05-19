@@ -127,12 +127,12 @@ export function DataTable<TData, TValue>({
             onChange={(event) => setSearchValue(event.target.value)}
           />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
           <Button
             variant="outline"
             onClick={onFilterClick}
             className={cn(
-              "h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold transition-all shadow-sm relative overflow-visible cursor-pointer",
+              "h-12 px-6 flex-1 lg:flex-initial border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold transition-all shadow-sm relative overflow-visible cursor-pointer justify-center",
               activeFiltersCount > 0
                 ? "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/30"
                 : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
@@ -149,7 +149,7 @@ export function DataTable<TData, TValue>({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="outline" className="h-12 px-6 border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm">
+                <Button variant="outline" className="h-12 px-6 flex-1 lg:flex-initial border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm justify-center">
                   <Settings2 className="h-4 w-4" />
                   Columns
                 </Button>
@@ -177,8 +177,8 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      {/* Table Body */}
-      <div className="rounded-[24px] border border-gray-100 dark:border-white/5 overflow-hidden bg-white/50 dark:bg-black/5 backdrop-blur-xl shadow-md shadow-gray-100/10">
+      {/* Desktop View - Table */}
+      <div className="hidden md:block rounded-[24px] border border-gray-100 dark:border-white/5 overflow-hidden bg-white/50 dark:bg-black/5 backdrop-blur-xl shadow-md shadow-gray-100/10">
         <Table>
           <TableHeader className="bg-primary/[0.02] dark:bg-primary/[0.04] border-b border-primary/10">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -253,6 +253,92 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile View - Card Grid */}
+      <div className="block md:hidden space-y-4">
+        {loading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="p-5 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm space-y-3 animate-pulse">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-1/3 rounded-lg" />
+                  <Skeleton className="h-4 w-1/4 rounded-lg" />
+                </div>
+              </div>
+              <div className="border-t border-gray-100 dark:border-white/5 pt-3 space-y-2">
+                <div className="flex justify-between"><Skeleton className="h-4 w-16" /><Skeleton className="h-4 w-24" /></div>
+                <div className="flex justify-between"><Skeleton className="h-4 w-16" /><Skeleton className="h-4 w-20" /></div>
+              </div>
+            </div>
+          ))
+        ) : table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => {
+            const visibleCells = row.getVisibleCells();
+            const primaryCell = visibleCells[0]; // Primary descriptor (e.g., Name / Title)
+            const actionsCell = visibleCells.find(c => c.column.id === "actions");
+            const statusCell = visibleCells.find(c => c.column.id === "account_status" || c.column.id === "status");
+            
+            // Filter out actions, primary, and status from the grid to render them specifically
+            const gridCells = visibleCells.filter(
+              c => c !== primaryCell && c !== actionsCell && c !== statusCell
+            );
+
+            return (
+              <div 
+                key={row.id} 
+                className="p-5 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-4 relative group/card"
+              >
+                {/* Card Header */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    {primaryCell && flexRender(primaryCell.column.columnDef.cell, primaryCell.getContext())}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {statusCell && (
+                      <div className="scale-90 origin-right">
+                        {flexRender(statusCell.column.columnDef.cell, statusCell.getContext())}
+                      </div>
+                    )}
+                    {actionsCell && (
+                      <div className="flex-shrink-0">
+                        {flexRender(actionsCell.column.columnDef.cell, actionsCell.getContext())}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Body - Grid of fields */}
+                {gridCells.length > 0 && (
+                  <div className="border-t border-gray-100/80 dark:border-white/5 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-4">
+                    {gridCells.map((cell) => {
+                      const header = cell.column.columnDef.header;
+                      return (
+                        <div key={cell.id} className="flex flex-col gap-1">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                            {typeof header === "string" ? header : cell.column.id.replace("_", " ")}
+                          </span>
+                          <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div className="h-[300px] flex items-center justify-center bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-[24px] border border-gray-100 dark:border-white/5">
+            <EmptyState 
+              title="No records found" 
+              description="Try adjusting your filters or search terms to find what you are looking for."
+            />
+          </div>
+        )}
       </div>
 
       {/* Pagination */}

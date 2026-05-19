@@ -41,21 +41,30 @@ function SheetOverlay({
 
 interface SheetContentProps extends DialogPrimitive.Popup.Props {
   showCloseButton?: boolean
+  side?: "top" | "bottom" | "left" | "right"
 }
 
 function SheetContent({
   className,
   children,
   showCloseButton = true,
+  side = "right",
   ...props
 }: SheetContentProps) {
+  const sideVariants = {
+    top: "fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-top data-closed:animate-out data-closed:slide-out-to-top",
+    bottom: "fixed bottom-0 left-0 right-0 z-50 w-full border-t border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom",
+    left: "fixed top-0 left-0 z-50 h-full w-full max-w-xs border-r border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-left data-closed:animate-out data-closed:slide-out-to-left",
+    right: "fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-right data-closed:animate-out data-closed:slide-out-to-right",
+  }
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <DialogPrimitive.Popup
         data-slot="sheet-content"
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-right data-closed:animate-out data-closed:slide-out-to-right",
+          sideVariants[side],
           className
         )}
         {...props}

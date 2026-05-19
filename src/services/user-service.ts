@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export interface User {
@@ -37,6 +37,7 @@ export const useUsers = (params: { skip: number; take: number; search?: string; 
       const { data } = await api.get<UsersResponse>("/users", { params });
       return data;
     },
+    placeholderData: keepPreviousData,
   });
 };
 
