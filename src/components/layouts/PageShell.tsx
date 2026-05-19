@@ -19,7 +19,7 @@ export function PageShell({ children, className, contentClassName }: PageShellPr
       className={cn("min-h-full", className)}
     >
       <div className={cn(
-        "bg-white/70 dark:bg-gray-950/40 backdrop-blur-3xl border border-white dark:border-white/5 rounded-[32px] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.06)] p-6 md:p-8 space-y-8 h-full",
+        "bg-white dark:bg-gray-900/60 backdrop-blur-3xl border border-slate-200/65 dark:border-white/5 rounded-[32px] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.08)] p-6 md:p-8 space-y-8 h-full",
         contentClassName
       )}>
         {children}
