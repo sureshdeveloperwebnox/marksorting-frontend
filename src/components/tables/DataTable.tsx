@@ -184,7 +184,7 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="h-16 text-primary/80 dark:text-primary/90 font-semibold uppercase tracking-[0.12em] text-[11px] px-8">
+                  <TableHead key={header.id} className="h-16 text-primary/90 dark:text-primary/90 font-bold uppercase tracking-[0.12em] text-[12px] px-8">
                     {header.isPlaceholder ? null : (
                       <div
                         className={

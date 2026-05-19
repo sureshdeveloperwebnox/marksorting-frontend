@@ -10,6 +10,8 @@ interface User {
   permissions?: string[];
   profile_image?: string;
   profile_image_url?: string;
+  background_image?: string;
+  background_image_url?: string;
 }
 
 interface AuthState {

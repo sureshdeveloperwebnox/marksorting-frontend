@@ -28,6 +28,7 @@ import { ImageUpload } from '@/components/common/image-upload';
 import { useAuthStore } from '@/store/auth-store';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber } from 'react-phone-number-input';
+import { useS3Upload } from '@/hooks/use-s3-upload';
 
 const userSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -49,6 +50,7 @@ const userSchema = z.object({
   role_id: z.string().min(1, 'Please select a role'),
   account_status: z.string().min(1, 'Status is required'),
   profile_image: z.string().optional().or(z.literal('')),
+  background_image: z.string().optional().or(z.literal('')),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -68,6 +70,10 @@ function UserForm() {
   const currentUser = useAuthStore((state) => state.user);
   const setAuth = useAuthStore((state) => state.setAuth);
 
+  const { uploadFile, isUploading: isUploadingBg, uploadProgress: bgUploadProgress } = useS3Upload();
+  const bgInputRef = React.useRef<HTMLInputElement>(null);
+  const [bgPreview, setBgPreview] = React.useState<string | null>(null);
+
   const {
     register,
     control,
@@ -86,6 +92,7 @@ function UserForm() {
       role_id: '',
       account_status: 'ACTIVE',
       profile_image: '',
+      background_image: '',
     }
   });
 
@@ -116,7 +123,11 @@ function UserForm() {
         role_id: userData.role.id || '',
         account_status: userData.account_status,
         profile_image: userData.profile_image || '',
+        background_image: userData.background_image || '',
       });
+      if (userData.background_image_url) {
+        setBgPreview(userData.background_image_url);
+      }
     }
   }, [userData, reset]);
 
@@ -133,6 +144,8 @@ function UserForm() {
             email: updatedUser.email,
             profile_image: updatedUser.profile_image,
             profile_image_url: updatedUser.profile_image_url,
+            background_image: updatedUser.background_image,
+            background_image_url: updatedUser.background_image_url,
           });
         }
         
@@ -171,11 +184,69 @@ function UserForm() {
           transition={{ duration: 0.5 }}
           className="bg-white dark:bg-gray-900 rounded-[32px] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/5 min-h-full"
         >
+          {/* Hidden File Input for Background Image */}
+          <input 
+            type="file" 
+            ref={bgInputRef}
+            className="hidden" 
+            accept="image/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                // Show local preview immediately
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setBgPreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+
+                const res = await uploadFile(file);
+                if (res) {
+                  setValue('background_image', res.key);
+                  setBgPreview(res.fileUrl);
+                }
+              }
+            }}
+          />
+
           {/* Hero Gradient Section */}
-          <div className="h-48 md:h-64 bg-gradient-to-br from-[#E0E7FF] via-[#F5F3FF] to-[#FFF7ED] relative">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+          <div 
+            className="h-48 md:h-64 bg-gradient-to-br from-[#E0E7FF] via-[#F5F3FF] to-[#FFF7ED] relative group cursor-pointer overflow-hidden"
+            onClick={() => !isUploadingBg && bgInputRef.current?.click()}
+          >
+            {/* Background Image if uploaded */}
+            {bgPreview ? (
+              <img 
+                src={bgPreview} 
+                alt="Background Cover" 
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : null}
+
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none" />
+            
+            {/* Hover Overlay */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center pointer-events-none z-10">
+              {isUploadingBg ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  <span className="text-white font-semibold text-sm">Uploading {bgUploadProgress}%</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-white bg-black/50 backdrop-blur-md px-4 py-2 rounded-full font-semibold">
+                  <Camera size={18} />
+                  <span>{watch('background_image') ? 'Change Cover' : 'Upload Cover'}</span>
+                </div>
+              )}
+            </div>
+
             <Link href="/users">
-              <Button type="button" variant="ghost" className="absolute top-6 left-6 bg-white/50 backdrop-blur-md hover:bg-white/80 rounded-full h-10 w-10 p-0">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={(e) => e.stopPropagation()}
+                className="absolute top-6 left-6 bg-white/50 backdrop-blur-md hover:bg-white/80 rounded-full h-10 w-10 p-0 z-20"
+              >
                 <ArrowLeft size={18} />
               </Button>
             </Link>

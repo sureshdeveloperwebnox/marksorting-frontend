@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { DataTable } from "@/components/tables/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { useUsers, User, useDeleteUser } from "@/services/user-service";
+import { useUsers, User, useDeleteUser, useUpdateUser } from "@/services/user-service";
 import { useUserStore } from "@/store/useUserStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,40 @@ const formatPhoneNumber = (phone?: string) => {
   }
   return phone;
 };
+
+const getRoleColors = (role: string) => {
+  // All roles use the brand primary color to keep text and border consistent
+  return "bg-primary/5 dark:bg-primary/10 text-primary border-primary";
+};
+
+const getStatusColors = (status: string) => {
+  const normalized = status?.toUpperCase() || "";
+  switch (normalized) {
+    case "ACTIVE":
+      return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
+    case "INACTIVE":
+      return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
+    case "LOCKED":
+      return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
+    default:
+      return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
+  }
+};
+
+const getStatusDotColors = (status: string) => {
+  const normalized = status?.toUpperCase() || "";
+  switch (normalized) {
+    case "ACTIVE":
+      return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+    case "INACTIVE":
+      return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+    case "LOCKED":
+      return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
+    default:
+      return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
+  }
+};
+
 
 const userFilterFields: FilterField[] = [
   {
@@ -77,6 +111,7 @@ export default function UsersPage() {
   });
 
   const deleteUserMutation = useDeleteUser();
+  const updateUserMutation = useUpdateUser();
 
   const confirmDelete = async () => {
     if (!deleteId) return;
@@ -136,7 +171,13 @@ export default function UsersPage() {
       accessorKey: "role.name",
       header: "Role",
       cell: ({ row }) => (
-        <Badge variant="outline" className="bg-primary/5 dark:bg-primary/10 text-primary border-primary/10 font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 rounded-md shadow-sm">
+        <Badge 
+          variant="outline" 
+          className={cn(
+            "font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 rounded-md shadow-sm transition-all duration-300 hover:scale-105",
+            getRoleColors(row.original.role.name)
+          )}
+        >
           {row.original.role.name}
         </Badge>
       ),
@@ -146,27 +187,69 @@ export default function UsersPage() {
       header: "Status",
       cell: ({ row }) => {
         const status = row.original.account_status;
-        const isActive = status === "ACTIVE";
+        const userId = row.original.id;
+        
         return (
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              "w-2 h-2 rounded-full animate-pulse",
-              isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
-            )} />
-            <Badge
-              className={cn(
-                "rounded-md font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 border-none shadow-sm",
-                isActive
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-              )}
-            >
-              {status}
-            </Badge>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button className="flex items-center gap-2 cursor-pointer outline-none select-none group/status hover:scale-105 active:scale-95 transition-all duration-300">
+                  <div className={cn(
+                    "w-2 h-2 rounded-full animate-pulse transition-all duration-300",
+                    getStatusDotColors(status)
+                  )} />
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "rounded-md font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 shadow-sm transition-all duration-300 cursor-pointer group-hover/status:border-primary/50",
+                      getStatusColors(status)
+                    )}
+                  >
+                    {status}
+                  </Badge>
+                </button>
+              }
+            />
+            <DropdownMenuContent align="start" className="w-32 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 z-[9999]">
+              <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">
+                Set Status
+              </div>
+              <DropdownMenuItem
+                className={cn(
+                  "rounded-lg font-semibold text-xs my-0.5 focus:bg-emerald-500/10 focus:text-emerald-500 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
+                  status === "ACTIVE" ? "text-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10" : "text-gray-700 dark:text-gray-300"
+                )}
+                onClick={() => updateUserMutation.mutate({ id: userId, account_status: "ACTIVE" })}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                ACTIVE
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className={cn(
+                  "rounded-lg font-semibold text-xs my-0.5 focus:bg-amber-500/10 focus:text-amber-500 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
+                  status === "INACTIVE" ? "text-amber-500 bg-amber-500/5 dark:bg-amber-500/10" : "text-gray-700 dark:text-gray-300"
+                )}
+                onClick={() => updateUserMutation.mutate({ id: userId, account_status: "INACTIVE" })}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                INACTIVE
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className={cn(
+                  "rounded-lg font-semibold text-xs my-0.5 focus:bg-rose-500/10 focus:text-rose-500 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
+                  status === "LOCKED" ? "text-rose-500 bg-rose-500/5 dark:bg-rose-500/10" : "text-gray-700 dark:text-gray-300"
+                )}
+                onClick={() => updateUserMutation.mutate({ id: userId, account_status: "LOCKED" })}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                LOCKED
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
+
     {
       accessorKey: "created_at",
       header: "Joined Date",
@@ -230,7 +313,7 @@ export default function UsersPage() {
           onPaginationChange={setPagination}
           onGlobalFilterChange={setSearch}
           globalFilterValue={search}
-          searchPlaceholder="Search team members..."
+          searchPlaceholder="Search..."
           onFilterClick={() => setIsFilterDrawerOpen(true)}
           activeFiltersCount={statusFilter ? 1 : 0}
         />

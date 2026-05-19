@@ -14,6 +14,8 @@ export interface User {
   };
   profile_image?: string;
   profile_image_url?: string;
+  background_image?: string;
+  background_image_url?: string;
   created_at: string;
 }
 
