@@ -132,16 +132,16 @@ export function DataTable<TData, TValue>({
             variant="outline"
             onClick={onFilterClick}
             className={cn(
-              "h-12 px-6 flex-1 lg:flex-initial border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold transition-all shadow-sm relative overflow-visible cursor-pointer justify-center",
+              "h-12 px-6 flex-1 lg:flex-initial border-2 rounded-[16px] gap-2 font-bold transition-all shadow-sm relative overflow-visible cursor-pointer justify-center hover:scale-105 active:scale-95",
               activeFiltersCount > 0
-                ? "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/30"
-                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+                ? "border-primary bg-primary text-white hover:bg-primary/95 hover:border-primary/95"
+                : "border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45"
             )}
           >
             <Filter className="h-4 w-4" />
             Filter
             {activeFiltersCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md shadow-primary/20 animate-in zoom-in duration-300">
+              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-primary shadow-md animate-in zoom-in duration-300">
                 {activeFiltersCount}
               </span>
             )}
@@ -149,7 +149,7 @@ export function DataTable<TData, TValue>({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="outline" className="h-12 px-6 flex-1 lg:flex-initial border-gray-100 dark:border-white/10 rounded-[16px] gap-2 font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm justify-center">
+                <Button variant="outline" className="h-12 px-6 flex-1 lg:flex-initial border-2 border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45 rounded-[16px] gap-2 font-bold hover:scale-105 active:scale-95 transition-all shadow-sm justify-center">
                   <Settings2 className="h-4 w-4" />
                   Columns
                 </Button>
