@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 interface NavSubItem {
   label: string;
   href: string;
+  icon?: any;
 }
 
 interface NavItem {
@@ -45,7 +46,7 @@ const navItems: NavItem[] = [
     label: 'User Management', 
     icon: Users,
     subItems: [
-      { label: 'Users', href: '/users' }
+      { label: 'Users', href: '/users', icon: Users }
     ]
   },
   { label: 'Mills', href: '/mills', icon: Factory },
@@ -127,8 +128,8 @@ export function Navbar() {
                             className={cn(
                               'w-full flex items-center justify-between py-3.5 px-6 transition-all duration-300 relative text-left group',
                               isSubActive
-                                ? 'text-white font-bold'
-                                : 'text-white/70 hover:text-white hover:bg-white/10 rounded-2xl'
+                                ? 'text-white font-semibold'
+                                : 'text-white hover:bg-white/10 rounded-2xl font-semibold'
                             )}
                           >
                             <div className="flex items-center gap-4">
@@ -136,10 +137,10 @@ export function Navbar() {
                                 <item.icon 
                                   size={20} 
                                   strokeWidth={isSubActive ? 2.5 : 2} 
-                                  className={cn("transition-colors", isSubActive ? "text-white" : "group-hover:text-white")}
+                                  className="text-white"
                                 />
                               </div>
-                              <span className="relative z-10 font-bold text-[14px] tracking-tight font-poppins">
+                              <span className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins">
                                 {item.label}
                               </span>
                             </div>
@@ -172,11 +173,19 @@ export function Navbar() {
                                       'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
                                       isSubItemActive
                                         ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-2xl shadow-md'
-                                        : 'text-white/70 hover:text-white hover:bg-white/10 rounded-2xl'
+                                        : 'text-white hover:bg-white/10 rounded-2xl font-semibold'
                                     )}
                                   >
-                                    <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/30 group-hover:bg-white transition-colors" />
-                                    <span className="relative z-10 font-bold text-[13px] tracking-tight font-poppins">
+                                    {subItem.icon ? (
+                                      <subItem.icon 
+                                        size={16} 
+                                        strokeWidth={isSubItemActive ? 2.5 : 2}
+                                        className={cn("relative z-10 transition-colors", isSubItemActive ? "text-primary" : "text-white")}
+                                      />
+                                    ) : (
+                                      <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/70 group-hover:bg-white transition-colors" />
+                                    )}
+                                    <span className="relative z-10 font-semibold text-[13px] tracking-tight font-poppins">
                                       {subItem.label}
                                     </span>
                                   </div>
@@ -199,17 +208,17 @@ export function Navbar() {
                             'flex items-center gap-4 py-3.5 px-6 transition-all duration-300 relative',
                             isMainActive
                               ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-2xl shadow-md'
-                              : 'text-white/70 hover:text-white hover:bg-white/10 rounded-2xl'
+                              : 'text-white hover:bg-white/10 rounded-2xl font-semibold'
                           )}
                         >
                           <div className="relative z-10 flex items-center justify-center w-6 h-6">
                             <item.icon 
                               size={20} 
                               strokeWidth={isMainActive ? 2.5 : 2} 
-                              className={cn("transition-colors", isMainActive ? "text-primary" : "group-hover:text-white")}
+                              className={cn("transition-colors", isMainActive ? "text-primary" : "text-white")}
                             />
                           </div>
-                          <span className="relative z-10 font-bold text-[14px] tracking-tight font-poppins">
+                          <span className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins">
                             {item.label}
                           </span>
                         </div>

@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react';
 interface SidebarSubItem {
   label: string;
   href: string;
+  icon?: any;
 }
 
 interface SidebarItem {
@@ -36,7 +37,7 @@ const items: SidebarItem[] = [
     label: 'User Management', 
     icon: Users,
     subItems: [
-      { label: 'Users', href: '/users' }
+      { label: 'Users', href: '/users', icon: Users }
     ]
   },
   { label: 'Mills', href: '/mills', icon: Factory },
@@ -70,7 +71,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="relative p-4 h-screen hidden md:block">
+    <div className="relative h-full hidden md:block">
       <motion.div 
         initial={false}
         animate={{ width: isCollapsed ? 80 : 280 }}
@@ -125,8 +126,8 @@ export function Sidebar() {
                       'w-full flex items-center justify-between py-3.5 transition-all duration-300 relative text-left group',
                       isCollapsed ? 'px-0 justify-center' : 'px-6',
                       isSubActive && !isCollapsed
-                        ? 'text-white font-black'
-                        : 'text-white/60 hover:text-white hover:bg-white/5 rounded-2xl'
+                        ? 'text-white font-semibold'
+                        : 'text-white hover:bg-white/5 rounded-2xl font-semibold'
                     )}
                   >
                     <div className="flex items-center gap-4">
@@ -134,7 +135,7 @@ export function Sidebar() {
                         <item.icon 
                           size={20} 
                           strokeWidth={isSubActive ? 2.5 : 2} 
-                          className={cn("transition-colors", isSubActive ? "text-white" : "group-hover:text-white")}
+                          className="text-white"
                         />
                       </div>
                       
@@ -142,7 +143,7 @@ export function Sidebar() {
                         <motion.span 
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          className="relative z-10 font-black text-[14px] tracking-tight font-poppins"
+                          className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins"
                         >
                           {item.label}
                         </motion.span>
@@ -183,7 +184,7 @@ export function Sidebar() {
                                 'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
                                 isSubItemActive
                                   ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
-                                  : 'text-white/60 hover:text-white hover:bg-white/5 rounded-xl'
+                                  : 'text-white hover:bg-white/5 rounded-xl font-semibold'
                               )}
                             >
                               {isSubItemActive && (
@@ -202,9 +203,17 @@ export function Sidebar() {
                                 </>
                               )}
 
-                              <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/30 group-hover:bg-white transition-colors" />
+                              {subItem.icon ? (
+                                <subItem.icon 
+                                  size={16} 
+                                  strokeWidth={isSubItemActive ? 2.5 : 2}
+                                  className={cn("relative z-10 transition-colors", isSubItemActive ? "text-primary" : "text-white")}
+                                />
+                              ) : (
+                                <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/70 group-hover:bg-white transition-colors" />
+                              )}
 
-                              <span className="relative z-10 font-bold text-[13px] tracking-tight font-poppins">
+                              <span className="relative z-10 font-semibold text-[13px] tracking-tight font-poppins">
                                 {subItem.label}
                               </span>
 
@@ -237,7 +246,7 @@ export function Sidebar() {
                     isCollapsed ? 'px-0 justify-center' : 'px-6',
                     isMainActive
                       ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
-                      : 'text-white/60 hover:text-white hover:bg-white/5 rounded-2xl'
+                      : 'text-white hover:bg-white/5 rounded-2xl font-semibold'
                   )}
                 >
                   {isMainActive && (
@@ -260,7 +269,7 @@ export function Sidebar() {
                     <item.icon 
                       size={20} 
                       strokeWidth={isMainActive ? 2.5 : 2} 
-                      className={cn("transition-colors", isMainActive ? "text-primary" : "group-hover:text-white")}
+                      className={cn("transition-colors", isMainActive ? "text-primary" : "text-white")}
                     />
                   </div>
                   
@@ -268,7 +277,7 @@ export function Sidebar() {
                     <motion.span 
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="relative z-10 font-black text-[14px] tracking-tight font-poppins"
+                      className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins"
                     >
                       {item.label}
                     </motion.span>
@@ -292,7 +301,7 @@ export function Sidebar() {
             onClick={handleLogout}
             disabled={isLoggingOut}
             className={cn(
-              "flex items-center gap-3 px-6 py-4 w-full text-white/60 hover:text-white hover:bg-white/10 rounded-2xl transition-all duration-300 group",
+              "flex items-center gap-3 px-6 py-4 w-full text-white hover:bg-white/10 rounded-2xl transition-all duration-300 group font-semibold",
               isCollapsed && "justify-center px-0",
               isLoggingOut && "opacity-50 cursor-not-allowed"
             )}
