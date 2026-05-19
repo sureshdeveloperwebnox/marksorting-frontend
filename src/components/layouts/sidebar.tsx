@@ -16,11 +16,29 @@ import {
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const items = [
+interface SidebarSubItem {
+  label: string;
+  href: string;
+}
+
+interface SidebarItem {
+  label: string;
+  icon: any;
+  href?: string;
+  subItems?: SidebarSubItem[];
+}
+
+const items: SidebarItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Users', href: '/users', icon: Users },
+  { 
+    label: 'User Management', 
+    icon: Users,
+    subItems: [
+      { label: 'Users', href: '/users' }
+    ]
+  },
   { label: 'Mills', href: '/mills', icon: Factory },
   { label: 'Orders', href: '/orders', icon: ClipboardList },
   { label: 'Analytics', href: '/analytics', icon: PieChart },
@@ -31,6 +49,21 @@ export function Sidebar() {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  // Auto-expand menu when subitem is active
+  useEffect(() => {
+    items.forEach((item) => {
+      if (item.subItems) {
+        const hasActiveSub = item.subItems.some(
+          (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
+        );
+        if (hasActiveSub) {
+          setOpenMenus((prev) => ({ ...prev, [item.label]: true }));
+        }
+      }
+    });
+  }, [pathname]);
 
   const handleLogout = () => {
     logout();
@@ -62,25 +95,152 @@ export function Sidebar() {
           )}
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 relative pt-4">
+        <nav className="flex-1 px-4 space-y-1 relative pt-4 overflow-y-auto max-h-[calc(100vh-220px)] scrollbar-none">
           {items.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const hasSubItems = !!item.subItems;
+            
+            // Check if any sub-item is active
+            const isSubActive = hasSubItems && item.subItems!.some(
+              (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
+            );
+            
+            const isMainActive = !hasSubItems && item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`));
+            
+            const isMenuOpen = openMenus[item.label];
+
+            if (hasSubItems) {
+              return (
+                <div key={item.label} className="relative space-y-1">
+                  {/* Parent Item */}
+                  <button
+                    onClick={() => {
+                      if (isCollapsed) {
+                        setIsCollapsed(false);
+                        setOpenMenus((prev) => ({ ...prev, [item.label]: true }));
+                      } else {
+                        setOpenMenus((prev) => ({ ...prev, [item.label]: !prev[item.label] }));
+                      }
+                    }}
+                    className={cn(
+                      'w-full flex items-center justify-between py-3.5 transition-all duration-300 relative text-left group',
+                      isCollapsed ? 'px-0 justify-center' : 'px-6',
+                      isSubActive && !isCollapsed
+                        ? 'text-white font-black'
+                        : 'text-white/60 hover:text-white hover:bg-white/5 rounded-2xl'
+                    )}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="relative z-10 flex items-center justify-center w-6 h-6">
+                        <item.icon 
+                          size={20} 
+                          strokeWidth={isSubActive ? 2.5 : 2} 
+                          className={cn("transition-colors", isSubActive ? "text-white" : "group-hover:text-white")}
+                        />
+                      </div>
+                      
+                      {!isCollapsed && (
+                        <motion.span 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="relative z-10 font-black text-[14px] tracking-tight font-poppins"
+                        >
+                          {item.label}
+                        </motion.span>
+                      )}
+                    </div>
+
+                    {!isCollapsed && (
+                      <ChevronRight 
+                        size={16} 
+                        className={cn(
+                          "transition-transform duration-300 text-white/40 group-hover:text-white",
+                          isMenuOpen && "rotate-90"
+                        )}
+                      />
+                    )}
+                  </button>
+
+                  {/* Submenu container */}
+                  {!isCollapsed && (
+                    <motion.div
+                      initial={false}
+                      animate={isMenuOpen ? { height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } } : { height: 0, opacity: 0, overflow: 'hidden' }}
+                      className="overflow-hidden pl-6 -mr-4 pr-4 space-y-1 relative"
+                    >
+                      {/* Vertical line indicator */}
+                      <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
+                      
+                      {item.subItems!.map((subItem) => {
+                        const isSubItemActive = pathname === subItem.href || pathname.startsWith(`${subItem.href}/`);
+                        return (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            className="relative block group"
+                          >
+                            <div
+                              className={cn(
+                                'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
+                                isSubItemActive
+                                  ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                                  : 'text-white/60 hover:text-white hover:bg-white/5 rounded-xl'
+                              )}
+                            >
+                              {isSubItemActive && (
+                                <>
+                                  {/* Inverted Corner Top */}
+                                  <div className="absolute -top-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
+                                    <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                                    <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
+                                  </div>
+                                  
+                                  {/* Inverted Corner Bottom */}
+                                  <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
+                                    <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                                    <div className="absolute inset-0 bg-primary rounded-tr-[20px]" />
+                                  </div>
+                                </>
+                              )}
+
+                              <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/30 group-hover:bg-white transition-colors" />
+
+                              <span className="relative z-10 font-bold text-[13px] tracking-tight font-poppins">
+                                {subItem.label}
+                              </span>
+
+                              {isSubItemActive && (
+                                <motion.div 
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
+                                />
+                              )}
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={item.href!}
                 className="relative block group"
               >
                 <div
                   className={cn(
                     'flex items-center gap-4 py-3.5 transition-all duration-300 relative',
                     isCollapsed ? 'px-0 justify-center' : 'px-6',
-                    isActive
+                    isMainActive
                       ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
                       : 'text-white/60 hover:text-white hover:bg-white/5 rounded-2xl'
                   )}
                 >
-                  {isActive && (
+                  {isMainActive && (
                     <>
                       {/* Inverted Corner Top */}
                       <div className="absolute -top-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
@@ -99,8 +259,8 @@ export function Sidebar() {
                   <div className="relative z-10 flex items-center justify-center w-6 h-6">
                     <item.icon 
                       size={20} 
-                      strokeWidth={isActive ? 2.5 : 2} 
-                      className={cn("transition-colors", isActive ? "text-primary" : "group-hover:text-white")}
+                      strokeWidth={isMainActive ? 2.5 : 2} 
+                      className={cn("transition-colors", isMainActive ? "text-primary" : "group-hover:text-white")}
                     />
                   </div>
                   
@@ -114,7 +274,7 @@ export function Sidebar() {
                     </motion.span>
                   )}
 
-                  {isActive && !isCollapsed && (
+                  {isMainActive && !isCollapsed && (
                     <motion.div 
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}

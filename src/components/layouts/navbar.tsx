@@ -14,7 +14,8 @@ import {
   Factory, 
   ClipboardList, 
   PieChart, 
-  Menu 
+  Menu,
+  ChevronRight
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,9 +27,27 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/
 import { Logo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 
-const navItems = [
+interface NavSubItem {
+  label: string;
+  href: string;
+}
+
+interface NavItem {
+  label: string;
+  icon: any;
+  href?: string;
+  subItems?: NavSubItem[];
+}
+
+const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Users', href: '/users', icon: Users },
+  { 
+    label: 'User Management', 
+    icon: Users,
+    subItems: [
+      { label: 'Users', href: '/users' }
+    ]
+  },
   { label: 'Mills', href: '/mills', icon: Factory },
   { label: 'Orders', href: '/orders', icon: ClipboardList },
   { label: 'Analytics', href: '/analytics', icon: PieChart },
@@ -41,6 +60,21 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  // Auto-expand menu when subitem is active
+  useEffect(() => {
+    navItems.forEach((item) => {
+      if (item.subItems) {
+        const hasActiveSub = item.subItems.some(
+          (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
+        );
+        if (hasActiveSub) {
+          setOpenMenus((prev) => ({ ...prev, [item.label]: true }));
+        }
+      }
+    });
+  }, [pathname]);
 
   // Avoid hydration mismatch
   useEffect(() => {
@@ -76,19 +110,94 @@ export function Navbar() {
                 <SheetHeader className="pb-6 border-b border-white/10 flex flex-row items-center justify-between">
                   <Logo isCollapsed={false} className="transition-all duration-300 text-white" />
                 </SheetHeader>
-                <nav className="flex flex-col gap-2 pt-4">
+                <nav className="flex flex-col gap-1 pt-4 overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-none">
                   {navItems.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    const hasSubItems = !!item.subItems;
+                    const isSubActive = hasSubItems && item.subItems!.some(
+                      (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
+                    );
+                    const isMainActive = !hasSubItems && item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`));
+                    const isMenuOpen = openMenus[item.label];
+
+                    if (hasSubItems) {
+                      return (
+                        <div key={item.label} className="flex flex-col gap-1">
+                          <button
+                            onClick={() => setOpenMenus((prev) => ({ ...prev, [item.label]: !prev[item.label] }))}
+                            className={cn(
+                              'w-full flex items-center justify-between py-3.5 px-6 transition-all duration-300 relative text-left group',
+                              isSubActive
+                                ? 'text-white font-bold'
+                                : 'text-white/70 hover:text-white hover:bg-white/10 rounded-2xl'
+                            )}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="relative z-10 flex items-center justify-center w-6 h-6">
+                                <item.icon 
+                                  size={20} 
+                                  strokeWidth={isSubActive ? 2.5 : 2} 
+                                  className={cn("transition-colors", isSubActive ? "text-white" : "group-hover:text-white")}
+                                />
+                              </div>
+                              <span className="relative z-10 font-bold text-[14px] tracking-tight font-poppins">
+                                {item.label}
+                              </span>
+                            </div>
+                            <ChevronRight 
+                              size={16} 
+                              className={cn(
+                                "transition-transform duration-300 text-white/40 group-hover:text-white",
+                                isMenuOpen && "rotate-90"
+                              )}
+                            />
+                          </button>
+
+                          <motion.div
+                            initial={false}
+                            animate={isMenuOpen ? { height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } } : { height: 0, opacity: 0, overflow: 'hidden' }}
+                            className="overflow-hidden pl-6 -mr-4 pr-4 space-y-1 relative"
+                          >
+                            <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
+                            
+                            {item.subItems!.map((subItem) => {
+                              const isSubItemActive = pathname === subItem.href || pathname.startsWith(`${subItem.href}/`);
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  className="relative block group"
+                                >
+                                  <div
+                                    className={cn(
+                                      'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
+                                      isSubItemActive
+                                        ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-2xl shadow-md'
+                                        : 'text-white/70 hover:text-white hover:bg-white/10 rounded-2xl'
+                                    )}
+                                  >
+                                    <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/30 group-hover:bg-white transition-colors" />
+                                    <span className="relative z-10 font-bold text-[13px] tracking-tight font-poppins">
+                                      {subItem.label}
+                                    </span>
+                                  </div>
+                                </Link>
+                              );
+                            })}
+                          </motion.div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <Link
                         key={item.href}
-                        href={item.href}
+                        href={item.href!}
                         className="relative block group"
                       >
                         <div
                           className={cn(
                             'flex items-center gap-4 py-3.5 px-6 transition-all duration-300 relative',
-                            isActive
+                            isMainActive
                               ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-2xl shadow-md'
                               : 'text-white/70 hover:text-white hover:bg-white/10 rounded-2xl'
                           )}
@@ -96,11 +205,11 @@ export function Navbar() {
                           <div className="relative z-10 flex items-center justify-center w-6 h-6">
                             <item.icon 
                               size={20} 
-                              strokeWidth={isActive ? 2.5 : 2} 
-                              className={cn("transition-colors", isActive ? "text-primary" : "group-hover:text-white")}
+                              strokeWidth={isMainActive ? 2.5 : 2} 
+                              className={cn("transition-colors", isMainActive ? "text-primary" : "group-hover:text-white")}
                             />
                           </div>
-                          <span className="relative z-10 font-bold text-[14px] tracking-tight">
+                          <span className="relative z-10 font-bold text-[14px] tracking-tight font-poppins">
                             {item.label}
                           </span>
                         </div>
