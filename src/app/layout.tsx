@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800", "900"],
-  variable: "--font-sans",
+  variable: "--font-poppins",
 });
 
 export const metadata: Metadata = {

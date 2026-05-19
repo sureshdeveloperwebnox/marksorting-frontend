@@ -55,7 +55,7 @@ export function Sidebar() {
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-white/40 text-[11px] font-black uppercase tracking-[0.2em] ml-4"
+              className="text-white/40 text-[11px] font-black uppercase tracking-[0.2em] ml-4 font-poppins"
             >
               Management
             </motion.p>
@@ -108,7 +108,7 @@ export function Sidebar() {
                     <motion.span 
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="relative z-10 font-black text-[14px] tracking-tight"
+                      className="relative z-10 font-black text-[14px] tracking-tight font-poppins"
                     >
                       {item.label}
                     </motion.span>
@@ -138,7 +138,7 @@ export function Sidebar() {
             )}
           >
             <LogOut size={20} className={cn("group-hover:rotate-12 transition-transform", isLoggingOut && "animate-pulse")} />
-            {!isCollapsed && <span className="font-bold text-[14px]">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
+            {!isCollapsed && <span className="font-bold text-[14px] font-poppins">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
           </button>
         </div>
 
