@@ -8,7 +8,20 @@ import { useUsers, User, useDeleteUser, useUpdateUser } from "@/services/user-se
 import { useUserStore } from "@/store/useUserStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Edit, Trash2, UserPlus, Eye, Loader2 } from "lucide-react";
+import {
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  UserPlus,
+  Eye,
+  Loader2,
+  Search,
+  Filter,
+  Users,
+  UserCheck,
+  Clock,
+  TrendingUp,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,88 +40,142 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { PageShell, PageShellHeader, PageShellContent } from "@/components/layouts/PageShell";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+
+/* ─── Helpers ──────────────────────────────────────────────────── */
 
 const formatPhoneNumber = (phone?: string) => {
   if (!phone) return "";
   if (!phone.startsWith("+")) return phone;
   const parsed = parsePhoneNumberFromString(phone);
-  if (parsed) {
-    return `+${parsed.countryCallingCode} ${parsed.nationalNumber}`;
-  }
+  if (parsed) return `+${parsed.countryCallingCode} ${parsed.nationalNumber}`;
   return phone;
 };
 
-const getRoleColors = (role: string) => {
-  // All roles use the brand primary color to keep text and border consistent
-  return "bg-primary/5 dark:bg-primary/10 text-primary border-primary";
-};
+const getRoleColors = (_role: string) =>
+  "bg-primary/5 dark:bg-primary/10 text-primary border-primary";
 
 const getStatusColors = (status: string) => {
-  const normalized = status?.toUpperCase() || "";
-  switch (normalized) {
-    case "ACTIVE":
-      return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
-    case "INACTIVE":
-      return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
-    case "LOCKED":
-      return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
-    default:
-      return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
+  switch (status?.toUpperCase()) {
+    case "ACTIVE":   return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
+    case "INACTIVE": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
+    case "LOCKED":   return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
+    default:         return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
   }
 };
 
 const getStatusDotColors = (status: string) => {
-  const normalized = status?.toUpperCase() || "";
-  switch (normalized) {
-    case "ACTIVE":
-      return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
-    case "INACTIVE":
-      return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
-    case "LOCKED":
-      return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
-    default:
-      return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
+  switch (status?.toUpperCase()) {
+    case "ACTIVE":   return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+    case "INACTIVE": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+    case "LOCKED":   return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
+    default:         return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
   }
 };
-
 
 const userFilterFields: FilterField[] = [
   {
     id: "status",
     label: "Account Status",
     options: [
-      { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
-      { value: "ACTIVE", label: "Active Only", iconColor: "bg-emerald-500", animatePulse: true },
-      { value: "INACTIVE", label: "Inactive Only", iconColor: "bg-amber-500", animatePulse: true },
-      { value: "LOCKED", label: "Locked Only", iconColor: "bg-rose-500", animatePulse: true },
-    ]
-  }
+      { value: "ALL",      label: "All Statuses",   iconColor: "bg-gray-400 dark:bg-gray-500" },
+      { value: "ACTIVE",   label: "Active Only",    iconColor: "bg-emerald-500", animatePulse: true },
+      { value: "INACTIVE", label: "Inactive Only",  iconColor: "bg-amber-500",   animatePulse: true },
+      { value: "LOCKED",   label: "Locked Only",    iconColor: "bg-rose-500",    animatePulse: true },
+    ],
+  },
 ];
 
+/* ─── Stats Card ────────────────────────────────────────────────── */
+
+interface StatsCardProps {
+  title: string;
+  value: number | undefined;
+  icon: React.ReactNode;
+  iconBg: string;
+  gradient: string;
+  trend?: string;
+  loading?: boolean;
+}
+
+function StatsCard({ title, value, icon, iconBg, gradient, trend, loading }: StatsCardProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={cn(
+        "relative overflow-hidden rounded-[20px] p-5 border border-gray-100 dark:border-white/5",
+        "bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
+      )}
+    >
+      {/* Gradient accent */}
+      <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 -translate-y-6 translate-x-6", gradient)} />
+
+      <div className="relative flex items-start justify-between">
+        <div>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.12em] mb-3">
+            {title}
+          </p>
+          {loading ? (
+            <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
+          ) : (
+            <p className="text-4xl font-black text-gray-900 dark:text-white leading-none">
+              {value ?? 0}
+            </p>
+          )}
+          {trend && (
+            <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500 mt-2">
+              <TrendingUp size={11} />
+              {trend}
+            </p>
+          )}
+        </div>
+        <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
+          {icon}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Page ──────────────────────────────────────────────────────── */
+
 export default function UsersPage() {
-  const { 
-    pagination, 
-    setPagination, 
-    search, 
+  const {
+    pagination,
+    setPagination,
+    search,
     setSearch,
     statusFilter,
     setStatusFilter,
     resetFilters,
     deleteId,
-    setDeleteId
+    setDeleteId,
   } = useUserStore();
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
+  const [localSearch, setLocalSearch] = React.useState(search);
 
+  // Debounce search input
+  React.useEffect(() => {
+    const t = setTimeout(() => setSearch(localSearch), 350);
+    return () => clearTimeout(t);
+  }, [localSearch, setSearch]);
+
+  /* ── Data queries ── */
   const { data, isLoading } = useUsers({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
-    search: search,
+    search,
     status: statusFilter || undefined,
   });
+
+  // Stats: total, active, inactive counts via lightweight queries
+  const { data: totalData } = useUsers({ skip: 0, take: 1 });
+  const { data: activeData } = useUsers({ skip: 0, take: 1, status: "ACTIVE" });
+  const { data: inactiveData } = useUsers({ skip: 0, take: 1, status: "INACTIVE" });
 
   const deleteUserMutation = useDeleteUser();
   const updateUserMutation = useUpdateUser();
@@ -118,36 +185,31 @@ export default function UsersPage() {
     try {
       await deleteUserMutation.mutateAsync(deleteId);
       toast.success("User deleted successfully");
-    } catch (error) {
+    } catch {
       // Error handled in mutation
     } finally {
       setDeleteId(null);
     }
   };
 
+  /* ── Table columns ── */
   const columns: ColumnDef<User>[] = [
     {
       accessorKey: "full_name",
       header: "Full Name",
       cell: ({ row }) => (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3.5">
           <div className="relative group">
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-md group-hover:bg-primary/30 transition-all duration-500 opacity-0 group-hover:opacity-100" />
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-semibold text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-110 overflow-hidden">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-all duration-500" />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-semibold text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-110 overflow-hidden">
               {row.original.profile_image_url ? (
-                <img 
-                  src={row.original.profile_image_url} 
-                  alt={row.original.full_name} 
-                  className="w-full h-full object-cover"
-                />
+                <img src={row.original.profile_image_url} alt={row.original.full_name} className="w-full h-full object-cover" />
               ) : (
                 row.original.full_name.charAt(0)
               )}
             </div>
           </div>
-          <div className="flex flex-col">
-            <span className="font-semibold text-[15px] text-primary dark:text-primary tracking-tight">{row.original.full_name}</span>
-          </div>
+          <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight">{row.original.full_name}</span>
         </div>
       ),
     },
@@ -156,11 +218,9 @@ export default function UsersPage() {
       header: "Contact",
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
-          <span className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
-            {row.original.email}
-          </span>
+          <span className="text-gray-600 dark:text-gray-300 font-semibold text-sm">{row.original.email}</span>
           {row.original.phone_number && (
-            <span className="text-primary dark:text-primary/80 font-bold text-xs bg-primary/5 dark:bg-primary/10 px-2 py-0.5 rounded w-fit border border-primary/5">
+            <span className="text-primary font-bold text-xs bg-primary/5 px-2 py-0.5 rounded w-fit border border-primary/10">
               {formatPhoneNumber(row.original.phone_number)}
             </span>
           )}
@@ -171,8 +231,8 @@ export default function UsersPage() {
       accessorKey: "role.name",
       header: "Role",
       cell: ({ row }) => (
-        <Badge 
-          variant="outline" 
+        <Badge
+          variant="outline"
           className={cn(
             "font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 rounded-md shadow-sm transition-all duration-300 hover:scale-105",
             getRoleColors(row.original.role.name)
@@ -188,16 +248,12 @@ export default function UsersPage() {
       cell: ({ row }) => {
         const status = row.original.account_status;
         const userId = row.original.id;
-        
         return (
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <button className="flex items-center gap-2 cursor-pointer outline-none select-none group/status hover:scale-105 active:scale-95 transition-all duration-300">
-                  <div className={cn(
-                    "w-2 h-2 rounded-full animate-pulse transition-all duration-300",
-                    getStatusDotColors(status)
-                  )} />
+                  <div className={cn("w-2 h-2 rounded-full animate-pulse", getStatusDotColors(status))} />
                   <Badge
                     variant="outline"
                     className={cn(
@@ -211,45 +267,31 @@ export default function UsersPage() {
               }
             />
             <DropdownMenuContent align="start" className="w-32 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 z-[9999]">
-              <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">
-                Set Status
-              </div>
-              <DropdownMenuItem
-                className={cn(
-                  "rounded-lg font-semibold text-xs my-0.5 focus:bg-emerald-500/10 focus:text-emerald-500 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
-                  status === "ACTIVE" ? "text-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10" : "text-gray-700 dark:text-gray-300"
-                )}
-                onClick={() => updateUserMutation.mutate({ id: userId, account_status: "ACTIVE" })}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                ACTIVE
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className={cn(
-                  "rounded-lg font-semibold text-xs my-0.5 focus:bg-amber-500/10 focus:text-amber-500 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
-                  status === "INACTIVE" ? "text-amber-500 bg-amber-500/5 dark:bg-amber-500/10" : "text-gray-700 dark:text-gray-300"
-                )}
-                onClick={() => updateUserMutation.mutate({ id: userId, account_status: "INACTIVE" })}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                INACTIVE
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className={cn(
-                  "rounded-lg font-semibold text-xs my-0.5 focus:bg-rose-500/10 focus:text-rose-500 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
-                  status === "LOCKED" ? "text-rose-500 bg-rose-500/5 dark:bg-rose-500/10" : "text-gray-700 dark:text-gray-300"
-                )}
-                onClick={() => updateUserMutation.mutate({ id: userId, account_status: "LOCKED" })}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                LOCKED
-              </DropdownMenuItem>
+              <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">Set Status</div>
+              {[
+                { value: "ACTIVE",   label: "Active",   color: "emerald" },
+                { value: "INACTIVE", label: "Inactive", color: "amber" },
+                { value: "LOCKED",   label: "Locked",   color: "rose" },
+              ].map((s) => (
+                <DropdownMenuItem
+                  key={s.value}
+                  className={cn(
+                    "rounded-lg font-semibold text-xs my-0.5 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
+                    status === s.value
+                      ? `text-${s.color}-500 bg-${s.color}-500/5`
+                      : "text-gray-700 dark:text-gray-300"
+                  )}
+                  onClick={() => updateUserMutation.mutate({ id: userId, account_status: s.value })}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full bg-${s.color}-500`} />
+                  {s.label.toUpperCase()}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         );
       },
     },
-
     {
       accessorKey: "created_at",
       header: "Joined Date",
@@ -263,12 +305,12 @@ export default function UsersPage() {
       id: "actions",
       header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-2.5">
+        <div className="flex items-center justify-end gap-2">
           <Link href={`/users/new?id=${row.original.id}`}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 dark:hover:bg-amber-950/50 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
             >
               <Edit className="h-4 w-4" />
             </Button>
@@ -276,7 +318,7 @@ export default function UsersPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 dark:hover:bg-rose-950/50 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
+            className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
             onClick={() => setDeleteId(row.original.id)}
             disabled={deleteUserMutation.isPending}
           >
@@ -287,50 +329,163 @@ export default function UsersPage() {
     },
   ];
 
+  /* ── Render ── */
   return (
-    <PageShell>
-      <PageShellHeader
-        title="User Management"
-        action={
-          <Link href="/users/new">
-            <Button className="border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white rounded-[16px] h-12 px-6 gap-2 transition-all hover:scale-105 active:scale-95 font-semibold shadow-sm hover:shadow-lg hover:shadow-primary/20">
-              <UserPlus className="h-4 w-4" />
-              Add New User
-            </Button>
-          </Link>
-        }
-      />
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+    >
+      {/* ════════════════════════════════════════
+          LEFT — User List Card  (3/4 width)
+      ════════════════════════════════════════ */}
+      <div className="xl:col-span-3">
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
+          {/* Card header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
+            {/* Title */}
+            <div>
+              <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                User List &amp;{" "}
+                <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
+                  Details
+                </span>
+              </h1>
+              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
+                Manage all system users and their permissions
+              </p>
+            </div>
 
-      <PageShellContent>
-        <DataTable
-          columns={columns}
-          data={data?.users || []}
-          loading={isLoading}
-          pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
-          totalCount={data?.total || 0}
-          entityName="users"
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          onGlobalFilterChange={setSearch}
-          globalFilterValue={search}
-          searchPlaceholder="Search..."
-          onFilterClick={() => setIsFilterDrawerOpen(true)}
-          activeFiltersCount={statusFilter ? 1 : 0}
+            {/* Controls */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+                <input
+                  id="users-search"
+                  type="text"
+                  placeholder="Search users..."
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  className="pl-9 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all w-48 font-medium"
+                />
+              </div>
+
+              {/* Filter button */}
+              <Button
+                id="users-filter-btn"
+                variant="outline"
+                onClick={() => setIsFilterDrawerOpen(true)}
+                className={cn(
+                  "gap-2 h-10 px-4 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all",
+                  statusFilter && "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
+                )}
+              >
+                <Filter size={14} />
+                Filter
+                {statusFilter && (
+                  <span className="w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center">1</span>
+                )}
+              </Button>
+
+              {/* Add New User */}
+              <Link href="/users/new" id="users-add-btn">
+                <Button className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                  <UserPlus size={15} />
+                  Add New User
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="p-6 pt-4">
+            <DataTable
+              columns={columns}
+              data={data?.users || []}
+              loading={isLoading}
+              pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
+              totalCount={data?.total || 0}
+              entityName="users"
+              pagination={pagination}
+              onPaginationChange={setPagination}
+              onGlobalFilterChange={setSearch}
+              globalFilterValue={search}
+              searchPlaceholder="Search..."
+              onFilterClick={() => setIsFilterDrawerOpen(true)}
+              activeFiltersCount={statusFilter ? 1 : 0}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════
+          RIGHT — Statistics Panel  (1/4 width)
+      ════════════════════════════════════════ */}
+      <div className="xl:col-span-1 flex flex-col gap-4">
+        <StatsCard
+          title="Total Users"
+          value={totalData?.total}
+          loading={!totalData}
+          icon={<Users size={20} className="text-blue-600 dark:text-blue-400" />}
+          iconBg="bg-blue-50 dark:bg-blue-500/15"
+          gradient="bg-blue-500"
+          trend="All registered accounts"
         />
-      </PageShellContent>
-      <GenericFilterDrawer 
-        isOpen={isFilterDrawerOpen} 
-        onClose={() => setIsFilterDrawerOpen(false)} 
+        <StatsCard
+          title="Active Engineers"
+          value={activeData?.total}
+          loading={!activeData}
+          icon={<UserCheck size={20} className="text-emerald-600 dark:text-emerald-400" />}
+          iconBg="bg-emerald-50 dark:bg-emerald-500/15"
+          gradient="bg-emerald-500"
+          trend="Currently active"
+        />
+        <StatsCard
+          title="Pending Users"
+          value={inactiveData?.total}
+          loading={!inactiveData}
+          icon={<Clock size={20} className="text-orange-600 dark:text-orange-400" />}
+          iconBg="bg-orange-50 dark:bg-orange-500/15"
+          gradient="bg-orange-500"
+          trend="Inactive / awaiting"
+        />
+
+        {/* Mini summary card */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
+          className="relative overflow-hidden rounded-[20px] p-5 bg-gradient-to-br from-primary to-orange-500 border border-primary/20 shadow-sm shadow-primary/20"
+        >
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMC0xMnY2aDZ2LTZoLTZ6bS0xMiAxMnY2aDZ2LTZoLTZ6bTAtMTJ2Nmg2di02aC02eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
+          <p className="text-xs font-bold text-white/70 uppercase tracking-[0.12em] mb-2 relative">Quick Stats</p>
+          <div className="space-y-1.5 relative">
+            {[
+              { label: "Active rate", value: totalData?.total ? `${Math.round(((activeData?.total || 0) / totalData.total) * 100)}%` : "—" },
+              { label: "Inactive rate", value: totalData?.total ? `${Math.round(((inactiveData?.total || 0) / totalData.total) * 100)}%` : "—" },
+            ].map((s) => (
+              <div key={s.label} className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-white/70">{s.label}</span>
+                <span className="text-sm font-black text-white">{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ── Filter Drawer ── */}
+      <GenericFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
         fields={userFilterFields}
         activeValues={{ status: statusFilter || "ALL" }}
-        onApply={(values) => {
-          setStatusFilter(values.status === "ALL" ? "" : values.status);
-        }}
-        onReset={() => {
-          setStatusFilter("");
-          resetFilters();
-        }}
+        onApply={(values) => setStatusFilter(values.status === "ALL" ? "" : values.status)}
+        onReset={() => { setStatusFilter(""); resetFilters(); }}
       />
+
+      {/* ── Delete Confirm Dialog ── */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
           <DialogHeader className="space-y-4">
@@ -360,6 +515,6 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </PageShell>
+    </motion.div>
   );
 }

@@ -1,323 +1,347 @@
 'use client';
 
 import { useAuthStore } from '@/store/auth-store';
-import { 
-  Search, 
-  Bell, 
-  Settings, 
-  CircleHelp, 
-  Mail, 
-  Sun, 
-  Moon, 
-  LayoutDashboard, 
-  Users, 
-  Factory, 
-  ClipboardList, 
-  PieChart, 
+import {
+  Bell,
+  Sun,
+  Moon,
   Menu,
-  ChevronRight
+  LogOut,
+  Settings,
+  ChevronDown,
+  Users,
+  DollarSign,
+  Receipt,
+  Layers,
+  Wrench,
+  BarChart3,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/sheet';
-import { Logo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 
-interface NavSubItem {
+interface NavLink {
   label: string;
   href: string;
-  icon?: any;
-}
-
-interface NavItem {
-  label: string;
   icon: any;
-  href?: string;
-  subItems?: NavSubItem[];
 }
 
-const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { 
-    label: 'User Management', 
-    icon: Users,
-    subItems: [
-      { label: 'Users', href: '/users', icon: Users }
-    ]
-  },
-  { 
-    label: 'Mill Management', 
-    icon: Factory,
-    subItems: [
-      { label: 'Mills', href: '/mills', icon: Factory }
-    ]
-  },
-  { label: 'Orders', href: '/orders', icon: ClipboardList },
-  { label: 'Analytics', href: '/analytics', icon: PieChart },
-  { label: 'Settings', href: '/settings', icon: Settings },
+const navLinks: NavLink[] = [
+  { label: 'Users', href: '/users', icon: Users },
+  { label: 'Expense Type', href: '/expense-type', icon: DollarSign },
+  { label: 'Expense', href: '/expense', icon: Receipt },
+  { label: 'Service List', href: '/service-list', icon: Layers },
+  { label: 'Installation List', href: '/installation-list', icon: Wrench },
+  { label: 'Report', href: '/report', icon: BarChart3 },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const { theme, setTheme } = useTheme();
+  const { logout, isLoggingOut } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  // Auto-expand menu when subitem is active
+  useEffect(() => { setMounted(true); }, []);
+
+  // Close dropdowns on outside click
   useEffect(() => {
-    navItems.forEach((item) => {
-      if (item.subItems) {
-        const hasActiveSub = item.subItems.some(
-          (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
-        );
-        if (hasActiveSub) {
-          setOpenMenus((prev) => ({ ...prev, [item.label]: true }));
-        }
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
       }
-    });
-  }, [pathname]);
-
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
+
+  const userInitials = user?.full_name
+    ? user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+
+  const userRoleName = (user as any)?.role?.name || 'Admin';
+
   return (
-    <div className="sticky top-0 z-50 w-full transition-all duration-300">
-      <motion.header 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="h-20 bg-gradient-to-r from-primary to-primary/90 text-white border border-white/10 px-4 md:px-8 flex items-center justify-between shadow-[0_12px_32px_-12px_rgba(255,107,0,0.15)] rounded-[32px]"
-      >
-        <div className="flex items-center gap-4 md:gap-6 flex-1 max-w-xl">
-          {/* Mobile hamburger menu */}
+    <header className="sticky top-0 z-50 w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-white/5 shadow-sm">
+      <div className="flex items-center h-16 px-4 md:px-6 gap-4">
+
+        {/* ── Logo ── */}
+        <Link
+          href="/dashboard"
+          className="flex-shrink-0 flex items-center mr-2 md:mr-4"
+          aria-label="Go to dashboard"
+        >
+          {/* Compact inline logo — constrained to navbar height */}
+          <div className="relative h-9 w-auto">
+            <Image
+              src="/assets/logo.png"
+              alt="Mark Sorting Logo"
+              width={120}
+              height={36}
+              className="h-9 w-auto object-contain"
+              priority
+            />
+          </div>
+        </Link>
+
+        {/* ── Desktop Nav Links ── */}
+        <nav className="hidden md:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto scrollbar-none">
+          {navLinks.map((link) => {
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  'relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
+                  active
+                    ? 'text-primary'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+                )}
+              >
+                <link.icon size={15} strokeWidth={active ? 2.5 : 2} />
+                {link.label}
+                {/* Active indicator bar */}
+                {active && (
+                  <motion.span
+                    layoutId="navbar-active-pill"
+                    className="absolute inset-0 bg-primary/8 dark:bg-primary/15 rounded-lg"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                  />
+                )}
+                {/* Hover underline */}
+                <span className={cn(
+                  'absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+                  active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
+                )} />
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* ── Right Section ── */}
+        <div className="ml-auto flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+
+          {/* Theme toggle */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
+            aria-label="Toggle theme"
+          >
+            {mounted && (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={theme}
+                  initial={{ scale: 0, rotate: -90, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                  exit={{ scale: 0, rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {theme === 'dark' ? <Moon size={17} /> : <Sun size={17} />}
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </motion.button>
+
+          {/* Notifications */}
+          <div ref={notifRef} className="relative">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setNotifOpen((v) => !v)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/8 transition-all relative"
+              aria-label="Notifications"
+            >
+              <Bell size={17} />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-2 ring-white dark:ring-gray-900" />
+            </motion.button>
+            <AnimatePresence>
+              {notifOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl shadow-black/8 p-4 z-50"
+                >
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Notifications</p>
+                  <div className="flex flex-col gap-3">
+                    {[
+                      { msg: 'New user registered', time: '2m ago', dot: 'bg-emerald-500' },
+                      { msg: 'Installation #142 completed', time: '1h ago', dot: 'bg-blue-500' },
+                      { msg: 'Report generated', time: '3h ago', dot: 'bg-primary' },
+                    ].map((n, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <span className={cn('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', n.dot)} />
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{n.msg}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden md:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+
+          {/* User menu */}
+          <div ref={userMenuRef} className="relative">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setUserMenuOpen((v) => !v)}
+              className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <Avatar className="h-8 w-8 ring-2 ring-primary/20 shadow-sm">
+                <AvatarImage src={user?.profile_image_url || ''} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-orange-400 text-white text-xs font-black">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden lg:flex flex-col items-start leading-none">
+                <span className="text-[13px] font-bold text-gray-900 dark:text-white uppercase tracking-wide">
+                  {user?.full_name || 'User'}
+                </span>
+                <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium mt-0.5">
+                  {userRoleName}
+                </span>
+              </div>
+              <ChevronDown
+                size={14}
+                className={cn(
+                  'hidden lg:block text-gray-400 transition-transform duration-200',
+                  userMenuOpen && 'rotate-180'
+                )}
+              />
+            </motion.button>
+
+            <AnimatePresence>
+              {userMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl shadow-black/8 p-2 z-50"
+                >
+                  {/* User info header */}
+                  <div className="px-3 py-2.5 mb-1 border-b border-gray-100 dark:border-white/5">
+                    <p className="text-[13px] font-bold text-gray-900 dark:text-white truncate uppercase tracking-wide">
+                      {user?.full_name || 'User'}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">{user?.email || ''}</p>
+                  </div>
+                  <Link
+                    href="/settings"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all"
+                  >
+                    <Settings size={15} className="text-gray-400" />
+                    Settings
+                  </Link>
+                  <button
+                    onClick={() => { setUserMenuOpen(false); logout(); }}
+                    disabled={isLoggingOut}
+                    className="flex items-center gap-2.5 px-3 py-2.5 w-full rounded-xl text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all disabled:opacity-50"
+                  >
+                    <LogOut size={15} />
+                    {isLoggingOut ? 'Logging out…' : 'Logout'}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ── Mobile hamburger ── */}
           <Sheet>
             <SheetTrigger render={
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex md:hidden w-11 h-11 items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all shadow-sm border border-white/10 cursor-pointer flex-shrink-0"
+                className="flex md:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
               >
                 <Menu size={18} />
               </motion.button>
             } />
-            <SheetContent 
-              side="left" 
-              className="fixed top-0 left-0 z-50 h-full w-72 bg-gradient-to-b from-primary to-primary/95 border-r border-white/10 p-6 shadow-2xl transition-all duration-300 ease-out outline-none flex flex-col justify-between"
+            <SheetContent
+              side="left"
+              className="fixed top-0 left-0 z-50 h-full w-72 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-white/10 p-6 shadow-2xl flex flex-col"
               showCloseButton={true}
             >
-              <div className="flex flex-col gap-6">
-                <SheetHeader className="pb-6 border-b border-white/10 flex flex-row items-center justify-between">
-                  <Logo isCollapsed={false} className="transition-all duration-300 text-white" />
-                </SheetHeader>
-                <nav className="flex flex-col gap-1 pt-4 overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-none">
-                  {navItems.map((item) => {
-                    const hasSubItems = !!item.subItems;
-                    const isSubActive = hasSubItems && item.subItems!.some(
-                      (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
-                    );
-                    const isMainActive = !hasSubItems && item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`));
-                    const isMenuOpen = openMenus[item.label];
-
-                    if (hasSubItems) {
-                      return (
-                        <div key={item.label} className="flex flex-col gap-1">
-                          <button
-                            onClick={() => setOpenMenus((prev) => ({ ...prev, [item.label]: !prev[item.label] }))}
-                            className={cn(
-                              'w-full flex items-center justify-between py-3.5 px-6 transition-all duration-300 relative text-left group',
-                              isSubActive
-                                ? 'text-white font-semibold'
-                                : 'text-white hover:bg-white/10 rounded-2xl font-semibold'
-                            )}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="relative z-10 flex items-center justify-center w-6 h-6">
-                                <item.icon 
-                                  size={20} 
-                                  strokeWidth={isSubActive ? 2.5 : 2} 
-                                  className="text-white"
-                                />
-                              </div>
-                              <span className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins">
-                                {item.label}
-                              </span>
-                            </div>
-                            <ChevronRight 
-                              size={16} 
-                              className={cn(
-                                "transition-transform duration-300 text-white/40 group-hover:text-white",
-                                isMenuOpen && "rotate-90"
-                              )}
-                            />
-                          </button>
-
-                          <motion.div
-                            initial={false}
-                            animate={isMenuOpen ? { height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } } : { height: 0, opacity: 0, overflow: 'hidden' }}
-                            className="overflow-hidden pl-6 -mr-4 pr-4 space-y-1 relative"
-                          >
-                            <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
-                            
-                            {item.subItems!.map((subItem) => {
-                              const isSubItemActive = pathname === subItem.href || pathname.startsWith(`${subItem.href}/`);
-                              return (
-                                <Link
-                                  key={subItem.href}
-                                  href={subItem.href}
-                                  className="relative block group"
-                                >
-                                  <div
-                                    className={cn(
-                                      'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
-                                      isSubItemActive
-                                        ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-2xl shadow-md'
-                                        : 'text-white hover:bg-white/10 rounded-2xl font-semibold'
-                                    )}
-                                  >
-                                    {subItem.icon ? (
-                                      <subItem.icon 
-                                        size={16} 
-                                        strokeWidth={isSubItemActive ? 2.5 : 2}
-                                        className={cn("relative z-10 transition-colors", isSubItemActive ? "text-primary" : "text-white")}
-                                      />
-                                    ) : (
-                                      <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/70 group-hover:bg-white transition-colors" />
-                                    )}
-                                    <span className="relative z-10 font-semibold text-[13px] tracking-tight font-poppins">
-                                      {subItem.label}
-                                    </span>
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </motion.div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href!}
-                        className="relative block group"
-                      >
-                        <div
-                          className={cn(
-                            'flex items-center gap-4 py-3.5 px-6 transition-all duration-300 relative',
-                            isMainActive
-                              ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-2xl shadow-md'
-                              : 'text-white hover:bg-white/10 rounded-2xl font-semibold'
-                          )}
-                        >
-                          <div className="relative z-10 flex items-center justify-center w-6 h-6">
-                            <item.icon 
-                              size={20} 
-                              strokeWidth={isMainActive ? 2.5 : 2} 
-                              className={cn("transition-colors", isMainActive ? "text-primary" : "text-white")}
-                            />
-                          </div>
-                          <span className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins">
-                            {item.label}
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </nav>
+              <SheetHeader className="pb-5 border-b border-gray-100 dark:border-white/10">
+                <div className="flex items-center">
+                  <Image
+                    src="/assets/logo.png"
+                    alt="Mark Sorting Logo"
+                    width={130}
+                    height={40}
+                    className="h-10 w-auto object-contain"
+                    priority
+                  />
+                </div>
+              </SheetHeader>
+              <nav className="flex flex-col gap-1 pt-5 flex-1 overflow-y-auto scrollbar-none">
+                {navLinks.map((link) => {
+                  const active = isActive(link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all',
+                        active
+                          ? 'bg-primary/10 dark:bg-primary/20 text-primary'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                      )}
+                    >
+                      <link.icon size={16} strokeWidth={active ? 2.5 : 2} />
+                      {link.label}
+                      {active && (
+                        <span className="ml-auto w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.5)]" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+              {/* Mobile logout */}
+              <div className="pt-4 border-t border-gray-100 dark:border-white/10">
+                <button
+                  onClick={() => logout()}
+                  disabled={isLoggingOut}
+                  className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                >
+                  <LogOut size={16} />
+                  {isLoggingOut ? 'Logging out…' : 'Logout'}
+                </button>
               </div>
             </SheetContent>
           </Sheet>
-          <motion.div 
-            className="relative w-full group"
-            animate={{ width: isSearchFocused ? '100%' : '90%' }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          >
-            <Search 
-              className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
-                isSearchFocused ? 'text-white' : 'text-white/60 group-hover:text-white/80'
-              }`} 
-              size={18} 
-            />
-            <input
-              type="text"
-              placeholder="Search task"
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className="w-full bg-white/10 focus:bg-white/15 border border-white/10 focus:border-white/20 rounded-full py-2.5 pl-12 pr-6 transition-all text-sm outline-none text-white placeholder:text-white/60 font-medium"
-            />
-          </motion.div>
+
         </div>
-
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <motion.button 
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-11 h-11 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all shadow-sm border border-white/10"
-            >
-              <Mail size={18} />
-            </motion.button>
-            
-            <motion.button 
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-11 h-11 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all shadow-sm border border-white/10 relative"
-            >
-              <Bell size={18} />
-              <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-white rounded-full ring-2 ring-primary" />
-            </motion.button>
-
-            <motion.button 
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-11 h-11 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all shadow-sm border border-white/10"
-            >
-              {mounted && (
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={theme === 'dark' ? 'dark' : 'light'}
-                    initial={{ scale: 0, rotate: -90 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    exit={{ scale: 0, rotate: 90 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-                  </motion.div>
-                </AnimatePresence>
-              )}
-            </motion.button>
-          </div>
-
-          <motion.div 
-            className="flex items-center gap-3 pl-4 border-l border-white/20 group cursor-pointer"
-            whileHover={{ x: 2 }}
-          >
-            <Avatar className="h-11 w-11 ring-2 ring-white/20 group-hover:ring-white/40 transition-all duration-300 shadow-md">
-              <AvatarImage src={user?.profile_image_url || '/avatars/admin.png'} />
-              <AvatarFallback className="bg-white text-primary font-black">
-                {user?.full_name?.charAt(0) || 'A'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-left hidden lg:block">
-              <p className="text-sm font-black text-white leading-none mb-1">
-                {user?.full_name || 'Team Member'}
-              </p>
-              <p className="text-[11px] text-white/70 font-medium">
-                {user?.email || ''}
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </motion.header>
-    </div>
+      </div>
+    </header>
   );
 }
