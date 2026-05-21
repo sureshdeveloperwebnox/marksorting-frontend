@@ -166,7 +166,7 @@ function DropdownNavItem({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.14 }}
-            className="absolute left-0 top-full mt-1.5 w-44 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-xl shadow-xl shadow-black/8 p-1.5 z-50"
+            className="absolute left-0 top-full mt-1.5 min-w-[11rem] w-max bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-xl shadow-xl shadow-black/8 p-1.5 z-50"
           >
             {item.subItems.map((sub) => {
               const subActive = isSubItemActive(sub);
@@ -176,7 +176,7 @@ function DropdownNavItem({
                   href={sub.href}
                   onClick={() => setOpen(false)}
                   className={cn(
-                    'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all',
+                    'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
                     subActive
                       ? 'bg-primary/10 dark:bg-primary/20 text-primary'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
