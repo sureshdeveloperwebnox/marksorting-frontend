@@ -10,6 +10,7 @@ import {
   Settings,
   ChevronDown,
   Users,
+  Factory,
   DollarSign,
   Receipt,
   Layers,
@@ -27,20 +28,149 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 
-interface NavLink {
+/* ─── Nav data types ─────────────────────────────────────────── */
+
+interface NavSubItem {
   label: string;
   href: string;
   icon: any;
 }
 
-const navLinks: NavLink[] = [
-  { label: 'Users', href: '/users', icon: Users },
+interface NavItem {
+  label: string;
+  icon: any;
+  href?: string;           // flat link
+  subItems?: NavSubItem[]; // dropdown
+}
+
+const navItems: NavItem[] = [
+  {
+    label: 'User Management',
+    icon: Users,
+    subItems: [
+      { label: 'Users', href: '/users', icon: Users },
+    ],
+  },
+  { label: 'Mill Management', href: '/mills', icon: Factory },
   { label: 'Expense Type', href: '/expense-type', icon: DollarSign },
   { label: 'Expense', href: '/expense', icon: Receipt },
   { label: 'Service List', href: '/service-list', icon: Layers },
   { label: 'Installation List', href: '/installation-list', icon: Wrench },
   { label: 'Report', href: '/report', icon: BarChart3 },
 ];
+
+/* ─── Dropdown Nav Item (desktop) ───────────────────────────── */
+
+function DropdownNavItem({
+  item,
+  pathname,
+}: {
+  item: NavItem & { subItems: NavSubItem[] };
+  pathname: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Is any sub-item active?
+  const isGroupActive = item.subItems.some(
+    (s) => pathname === s.href || pathname.startsWith(`${s.href}/`)
+  );
+
+  // Auto-open when a child is active
+  useEffect(() => {
+    if (isGroupActive) setOpen(true);
+  }, [isGroupActive]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
+          isGroupActive
+            ? 'text-primary'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+        )}
+      >
+        <item.icon size={15} strokeWidth={isGroupActive ? 2.5 : 2} />
+        {item.label}
+        <ChevronDown
+          size={13}
+          className={cn(
+            'transition-transform duration-200 ml-0.5',
+            open && 'rotate-180'
+          )}
+        />
+        {/* Active pill background */}
+        {isGroupActive && (
+          <motion.span
+            layoutId="navbar-active-pill"
+            className="absolute inset-0 bg-primary/8 dark:bg-primary/15 rounded-lg"
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+          />
+        )}
+        {/* Hover / active underline */}
+        <span className={cn(
+          'absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+          isGroupActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
+        )} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.14 }}
+            className="absolute left-0 top-full mt-1.5 w-44 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-xl shadow-xl shadow-black/8 p-1.5 z-50"
+          >
+            {item.subItems.map((sub) => {
+              const subActive =
+                pathname === sub.href || pathname.startsWith(`${sub.href}/`);
+              return (
+                <Link
+                  key={sub.href}
+                  href={sub.href}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all',
+                    subActive
+                      ? 'bg-primary/10 dark:bg-primary/20 text-primary'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                  )}
+                >
+                  <sub.icon
+                    size={14}
+                    strokeWidth={subActive ? 2.5 : 2}
+                    className={subActive ? 'text-primary' : ''}
+                  />
+                  {sub.label}
+                  {subActive && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_6px_rgba(255,107,0,0.5)]" />
+                  )}
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─── Main Navbar ────────────────────────────────────────────── */
 
 export function Navbar() {
   const pathname = usePathname();
@@ -50,12 +180,28 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  // Mobile sheet accordion state
+  const [mobileOpenGroups, setMobileOpenGroups] = useState<Record<string, boolean>>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Close dropdowns on outside click
+  // Auto-expand mobile groups when a child is active
+  useEffect(() => {
+    const expanded: Record<string, boolean> = {};
+    navItems.forEach((item) => {
+      if (item.subItems) {
+        const hasActiveSub = item.subItems.some(
+          (s) => pathname === s.href || pathname.startsWith(`${s.href}/`)
+        );
+        if (hasActiveSub) expanded[item.label] = true;
+      }
+    });
+    setMobileOpenGroups((prev) => ({ ...prev, ...expanded }));
+  }, [pathname]);
+
+  // Close user / notif dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -88,7 +234,6 @@ export function Navbar() {
           className="flex-shrink-0 flex items-center mr-2 md:mr-4"
           aria-label="Go to dashboard"
         >
-          {/* Compact inline logo — constrained to navbar height */}
           <div className="relative h-9 w-auto">
             <Image
               src="/assets/logo.png"
@@ -101,14 +246,26 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* ── Desktop Nav Links ── */}
-        <nav className="hidden md:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto scrollbar-none">
-          {navLinks.map((link) => {
-            const active = isActive(link.href);
+        {/* ── Desktop Nav ── */}
+        <nav className="hidden md:flex items-center gap-1 flex-1 min-w-0">
+          {navItems.map((item) => {
+            // Dropdown item
+            if (item.subItems) {
+              return (
+                <DropdownNavItem
+                  key={item.label}
+                  item={item as NavItem & { subItems: NavSubItem[] }}
+                  pathname={pathname}
+                />
+              );
+            }
+
+            // Flat link
+            const active = isActive(item.href!);
             return (
               <Link
-                key={link.href}
-                href={link.href}
+                key={item.href}
+                href={item.href!}
                 className={cn(
                   'relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
                   active
@@ -116,9 +273,8 @@ export function Navbar() {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
                 )}
               >
-                <link.icon size={15} strokeWidth={active ? 2.5 : 2} />
-                {link.label}
-                {/* Active indicator bar */}
+                <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
+                {item.label}
                 {active && (
                   <motion.span
                     layoutId="navbar-active-pill"
@@ -126,7 +282,6 @@ export function Navbar() {
                     transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                   />
                 )}
-                {/* Hover underline */}
                 <span className={cn(
                   'absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
                   active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
@@ -247,7 +402,6 @@ export function Navbar() {
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl shadow-black/8 p-2 z-50"
                 >
-                  {/* User info header */}
                   <div className="px-3 py-2.5 mb-1 border-b border-gray-100 dark:border-white/5">
                     <p className="text-[13px] font-bold text-gray-900 dark:text-white truncate uppercase tracking-wide">
                       {user?.full_name || 'User'}
@@ -303,13 +457,87 @@ export function Navbar() {
                   />
                 </div>
               </SheetHeader>
+
               <nav className="flex flex-col gap-1 pt-5 flex-1 overflow-y-auto scrollbar-none">
-                {navLinks.map((link) => {
-                  const active = isActive(link.href);
+                {navItems.map((item) => {
+                  if (item.subItems) {
+                    const isGroupActive = item.subItems.some(
+                      (s) => pathname === s.href || pathname.startsWith(`${s.href}/`)
+                    );
+                    const isOpen = mobileOpenGroups[item.label];
+                    return (
+                      <div key={item.label}>
+                        <button
+                          onClick={() =>
+                            setMobileOpenGroups((prev) => ({
+                              ...prev,
+                              [item.label]: !prev[item.label],
+                            }))
+                          }
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-semibold transition-all',
+                            isGroupActive
+                              ? 'text-primary'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                          )}
+                        >
+                          <item.icon size={16} strokeWidth={isGroupActive ? 2.5 : 2} />
+                          <span className="flex-1 text-left">{item.label}</span>
+                          <ChevronDown
+                            size={14}
+                            className={cn(
+                              'text-gray-400 transition-transform duration-200',
+                              isOpen && 'rotate-180'
+                            )}
+                          />
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden pl-4"
+                            >
+                              {item.subItems.map((sub) => {
+                                const subActive =
+                                  pathname === sub.href || pathname.startsWith(`${sub.href}/`);
+                                return (
+                                  <Link
+                                    key={sub.href}
+                                    href={sub.href}
+                                    className={cn(
+                                      'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all',
+                                      subActive
+                                        ? 'bg-primary/10 dark:bg-primary/20 text-primary'
+                                        : 'text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                                    )}
+                                  >
+                                    <span className={cn(
+                                      'w-1.5 h-1.5 rounded-full flex-shrink-0',
+                                      subActive ? 'bg-primary shadow-[0_0_6px_rgba(255,107,0,0.5)]' : 'bg-gray-300 dark:bg-gray-600'
+                                    )} />
+                                    {sub.label}
+                                    {subActive && (
+                                      <span className="ml-auto w-1.5 h-1.5 bg-primary rounded-full" />
+                                    )}
+                                  </Link>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  }
+
+                  // flat link
+                  const active = isActive(item.href!);
                   return (
                     <Link
-                      key={link.href}
-                      href={link.href}
+                      key={item.href}
+                      href={item.href!}
                       className={cn(
                         'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all',
                         active
@@ -317,8 +545,8 @@ export function Navbar() {
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                       )}
                     >
-                      <link.icon size={16} strokeWidth={active ? 2.5 : 2} />
-                      {link.label}
+                      <item.icon size={16} strokeWidth={active ? 2.5 : 2} />
+                      {item.label}
                       {active && (
                         <span className="ml-auto w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.5)]" />
                       )}
@@ -326,6 +554,7 @@ export function Navbar() {
                   );
                 })}
               </nav>
+
               {/* Mobile logout */}
               <div className="pt-4 border-t border-gray-100 dark:border-white/10">
                 <button
