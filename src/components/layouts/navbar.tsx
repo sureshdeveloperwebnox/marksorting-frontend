@@ -18,6 +18,7 @@ import {
   BarChart3,
   Shield,
   Users2,
+  Tag,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -60,6 +61,13 @@ const navItems: NavItem[] = [
     subItems: [
       { label: 'Mills', href: '/mills', icon: Factory },
       { label: 'Customers', href: '/mills/customers', icon: Users2 },
+    ],
+  },
+  {
+    label: 'Service Management',
+    icon: Tag,
+    subItems: [
+      { label: 'Service Category', href: '/service-management/service-category', icon: Tag },
     ],
   },
   { label: 'Expense Type', href: '/expense-type', icon: DollarSign },
