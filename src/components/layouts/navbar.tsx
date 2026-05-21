@@ -51,7 +51,13 @@ const navItems: NavItem[] = [
       { label: 'Users', href: '/users', icon: Users },
     ],
   },
-  { label: 'Mill Management', href: '/mills', icon: Factory },
+  {
+    label: 'Mill Management',
+    icon: Factory,
+    subItems: [
+      { label: 'Mills', href: '/mills', icon: Factory },
+    ],
+  },
   { label: 'Expense Type', href: '/expense-type', icon: DollarSign },
   { label: 'Expense', href: '/expense', icon: Receipt },
   { label: 'Service List', href: '/service-list', icon: Layers },
