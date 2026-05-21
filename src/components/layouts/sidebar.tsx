@@ -66,9 +66,13 @@ export function Sidebar() {
   useEffect(() => {
     items.forEach((item) => {
       if (item.subItems) {
-        const hasActiveSub = item.subItems.some(
-          (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
-        );
+        const hasActiveSub = item.subItems.some((sub) => {
+          if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
+          const betterMatch = item.subItems!.some(
+            (o) => o.href !== sub.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > sub.href.length
+          );
+          return !betterMatch;
+        });
         if (hasActiveSub) {
           setOpenMenus((prev) => ({ ...prev, [item.label]: true }));
         }
@@ -110,10 +114,14 @@ export function Sidebar() {
           {items.map((item) => {
             const hasSubItems = !!item.subItems;
 
-            // Check if any sub-item is active
-            const isSubActive = hasSubItems && item.subItems!.some(
-              (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
-            );
+            // Check if any sub-item is active (best match wins)
+            const isSubActive = hasSubItems && item.subItems!.some((sub) => {
+              if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
+              const betterMatch = item.subItems!.some(
+                (o) => o.href !== sub.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > sub.href.length
+              );
+              return !betterMatch;
+            });
 
             const isMainActive = !hasSubItems && item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`));
 
@@ -182,7 +190,13 @@ export function Sidebar() {
                       <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
 
                       {item.subItems!.map((subItem) => {
-                        const isSubItemActive = pathname === subItem.href || pathname.startsWith(`${subItem.href}/`);
+                        const isSubItemActive = (() => {
+                          if (pathname !== subItem.href && !pathname.startsWith(`${subItem.href}/`)) return false;
+                          const betterMatch = item.subItems!.some(
+                            (o) => o.href !== subItem.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > subItem.href.length
+                          );
+                          return !betterMatch;
+                        })();
                         return (
                           <Link
                             key={subItem.href}

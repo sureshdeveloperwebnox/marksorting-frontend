@@ -81,10 +81,24 @@ function DropdownNavItem({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  /**
+   * Returns true only if this sub-item is the best (most specific) match
+   * for the current pathname. This prevents /mills matching /mills/customers.
+   */
+  const isSubItemActive = (sub: NavSubItem): boolean => {
+    if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
+    // Check no sibling is a longer/more-specific match
+    const betterMatch = item.subItems.some(
+      (other) =>
+        other.href !== sub.href &&
+        (pathname === other.href || pathname.startsWith(`${other.href}/`)) &&
+        other.href.length > sub.href.length
+    );
+    return !betterMatch;
+  };
+
   // Is any sub-item active?
-  const isGroupActive = item.subItems.some(
-    (s) => pathname === s.href || pathname.startsWith(`${s.href}/`)
-  );
+  const isGroupActive = item.subItems.some((s) => isSubItemActive(s));
 
   // Auto-open when a child is active
   useEffect(() => {
@@ -147,8 +161,7 @@ function DropdownNavItem({
             className="absolute left-0 top-full mt-1.5 w-44 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-xl shadow-xl shadow-black/8 p-1.5 z-50"
           >
             {item.subItems.map((sub) => {
-              const subActive =
-                pathname === sub.href || pathname.startsWith(`${sub.href}/`);
+              const subActive = isSubItemActive(sub);
               return (
                 <Link
                   key={sub.href}
@@ -202,9 +215,13 @@ export function Navbar() {
     const expanded: Record<string, boolean> = {};
     navItems.forEach((item) => {
       if (item.subItems) {
-        const hasActiveSub = item.subItems.some(
-          (s) => pathname === s.href || pathname.startsWith(`${s.href}/`)
-        );
+        const hasActiveSub = item.subItems.some((s) => {
+          if (pathname !== s.href && !pathname.startsWith(`${s.href}/`)) return false;
+          const betterMatch = item.subItems!.some(
+            (o) => o.href !== s.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > s.href.length
+          );
+          return !betterMatch;
+        });
         if (hasActiveSub) expanded[item.label] = true;
       }
     });
@@ -471,9 +488,13 @@ export function Navbar() {
               <nav className="flex flex-col gap-1 pt-5 flex-1 overflow-y-auto scrollbar-none">
                 {navItems.map((item) => {
                   if (item.subItems) {
-                    const isGroupActive = item.subItems.some(
-                      (s) => pathname === s.href || pathname.startsWith(`${s.href}/`)
-                    );
+                    const isGroupActive = item.subItems.some((s) => {
+                      if (pathname !== s.href && !pathname.startsWith(`${s.href}/`)) return false;
+                      const betterMatch = item.subItems!.some(
+                        (o) => o.href !== s.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > s.href.length
+                      );
+                      return !betterMatch;
+                    });
                     const isOpen = mobileOpenGroups[item.label];
                     return (
                       <div key={item.label}>
@@ -511,8 +532,13 @@ export function Navbar() {
                               className="overflow-hidden pl-4"
                             >
                               {item.subItems.map((sub) => {
-                                const subActive =
-                                  pathname === sub.href || pathname.startsWith(`${sub.href}/`);
+                                const subActive = (() => {
+                                  if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
+                                  const betterMatch = item.subItems!.some(
+                                    (o) => o.href !== sub.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > sub.href.length
+                                  );
+                                  return !betterMatch;
+                                })();
                                 return (
                                   <Link
                                     key={sub.href}
