@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { DataTable } from "@/components/tables/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { useUsers, User, useDeleteUser, useUpdateUser } from "@/services/user-service";
@@ -42,6 +41,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { UserFormDrawer } from "@/components/forms/user-form-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -153,6 +153,7 @@ export default function UsersPage() {
     resetFilters,
     deleteId,
     setDeleteId,
+    openFormDrawer,
   } = useUserStore();
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
@@ -306,15 +307,14 @@ export default function UsersPage() {
       header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Link href={`/users/new?id=${row.original.id}`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            onClick={() => openFormDrawer(row.original.id)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -390,12 +390,14 @@ export default function UsersPage() {
               </Button>
 
               {/* Add New User */}
-              <Link href="/users/new" id="users-add-btn">
-                <Button className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                  <UserPlus size={15} />
-                  Add New User
-                </Button>
-              </Link>
+              <Button 
+                id="users-add-btn"
+                onClick={() => openFormDrawer()}
+                className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <UserPlus size={15} />
+                Add New User
+              </Button>
             </div>
           </div>
 
@@ -484,6 +486,9 @@ export default function UsersPage() {
         onApply={(values) => setStatusFilter(values.status === "ALL" ? "" : values.status)}
         onReset={() => { setStatusFilter(""); resetFilters(); }}
       />
+
+      {/* ── User Form Drawer ── */}
+      <UserFormDrawer />
 
       {/* ── Delete Confirm Dialog ── */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

@@ -14,6 +14,10 @@ interface UserState {
   // UI State
   deleteId: string | null;
   setDeleteId: (id: string | null) => void;
+  isFormDrawerOpen: boolean;
+  selectedUserId: string | null;
+  openFormDrawer: (id?: string) => void;
+  closeFormDrawer: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -34,4 +38,8 @@ export const useUserStore = create<UserState>((set) => ({
     }),
   deleteId: null,
   setDeleteId: (id) => set({ deleteId: id }),
+  isFormDrawerOpen: false,
+  selectedUserId: null,
+  openFormDrawer: (id?: string) => set({ isFormDrawerOpen: true, selectedUserId: id || null }),
+  closeFormDrawer: () => set({ isFormDrawerOpen: false, selectedUserId: null }),
 }));
