@@ -3,16 +3,17 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Factory, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  Factory,
+  Settings,
   LogOut,
   ChevronRight,
   ClipboardList,
   PieChart,
   Shield,
+  Users2,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
@@ -34,19 +35,20 @@ interface SidebarItem {
 
 const items: SidebarItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { 
-    label: 'User Management', 
+  {
+    label: 'User Management',
     icon: Users,
     subItems: [
       { label: 'Users', href: '/users', icon: Users },
       { label: 'Roles', href: '/roles', icon: Shield }
     ]
   },
-  { 
-    label: 'Mill Management', 
+  {
+    label: 'Mill Management',
     icon: Factory,
     subItems: [
-      { label: 'Mills', href: '/mills', icon: Factory }
+      { label: 'Mills', href: '/mills', icon: Factory },
+      { label: 'Customers', href: '/mills/customers', icon: Users2 },
     ]
   },
   { label: 'Orders', href: '/orders', icon: ClipboardList },
@@ -80,21 +82,21 @@ export function Sidebar() {
 
   return (
     <div className="relative h-full hidden md:block">
-      <motion.div 
+      <motion.div
         initial={false}
         animate={{ width: isCollapsed ? 80 : 280 }}
         className="h-full bg-gradient-to-b from-primary to-primary/90 flex flex-col z-40 rounded-[32px] overflow-hidden shadow-2xl relative border border-white/10"
       >
         <div className="p-6 mb-2">
-          <Logo 
+          <Logo
             isCollapsed={isCollapsed}
-            className="transition-all duration-300" 
+            className="transition-all duration-300"
           />
         </div>
 
         <div className="px-6 mb-4">
           {!isCollapsed && (
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-white/40 text-[11px] font-black uppercase tracking-[0.2em] ml-4 font-poppins"
@@ -107,14 +109,14 @@ export function Sidebar() {
         <nav className="flex-1 px-4 space-y-1 relative pt-4 overflow-y-auto max-h-[calc(100vh-220px)] scrollbar-none">
           {items.map((item) => {
             const hasSubItems = !!item.subItems;
-            
+
             // Check if any sub-item is active
             const isSubActive = hasSubItems && item.subItems!.some(
               (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
             );
-            
+
             const isMainActive = !hasSubItems && item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`));
-            
+
             const isMenuOpen = openMenus[item.label];
 
             if (hasSubItems) {
@@ -140,15 +142,15 @@ export function Sidebar() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="relative z-10 flex items-center justify-center w-6 h-6">
-                        <item.icon 
-                          size={20} 
-                          strokeWidth={isSubActive ? 2.5 : 2} 
+                        <item.icon
+                          size={20}
+                          strokeWidth={isSubActive ? 2.5 : 2}
                           className="text-white"
                         />
                       </div>
-                      
+
                       {!isCollapsed && (
-                        <motion.span 
+                        <motion.span
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins"
@@ -159,8 +161,8 @@ export function Sidebar() {
                     </div>
 
                     {!isCollapsed && (
-                      <ChevronRight 
-                        size={16} 
+                      <ChevronRight
+                        size={16}
                         className={cn(
                           "transition-transform duration-300 text-white/40 group-hover:text-white",
                           isMenuOpen && "rotate-90"
@@ -178,7 +180,7 @@ export function Sidebar() {
                     >
                       {/* Vertical line indicator */}
                       <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
-                      
+
                       {item.subItems!.map((subItem) => {
                         const isSubItemActive = pathname === subItem.href || pathname.startsWith(`${subItem.href}/`);
                         return (
@@ -202,7 +204,7 @@ export function Sidebar() {
                                     <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
                                     <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
                                   </div>
-                                  
+
                                   {/* Inverted Corner Bottom */}
                                   <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
                                     <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
@@ -212,8 +214,8 @@ export function Sidebar() {
                               )}
 
                               {subItem.icon ? (
-                                <subItem.icon 
-                                  size={16} 
+                                <subItem.icon
+                                  size={16}
                                   strokeWidth={isSubItemActive ? 2.5 : 2}
                                   className={cn("relative z-10 transition-colors", isSubItemActive ? "text-primary" : "text-white")}
                                 />
@@ -226,7 +228,7 @@ export function Sidebar() {
                               </span>
 
                               {isSubItemActive && (
-                                <motion.div 
+                                <motion.div
                                   initial={{ scale: 0 }}
                                   animate={{ scale: 1 }}
                                   className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
@@ -264,7 +266,7 @@ export function Sidebar() {
                         <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
                         <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
                       </div>
-                      
+
                       {/* Inverted Corner Bottom */}
                       <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
                         <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
@@ -274,15 +276,15 @@ export function Sidebar() {
                   )}
 
                   <div className="relative z-10 flex items-center justify-center w-6 h-6">
-                    <item.icon 
-                      size={20} 
-                      strokeWidth={isMainActive ? 2.5 : 2} 
+                    <item.icon
+                      size={20}
+                      strokeWidth={isMainActive ? 2.5 : 2}
                       className={cn("transition-colors", isMainActive ? "text-primary" : "text-white")}
                     />
                   </div>
-                  
+
                   {!isCollapsed && (
-                    <motion.span 
+                    <motion.span
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins"
@@ -292,7 +294,7 @@ export function Sidebar() {
                   )}
 
                   {isMainActive && !isCollapsed && (
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
@@ -324,10 +326,10 @@ export function Sidebar() {
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="absolute -right-1 top-20 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 active:scale-95 transition-all z-50 translate-x-1/2 border-2 border-primary/10"
         >
-          <ChevronRight 
-            size={16} 
+          <ChevronRight
+            size={16}
             strokeWidth={3}
-            className={cn("transition-transform duration-500", !isCollapsed && "rotate-180")} 
+            className={cn("transition-transform duration-500", !isCollapsed && "rotate-180")}
           />
         </button>
       </motion.div>

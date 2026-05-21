@@ -3,15 +3,15 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Save, Loader2, Mail, Phone, Factory, MapPin, RefreshCcw } from 'lucide-react';
+import { Save, Loader2, Mail, Phone, Factory, MapPin, RefreshCcw, Users } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,6 +28,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { CustomerMultiSelect } from '@/components/ui/customer-multi-select';
 
 const millSchema = z.object({
   name: z.string().min(2, 'Mill Name must be at least 2 characters'),
@@ -41,6 +42,7 @@ const millSchema = z.object({
     ),
   address: z.string().optional().or(z.literal('')),
   status: z.string().min(1, 'Status is required'),
+  customer_ids: z.array(z.string()).optional(),
 });
 
 type MillFormValues = z.infer<typeof millSchema>;
@@ -69,6 +71,7 @@ export function MillFormDrawer() {
       phone: '',
       address: '',
       status: 'ACTIVE',
+      customer_ids: [],
     }
   });
 
@@ -90,6 +93,7 @@ export function MillFormDrawer() {
           phone: phoneNumber,
           address: millData.address || '',
           status: millData.status,
+          customer_ids: [],
         });
       } else if (!isEdit) {
         reset({
@@ -98,17 +102,20 @@ export function MillFormDrawer() {
           phone: '',
           address: '',
           status: 'ACTIVE',
+          customer_ids: [],
         });
       }
     }
   }, [isFormDrawerOpen, millData, reset, isEdit]);
 
   const onSubmit: SubmitHandler<MillFormValues> = async (data) => {
+    // customer_ids is UI-only — strip it before sending to the backend
+    const { customer_ids, ...millPayload } = data;
     try {
       if (isEdit) {
-        await updateMill({ id: selectedMillId, ...data });
+        await updateMill({ id: selectedMillId, ...millPayload });
       } else {
-        await createMill(data);
+        await createMill(millPayload);
       }
       closeFormDrawer();
     } catch (error: any) {
@@ -152,9 +159,9 @@ export function MillFormDrawer() {
                     <Factory size={14} className="text-primary/70" />
                     Mill Name
                   </Label>
-                  <Input 
+                  <Input
                     {...register('name')}
-                    placeholder="Enter mill name" 
+                    placeholder="Enter mill name"
                     className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                   />
                   {errors.name && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.name.message}</p>}
@@ -166,9 +173,9 @@ export function MillFormDrawer() {
                     <Mail size={14} className="text-primary/70" />
                     Email Address
                   </Label>
-                  <Input 
+                  <Input
                     {...register('email')}
-                    placeholder="contact@mill.com (Optional)" 
+                    placeholder="contact@mill.com (Optional)"
                     className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                   />
                   {errors.email && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.email.message}</p>}
@@ -205,12 +212,32 @@ export function MillFormDrawer() {
                     <MapPin size={14} className="text-primary/70" />
                     Location / Address
                   </Label>
-                  <Input 
+                  <Input
                     {...register('address')}
-                    placeholder="Enter complete address (Optional)" 
+                    placeholder="Enter complete address (Optional)"
                     className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                   />
                   {errors.address && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.address.message}</p>}
+                </div>
+
+                {/* Customers */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Users size={14} className="text-primary/70" />
+                    Customers
+                    <span className="text-gray-400 font-normal normal-case tracking-normal text-[11px]">(Optional)</span>
+                  </Label>
+                  <Controller
+                    name="customer_ids"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomerMultiSelect
+                        value={field.value || []}
+                        onChange={field.onChange}
+                        placeholder="Select customers for this mill..."
+                      />
+                    )}
+                  />
                 </div>
 
                 {/* Mill Status */}
@@ -219,8 +246,8 @@ export function MillFormDrawer() {
                     <RefreshCcw size={14} className="text-primary/70" />
                     Mill Status
                   </Label>
-                  <Select 
-                    onValueChange={(val) => setValue('status', val ?? 'ACTIVE')} 
+                  <Select
+                    onValueChange={(val) => setValue('status', val ?? 'ACTIVE')}
                     value={watch('status')}
                   >
                     <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
@@ -248,7 +275,7 @@ export function MillFormDrawer() {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               type="submit"
               form="mill-form"
               disabled={isSubmitting || isLoading}
