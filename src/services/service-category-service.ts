@@ -95,7 +95,7 @@ export const useDeleteServiceCategory = () => {
                 queryKey: ["serviceCategories"],
             });
 
-            const snapshots: Array<{ queryKey: unknown[]; data: ServiceCategoriesResponse }> = [];
+            const snapshots: Array<{ queryKey: readonly unknown[]; data: ServiceCategoriesResponse }> = [];
 
             for (const query of serviceCategoryQueries) {
                 const previousData = query.state.data as ServiceCategoriesResponse | undefined;
@@ -111,7 +111,7 @@ export const useDeleteServiceCategory = () => {
 
             return { snapshots };
         },
-        onError: (err, id, context: any) => {
+        onError: (_err, _id, context: any) => {
             if (context?.snapshots) {
                 for (const snapshot of context.snapshots) {
                     queryClient.setQueryData(snapshot.queryKey, snapshot.data);
