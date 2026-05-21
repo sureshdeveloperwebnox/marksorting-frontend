@@ -11,7 +11,8 @@ import {
   LogOut,
   ChevronRight,
   ClipboardList,
-  PieChart
+  PieChart,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
@@ -37,7 +38,8 @@ const items: SidebarItem[] = [
     label: 'User Management', 
     icon: Users,
     subItems: [
-      { label: 'Users', href: '/users', icon: Users }
+      { label: 'Users', href: '/users', icon: Users },
+      { label: 'Roles', href: '/roles', icon: Shield }
     ]
   },
   { 

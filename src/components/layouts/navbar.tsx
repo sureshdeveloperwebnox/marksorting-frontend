@@ -16,6 +16,7 @@ import {
   Layers,
   Wrench,
   BarChart3,
+  Shield,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
     icon: Users,
     subItems: [
       { label: 'Users', href: '/users', icon: Users },
+      { label: 'Roles', href: '/roles', icon: Shield },
     ],
   },
   {

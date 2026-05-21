@@ -14,13 +14,12 @@ import {
   UserPlus,
   Eye,
   Loader2,
-  Search,
-  Filter,
   Users,
   UserCheck,
   Clock,
   TrendingUp,
 } from "lucide-react";
+import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,19 +57,19 @@ const getRoleColors = (_role: string) =>
 
 const getStatusColors = (status: string) => {
   switch (status?.toUpperCase()) {
-    case "ACTIVE":   return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
+    case "ACTIVE": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
     case "INACTIVE": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
-    case "LOCKED":   return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
-    default:         return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
+    case "LOCKED": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
+    default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
   }
 };
 
 const getStatusDotColors = (status: string) => {
   switch (status?.toUpperCase()) {
-    case "ACTIVE":   return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+    case "ACTIVE": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
     case "INACTIVE": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
-    case "LOCKED":   return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
-    default:         return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
+    case "LOCKED": return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
+    default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
   }
 };
 
@@ -79,10 +78,10 @@ const userFilterFields: FilterField[] = [
     id: "status",
     label: "Account Status",
     options: [
-      { value: "ALL",      label: "All Statuses",   iconColor: "bg-gray-400 dark:bg-gray-500" },
-      { value: "ACTIVE",   label: "Active Only",    iconColor: "bg-emerald-500", animatePulse: true },
-      { value: "INACTIVE", label: "Inactive Only",  iconColor: "bg-amber-500",   animatePulse: true },
-      { value: "LOCKED",   label: "Locked Only",    iconColor: "bg-rose-500",    animatePulse: true },
+      { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+      { value: "ACTIVE", label: "Active Only", iconColor: "bg-emerald-500", animatePulse: true },
+      { value: "INACTIVE", label: "Inactive Only", iconColor: "bg-amber-500", animatePulse: true },
+      { value: "LOCKED", label: "Locked Only", iconColor: "bg-rose-500", animatePulse: true },
     ],
   },
 ];
@@ -270,9 +269,9 @@ export default function UsersPage() {
             <DropdownMenuContent align="start" className="w-32 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 z-[9999]">
               <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">Set Status</div>
               {[
-                { value: "ACTIVE",   label: "Active",   color: "emerald" },
+                { value: "ACTIVE", label: "Active", color: "emerald" },
                 { value: "INACTIVE", label: "Inactive", color: "amber" },
-                { value: "LOCKED",   label: "Locked",   color: "rose" },
+                { value: "LOCKED", label: "Locked", color: "rose" },
               ].map((s) => (
                 <DropdownMenuItem
                   key={s.value}
@@ -357,48 +356,16 @@ export default function UsersPage() {
               </p>
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-                <input
-                  id="users-search"
-                  type="text"
-                  placeholder="Search users..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all w-48 font-medium"
-                />
-              </div>
-
-              {/* Filter button */}
-              <Button
-                id="users-filter-btn"
-                variant="outline"
-                onClick={() => setIsFilterDrawerOpen(true)}
-                className={cn(
-                  "gap-2 h-10 px-4 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all",
-                  statusFilter && "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
-                )}
-              >
-                <Filter size={14} />
-                Filter
-                {statusFilter && (
-                  <span className="w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center">1</span>
-                )}
-              </Button>
-
-              {/* Add New User */}
-              <Button 
-                id="users-add-btn"
-                onClick={() => openFormDrawer()}
-                className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <UserPlus size={15} />
-                Add New User
-              </Button>
-            </div>
+            <PageHeaderControls
+              searchValue={localSearch}
+              onSearchChange={setLocalSearch}
+              searchPlaceholder="Search users..."
+              onFilterClick={() => setIsFilterDrawerOpen(true)}
+              activeFiltersCount={statusFilter ? 1 : 0}
+              addLabel="Add New User"
+              addIcon={<UserPlus size={15} />}
+              onAddClick={() => openFormDrawer()}
+            />
           </div>
 
           {/* Table */}
@@ -417,6 +384,7 @@ export default function UsersPage() {
               searchPlaceholder="Search..."
               onFilterClick={() => setIsFilterDrawerOpen(true)}
               activeFiltersCount={statusFilter ? 1 : 0}
+              hideToolbar
             />
           </div>
         </div>

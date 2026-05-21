@@ -53,6 +53,8 @@ interface DataTableProps<TData, TValue> {
   entityName?: string;
   onFilterClick?: () => void;
   activeFiltersCount?: number;
+  /** Hide the built-in search/filter/columns toolbar (use when the parent already provides its own controls) */
+  hideToolbar?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -70,6 +72,7 @@ export function DataTable<TData, TValue>({
   entityName = "records",
   onFilterClick,
   activeFiltersCount = 0,
+  hideToolbar = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -117,65 +120,67 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full space-y-4">
       {/* Table Controls */}
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-white/5 backdrop-blur-xl p-4 md:p-5 rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm">
-        <div className="relative flex-1 w-full max-w-xl group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
-          <Input
-            placeholder={searchPlaceholder}
-            className="pl-12 h-12 bg-gray-50/50 dark:bg-black/20 border-none rounded-[16px] focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-400 shadow-inner"
-            value={searchValue}
-            onChange={(event) => setSearchValue(event.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
-          <Button
-            variant="outline"
-            onClick={onFilterClick}
-            className={cn(
-              "h-12 px-6 flex-1 lg:flex-initial border-2 rounded-[16px] gap-2 font-bold transition-all shadow-sm relative overflow-visible cursor-pointer justify-center hover:scale-105 active:scale-95",
-              activeFiltersCount > 0
-                ? "border-primary bg-primary text-white hover:bg-primary/95 hover:border-primary/95"
-                : "border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45"
-            )}
-          >
-            <Filter className="h-4 w-4" />
-            Filter
-            {activeFiltersCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-primary shadow-md animate-in zoom-in duration-300">
-                {activeFiltersCount}
-              </span>
-            )}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="outline" className="h-12 px-6 flex-1 lg:flex-initial border-2 border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45 rounded-[16px] gap-2 font-bold hover:scale-105 active:scale-95 transition-all shadow-sm justify-center">
-                  <Settings2 className="h-4 w-4" />
-                  Columns
-                </Button>
-              }
+      {!hideToolbar && (
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-white/5 backdrop-blur-xl p-4 md:p-5 rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm">
+          <div className="relative flex-1 w-full max-w-xl group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
+            <Input
+              placeholder={searchPlaceholder}
+              className="pl-12 h-12 bg-gray-50/50 dark:bg-black/20 border-none rounded-[16px] focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium text-gray-900 dark:text-white placeholder:text-gray-400 shadow-inner"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
             />
-            <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90">
-              <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Toggle Columns</div>
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize rounded-xl font-medium text-sm my-1 focus:bg-primary/10 focus:text-primary"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                    >
-                      {column.id.replace("_", " ")}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          </div>
+          <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+            <Button
+              variant="outline"
+              onClick={onFilterClick}
+              className={cn(
+                "h-12 px-6 flex-1 lg:flex-initial border-2 rounded-[16px] gap-2 font-bold transition-all shadow-sm relative overflow-visible cursor-pointer justify-center hover:scale-105 active:scale-95",
+                activeFiltersCount > 0
+                  ? "border-primary bg-primary text-white hover:bg-primary/95 hover:border-primary/95"
+                  : "border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45"
+              )}
+            >
+              <Filter className="h-4 w-4" />
+              Filter
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-primary shadow-md animate-in zoom-in duration-300">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="outline" className="h-12 px-6 flex-1 lg:flex-initial border-2 border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45 rounded-[16px] gap-2 font-bold hover:scale-105 active:scale-95 transition-all shadow-sm justify-center">
+                    <Settings2 className="h-4 w-4" />
+                    Columns
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90">
+                <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Toggle Columns</div>
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize rounded-xl font-medium text-sm my-1 focus:bg-primary/10 focus:text-primary"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      >
+                        {column.id.replace("_", " ")}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Desktop View - Table */}
       <div className="hidden md:block rounded-[24px] border border-gray-100 dark:border-white/5 overflow-hidden bg-white/50 dark:bg-black/5 backdrop-blur-xl shadow-md shadow-gray-100/10">
@@ -244,8 +249,8 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-[450px] text-center border-none hover:bg-transparent">
-                  <EmptyState 
-                    title="No records found" 
+                  <EmptyState
+                    title="No records found"
                     description="It seems there are no team members in the database yet. Try adding a new user to get started."
                   />
                 </TableCell>
@@ -279,15 +284,15 @@ export function DataTable<TData, TValue>({
             const primaryCell = visibleCells[0]; // Primary descriptor (e.g., Name / Title)
             const actionsCell = visibleCells.find(c => c.column.id === "actions");
             const statusCell = visibleCells.find(c => c.column.id === "account_status" || c.column.id === "status");
-            
+
             // Filter out actions, primary, and status from the grid to render them specifically
             const gridCells = visibleCells.filter(
               c => c !== primaryCell && c !== actionsCell && c !== statusCell
             );
 
             return (
-              <div 
-                key={row.id} 
+              <div
+                key={row.id}
                 className="p-5 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-4 relative group/card"
               >
                 {/* Card Header */}
@@ -295,7 +300,7 @@ export function DataTable<TData, TValue>({
                   <div className="flex-1 min-w-0">
                     {primaryCell && flexRender(primaryCell.column.columnDef.cell, primaryCell.getContext())}
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     {statusCell && (
                       <div className="scale-90 origin-right">
@@ -333,8 +338,8 @@ export function DataTable<TData, TValue>({
           })
         ) : (
           <div className="h-[300px] flex items-center justify-center bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-[24px] border border-gray-100 dark:border-white/5">
-            <EmptyState 
-              title="No records found" 
+            <EmptyState
+              title="No records found"
               description="Try adjusting your filters or search terms to find what you are looking for."
             />
           </div>
@@ -394,9 +399,9 @@ export function DataTable<TData, TValue>({
           </div>
           <div className="flex items-center gap-4">
             <div className="text-xs font-semibold text-primary bg-primary/5 px-4 py-2.5 rounded-xl border border-primary/10 tracking-widest uppercase flex items-center gap-1.5 shadow-sm">
-              <span className="text-primary/60 font-medium tracking-normal">PAGE</span> 
-              <span>{table.getState().pagination.pageIndex + 1}</span> 
-              <span className="text-primary/60 font-medium tracking-normal">OF</span> 
+              <span className="text-primary/60 font-medium tracking-normal">PAGE</span>
+              <span>{table.getState().pagination.pageIndex + 1}</span>
+              <span className="text-primary/60 font-medium tracking-normal">OF</span>
               <span>{pageCount}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -409,8 +414,8 @@ export function DataTable<TData, TValue>({
                   onPaginationChange?.({
                     pageIndex: newIndex,
                     pageSize: table.getState().pagination.pageSize,
-                    });
-                  }}
+                  });
+                }}
                 disabled={!table.getCanPreviousPage()}
               >
                 <ChevronLeft className="h-5 w-5" />
