@@ -295,6 +295,7 @@ export function UserFormDrawer() {
                   <Select 
                     onValueChange={(val) => setValue('role_id', val ?? '', { shouldValidate: true })} 
                     value={watch('role_id') || undefined}
+                    items={roles?.map(r => ({ value: r.id, label: r.name }))}
                   >
                     <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
                       <SelectValue placeholder={isLoadingRoles ? "Loading roles..." : "Select a role"} />
