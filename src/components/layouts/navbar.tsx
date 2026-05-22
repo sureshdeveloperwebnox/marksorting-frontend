@@ -19,6 +19,7 @@ import {
   Shield,
   Users2,
   Tag,
+  FileText,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -68,6 +69,7 @@ const navItems: NavItem[] = [
     icon: Tag,
     subItems: [
       { label: 'Service Category', href: '/service-management/service-category', icon: Tag },
+      { label: 'Service Report', href: '/service-management/service-report', icon: FileText },
     ],
   },
   { label: 'Expense Type', href: '/expense-type', icon: DollarSign },

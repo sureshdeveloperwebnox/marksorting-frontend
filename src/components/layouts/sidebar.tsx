@@ -14,6 +14,8 @@ import {
   PieChart,
   Shield,
   Users2,
+  Tag,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
@@ -49,6 +51,14 @@ const items: SidebarItem[] = [
     subItems: [
       { label: 'Mills', href: '/mills', icon: Factory },
       { label: 'Customers', href: '/mills/customers', icon: Users2 },
+    ]
+  },
+  {
+    label: 'Service Management',
+    icon: Tag,
+    subItems: [
+      { label: 'Service Category', href: '/service-management/service-category', icon: Tag },
+      { label: 'Service Report', href: '/service-management/service-report', icon: FileText },
     ]
   },
   { label: 'Orders', href: '/orders', icon: ClipboardList },
