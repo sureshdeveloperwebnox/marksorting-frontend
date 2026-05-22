@@ -23,7 +23,7 @@ import * as z from 'zod';
 import { useCreateUser, useUpdateUser, useRoles, useUser } from '@/services/user-service';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, normalizePhoneNumber } from '@/lib/utils';
 import { ImageUpload } from '@/components/common/image-upload';
 import { useAuthStore } from '@/store/auth-store';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -107,19 +107,10 @@ function UserForm() {
 
   React.useEffect(() => {
     if (userData) {
-      let phone = userData.phone_number || '';
-      if (phone && !phone.startsWith('+')) {
-        if (phone.length === 10) {
-          phone = `+91${phone}`;
-        } else {
-          phone = `+${phone}`;
-        }
-      }
-
       reset({
         full_name: userData.full_name,
         email: userData.email,
-        phone_number: phone,
+        phone_number: normalizePhoneNumber(userData.phone_number),
         role_id: userData.role.id || '',
         account_status: userData.account_status,
         profile_image: userData.profile_image || '',

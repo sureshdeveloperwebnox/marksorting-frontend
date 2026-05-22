@@ -15,6 +15,7 @@ import { Save, Loader2, Mail, Phone, Factory, MapPin, RefreshCcw, Users } from '
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { normalizePhoneNumber } from '@/lib/utils';
 import { useCreateMill, useUpdateMill, useMill } from '@/services/mill-service';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber } from 'react-phone-number-input';
@@ -78,19 +79,10 @@ export function MillFormDrawer() {
   React.useEffect(() => {
     if (isFormDrawerOpen) {
       if (isEdit && millData) {
-        let phoneNumber = millData.phone || '';
-        if (phoneNumber && !phoneNumber.startsWith('+')) {
-          if (phoneNumber.length === 10) {
-            phoneNumber = `+91${phoneNumber}`;
-          } else {
-            phoneNumber = `+${phoneNumber}`;
-          }
-        }
-
         reset({
           name: millData.name,
           email: millData.email || '',
-          phone: phoneNumber,
+          phone: normalizePhoneNumber(millData.phone),
           address: millData.address || '',
           status: millData.status,
           customer_ids: [],

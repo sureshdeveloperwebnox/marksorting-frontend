@@ -447,6 +447,7 @@ export default function ServiceReportPage() {
               searchPlaceholder="Search..."
               onFilterClick={() => setIsFilterDrawerOpen(true)}
               activeFiltersCount={activeFilterCount}
+              hideToolbar
             />
           </div>
         </div>

@@ -39,12 +39,14 @@ import {
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { normalizePhoneNumber } from '@/lib/utils';
 import { useCreateServiceReport, useUpdateServiceReport, useServiceReport } from '@/services/service-report-service';
 import { useServiceCategories } from '@/services/service-category-service';
 import { useMills } from '@/services/mill-service';
 import useServiceReportStore from '@/store/useServiceReportStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
 import { SignaturePad } from '@/components/ui/signature-pad';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
   Sheet,
   SheetContent,
@@ -62,7 +64,7 @@ const serviceReportSchema = z.object({
   technician_ids: z.array(z.string()).min(1, 'At least one engineer is required'),
   mill_id: z.string().min(1, 'Mill is required'),
   place: z.string().min(2, 'Place is required'),
-  mill_whatsapp_number: z.string().min(5, 'WhatsApp number is required'),
+  mill_whatsapp_number: z.string().min(1, 'WhatsApp number is required'),
   mill_email: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Visit date is required'),
   visit_time: z.string().min(1, 'Visit time is required'),
@@ -184,7 +186,7 @@ export function ServiceReportFormDrawer() {
       const mill = mills.find((m) => m.id === selectedMillId);
       if (mill) {
         if (mill.phone && !watch('mill_whatsapp_number')) {
-          setValue('mill_whatsapp_number', mill.phone);
+          setValue('mill_whatsapp_number', normalizePhoneNumber(mill.phone));
         }
         if (mill.email && !watch('mill_email')) {
           setValue('mill_email', mill.email);
@@ -488,10 +490,17 @@ export function ServiceReportFormDrawer() {
                       <Phone size={14} className="text-primary/70" />
                       Mill WhatsApp Number
                     </Label>
-                    <Input
-                      {...register('mill_whatsapp_number')}
-                      placeholder="Enter WhatsApp number"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    <Controller
+                      name="mill_whatsapp_number"
+                      control={control}
+                      render={({ field }) => (
+                        <PhoneInput
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Enter WhatsApp number"
+                          className="h-11"
+                        />
+                      )}
                     />
                     <FieldError message={errors.mill_whatsapp_number?.message} />
                   </div>

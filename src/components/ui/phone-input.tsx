@@ -2,7 +2,7 @@ import * as React from "react";
 import PhoneInputWithCountry, { Value } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { AsYouType } from "libphonenumber-js";
-import { cn } from "@/lib/utils";
+import { cn, normalizePhoneNumber } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
 export interface PhoneInputProps {
@@ -58,6 +58,8 @@ CustomInput.displayName = "CustomInput";
 export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
   ({ value, onChange, placeholder = "Enter phone number", className, disabled, defaultCountry = "IN" }, ref) => {
     
+    const normalizedValue = value ? normalizePhoneNumber(value) : value;
+
     const handlePhoneChange = (val: string) => {
       if (!val) {
         onChange("");
@@ -94,7 +96,7 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
         <PhoneInputWithCountry
           ref={ref}
           placeholder={placeholder}
-          value={value as Value}
+          value={normalizedValue as Value}
           onChange={(val) => handlePhoneChange(val || "")}
           disabled={disabled}
           inputComponent={CustomInput}

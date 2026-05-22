@@ -15,6 +15,7 @@ import { Save, Loader2, Mail, Phone, MapPin, RefreshCcw, User } from 'lucide-rea
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { normalizePhoneNumber } from '@/lib/utils';
 import { useCreateCustomer, useUpdateCustomer, useCustomer } from '@/services/customer-service';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber } from 'react-phone-number-input';
@@ -73,14 +74,10 @@ export function CustomerFormDrawer() {
     React.useEffect(() => {
         if (isFormDrawerOpen) {
             if (isEdit && customerData) {
-                let phoneNumber = customerData.phone || '';
-                if (phoneNumber && !phoneNumber.startsWith('+')) {
-                    phoneNumber = phoneNumber.length === 10 ? `+91${phoneNumber}` : `+${phoneNumber}`;
-                }
                 reset({
                     name: customerData.name,
                     email: customerData.email || '',
-                    phone: phoneNumber,
+                    phone: normalizePhoneNumber(customerData.phone),
                     address: customerData.address || '',
                     status: customerData.status,
                 });

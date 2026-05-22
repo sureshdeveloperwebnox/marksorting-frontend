@@ -37,20 +37,11 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, formatPhoneNumber } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { UserFormDrawer } from "@/components/forms/user-form-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
-
-const formatPhoneNumber = (phone?: string) => {
-  if (!phone) return "";
-  if (!phone.startsWith("+")) return phone;
-  const parsed = parsePhoneNumberFromString(phone);
-  if (parsed) return `+${parsed.countryCallingCode} ${parsed.nationalNumber}`;
-  return phone;
-};
 
 const getRoleColors = (_role: string) =>
   "bg-primary/5 dark:bg-primary/10 text-primary border-primary";

@@ -34,20 +34,11 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, formatPhoneNumber } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { MillFormDrawer } from "@/components/forms/mill-form-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
-
-const formatPhoneNumber = (phone?: string) => {
-  if (!phone) return "";
-  if (!phone.startsWith("+")) return phone;
-  const parsed = parsePhoneNumberFromString(phone);
-  if (parsed) return `+${parsed.countryCallingCode} ${parsed.nationalNumber}`;
-  return phone;
-};
 
 const getStatusColors = (status: string) => {
   switch (status?.toUpperCase()) {
