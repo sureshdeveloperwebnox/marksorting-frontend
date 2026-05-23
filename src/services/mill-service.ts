@@ -9,6 +9,8 @@ export interface Mill {
   phone?: string;
   address?: string;
   status: string;
+  customer_id?: string;
+  customer?: { id: string; name: string };
   created_at: string;
   updated_at: string;
 }

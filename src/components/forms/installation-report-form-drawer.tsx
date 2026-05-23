@@ -35,16 +35,16 @@ import {
   Tag,
   ChevronDown,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils';
-import { useCreateServiceReport, useUpdateServiceReport, useServiceReport } from '@/services/service-report-service';
-import { useServiceCategories } from '@/services/service-category-service';
+import { useCreateInstallationReport, useUpdateInstallationReport, useInstallationReport } from '@/services/installation-report-service';
 import { useMills } from '@/services/mill-service';
 import { useCustomers } from '@/services/customer-service';
-import useServiceReportStore from '@/store/useServiceReportStore';
+import useInstallationReportStore from '@/store/useInstallationReportStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -60,25 +60,22 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const serviceReportSchema = z.object({
-  service_category_id: z.string().min(1, 'Service category is required'),
+const installationReportSchema = z.object({
   technician_ids: z.array(z.string()).min(1, 'At least one engineer is required'),
   mill_id: z.string().min(1, 'Mill is required'),
   place: z.string().min(2, 'Place is required'),
   mill_whatsapp_number: z.string().min(1, 'WhatsApp number is required'),
   mill_email: z.string().optional().or(z.literal('')),
-  visit_date: z.string().min(1, 'Visit date is required'),
-  visit_time: z.string().min(1, 'Visit time is required'),
+  visit_date: z.string().min(1, 'Date is required'),
+  visit_time: z.string().min(1, 'Time is required'),
   call_registered_date: z.string().min(1, 'Call registered date is required'),
   machine_model: z.string().min(1, 'Machine model is required'),
-  machine_mfg_date: z.string().optional().or(z.literal('')),
-  machine_installation_date: z.string().optional().or(z.literal('')),
   serial_or_frame_no: z.string().min(1, 'Serial/Frame no is required'),
   authorized_person: z.string().min(1, 'Authorized person is required'),
-  previous_visit_engineer: z.string().optional().or(z.literal('')),
-  nature_of_complaint: z.string().min(1, 'Nature of complaint is required'),
-  problem_observed: z.string().optional().or(z.literal('')),
-  action_taken: z.string().min(1, 'Action taken is required'),
+  invoice_number: z.string().optional().or(z.literal('')),
+  invoice_date: z.string().optional().or(z.literal('')),
+  warranty_start_date: z.string().optional().or(z.literal('')),
+  warranty_end_date: z.string().optional().or(z.literal('')),
   commodity: z.string().optional().or(z.literal('')),
   contamination: z.string().optional().or(z.literal('')),
   output_capacity_per_hour: z.string().optional().or(z.literal('')),
@@ -88,8 +85,11 @@ const serviceReportSchema = z.object({
   ac_provided: z.string().min(1, 'AC status is required'),
   compressor_details: z.string().optional().or(z.literal('')),
   air_drier_details: z.string().optional().or(z.literal('')),
+  ground_earth_provided: z.string().min(1, 'Ground Earth status is required'),
+  ground_earth_value: z.number().min(1).max(12).optional().or(z.literal('')),
+  no_of_filters_installed: z.number().min(0).optional().or(z.literal('')),
+  oil_filter_condition: z.string().optional().or(z.literal('')),
   line_filter_condition: z.string().optional().or(z.literal('')),
-  machine_filter_condition: z.string().optional().or(z.literal('')),
   auto_drain_valve_working: z.string().min(1, 'Auto drain valve status is required'),
   engineer_remarks: z.string().min(1, 'Engineer remarks is required').max(2000, 'Maximum 2000 characters'),
   engineer_signature: z.string().min(1, 'Engineer signature is required'),
@@ -97,32 +97,25 @@ const serviceReportSchema = z.object({
   customer_signature: z.string().min(1, 'Customer signature is required'),
 });
 
-type ServiceReportFormValues = z.infer<typeof serviceReportSchema>;
+type InstallationReportFormValues = z.infer<typeof installationReportSchema>;
 
 const sections = [
-  { id: 1, title: 'General Information', icon: Tag },
-  { id: 2, title: 'Service Engineer Details', icon: Users },
-  { id: 3, title: 'Customer / Mill Details', icon: Building2 },
-  { id: 4, title: 'Visit Details', icon: Calendar },
-  { id: 5, title: 'Machine Information', icon: Cpu },
-  { id: 6, title: 'Machine Details', icon: Wrench },
-  { id: 7, title: 'Machine Performance', icon: Gauge },
-  { id: 8, title: 'Equipment Status', icon: Wind },
-  { id: 9, title: 'Remarks & Signatures', icon: Pen },
+  { id: 1, title: 'Basic Details', icon: Tag },
+  { id: 2, title: 'Machine Performance', icon: Gauge },
+  { id: 3, title: 'Utility / Equipment Details', icon: Wind },
+  { id: 4, title: 'Remarks & Signatures', icon: Pen },
 ];
 
-export function ServiceReportFormDrawer() {
-  const { isFormDrawerOpen, closeFormDrawer, selectedId } = useServiceReportStore();
+export function InstallationReportFormDrawer() {
+  const { isFormDrawerOpen, closeFormDrawer, selectedId } = useInstallationReportStore();
   const isEdit = !!selectedId;
 
-  const { data: reportData, isLoading: reportLoading } = useServiceReport(selectedId);
-  const { data: categoriesData } = useServiceCategories({ skip: 0, take: 500 });
+  const { data: reportData, isLoading: reportLoading } = useInstallationReport(selectedId);
   const { data: millsData } = useMills({ skip: 0, take: 500 });
   const { data: customersData } = useCustomers({ skip: 0, take: 500, status: 'ACTIVE' });
-  const { mutateAsync: createReport, isPending: isCreating } = useCreateServiceReport();
-  const { mutateAsync: updateReport, isPending: isUpdating } = useUpdateServiceReport();
+  const { mutateAsync: createReport, isPending: isCreating } = useCreateInstallationReport();
+  const { mutateAsync: updateReport, isPending: isUpdating } = useUpdateInstallationReport();
 
-  const categories = categoriesData?.serviceCategories || [];
   const mills = millsData?.mills || [];
   const customers = customersData?.customers || [];
 
@@ -144,10 +137,9 @@ export function ServiceReportFormDrawer() {
     watch,
     reset,
     formState: { errors },
-  } = useForm<ServiceReportFormValues>({
-    resolver: zodResolver(serviceReportSchema) as any,
+  } = useForm<InstallationReportFormValues>({
+    resolver: zodResolver(installationReportSchema) as any,
     defaultValues: {
-      service_category_id: '',
       technician_ids: [],
       mill_id: '',
       place: '',
@@ -157,14 +149,12 @@ export function ServiceReportFormDrawer() {
       visit_time: '',
       call_registered_date: '',
       machine_model: '',
-      machine_mfg_date: '',
-      machine_installation_date: '',
       serial_or_frame_no: '',
       authorized_person: '',
-      previous_visit_engineer: '',
-      nature_of_complaint: '',
-      problem_observed: '',
-      action_taken: '',
+      invoice_number: '',
+      invoice_date: '',
+      warranty_start_date: '',
+      warranty_end_date: '',
       commodity: '',
       contamination: '',
       output_capacity_per_hour: '',
@@ -174,8 +164,11 @@ export function ServiceReportFormDrawer() {
       ac_provided: 'NO',
       compressor_details: '',
       air_drier_details: '',
+      ground_earth_provided: 'NO',
+      ground_earth_value: '',
+      no_of_filters_installed: '',
+      oil_filter_condition: '',
       line_filter_condition: '',
-      machine_filter_condition: '',
       auto_drain_valve_working: 'NO',
       engineer_remarks: '',
       engineer_signature: '',
@@ -204,6 +197,9 @@ export function ServiceReportFormDrawer() {
         if (mill.email && !watch('mill_email')) {
           setValue('mill_email', mill.email);
         }
+        if (mill.address && !watch('place')) {
+          setValue('place', mill.address);
+        }
         if (mill.customer_id && !selectedCustomerId) {
           setSelectedCustomerId(mill.customer_id);
         }
@@ -218,7 +214,6 @@ export function ServiceReportFormDrawer() {
         const mill = mills.find((m) => m.id === reportData.mill_id);
         setSelectedCustomerId(mill?.customer_id || '');
         reset({
-          service_category_id: reportData.service_category_id,
           technician_ids: reportData.technicians?.map((t: any) => t.technician.id) || [],
           mill_id: reportData.mill_id,
           place: reportData.place,
@@ -228,14 +223,12 @@ export function ServiceReportFormDrawer() {
           visit_time: reportData.visit_time || '',
           call_registered_date: reportData.call_registered_date?.split('T')[0] || '',
           machine_model: reportData.machine_model,
-          machine_mfg_date: reportData.machine_mfg_date?.split('T')[0] || '',
-          machine_installation_date: reportData.machine_installation_date?.split('T')[0] || '',
           serial_or_frame_no: reportData.serial_or_frame_no,
           authorized_person: reportData.authorized_person,
-          previous_visit_engineer: reportData.previous_visit_engineer || '',
-          nature_of_complaint: reportData.nature_of_complaint,
-          problem_observed: reportData.problem_observed || '',
-          action_taken: reportData.action_taken,
+          invoice_number: reportData.invoice_number || '',
+          invoice_date: reportData.invoice_date?.split('T')[0] || '',
+          warranty_start_date: reportData.warranty_start_date?.split('T')[0] || '',
+          warranty_end_date: reportData.warranty_end_date?.split('T')[0] || '',
           commodity: reportData.commodity || '',
           contamination: reportData.contamination || '',
           output_capacity_per_hour: reportData.output_capacity_per_hour || '',
@@ -245,8 +238,11 @@ export function ServiceReportFormDrawer() {
           ac_provided: reportData.ac_provided ? 'YES' : 'NO',
           compressor_details: reportData.compressor_details || '',
           air_drier_details: reportData.air_drier_details || '',
+          ground_earth_provided: reportData.ground_earth_provided ? 'YES' : 'NO',
+          ground_earth_value: reportData.ground_earth_value ?? '',
+          no_of_filters_installed: reportData.no_of_filters_installed ?? '',
+          oil_filter_condition: reportData.oil_filter_condition || '',
           line_filter_condition: reportData.line_filter_condition || '',
-          machine_filter_condition: reportData.machine_filter_condition || '',
           auto_drain_valve_working: reportData.auto_drain_valve_working ? 'YES' : 'NO',
           engineer_remarks: reportData.engineer_remarks,
           engineer_signature: reportData.engineer_signature,
@@ -256,7 +252,6 @@ export function ServiceReportFormDrawer() {
       } else if (!isEdit) {
         setSelectedCustomerId('');
         reset({
-          service_category_id: '',
           technician_ids: [],
           mill_id: '',
           place: '',
@@ -266,14 +261,12 @@ export function ServiceReportFormDrawer() {
           visit_time: '',
           call_registered_date: '',
           machine_model: '',
-          machine_mfg_date: '',
-          machine_installation_date: '',
           serial_or_frame_no: '',
           authorized_person: '',
-          previous_visit_engineer: '',
-          nature_of_complaint: '',
-          problem_observed: '',
-          action_taken: '',
+          invoice_number: '',
+          invoice_date: '',
+          warranty_start_date: '',
+          warranty_end_date: '',
           commodity: '',
           contamination: '',
           output_capacity_per_hour: '',
@@ -283,8 +276,11 @@ export function ServiceReportFormDrawer() {
           ac_provided: 'NO',
           compressor_details: '',
           air_drier_details: '',
+          ground_earth_provided: 'NO',
+          ground_earth_value: '',
+          no_of_filters_installed: '',
+          oil_filter_condition: '',
           line_filter_condition: '',
-          machine_filter_condition: '',
           auto_drain_valve_working: 'NO',
           engineer_remarks: '',
           engineer_signature: '',
@@ -297,13 +293,19 @@ export function ServiceReportFormDrawer() {
     }
   }, [isFormDrawerOpen, reportData, reset, isEdit, mills]);
 
-  const onSubmit: SubmitHandler<ServiceReportFormValues> = async (data) => {
+  const onSubmit: SubmitHandler<InstallationReportFormValues> = async (data) => {
     try {
       const payload = {
         ...data,
         ac_provided: data.ac_provided === 'YES',
+        ground_earth_provided: data.ground_earth_provided === 'YES',
         auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
         no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
+        ground_earth_value: data.ground_earth_value ? Number(data.ground_earth_value) : undefined,
+        no_of_filters_installed: data.no_of_filters_installed ? Number(data.no_of_filters_installed) : undefined,
+        invoice_date: data.invoice_date || undefined,
+        warranty_start_date: data.warranty_start_date || undefined,
+        warranty_end_date: data.warranty_end_date || undefined,
       };
 
       if (isEdit) {
@@ -388,10 +390,10 @@ export function ServiceReportFormDrawer() {
             </div>
             <div>
               <SheetTitle className="text-xl">
-                {isEdit ? 'Edit Service Report' : 'New Service Report'}
+                {isEdit ? 'Edit Installation Report' : 'New Installation Report'}
               </SheetTitle>
               <SheetDescription>
-                {isEdit ? 'Update service report information.' : 'Create a new service report.'}
+                {isEdit ? 'Update installation report details.' : 'Fill details below to register installation.'}
               </SheetDescription>
             </div>
           </div>
@@ -403,63 +405,30 @@ export function ServiceReportFormDrawer() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
-            <form id="service-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
-              {/* Section 1 - General Information */}
+            <form id="installation-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
+              {/* Section 1 - Basic Details */}
               <SectionToggle section={sections[0]}>
-                  <div className="space-y-2" data-error={errors.service_category_id ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Tag size={14} className="text-primary/70" />
-                      Service Category
-                    </Label>
-                    {categories.length > 0 ? (
-                      <Select
-                        onValueChange={(val) => setValue('service_category_id', val || '')}
-                        value={watch('service_category_id')}
-                        items={categories.map(c => ({ value: c.id, label: c.name }))}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue placeholder="Select service category" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id} className="font-bold py-3">
-                              {cat.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Skeleton className="h-11 rounded-xl w-full" />
-                    )}
-                    <FieldError message={errors.service_category_id?.message} />
-                  </div>
-              </SectionToggle>
-
-              {/* Section 2 - Service Engineer Details */}
-              <SectionToggle section={sections[1]}>
-                <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Users size={14} className="text-primary/70" />
-                    Service Engineers
-                  </Label>
-                  <Controller
-                    name="technician_ids"
-                    control={control}
-                    render={({ field }) => (
-                      <TechnicianMultiSelect
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select engineers..."
-                      />
-                    )}
-                  />
-                  <FieldError message={errors.technician_ids?.message} />
-                </div>
-              </SectionToggle>
-
-              {/* Section 3 - Customer / Mill Details */}
-              <SectionToggle section={sections[2]}>
                 <div className="space-y-4">
+                  {/* Select Service Engineers */}
+                  <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Users size={14} className="text-primary/70" />
+                      Select Service Engineers
+                    </Label>
+                    <Controller
+                      name="technician_ids"
+                      control={control}
+                      render={({ field }) => (
+                        <TechnicianMultiSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select engineers..."
+                        />
+                      )}
+                    />
+                    <FieldError message={errors.technician_ids?.message} />
+                  </div>
+
                   {/* Customer Dropdown */}
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -495,11 +464,11 @@ export function ServiceReportFormDrawer() {
                     )}
                   </div>
 
-                  {/* Mill Dropdown */}
+                  {/* Mill Name */}
                   <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <Building2 size={14} className="text-primary/70" />
-                      Mill
+                      Mill Name
                     </Label>
                     {mills.length > 0 ? (
                       <Select
@@ -535,6 +504,7 @@ export function ServiceReportFormDrawer() {
                     <FieldError message={errors.mill_id?.message} />
                   </div>
 
+                  {/* Place */}
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
@@ -542,103 +512,100 @@ export function ServiceReportFormDrawer() {
                     </Label>
                     <Input
                       {...register('place')}
-                      placeholder="Enter place/location"
+                      placeholder="Enter mill place"
                       className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                     />
                     <FieldError message={errors.place?.message} />
                   </div>
 
-                  <div className="space-y-2" data-error={errors.mill_whatsapp_number ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Phone size={14} className="text-primary/70" />
-                      Mill WhatsApp Number
-                    </Label>
-                    <Controller
-                      name="mill_whatsapp_number"
-                      control={control}
-                      render={({ field }) => (
-                        <PhoneInput
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          placeholder="Enter WhatsApp number"
-                          className="h-11"
-                        />
-                      )}
-                    />
-                    <FieldError message={errors.mill_whatsapp_number?.message} />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Mail size={14} className="text-primary/70" />
-                      Mill Email ID
-                    </Label>
-                    <Input
-                      {...register('mill_email')}
-                      placeholder="mill@example.com (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                    <FieldError message={errors.mill_email?.message} />
-                  </div>
-                </div>
-              </SectionToggle>
-
-              {/* Section 4 - Visit Details */}
-              <SectionToggle section={sections[3]}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <CalendarDays size={14} className="text-primary/70" />
-                      Visit Date
-                    </Label>
-                    <Input
-                      type="date"
-                      {...register('visit_date')}
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                    <FieldError message={errors.visit_date?.message} />
-                  </div>
-
-                  <div className="space-y-2" data-error={errors.visit_time ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Clock size={14} className="text-primary/70" />
-                      Visit Time
-                    </Label>
-                    <Input
-                      type="time"
-                      {...register('visit_time')}
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                    <FieldError message={errors.visit_time?.message} />
-                  </div>
-
-                  <div className="space-y-2" data-error={errors.call_registered_date ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Calendar size={14} className="text-primary/70" />
-                      Call Registered Date
-                    </Label>
-                    <Input
-                      type="date"
-                      {...register('call_registered_date')}
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                    <FieldError message={errors.call_registered_date?.message} />
-                  </div>
-                </div>
-              </SectionToggle>
-
-              {/* Section 5 - Machine Information */}
-              <SectionToggle section={sections[4]}>
-                <div className="space-y-4">
+                  {/* Mill Whatsapp Number & Email */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2" data-error={errors.mill_whatsapp_number ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Phone size={14} className="text-primary/70" />
+                        Mill Whatsapp Number
+                      </Label>
+                      <Controller
+                        name="mill_whatsapp_number"
+                        control={control}
+                        render={({ field }) => (
+                          <PhoneInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            placeholder="Enter Whatsapp number"
+                            className="h-11"
+                          />
+                        )}
+                      />
+                      <FieldError message={errors.mill_whatsapp_number?.message} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Mail size={14} className="text-primary/70" />
+                        Mill Email ID
+                      </Label>
+                      <Input
+                        {...register('mill_email')}
+                        placeholder="mill@example.com (Optional)"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                      <FieldError message={errors.mill_email?.message} />
+                    </div>
+                  </div>
+
+                  {/* Date, Time, Call Registered Date */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <CalendarDays size={14} className="text-primary/70" />
+                        Date
+                      </Label>
+                      <Input
+                        type="date"
+                        {...register('visit_date')}
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                      <FieldError message={errors.visit_date?.message} />
+                    </div>
+
+                    <div className="space-y-2" data-error={errors.visit_time ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Clock size={14} className="text-primary/70" />
+                        Time
+                      </Label>
+                      <Input
+                        type="time"
+                        {...register('visit_time')}
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                      <FieldError message={errors.visit_time?.message} />
+                    </div>
+
+                    <div className="space-y-2" data-error={errors.call_registered_date ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Calendar size={14} className="text-primary/70" />
+                        Call Registered Date
+                      </Label>
+                      <Input
+                        type="date"
+                        {...register('call_registered_date')}
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                      <FieldError message={errors.call_registered_date?.message} />
+                    </div>
+                  </div>
+
+                  {/* Model, Serial, Authorized Person */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2" data-error={errors.machine_model ? 'true' : undefined}>
                       <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Cpu size={14} className="text-primary/70" />
-                        Machine Model
+                        Model
                       </Label>
                       <Input
                         {...register('machine_model')}
-                        placeholder="Enter machine model"
+                        placeholder="Machine model"
                         className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                       />
                       <FieldError message={errors.machine_model?.message} />
@@ -647,42 +614,14 @@ export function ServiceReportFormDrawer() {
                     <div className="space-y-2" data-error={errors.serial_or_frame_no ? 'true' : undefined}>
                       <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Tag size={14} className="text-primary/70" />
-                        Serial No / Frame No
+                        Serial / Frame No
                       </Label>
                       <Input
                         {...register('serial_or_frame_no')}
-                        placeholder="Enter serial or frame number"
+                        placeholder="Serial/Frame number"
                         className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                       />
                       <FieldError message={errors.serial_or_frame_no?.message} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <CalendarDays size={14} className="text-primary/70" />
-                        Mfg Date
-                      </Label>
-                      <Input
-                        type="date"
-                        {...register('machine_mfg_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                      />
-                      <FieldError message={errors.machine_mfg_date?.message} />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <CalendarDays size={14} className="text-primary/70" />
-                        Installation Date
-                      </Label>
-                      <Input
-                        type="date"
-                        {...register('machine_installation_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                      />
-                      <FieldError message={errors.machine_installation_date?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.authorized_person ? 'true' : undefined}>
@@ -699,67 +638,64 @@ export function ServiceReportFormDrawer() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Users size={14} className="text-primary/70" />
-                      Previous Visit Engineer
-                    </Label>
-                    <Input
-                      {...register('previous_visit_engineer')}
-                      placeholder="Previous visit engineer name (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                    <FieldError message={errors.previous_visit_engineer?.message} />
+                  {/* Invoice details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <FileText size={14} className="text-primary/70" />
+                        Invoice Number
+                      </Label>
+                      <Input
+                        {...register('invoice_number')}
+                        placeholder="Invoice number (Optional)"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <CalendarDays size={14} className="text-primary/70" />
+                        Invoice Date
+                      </Label>
+                      <Input
+                        type="date"
+                        {...register('invoice_date')}
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Warranty details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <ShieldCheck size={14} className="text-primary/70" />
+                        Warranty Start Date
+                      </Label>
+                      <Input
+                        type="date"
+                        {...register('warranty_start_date')}
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <ShieldCheck size={14} className="text-primary/70" />
+                        Warranty End Date
+                      </Label>
+                      <Input
+                        type="date"
+                        {...register('warranty_end_date')}
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
                   </div>
                 </div>
               </SectionToggle>
 
-              {/* Section 6 - Machine Details */}
-              <SectionToggle section={sections[5]}>
-                <div className="space-y-4">
-                  <div className="space-y-2" data-error={errors.nature_of_complaint ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <FileText size={14} className="text-primary/70" />
-                      Nature of Complaint
-                    </Label>
-                    <Textarea
-                      {...register('nature_of_complaint')}
-                      placeholder="Describe the nature of complaint"
-                      className="min-h-[80px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
-                    />
-                    <FieldError message={errors.nature_of_complaint?.message} />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <FileText size={14} className="text-primary/70" />
-                      Problem Observed
-                    </Label>
-                    <Textarea
-                      {...register('problem_observed')}
-                      placeholder="Describe the problem observed (Optional)"
-                      className="min-h-[80px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
-                    />
-                    <FieldError message={errors.problem_observed?.message} />
-                  </div>
-
-                  <div className="space-y-2" data-error={errors.action_taken ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Wrench size={14} className="text-primary/70" />
-                      Action Taken
-                    </Label>
-                    <Textarea
-                      {...register('action_taken')}
-                      placeholder="Describe the action taken"
-                      className="min-h-[80px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
-                    />
-                    <FieldError message={errors.action_taken?.message} />
-                  </div>
-                </div>
-              </SectionToggle>
-
-              {/* Section 7 - Machine Performance */}
-              <SectionToggle section={sections[6]}>
+              {/* Section 2 - Machine Performance */}
+              <SectionToggle section={sections[1]}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -768,7 +704,7 @@ export function ServiceReportFormDrawer() {
                     </Label>
                     <Input
                       {...register('commodity')}
-                      placeholder="Commodity (Optional)"
+                      placeholder="e.g., Rice, Coffee (Optional)"
                       className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                     />
                   </div>
@@ -780,7 +716,7 @@ export function ServiceReportFormDrawer() {
                     </Label>
                     <Input
                       {...register('contamination')}
-                      placeholder="Contamination (Optional)"
+                      placeholder="e.g., Black grains, stones (Optional)"
                       className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                     />
                   </div>
@@ -788,11 +724,11 @@ export function ServiceReportFormDrawer() {
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
-                      Output Capacity/Hour
+                      Output capacity / hour
                     </Label>
                     <Input
                       {...register('output_capacity_per_hour')}
-                      placeholder="e.g., 500 kg/hr (Optional)"
+                      placeholder="e.g., 5 tons/hour (Optional)"
                       className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                     />
                   </div>
@@ -804,7 +740,7 @@ export function ServiceReportFormDrawer() {
                     </Label>
                     <Input
                       {...register('rejection_ratio')}
-                      placeholder="e.g., 2% (Optional)"
+                      placeholder="e.g., 1:10 (Optional)"
                       className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                     />
                   </div>
@@ -816,7 +752,7 @@ export function ServiceReportFormDrawer() {
                     </Label>
                     <Input
                       {...register('purity')}
-                      placeholder="e.g., 98% (Optional)"
+                      placeholder="e.g., 99.9% (Optional)"
                       className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                     />
                   </div>
@@ -824,7 +760,7 @@ export function ServiceReportFormDrawer() {
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
-                      No of Programs Set
+                      No of Programs set
                     </Label>
                     <Input
                       type="number"
@@ -837,21 +773,22 @@ export function ServiceReportFormDrawer() {
                 </div>
               </SectionToggle>
 
-              {/* Section 8 - Equipment Status */}
-              <SectionToggle section={sections[7]}>
+              {/* Section 3 - Utility / Equipment Details */}
+              <SectionToggle section={sections[2]}>
                 <div className="space-y-4">
+                  {/* AC and Compressor */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.ac_provided ? 'true' : undefined}>
                       <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
-                        AC Provided
+                        Air Conditioner Provided or not?
                       </Label>
                       <Select
                         onValueChange={(val) => setValue('ac_provided', val || '')}
                         value={watch('ac_provided')}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue />
+                          <SelectValue placeholder="Select AC status" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                           <SelectItem value="YES" className="font-bold py-3 text-emerald-500">Yes</SelectItem>
@@ -861,17 +798,142 @@ export function ServiceReportFormDrawer() {
                       <FieldError message={errors.ac_provided?.message} />
                     </div>
 
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <FileText size={14} className="text-primary/70" />
+                        Compressor Details
+                      </Label>
+                      <Input
+                        {...register('compressor_details')}
+                        placeholder="Compressor details (Optional)"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Air Drier */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <FileText size={14} className="text-primary/70" />
+                      Air Drier details
+                    </Label>
+                    <Input
+                      {...register('air_drier_details')}
+                      placeholder="Air drier details (Optional)"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    />
+                  </div>
+
+                  {/* Ground Earth Toggle & Ground Earth Value */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2" data-error={errors.ground_earth_provided ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Wind size={14} className="text-primary/70" />
+                        Ground Earth Provided or not?
+                      </Label>
+                      <Select
+                        onValueChange={(val) => {
+                          setValue('ground_earth_provided', val || '');
+                          if (val === 'NO') {
+                            setValue('ground_earth_value', '');
+                          }
+                        }}
+                        value={watch('ground_earth_provided')}
+                      >
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                          <SelectValue placeholder="Select Ground Earth status" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                          <SelectItem value="YES" className="font-bold py-3 text-emerald-500">Yes</SelectItem>
+                          <SelectItem value="NO" className="font-bold py-3 text-rose-500">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FieldError message={errors.ground_earth_provided?.message} />
+                    </div>
+
+                    <div className="space-y-2" data-error={errors.ground_earth_value ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Cpu size={14} className="text-primary/70" />
+                        Ground Earth Value Selection (1 - 12)
+                      </Label>
+                      <Select
+                        disabled={watch('ground_earth_provided') !== 'YES'}
+                        onValueChange={(val) => setValue('ground_earth_value', val ? Number(val) : '')}
+                        value={watch('ground_earth_value')?.toString() || ''}
+                        items={Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString() }))}
+                      >
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                          <SelectValue placeholder="Select value (1-12)" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-48">
+                          {Array.from({ length: 12 }).map((_, i) => {
+                            const valStr = (i + 1).toString();
+                            return (
+                              <SelectItem key={valStr} value={valStr} className="font-bold py-2.5">
+                                {valStr}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <FieldError message={errors.ground_earth_value?.message} />
+                    </div>
+                  </div>
+
+                  {/* Filters installed */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Cpu size={14} className="text-primary/70" />
+                        No of filters installed
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        {...register('no_of_filters_installed', { valueAsNumber: false })}
+                        placeholder="0 (Optional)"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <FileText size={14} className="text-primary/70" />
+                        Oil Filter condition
+                      </Label>
+                      <Input
+                        {...register('oil_filter_condition')}
+                        placeholder="Oil filter condition (Optional)"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Line filter and Auto drain valve */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <FileText size={14} className="text-primary/70" />
+                        Line filter condition
+                      </Label>
+                      <Input
+                        {...register('line_filter_condition')}
+                        placeholder="Line filter condition (Optional)"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                    </div>
+
                     <div className="space-y-2" data-error={errors.auto_drain_valve_working ? 'true' : undefined}>
                       <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
-                        Auto Drain Valve Working
+                        Auto drain valve working or not?
                       </Label>
                       <Select
                         onValueChange={(val) => setValue('auto_drain_valve_working', val || '')}
                         value={watch('auto_drain_valve_working')}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue />
+                          <SelectValue placeholder="Select Status" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                           <SelectItem value="YES" className="font-bold py-3 text-emerald-500">Yes</SelectItem>
@@ -881,116 +943,76 @@ export function ServiceReportFormDrawer() {
                       <FieldError message={errors.auto_drain_valve_working?.message} />
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <FileText size={14} className="text-primary/70" />
-                      Compressor Details
-                    </Label>
-                    <Input
-                      {...register('compressor_details')}
-                      placeholder="Compressor details (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <FileText size={14} className="text-primary/70" />
-                      Air Drier Details
-                    </Label>
-                    <Input
-                      {...register('air_drier_details')}
-                      placeholder="Air drier details (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <FileText size={14} className="text-primary/70" />
-                        Line Filter Condition
-                      </Label>
-                      <Input
-                        {...register('line_filter_condition')}
-                        placeholder="Line filter condition (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <FileText size={14} className="text-primary/70" />
-                        Machine Filter Condition
-                      </Label>
-                      <Input
-                        {...register('machine_filter_condition')}
-                        placeholder="Machine filter condition (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                      />
-                    </div>
-                  </div>
                 </div>
               </SectionToggle>
 
-              {/* Section 9 - Remarks & Signatures */}
-              <SectionToggle section={sections[8]}>
+              {/* Section 4 - Remarks & Signatures */}
+              <SectionToggle section={sections[3]}>
                 <div className="space-y-6">
-                  <div className="space-y-2" data-error={errors.engineer_remarks ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Pen size={14} className="text-primary/70" />
-                      Engineer Remarks
-                    </Label>
-                    <Textarea
-                      {...register('engineer_remarks')}
-                      placeholder="Enter engineer remarks (max 2000 chars)"
-                      className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
-                    />
-                    <FieldError message={errors.engineer_remarks?.message} />
+                  {/* Service Engineer Details */}
+                  <div className="border-b border-gray-100 dark:border-white/5 pb-6 space-y-4">
+                    <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">Service Engineer Details</h3>
+                    
+                    <div className="space-y-2" data-error={errors.engineer_remarks ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Pen size={14} className="text-primary/70" />
+                        Service Engineer Remarks
+                      </Label>
+                      <Textarea
+                        {...register('engineer_remarks')}
+                        placeholder="Enter service engineer remarks (max 2000 chars)"
+                        className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
+                      />
+                      <FieldError message={errors.engineer_remarks?.message} />
+                    </div>
+
+                    <div className="space-y-2" data-error={errors.engineer_signature ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Pen size={14} className="text-primary/70" />
+                        Service Engineer Signature
+                      </Label>
+                      <Controller
+                        name="engineer_signature"
+                        control={control}
+                        render={({ field }) => (
+                          <SignaturePad value={field.value} onChange={field.onChange} />
+                        )}
+                      />
+                      <FieldError message={errors.engineer_signature?.message} />
+                    </div>
                   </div>
 
-                  <div className="space-y-2" data-error={errors.engineer_signature ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Pen size={14} className="text-primary/70" />
-                      Engineer Signature
-                    </Label>
-                    <Controller
-                      name="engineer_signature"
-                      control={control}
-                      render={({ field }) => (
-                        <SignaturePad value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                    <FieldError message={errors.engineer_signature?.message} />
-                  </div>
+                  {/* Customer Details */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">Customer Details</h3>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <FileText size={14} className="text-primary/70" />
-                      Customer Remarks
-                    </Label>
-                    <Textarea
-                      {...register('customer_remarks')}
-                      placeholder="Customer remarks (Optional, max 2000 chars)"
-                      className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
-                    />
-                    <FieldError message={errors.customer_remarks?.message} />
-                  </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <FileText size={14} className="text-primary/70" />
+                        Customer Remarks
+                      </Label>
+                      <Textarea
+                        {...register('customer_remarks')}
+                        placeholder="Customer remarks (Optional, max 2000 chars)"
+                        className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
+                      />
+                      <FieldError message={errors.customer_remarks?.message} />
+                    </div>
 
-                  <div className="space-y-2" data-error={errors.customer_signature ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Pen size={14} className="text-primary/70" />
-                      Customer Signature
-                    </Label>
-                    <Controller
-                      name="customer_signature"
-                      control={control}
-                      render={({ field }) => (
-                        <SignaturePad value={field.value} onChange={field.onChange} />
-                      )}
-                    />
-                    <FieldError message={errors.customer_signature?.message} />
+                    <div className="space-y-2" data-error={errors.customer_signature ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Pen size={14} className="text-primary/70" />
+                        Customer Signature
+                      </Label>
+                      <Controller
+                        name="customer_signature"
+                        control={control}
+                        render={({ field }) => (
+                          <SignaturePad value={field.value} onChange={field.onChange} />
+                        )}
+                      />
+                      <FieldError message={errors.customer_signature?.message} />
+                    </div>
                   </div>
                 </div>
               </SectionToggle>
@@ -1010,7 +1032,7 @@ export function ServiceReportFormDrawer() {
             </Button>
             <Button
               type="submit"
-              form="service-report-form"
+              form="installation-report-form"
               disabled={isSubmitting || isLoading}
               className="flex-1 rounded-xl h-11 bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20 gap-2"
             >

@@ -29,7 +29,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { CustomerMultiSelect } from '@/components/ui/customer-multi-select';
+import { useCustomers } from '@/services/customer-service';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const millSchema = z.object({
   name: z.string().min(2, 'Mill Name must be at least 2 characters'),
@@ -43,7 +44,7 @@ const millSchema = z.object({
     ),
   address: z.string().optional().or(z.literal('')),
   status: z.string().min(1, 'Status is required'),
-  customer_ids: z.array(z.string()).optional(),
+  customer_id: z.string().optional().or(z.literal('')),
 });
 
 type MillFormValues = z.infer<typeof millSchema>;
@@ -53,8 +54,11 @@ export function MillFormDrawer() {
   const isEdit = !!selectedMillId;
 
   const { data: millData, isLoading: millLoading } = useMill(selectedMillId);
+  const { data: customersData } = useCustomers({ skip: 0, take: 500, status: 'ACTIVE' });
   const { mutateAsync: createMill, isPending: isCreating } = useCreateMill();
   const { mutateAsync: updateMill, isPending: isUpdating } = useUpdateMill();
+
+  const customers = customersData?.customers || [];
 
   const {
     register,
@@ -72,7 +76,7 @@ export function MillFormDrawer() {
       phone: '',
       address: '',
       status: 'ACTIVE',
-      customer_ids: [],
+      customer_id: '',
     }
   });
 
@@ -85,7 +89,7 @@ export function MillFormDrawer() {
           phone: normalizePhoneNumber(millData.phone),
           address: millData.address || '',
           status: millData.status,
-          customer_ids: [],
+          customer_id: millData.customer_id || '',
         });
       } else if (!isEdit) {
         reset({
@@ -94,20 +98,22 @@ export function MillFormDrawer() {
           phone: '',
           address: '',
           status: 'ACTIVE',
-          customer_ids: [],
+          customer_id: '',
         });
       }
     }
   }, [isFormDrawerOpen, millData, reset, isEdit]);
 
   const onSubmit: SubmitHandler<MillFormValues> = async (data) => {
-    // customer_ids is UI-only — strip it before sending to the backend
-    const { customer_ids, ...millPayload } = data;
+    const payload = {
+      ...data,
+      customer_id: data.customer_id || undefined,
+    };
     try {
       if (isEdit) {
-        await updateMill({ id: selectedMillId, ...millPayload });
+        await updateMill({ id: selectedMillId, ...payload });
       } else {
-        await createMill(millPayload);
+        await createMill(payload);
       }
       closeFormDrawer();
     } catch (error: any) {
@@ -212,24 +218,37 @@ export function MillFormDrawer() {
                   {errors.address && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.address.message}</p>}
                 </div>
 
-                {/* Customers */}
+                {/* Customer */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Users size={14} className="text-primary/70" />
-                    Customers
+                    Customer
                     <span className="text-gray-400 font-normal normal-case tracking-normal text-[11px]">(Optional)</span>
                   </Label>
                   <Controller
-                    name="customer_ids"
+                    name="customer_id"
                     control={control}
                     render={({ field }) => (
-                      <CustomerMultiSelect
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        placeholder="Select customers for this mill..."
-                      />
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || ''}
+                        items={customers.map((c) => ({ value: c.id, label: c.name }))}
+                      >
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                          <SelectValue placeholder="Select customer for this mill..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-[300px] overflow-y-auto">
+                          <SelectItem value="" className="font-bold py-3 text-gray-400">None / Clear</SelectItem>
+                          {customers.map((cust) => (
+                            <SelectItem key={cust.id} value={cust.id} className="font-bold py-3">
+                              {cust.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   />
+                  {errors.customer_id && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.customer_id.message}</p>}
                 </div>
 
                 {/* Mill Status */}

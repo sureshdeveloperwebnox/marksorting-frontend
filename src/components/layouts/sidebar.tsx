@@ -16,6 +16,7 @@ import {
   Users2,
   Tag,
   FileText,
+  Wrench,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
@@ -59,6 +60,13 @@ const items: SidebarItem[] = [
     subItems: [
       { label: 'Service Category', href: '/service-management/service-category', icon: Tag },
       { label: 'Service Report', href: '/service-management/service-report', icon: FileText },
+    ]
+  },
+  {
+    label: 'Installation Management',
+    icon: Wrench,
+    subItems: [
+      { label: 'Installation Report', href: '/installation-management/installation-report', icon: FileText },
     ]
   },
   { label: 'Orders', href: '/orders', icon: ClipboardList },

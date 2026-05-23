@@ -72,6 +72,13 @@ const navItems: NavItem[] = [
       { label: 'Service Report', href: '/service-management/service-report', icon: FileText },
     ],
   },
+  {
+    label: 'Installation Management',
+    icon: Wrench,
+    subItems: [
+      { label: 'Installation Report', href: '/installation-management/installation-report', icon: FileText },
+    ],
+  },
   { label: 'Expense Type', href: '/expense-type', icon: DollarSign },
   { label: 'Expense', href: '/expense', icon: Receipt },
   { label: 'Service List', href: '/service-list', icon: Layers },
