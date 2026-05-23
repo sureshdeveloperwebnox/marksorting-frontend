@@ -320,9 +320,95 @@ export function ServiceReportFormDrawer() {
   const isLoading = isEdit && reportLoading;
   const isSubmitting = isCreating || isUpdating;
 
-  const scrollToFirstError = () => {
-    const firstError = formRef.current?.querySelector('[data-error="true"]');
-    firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const fieldToSectionMap: Record<string, number> = {
+    // Section 1
+    service_category_id: 1,
+
+    // Section 2
+    technician_ids: 2,
+
+    // Section 3
+    mill_id: 3,
+    place: 3,
+    mill_whatsapp_number: 3,
+    mill_email: 3,
+
+    // Section 4
+    visit_date: 4,
+    visit_time: 4,
+    call_registered_date: 4,
+
+    // Section 5
+    machine_model: 5,
+    machine_mfg_date: 5,
+    machine_installation_date: 5,
+    serial_or_frame_no: 5,
+    authorized_person: 5,
+    previous_visit_engineer: 5,
+
+    // Section 6
+    nature_of_complaint: 6,
+    problem_observed: 6,
+    action_taken: 6,
+
+    // Section 7
+    commodity: 7,
+    contamination: 7,
+    output_capacity_per_hour: 7,
+    rejection_ratio: 7,
+    purity: 7,
+    no_of_programs_set: 7,
+
+    // Section 8
+    ac_provided: 8,
+    compressor_details: 8,
+    air_drier_details: 8,
+    line_filter_condition: 8,
+    machine_filter_condition: 8,
+    auto_drain_valve_working: 8,
+
+    // Section 9
+    engineer_remarks: 9,
+    engineer_signature: 9,
+    customer_remarks: 9,
+    customer_signature: 9,
+  };
+
+  const scrollToFirstError = (errors: any) => {
+    // Open any section that contains an error
+    const sectionsToOpen: Record<number, boolean> = {};
+    Object.keys(errors).forEach((fieldName) => {
+      const sectionId = fieldToSectionMap[fieldName];
+      if (sectionId) {
+        sectionsToOpen[sectionId] = true;
+      }
+    });
+
+    if (Object.keys(sectionsToOpen).length > 0) {
+      setOpenSections((prev) => ({
+        ...prev,
+        ...sectionsToOpen,
+      }));
+    }
+
+    // Show a toast with all validation error fields
+    const errorFields = Object.keys(errors)
+      .map((key) => {
+        return key
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+      });
+
+    toast.error('Validation Failed', {
+      description: `Please fill required fields: ${errorFields.join(', ')}`,
+      duration: 6000,
+    });
+
+    // Wait a brief tick for the sections to open and render before scrolling
+    setTimeout(() => {
+      const firstError = formRef.current?.querySelector('[data-error="true"]');
+      firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
   };
 
   const SectionToggle = ({ section, children }: { section: typeof sections[0]; children: React.ReactNode }) => (

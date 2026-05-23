@@ -81,13 +81,13 @@ const installationReportSchema = z.object({
   output_capacity_per_hour: z.string().optional().or(z.literal('')),
   rejection_ratio: z.string().optional().or(z.literal('')),
   purity: z.string().optional().or(z.literal('')),
-  no_of_programs_set: z.number().min(0).optional().or(z.literal('')),
+  no_of_programs_set: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0).optional()),
   ac_provided: z.string().min(1, 'AC status is required'),
   compressor_details: z.string().optional().or(z.literal('')),
   air_drier_details: z.string().optional().or(z.literal('')),
   ground_earth_provided: z.string().min(1, 'Ground Earth status is required'),
-  ground_earth_value: z.number().min(1).max(12).optional().or(z.literal('')),
-  no_of_filters_installed: z.number().min(0).optional().or(z.literal('')),
+  ground_earth_value: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(1).max(12).optional()),
+  no_of_filters_installed: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0).optional()),
   oil_filter_condition: z.string().optional().or(z.literal('')),
   line_filter_condition: z.string().optional().or(z.literal('')),
   auto_drain_valve_working: z.string().min(1, 'Auto drain valve status is required'),
@@ -160,13 +160,13 @@ export function InstallationReportFormDrawer() {
       output_capacity_per_hour: '',
       rejection_ratio: '',
       purity: '',
-      no_of_programs_set: '',
+      no_of_programs_set: undefined,
       ac_provided: 'NO',
       compressor_details: '',
       air_drier_details: '',
       ground_earth_provided: 'NO',
-      ground_earth_value: '',
-      no_of_filters_installed: '',
+      ground_earth_value: undefined,
+      no_of_filters_installed: undefined,
       oil_filter_condition: '',
       line_filter_condition: '',
       auto_drain_valve_working: 'NO',
@@ -234,13 +234,13 @@ export function InstallationReportFormDrawer() {
           output_capacity_per_hour: reportData.output_capacity_per_hour || '',
           rejection_ratio: reportData.rejection_ratio || '',
           purity: reportData.purity || '',
-          no_of_programs_set: reportData.no_of_programs_set ?? '',
+          no_of_programs_set: reportData.no_of_programs_set ?? undefined,
           ac_provided: reportData.ac_provided ? 'YES' : 'NO',
           compressor_details: reportData.compressor_details || '',
           air_drier_details: reportData.air_drier_details || '',
           ground_earth_provided: reportData.ground_earth_provided ? 'YES' : 'NO',
-          ground_earth_value: reportData.ground_earth_value ?? '',
-          no_of_filters_installed: reportData.no_of_filters_installed ?? '',
+          ground_earth_value: reportData.ground_earth_value ?? undefined,
+          no_of_filters_installed: reportData.no_of_filters_installed ?? undefined,
           oil_filter_condition: reportData.oil_filter_condition || '',
           line_filter_condition: reportData.line_filter_condition || '',
           auto_drain_valve_working: reportData.auto_drain_valve_working ? 'YES' : 'NO',
@@ -272,13 +272,13 @@ export function InstallationReportFormDrawer() {
           output_capacity_per_hour: '',
           rejection_ratio: '',
           purity: '',
-          no_of_programs_set: '',
+          no_of_programs_set: undefined,
           ac_provided: 'NO',
           compressor_details: '',
           air_drier_details: '',
           ground_earth_provided: 'NO',
-          ground_earth_value: '',
-          no_of_filters_installed: '',
+          ground_earth_value: undefined,
+          no_of_filters_installed: undefined,
           oil_filter_condition: '',
           line_filter_condition: '',
           auto_drain_valve_working: 'NO',
@@ -322,9 +322,85 @@ export function InstallationReportFormDrawer() {
   const isLoading = isEdit && reportLoading;
   const isSubmitting = isCreating || isUpdating;
 
-  const scrollToFirstError = () => {
-    const firstError = formRef.current?.querySelector('[data-error="true"]');
-    firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const fieldToSectionMap: Record<string, number> = {
+    // Section 1
+    technician_ids: 1,
+    mill_id: 1,
+    place: 1,
+    mill_whatsapp_number: 1,
+    mill_email: 1,
+    visit_date: 1,
+    visit_time: 1,
+    call_registered_date: 1,
+    machine_model: 1,
+    serial_or_frame_no: 1,
+    authorized_person: 1,
+    invoice_number: 1,
+    invoice_date: 1,
+    warranty_start_date: 1,
+    warranty_end_date: 1,
+
+    // Section 2
+    commodity: 2,
+    contamination: 2,
+    output_capacity_per_hour: 2,
+    rejection_ratio: 2,
+    purity: 2,
+    no_of_programs_set: 2,
+
+    // Section 3
+    ac_provided: 3,
+    compressor_details: 3,
+    air_drier_details: 3,
+    ground_earth_provided: 3,
+    ground_earth_value: 3,
+    no_of_filters_installed: 3,
+    oil_filter_condition: 3,
+    line_filter_condition: 3,
+    auto_drain_valve_working: 3,
+
+    // Section 4
+    engineer_remarks: 4,
+    engineer_signature: 4,
+    customer_remarks: 4,
+    customer_signature: 4,
+  };
+
+  const scrollToFirstError = (errors: any) => {
+    // Open any section that contains an error
+    const sectionsToOpen: Record<number, boolean> = {};
+    Object.keys(errors).forEach((fieldName) => {
+      const sectionId = fieldToSectionMap[fieldName];
+      if (sectionId) {
+        sectionsToOpen[sectionId] = true;
+      }
+    });
+
+    if (Object.keys(sectionsToOpen).length > 0) {
+      setOpenSections((prev) => ({
+        ...prev,
+        ...sectionsToOpen,
+      }));
+    }
+
+    // Show a toast with all validation error fields
+    const errorFields = Object.keys(errors)
+      .map((key) => {
+        return key
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+      });
+
+    toast.error('Validation Failed', {
+      description: `Please fill required fields: ${errorFields.join(', ')}`,
+      duration: 6000,
+    });
+
+    // Wait a brief tick for the sections to open and render before scrolling
+    setTimeout(() => {
+      const firstError = formRef.current?.querySelector('[data-error="true"]');
+      firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
   };
 
   const SectionToggle = ({ section, children }: { section: typeof sections[0]; children: React.ReactNode }) => (
@@ -835,7 +911,7 @@ export function InstallationReportFormDrawer() {
                         onValueChange={(val) => {
                           setValue('ground_earth_provided', val || '');
                           if (val === 'NO') {
-                            setValue('ground_earth_value', '');
+                            setValue('ground_earth_value', undefined);
                           }
                         }}
                         value={watch('ground_earth_provided')}
@@ -858,7 +934,7 @@ export function InstallationReportFormDrawer() {
                       </Label>
                       <Select
                         disabled={watch('ground_earth_provided') !== 'YES'}
-                        onValueChange={(val) => setValue('ground_earth_value', val ? Number(val) : '')}
+                        onValueChange={(val) => setValue('ground_earth_value', val ? Number(val) : undefined)}
                         value={watch('ground_earth_value')?.toString() || ''}
                         items={Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString() }))}
                       >
