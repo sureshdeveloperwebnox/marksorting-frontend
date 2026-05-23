@@ -59,6 +59,8 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 
 const serviceReportSchema = z.object({
   service_category_id: z.string().min(1, 'Service category is required'),
@@ -677,10 +679,16 @@ export function ServiceReportFormDrawer() {
                       <CalendarDays size={14} className="text-primary/70" />
                       Visit Date
                     </Label>
-                    <Input
-                      type="date"
-                      {...register('visit_date')}
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    <Controller
+                      name="visit_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select visit date"
+                        />
+                      )}
                     />
                     <FieldError message={errors.visit_date?.message} />
                   </div>
@@ -690,10 +698,16 @@ export function ServiceReportFormDrawer() {
                       <Clock size={14} className="text-primary/70" />
                       Visit Time
                     </Label>
-                    <Input
-                      type="time"
-                      {...register('visit_time')}
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    <Controller
+                      name="visit_time"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select visit time"
+                        />
+                      )}
                     />
                     <FieldError message={errors.visit_time?.message} />
                   </div>
@@ -703,10 +717,16 @@ export function ServiceReportFormDrawer() {
                       <Calendar size={14} className="text-primary/70" />
                       Call Registered Date
                     </Label>
-                    <Input
-                      type="date"
-                      {...register('call_registered_date')}
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    <Controller
+                      name="call_registered_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select call registered date"
+                        />
+                      )}
                     />
                     <FieldError message={errors.call_registered_date?.message} />
                   </div>
@@ -750,10 +770,16 @@ export function ServiceReportFormDrawer() {
                         <CalendarDays size={14} className="text-primary/70" />
                         Mfg Date
                       </Label>
-                      <Input
-                        type="date"
-                        {...register('machine_mfg_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="machine_mfg_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select mfg date"
+                          />
+                        )}
                       />
                       <FieldError message={errors.machine_mfg_date?.message} />
                     </div>
@@ -763,10 +789,16 @@ export function ServiceReportFormDrawer() {
                         <CalendarDays size={14} className="text-primary/70" />
                         Installation Date
                       </Label>
-                      <Input
-                        type="date"
-                        {...register('machine_installation_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="machine_installation_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select installation date"
+                          />
+                        )}
                       />
                       <FieldError message={errors.machine_installation_date?.message} />
                     </div>

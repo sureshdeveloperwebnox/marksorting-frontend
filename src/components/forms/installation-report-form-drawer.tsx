@@ -59,6 +59,8 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 
 const installationReportSchema = z.object({
   technician_ids: z.array(z.string()).min(1, 'At least one engineer is required'),
@@ -637,10 +639,16 @@ export function InstallationReportFormDrawer() {
                         <CalendarDays size={14} className="text-primary/70" />
                         Date
                       </Label>
-                      <Input
-                        type="date"
-                        {...register('visit_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="visit_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select date"
+                          />
+                        )}
                       />
                       <FieldError message={errors.visit_date?.message} />
                     </div>
@@ -650,10 +658,16 @@ export function InstallationReportFormDrawer() {
                         <Clock size={14} className="text-primary/70" />
                         Time
                       </Label>
-                      <Input
-                        type="time"
-                        {...register('visit_time')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="visit_time"
+                        control={control}
+                        render={({ field }) => (
+                          <TimePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select time"
+                          />
+                        )}
                       />
                       <FieldError message={errors.visit_time?.message} />
                     </div>
@@ -663,10 +677,16 @@ export function InstallationReportFormDrawer() {
                         <Calendar size={14} className="text-primary/70" />
                         Call Registered Date
                       </Label>
-                      <Input
-                        type="date"
-                        {...register('call_registered_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="call_registered_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select call registered date"
+                          />
+                        )}
                       />
                       <FieldError message={errors.call_registered_date?.message} />
                     </div>
@@ -733,10 +753,16 @@ export function InstallationReportFormDrawer() {
                         <CalendarDays size={14} className="text-primary/70" />
                         Invoice Date
                       </Label>
-                      <Input
-                        type="date"
-                        {...register('invoice_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="invoice_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select invoice date"
+                          />
+                        )}
                       />
                     </div>
                   </div>
@@ -748,10 +774,16 @@ export function InstallationReportFormDrawer() {
                         <ShieldCheck size={14} className="text-primary/70" />
                         Warranty Start Date
                       </Label>
-                      <Input
-                        type="date"
-                        {...register('warranty_start_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="warranty_start_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select warranty start date"
+                          />
+                        )}
                       />
                     </div>
 
@@ -760,10 +792,16 @@ export function InstallationReportFormDrawer() {
                         <ShieldCheck size={14} className="text-primary/70" />
                         Warranty End Date
                       </Label>
-                      <Input
-                        type="date"
-                        {...register('warranty_end_date')}
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      <Controller
+                        name="warranty_end_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select warranty end date"
+                          />
+                        )}
                       />
                     </div>
                   </div>
