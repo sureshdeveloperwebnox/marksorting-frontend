@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "Mark Sorter",
   description: "Enterprise-grade Mark Sorting Management System",
   icons: {
-    icon: "/assets/favion.png",
-    shortcut: "/assets/favion.png",
-    apple: "/assets/favion.png",
+    icon: "/assets/favicon.png",
+    shortcut: "/assets/favicon.png",
+    apple: "/assets/favicon.png",
   },
 };
 
