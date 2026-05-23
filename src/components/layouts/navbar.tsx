@@ -16,6 +16,7 @@ import {
   Users2,
   Tag,
   FileText,
+  Receipt,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -73,6 +74,13 @@ const navItems: NavItem[] = [
     icon: Wrench,
     subItems: [
       { label: 'Installation Report', href: '/installation-management/installation-report', icon: FileText },
+    ],
+  },
+  {
+    label: 'Expense',
+    icon: Receipt,
+    subItems: [
+      { label: 'Expenses', href: '/expense/expenses', icon: FileText },
     ],
   },
 ];
