@@ -11,11 +11,7 @@ import {
   ChevronDown,
   Users,
   Factory,
-  DollarSign,
-  Receipt,
-  Layers,
   Wrench,
-  BarChart3,
   Shield,
   Users2,
   Tag,
@@ -79,11 +75,6 @@ const navItems: NavItem[] = [
       { label: 'Installation Report', href: '/installation-management/installation-report', icon: FileText },
     ],
   },
-  { label: 'Expense Type', href: '/expense-type', icon: DollarSign },
-  { label: 'Expense', href: '/expense', icon: Receipt },
-  { label: 'Service List', href: '/service-list', icon: Layers },
-  { label: 'Installation List', href: '/installation-list', icon: Wrench },
-  { label: 'Report', href: '/report', icon: BarChart3 },
 ];
 
 /* ─── Dropdown Nav Item (desktop) ───────────────────────────── */
@@ -138,16 +129,16 @@ function DropdownNavItem({
       <button
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
+          'relative flex items-center gap-1 xl:gap-1.5 px-2 xl:px-3.5 py-2 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
             ? 'text-primary'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
         )}
       >
-        <item.icon size={15} strokeWidth={isGroupActive ? 2.5 : 2} />
+        <item.icon size={14} strokeWidth={isGroupActive ? 2.5 : 2} />
         {item.label}
         <ChevronDown
-          size={13}
+          size={12}
           className={cn(
             'transition-transform duration-200 ml-0.5',
             open && 'rotate-180'
@@ -163,7 +154,7 @@ function DropdownNavItem({
         )}
         {/* Hover / active underline */}
         <span className={cn(
-          'absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+          'absolute bottom-0 left-2 xl:left-3 right-2 xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
           isGroupActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
         )} />
       </button>
@@ -270,12 +261,12 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-white/5 shadow-sm">
-      <div className="flex items-center h-16 px-4 md:px-6 gap-4">
+      <div className="flex items-center h-16 px-4 lg:px-6 gap-3 lg:gap-4">
 
         {/* ── Logo ── */}
         <Link
           href="/dashboard"
-          className="flex-shrink-0 flex items-center mr-2 md:mr-4"
+          className="flex-shrink-0 flex items-center mr-1 lg:mr-4"
           aria-label="Go to dashboard"
         >
           <div className="relative h-9 w-auto">
@@ -291,7 +282,7 @@ export function Navbar() {
         </Link>
 
         {/* ── Desktop Nav ── */}
-        <nav className="hidden md:flex items-center gap-1 flex-1 min-w-0">
+        <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 flex-1 min-w-0">
           {navItems.map((item) => {
             // Dropdown item
             if (item.subItems) {
@@ -311,13 +302,13 @@ export function Navbar() {
                 key={item.href}
                 href={item.href!}
                 className={cn(
-                  'relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
+                  'relative flex items-center gap-1 xl:gap-1.5 px-2 xl:px-3.5 py-2 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
                   active
                     ? 'text-primary'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
                 )}
               >
-                <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
+                <item.icon size={14} strokeWidth={active ? 2.5 : 2} />
                 {item.label}
                 {active && (
                   <motion.span
@@ -327,7 +318,7 @@ export function Navbar() {
                   />
                 )}
                 <span className={cn(
-                  'absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+                  'absolute bottom-0 left-2 xl:left-3 right-2 xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
                   active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
                 )} />
               </Link>
@@ -404,7 +395,7 @@ export function Navbar() {
           </div>
 
           {/* Divider */}
-          <div className="hidden md:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+          <div className="hidden lg:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
 
           {/* User menu */}
           <div ref={userMenuRef} className="relative">
@@ -479,7 +470,7 @@ export function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex md:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
+                className="flex lg:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
               >
                 <Menu size={18} />
               </motion.button>
