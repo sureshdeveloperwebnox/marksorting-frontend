@@ -32,6 +32,7 @@ import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useCreateExpense, useUpdateExpense, useExpense } from '@/services/expense-service';
+import { useExpenseCategories } from '@/services/expense-category-service';
 import { useMills } from '@/services/mill-service';
 import { useCustomers } from '@/services/customer-service';
 import useExpenseStore from '@/store/useExpenseStore';
@@ -56,7 +57,7 @@ const expenseSchema = z.object({
   others: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
   visit_time: z.string().min(1, 'Time is required'),
-  expense_type: z.string().min(1, 'Expense type is required'),
+  expense_category_id: z.string().min(1, 'Expense category is required'),
   amount: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0, 'Amount must be positive').optional()),
   expense_images: z.array(z.string()).default([]),
 });
@@ -70,15 +71,6 @@ const sections = [
   { id: 4, title: 'Expense Info & Images', icon: DollarSign },
 ];
 
-const EXPENSE_TYPES = [
-  { value: 'FOOD', label: 'Food / Meals' },
-  { value: 'TRAVEL', label: 'Travel / Transport' },
-  { value: 'LODGING', label: 'Lodging / Accommodation' },
-  { value: 'FUEL', label: 'Fuel / Petrol' },
-  { value: 'MAINTENANCE', label: 'Maintenance / Parts' },
-  { value: 'OTHERS', label: 'Others / Miscellaneous' },
-];
-
 export function ExpenseFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedId } = useExpenseStore();
   const isEdit = !!selectedId;
@@ -86,12 +78,14 @@ export function ExpenseFormDrawer() {
   const { data: expenseData, isLoading: expenseLoading } = useExpense(selectedId);
   const { data: millsData } = useMills({ skip: 0, take: 500 });
   const { data: customersData } = useCustomers({ skip: 0, take: 500, status: 'ACTIVE' });
+  const { data: categoriesData, isLoading: categoriesLoading } = useExpenseCategories({ skip: 0, take: 500, status: 'ACTIVE' });
   const { mutateAsync: createExpense, isPending: isCreating } = useCreateExpense();
   const { mutateAsync: updateExpense, isPending: isUpdating } = useUpdateExpense();
   const { uploadFile, isUploading, uploadProgress } = useS3Upload();
 
   const mills = millsData?.mills || [];
   const customers = customersData?.customers || [];
+  const categories = categoriesData?.expenseCategories || [];
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true });
@@ -122,7 +116,7 @@ export function ExpenseFormDrawer() {
       others: '',
       visit_date: '',
       visit_time: '',
-      expense_type: '',
+      expense_category_id: '',
       amount: undefined,
       expense_images: [],
     },
@@ -167,7 +161,7 @@ export function ExpenseFormDrawer() {
           others: expenseData.others || '',
           visit_date: expenseData.visit_date?.split('T')[0] || '',
           visit_time: expenseData.visit_time || '',
-          expense_type: expenseData.expense_type || '',
+          expense_category_id: expenseData.expense_category_id || '',
           amount: expenseData.amount ? Number(expenseData.amount) : undefined,
           expense_images: expenseData.expense_images || [],
         });
@@ -187,7 +181,7 @@ export function ExpenseFormDrawer() {
           others: '',
           visit_date: '',
           visit_time: '',
-          expense_type: '',
+          expense_category_id: '',
           amount: undefined,
           expense_images: [],
         });
@@ -259,7 +253,7 @@ export function ExpenseFormDrawer() {
     others: 2,
     visit_date: 3,
     visit_time: 3,
-    expense_type: 4,
+    expense_category_id: 4,
     amount: 4,
     expense_images: 4,
   };
@@ -544,28 +538,32 @@ export function ExpenseFormDrawer() {
                 <div className="space-y-4">
                   {/* Expense Type & Amount */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2" data-error={errors.expense_type ? 'true' : undefined}>
+                    <div className="space-y-2" data-error={errors.expense_category_id ? 'true' : undefined}>
                       <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Tag size={14} className="text-primary/70" />
-                        Select Expense Type *
+                        Select Expense Category *
                       </Label>
-                      <Select
-                        onValueChange={(val) => setValue('expense_type', val || '')}
-                        value={watch('expense_type') || ''}
-                        items={EXPENSE_TYPES}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                          {EXPENSE_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value} className="font-bold py-3">
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FieldError message={errors.expense_type?.message} />
+                      {categoriesLoading ? (
+                        <Skeleton className="h-11 rounded-xl w-full" />
+                      ) : (
+                        <Select
+                          onValueChange={(val) => setValue('expense_category_id', val || '')}
+                          value={watch('expense_category_id') || ''}
+                          items={categories.map((c) => ({ value: c.id, label: c.name }))}
+                        >
+                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id} className="font-bold py-3">
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <FieldError message={errors.expense_category_id?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.amount ? 'true' : undefined}>

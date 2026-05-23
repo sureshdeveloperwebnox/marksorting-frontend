@@ -213,7 +213,7 @@ export default function ExpensesPage() {
           <div className="relative group">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-all duration-500" />
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-semibold text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-110 overflow-hidden">
-              {row.original.expense_type?.charAt(0) || "E"}
+              {row.original.expenseCategory?.name?.charAt(0) || "E"}
             </div>
           </div>
           <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight">
@@ -254,11 +254,11 @@ export default function ExpensesPage() {
       ),
     },
     {
-      accessorKey: "expense_type",
-      header: "Type",
+      accessorKey: "expenseCategory.name",
+      header: "Category",
       cell: ({ row }) => (
         <Badge variant="outline" className="font-bold text-xs capitalize py-0.5 px-2 bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 text-gray-600 dark:text-gray-400">
-          {row.original.expense_type?.toLowerCase().replace(/_/g, " ")}
+          {row.original.expenseCategory?.name?.toLowerCase().replace(/_/g, " ") || "—"}
         </Badge>
       ),
     },

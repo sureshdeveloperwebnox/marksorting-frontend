@@ -16,7 +16,8 @@ export interface Expense {
     place?: string;
     visit_date: string;
     visit_time: string;
-    expense_type: string;
+    expense_category_id: string;
+    expenseCategory?: { id: string; name: string };
     others?: string;
     amount: string; // From Decimal on backend, represented as string or number in frontend
     expense_images: string[];

@@ -81,6 +81,7 @@ const navItems: NavItem[] = [
     icon: Receipt,
     subItems: [
       { label: 'Expenses', href: '/expense/expenses', icon: FileText },
+      { label: 'Expense Category', href: '/expense/expense-category', icon: Tag },
     ],
   },
 ];
