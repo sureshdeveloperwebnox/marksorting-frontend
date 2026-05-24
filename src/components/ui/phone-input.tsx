@@ -1,7 +1,6 @@
 import * as React from "react";
-import PhoneInputWithCountry, { Value } from "react-phone-number-input";
+import PhoneInputWithCountry, { Value, getCountryCallingCode } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { AsYouType } from "libphonenumber-js";
 import { cn, normalizePhoneNumber } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
@@ -57,8 +56,35 @@ CustomInput.displayName = "CustomInput";
 
 export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
   ({ value, onChange, placeholder = "Enter phone number", className, disabled, defaultCountry = "IN" }, ref) => {
-    
+    const [selectedCountry, setSelectedCountry] = React.useState<string>(defaultCountry);
     const normalizedValue = value ? normalizePhoneNumber(value) : value;
+
+    // Reset selected country when default country changes
+    React.useEffect(() => {
+      if (defaultCountry) {
+        setSelectedCountry(defaultCountry);
+      }
+    }, [defaultCountry]);
+
+    // Sync and truncate value immediately when selectedCountry or value changes
+    React.useEffect(() => {
+      if (value && selectedCountry) {
+        try {
+          const callingCode = getCountryCallingCode(selectedCountry as any);
+          const prefix = `+${callingCode}`;
+          if (value.startsWith(prefix)) {
+            const nationalNumber = value.slice(prefix.length).replace(/\D/g, "");
+            const maxLen = COUNTRY_MAX_LENGTHS[selectedCountry] || 15;
+            if (nationalNumber.length > maxLen) {
+              const truncatedNational = nationalNumber.slice(0, maxLen);
+              onChange(`${prefix}${truncatedNational}`);
+            }
+          }
+        } catch (e) {
+          console.error("Phone number sync truncation error:", e);
+        }
+      }
+    }, [selectedCountry, value, onChange]);
 
     const handlePhoneChange = (val: string) => {
       if (!val) {
@@ -66,19 +92,16 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
         return;
       }
 
-      // Perform strict local number digit restriction per country dynamically using AsYouType parser
-      if (val.startsWith("+")) {
-        const formatter = new AsYouType();
-        formatter.input(val);
-        const country = formatter.getCountry();
-        const callingCode = formatter.getCallingCode();
-
-        if (country && callingCode) {
-          const maxLen = COUNTRY_MAX_LENGTHS[country] || 15;
+      // Perform strict local number digit restriction per country dynamically using selectedCountry
+      try {
+        if (selectedCountry) {
+          const callingCode = getCountryCallingCode(selectedCountry as any);
           const prefix = `+${callingCode}`;
           
           if (val.startsWith(prefix)) {
             const nationalNumber = val.slice(prefix.length).replace(/\D/g, "");
+            const maxLen = COUNTRY_MAX_LENGTHS[selectedCountry] || 15;
+            
             if (nationalNumber.length > maxLen) {
               const truncatedNational = nationalNumber.slice(0, maxLen);
               onChange(`${prefix}${truncatedNational}`);
@@ -86,6 +109,8 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
             }
           }
         }
+      } catch (e) {
+        console.error("Phone number limit error:", e);
       }
 
       onChange(val);
@@ -98,6 +123,11 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
           placeholder={placeholder}
           value={normalizedValue as Value}
           onChange={(val) => handlePhoneChange(val || "")}
+          onCountryChange={(country) => {
+            if (country) {
+              setSelectedCountry(country);
+            }
+          }}
           disabled={disabled}
           inputComponent={CustomInput}
           international={true}

@@ -48,6 +48,7 @@ import useInstallationReportStore from '@/store/useInstallationReportStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 import {
   Sheet,
   SheetContent,
@@ -66,7 +67,12 @@ const installationReportSchema = z.object({
   technician_ids: z.array(z.string()).min(1, 'At least one engineer is required'),
   mill_id: z.string().min(1, 'Mill is required'),
   place: z.string().min(2, 'Place is required'),
-  mill_whatsapp_number: z.string().min(1, 'WhatsApp number is required'),
+  mill_whatsapp_number: z
+    .string()
+    .min(1, 'WhatsApp number is required')
+    .refine((val) => !val || isValidPhoneNumber(val), {
+      message: 'Please enter a valid WhatsApp number with country code',
+    }),
   mill_email: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
   visit_time: z.string().min(1, 'Time is required'),
