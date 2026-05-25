@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -94,14 +94,25 @@ const navItems: NavItem[] = [
   },
 ];
 
+const navPrefetchHrefs = Array.from(
+  new Set(
+    navItems.flatMap((item) => [
+      item.href,
+      ...(item.subItems?.map((subItem) => subItem.href) ?? []),
+    ]).filter(Boolean) as string[]
+  )
+);
+
 /* ─── Dropdown Nav Item (desktop) ───────────────────────────── */
 
 function DropdownNavItem({
   item,
   pathname,
+  onPrefetch,
 }: {
   item: NavItem & { subItems: NavSubItem[] };
   pathname: string;
+  onPrefetch: (href: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -145,7 +156,10 @@ function DropdownNavItem({
     <div
       ref={ref}
       className="relative"
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={() => {
+        setOpen(true);
+        item.subItems.forEach((subItem) => onPrefetch(subItem.href));
+      }}
       onMouseLeave={() => {
         if (!isGroupActive) setOpen(false);
       }}
@@ -199,6 +213,9 @@ function DropdownNavItem({
                 <Link
                   key={sub.href}
                   href={sub.href}
+                  prefetch
+                  onPointerEnter={() => onPrefetch(sub.href)}
+                  onFocus={() => onPrefetch(sub.href)}
                   onClick={() => setOpen(false)}
                   className={cn(
                     'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
@@ -230,6 +247,7 @@ function DropdownNavItem({
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { theme, setTheme } = useTheme();
   const { logout, isLoggingOut } = useAuth();
@@ -242,6 +260,36 @@ export function Navbar() {
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  const prefetchRoute = (href: string) => {
+    if (href !== pathname) {
+      router.prefetch(href);
+    }
+  };
+
+  useEffect(() => {
+    const prefetchAll = () => {
+      navPrefetchHrefs.forEach((href) => {
+        if (href !== pathname) router.prefetch(href);
+      });
+      router.prefetch('/dashboard');
+    };
+
+    const cancelPrefetch =
+      typeof window.requestIdleCallback === 'function'
+        ? (() => {
+            const idleId = window.requestIdleCallback(prefetchAll, { timeout: 1500 });
+            return () => window.cancelIdleCallback(idleId);
+          })()
+        : (() => {
+            const timeoutId = globalThis.setTimeout(prefetchAll, 250);
+            return () => globalThis.clearTimeout(timeoutId);
+          })();
+
+    return () => {
+      cancelPrefetch();
+    };
+  }, [pathname, router]);
 
   // Auto-expand mobile groups when a child is active
   useEffect(() => {
@@ -291,6 +339,9 @@ export function Navbar() {
         {/* ── Logo ── */}
         <Link
           href="/dashboard"
+          prefetch
+          onPointerEnter={() => prefetchRoute('/dashboard')}
+          onFocus={() => prefetchRoute('/dashboard')}
           className="flex-shrink-0 flex items-center mr-1 lg:mr-4"
           aria-label="Go to dashboard"
         >
@@ -316,6 +367,7 @@ export function Navbar() {
                   key={item.label}
                   item={item as NavItem & { subItems: NavSubItem[] }}
                   pathname={pathname}
+                  onPrefetch={prefetchRoute}
                 />
               );
             }
@@ -326,6 +378,9 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href!}
+                prefetch
+                onPointerEnter={() => prefetchRoute(item.href!)}
+                onFocus={() => prefetchRoute(item.href!)}
                 className={cn(
                   'relative flex items-center gap-1 xl:gap-1.5 px-2 xl:px-3.5 py-2 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
                   active
@@ -470,6 +525,9 @@ export function Navbar() {
                   </div>
                   <Link
                     href="/settings"
+                    prefetch
+                    onPointerEnter={() => prefetchRoute('/settings')}
+                    onFocus={() => prefetchRoute('/settings')}
                     onClick={() => setUserMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all"
                   >
@@ -576,6 +634,9 @@ export function Navbar() {
                                   <Link
                                     key={sub.href}
                                     href={sub.href}
+                                    prefetch
+                                    onPointerEnter={() => prefetchRoute(sub.href)}
+                                    onFocus={() => prefetchRoute(sub.href)}
                                     className={cn(
                                       'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all',
                                       subActive
@@ -607,6 +668,9 @@ export function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href!}
+                      prefetch
+                      onPointerEnter={() => prefetchRoute(item.href!)}
+                      onFocus={() => prefetchRoute(item.href!)}
                       className={cn(
                         'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all',
                         active
