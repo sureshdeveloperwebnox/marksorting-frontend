@@ -132,6 +132,71 @@ const sections = [
   { id: 4, title: 'Remarks & Signatures', icon: Pen },
 ];
 
+type InstallationSection = (typeof sections)[number];
+
+function SectionToggle({
+  section,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  section: InstallationSection;
+  isOpen: boolean;
+  onToggle: (id: number) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-gray-100 dark:border-white/5 rounded-xl bg-white dark:bg-gray-950">
+      <button
+        type="button"
+        onClick={() => onToggle(section.id)}
+        className={cn(
+          "w-full flex items-center justify-between px-5 py-4 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors",
+          isOpen ? "rounded-t-xl" : "rounded-xl"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <section.icon size={16} className="text-primary" />
+          </div>
+          <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
+            {section.id}. {section.title}
+          </span>
+        </div>
+        {isOpen ? (
+          <ChevronDown size={18} className="text-gray-400" />
+        ) : (
+          <ChevronRight size={18} className="text-gray-400" />
+        )}
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            animate={{
+              height: 'auto',
+              opacity: 1,
+              transitionEnd: { overflow: 'visible' },
+            }}
+            exit={{
+              height: 0,
+              opacity: 0,
+              overflow: 'hidden',
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="px-5 pb-5 pt-4 space-y-4">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <p className="text-[11px] text-rose-500 font-medium ml-1">{message}</p> : null;
+}
+
 export function InstallationReportFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedId } = useInstallationReportStore();
   const isEdit = !!selectedId;
@@ -150,6 +215,7 @@ export function InstallationReportFormDrawer() {
   const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true });
   const sheetRef = React.useRef<HTMLDivElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const initializedFormKeyRef = React.useRef<string | null>(null);
 
   const toggleSection = (id: number) => {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -207,12 +273,11 @@ export function InstallationReportFormDrawer() {
   const selectedMillId = watch('mill_id');
 
   const filteredMills = React.useMemo(() => {
-    const currentMillId = watch('mill_id');
     if (!selectedCustomerId) {
-      return mills.filter((m) => m.id === currentMillId);
+      return mills.filter((m) => m.id === selectedMillId);
     }
-    return mills.filter((m) => m.customer_id === selectedCustomerId || m.id === currentMillId);
-  }, [mills, selectedCustomerId, watch('mill_id')]);
+    return mills.filter((m) => m.customer_id === selectedCustomerId || m.id === selectedMillId);
+  }, [mills, selectedCustomerId, selectedMillId]);
 
   React.useEffect(() => {
     if (selectedMillId) {
@@ -235,8 +300,20 @@ export function InstallationReportFormDrawer() {
   }, [selectedMillId, mills, setValue, watch, selectedCustomerId]);
 
   React.useEffect(() => {
+    if (!isFormDrawerOpen) {
+      initializedFormKeyRef.current = null;
+      setSelectedCustomerId('');
+      return;
+    }
+
+    const formKey = isEdit ? `edit:${selectedId}:${reportData?.id ?? 'loading'}` : 'new';
+    if (initializedFormKeyRef.current === formKey) return;
+    if (isEdit && !reportData) return;
+
+    initializedFormKeyRef.current = formKey;
+    setOpenSections({ 1: true });
+
     if (isFormDrawerOpen) {
-      setOpenSections({ 1: true });
       if (isEdit && reportData) {
         const mill = mills.find((m) => m.id === reportData.mill_id);
         setSelectedCustomerId(mill?.customer_id || '');
@@ -317,10 +394,16 @@ export function InstallationReportFormDrawer() {
           customer_signature: '',
         });
       }
-    } else {
-      setSelectedCustomerId('');
     }
-  }, [isFormDrawerOpen, reportData, reset, isEdit, mills]);
+  }, [isFormDrawerOpen, selectedId, reportData, reset, isEdit, mills]);
+
+  React.useEffect(() => {
+    if (!isFormDrawerOpen || !isEdit || !reportData || selectedCustomerId) return;
+    const mill = mills.find((m) => m.id === reportData.mill_id);
+    if (mill?.customer_id) {
+      setSelectedCustomerId(mill.customer_id);
+    }
+  }, [isFormDrawerOpen, isEdit, reportData, mills, selectedCustomerId]);
 
   const onSubmit: SubmitHandler<InstallationReportFormValues> = async (data) => {
     try {
@@ -434,56 +517,6 @@ export function InstallationReportFormDrawer() {
     }, 150);
   };
 
-  const SectionToggle = ({ section, children }: { section: typeof sections[0]; children: React.ReactNode }) => (
-    <div className="border border-gray-100 dark:border-white/5 rounded-xl bg-white dark:bg-gray-950">
-      <button
-        type="button"
-        onClick={() => toggleSection(section.id)}
-        className={cn(
-          "w-full flex items-center justify-between px-5 py-4 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors",
-          openSections[section.id] ? "rounded-t-xl" : "rounded-xl"
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <section.icon size={16} className="text-primary" />
-          </div>
-          <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
-            {section.id}. {section.title}
-          </span>
-        </div>
-        {openSections[section.id] ? (
-          <ChevronDown size={18} className="text-gray-400" />
-        ) : (
-          <ChevronRight size={18} className="text-gray-400" />
-        )}
-      </button>
-      <AnimatePresence initial={false}>
-        {openSections[section.id] && (
-          <motion.div
-            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-            animate={{
-              height: 'auto',
-              opacity: 1,
-              transitionEnd: { overflow: 'visible' },
-            }}
-            exit={{
-              height: 0,
-              opacity: 0,
-              overflow: 'hidden',
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="px-5 pb-5 pt-4 space-y-4">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
-  const FieldError = ({ message }: { message?: string }) =>
-    message ? <p className="text-[11px] text-rose-500 font-medium ml-1">{message}</p> : null;
-
   return (
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
       <SheetContent
@@ -514,7 +547,7 @@ export function InstallationReportFormDrawer() {
           ) : (
             <form id="installation-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4 min-w-0">
               {/* Section 1 - Basic Details */}
-              <SectionToggle section={sections[0]}>
+              <SectionToggle section={sections[0]} isOpen={!!openSections[1]} onToggle={toggleSection}>
                 <div className="space-y-4">
                   {/* Select Service Engineers */}
                   <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
@@ -838,7 +871,7 @@ export function InstallationReportFormDrawer() {
               </SectionToggle>
 
               {/* Section 2 - Machine Performance */}
-              <SectionToggle section={sections[1]}>
+              <SectionToggle section={sections[1]} isOpen={!!openSections[2]} onToggle={toggleSection}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
@@ -917,7 +950,7 @@ export function InstallationReportFormDrawer() {
               </SectionToggle>
 
               {/* Section 3 - Utility / Equipment Details */}
-              <SectionToggle section={sections[2]}>
+              <SectionToggle section={sections[2]} isOpen={!!openSections[3]} onToggle={toggleSection}>
                 <div className="space-y-4">
                   {/* AC and Compressor */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -933,7 +966,10 @@ export function InstallationReportFormDrawer() {
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select AC status" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                        <SelectContent
+                          alignItemWithTrigger={false}
+                          className="rounded-xl border-gray-100 shadow-xl"
+                        >
                           <SelectItem value="YES" className="font-medium py-3 text-emerald-500">Yes</SelectItem>
                           <SelectItem value="NO" className="font-medium py-3 text-rose-500">No</SelectItem>
                         </SelectContent>
@@ -1090,7 +1126,10 @@ export function InstallationReportFormDrawer() {
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select Primary / Secondary / Rejection / Split" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                        <SelectContent
+                          alignItemWithTrigger={false}
+                          className="rounded-xl border-gray-100 shadow-xl"
+                        >
                           {GROUND_EARTH_FIELD_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value} className="font-medium py-3">
                               <div className="flex items-center gap-3">
@@ -1171,7 +1210,7 @@ export function InstallationReportFormDrawer() {
               </SectionToggle>
 
               {/* Section 4 - Remarks & Signatures */}
-              <SectionToggle section={sections[3]}>
+              <SectionToggle section={sections[3]} isOpen={!!openSections[4]} onToggle={toggleSection}>
                 <div className="space-y-6">
                   {/* Service Engineer Details */}
                   <div className="border-b border-gray-100 dark:border-white/5 pb-6 space-y-4">
