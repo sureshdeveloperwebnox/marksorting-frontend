@@ -19,6 +19,7 @@ import {
   Wrench,
   Receipt,
   TicketCheck,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
@@ -86,6 +87,7 @@ const items: SidebarItem[] = [
     icon: Settings,
     subItems: [
       { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
+      { label: 'Company Settings', href: '/settings/company', icon: Building2 },
     ],
   },
 ];

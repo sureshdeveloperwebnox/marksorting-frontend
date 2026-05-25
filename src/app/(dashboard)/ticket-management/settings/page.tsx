@@ -25,6 +25,7 @@ import {
   Bell,
   Shield,
   FileCode,
+  Building2,
 } from "lucide-react";
 import {
   Dialog,
@@ -49,6 +50,7 @@ const getGroupColors = (group: string) => {
     case "PAYMENT":      return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
     case "NOTIFICATION": return "bg-purple-500/5 dark:bg-purple-500/10 text-purple-500 dark:text-purple-400 border-purple-500 dark:border-purple-400";
     case "SECURITY":     return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
+    case "COMPANY":      return "bg-teal-500/5 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500 dark:border-teal-400";
     default:             return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
   }
 };
@@ -60,6 +62,7 @@ const getGroupIcon = (group: string) => {
     case "PAYMENT":      return <CreditCard size={14} />;
     case "NOTIFICATION": return <Bell size={14} />;
     case "SECURITY":     return <Shield size={14} />;
+    case "COMPANY":      return <Building2 size={14} />;
     default:             return <Settings size={14} />;
   }
 };
@@ -147,6 +150,7 @@ export default function SettingsPage() {
   const { data: paymentData } = useSettings({ skip: 0, take: 1, group: "PAYMENT" });
   const { data: notificationData } = useSettings({ skip: 0, take: 1, group: "NOTIFICATION" });
   const { data: securityData } = useSettings({ skip: 0, take: 1, group: "SECURITY" });
+  const { data: companyData } = useSettings({ skip: 0, take: 1, group: "COMPANY" });
 
   const deleteMutation = useDeleteSetting();
 
@@ -182,6 +186,7 @@ export default function SettingsPage() {
         { value: "PAYMENT", label: "Payment Systems", iconColor: "bg-emerald-500" },
         { value: "NOTIFICATION", label: "Notification Channels", iconColor: "bg-purple-500" },
         { value: "SECURITY", label: "Access & Security", iconColor: "bg-rose-500" },
+        { value: "COMPANY", label: "Company Profile", iconColor: "bg-teal-500" },
       ],
     },
   ];
@@ -411,6 +416,14 @@ export default function SettingsPage() {
           icon={<Shield size={20} className="text-rose-600 dark:text-rose-400" />}
           iconBg="bg-rose-50 dark:bg-rose-500/15"
           gradient="bg-rose-500"
+        />
+        <StatsCard
+          title="Company"
+          value={companyData?.total}
+          loading={!companyData}
+          icon={<Building2 size={20} className="text-teal-600 dark:text-teal-400" />}
+          iconBg="bg-teal-50 dark:bg-teal-500/15"
+          gradient="bg-teal-500"
         />
       </div>
 

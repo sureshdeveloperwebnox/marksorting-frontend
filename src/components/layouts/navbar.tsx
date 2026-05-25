@@ -18,6 +18,7 @@ import {
   FileText,
   Receipt,
   TicketCheck,
+  Building2,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,6 +91,7 @@ const navItems: NavItem[] = [
     icon: Settings,
     subItems: [
       { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
+      { label: 'Company Settings', href: '/settings/company', icon: Building2 },
     ],
   },
 ];

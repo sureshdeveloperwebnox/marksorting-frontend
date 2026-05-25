@@ -16,6 +16,12 @@ export interface SettingsResponse {
     total: number;
 }
 
+export interface SettingInput {
+    key: string;
+    value: string;
+    group: string;
+}
+
 export const useSettings = (params: {
     skip: number;
     take: number;
@@ -121,6 +127,48 @@ export const useDeleteSetting = () => {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["settings"] });
+        },
+    });
+};
+
+export const useCompanySettings = () => {
+    return useSettings({ skip: 0, take: 100, group: "COMPANY" });
+};
+
+export const useUpsertSettings = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (settings: SettingInput[]) => {
+            const { data: existingData } = await api.get<SettingsResponse>("/settings", {
+                params: { skip: 0, take: 200, group: "COMPANY" },
+            });
+
+            const existingByKey = new Map(
+                existingData.settings.map((setting) => [setting.key, setting])
+            );
+
+            const saved = await Promise.all(
+                settings.map(async (setting) => {
+                    const existing = existingByKey.get(setting.key);
+                    if (existing) {
+                        const { data } = await api.put<Setting>(`/settings/${existing.id}`, setting);
+                        return data;
+                    }
+
+                    const { data } = await api.post<Setting>("/settings", setting);
+                    return data;
+                })
+            );
+
+            return saved;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["settings"] });
+            toast.success("Company settings saved successfully");
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to save company settings");
         },
     });
 };

@@ -19,7 +19,7 @@ import {
     useSetting,
 } from "@/services/setting-service";
 
-const GROUP_OPTIONS = ["GENERAL", "APP", "PAYMENT", "NOTIFICATION", "SECURITY"];
+const GROUP_OPTIONS = ["GENERAL", "APP", "PAYMENT", "NOTIFICATION", "SECURITY", "COMPANY"];
 
 const groupColors: Record<string, string> = {
     GENERAL: "bg-blue-500",
@@ -27,6 +27,7 @@ const groupColors: Record<string, string> = {
     PAYMENT: "bg-emerald-500",
     NOTIFICATION: "bg-purple-500",
     SECURITY: "bg-rose-500",
+    COMPANY: "bg-teal-500",
 };
 
 export function SettingFormDrawer() {
