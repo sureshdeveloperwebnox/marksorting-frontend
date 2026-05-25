@@ -81,6 +81,43 @@ export function DataTable<TData, TValue>({
 
   const [searchValue, setSearchValue] = React.useState(globalFilterValue);
 
+  const emptyStateCopy = React.useMemo(() => {
+    const normalized = entityName.toLowerCase();
+
+    if (normalized.includes("setting")) {
+      return {
+        title: "No settings yet",
+        description: "Your configuration panel is ready. Add the first parameter to start shaping the system.",
+      };
+    }
+
+    if (normalized.includes("ticket")) {
+      return {
+        title: "No tickets yet",
+        description: "All clear for now. Create a ticket when a customer needs support.",
+      };
+    }
+
+    if (normalized.includes("customer")) {
+      return {
+        title: "No customers yet",
+        description: "Start your customer list by adding the first account.",
+      };
+    }
+
+    if (normalized.includes("mill")) {
+      return {
+        title: "No mills yet",
+        description: "Add a mill to begin tracking operations and service history.",
+      };
+    }
+
+    return {
+      title: "Nothing here yet",
+      description: "Add your first record to bring this workspace to life.",
+    };
+  }, [entityName]);
+
   React.useEffect(() => {
     setSearchValue(globalFilterValue);
   }, [globalFilterValue]);
@@ -250,8 +287,8 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-[450px] text-center border-none hover:bg-transparent">
                   <EmptyState
-                    title="No records found"
-                    description="It seems there are no team members in the database yet. Try adding a new user to get started."
+                    title={emptyStateCopy.title}
+                    description={emptyStateCopy.description}
                   />
                 </TableCell>
               </TableRow>
@@ -339,8 +376,8 @@ export function DataTable<TData, TValue>({
         ) : (
           <div className="h-[300px] flex items-center justify-center bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-[24px] border border-gray-100 dark:border-white/5">
             <EmptyState
-              title="No records found"
-              description="Try adjusting your filters or search terms to find what you are looking for."
+              title={emptyStateCopy.title}
+              description={emptyStateCopy.description}
             />
           </div>
         )}

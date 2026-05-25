@@ -13,11 +13,11 @@ interface EmptyStateProps {
 
 export function EmptyState({ 
   title = "No data found", 
-  description = "There are no records to display at the moment.",
+  description,
   className 
 }: EmptyStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center p-12 text-center", className)}>
+    <div className={cn("flex flex-col items-center justify-center px-6 py-10 sm:p-12 text-center", className)}>
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -27,9 +27,9 @@ export function EmptyState({
           damping: 20,
           duration: 0.6 
         }}
-        className="w-48 h-48 md:w-64 md:h-64"
+        className="aspect-square w-[clamp(14rem,24vw,22rem)] max-w-[68vw]"
       >
-        <Lottie animationData={emptyAnimation} loop={true} />
+        <Lottie animationData={emptyAnimation} loop={true} className="h-full w-full" />
       </motion.div>
       
       <motion.div
@@ -41,9 +41,11 @@ export function EmptyState({
         <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
           {title} <span className="text-primary text-3xl leading-none">.</span>
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-bold max-w-[280px] mx-auto leading-relaxed">
-          {description}
-        </p>
+        {description && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-bold max-w-[280px] mx-auto leading-relaxed">
+            {description}
+          </p>
+        )}
       </motion.div>
     </div>
   );
