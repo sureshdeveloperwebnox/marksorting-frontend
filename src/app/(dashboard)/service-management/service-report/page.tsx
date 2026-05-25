@@ -8,6 +8,7 @@ import {
   ServiceReport,
   useDeleteServiceReport,
   useUpdateServiceReport,
+  downloadServiceReportPdf,
 } from "@/services/service-report-service";
 import useServiceReportStore from "@/store/useServiceReportStore";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ import {
   Building2,
   Users,
   Calendar,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -147,6 +149,7 @@ export default function ServiceReportPage() {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -191,6 +194,18 @@ export default function ServiceReportPage() {
       // Handled in mutation
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handleDownloadPdf = async (report: ServiceReport) => {
+    try {
+      setDownloadingId(report.id);
+      await downloadServiceReportPdf(report.id, report.report_number);
+      toast.success("Service report PDF downloaded");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to download service report PDF");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -340,27 +355,40 @@ export default function ServiceReportPage() {
     {
       id: "actions",
       header: () => <div className="text-right w-full font-bold">Actions</div>,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
-            onClick={() => openFormDrawer(row.original.id)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
-            onClick={() => setDeleteId(row.original.id)}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isDownloading = downloadingId === row.original.id;
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 hover:text-blue-700 hover:bg-blue-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+              onClick={() => handleDownloadPdf(row.original)}
+              disabled={isDownloading}
+              title="Download PDF"
+            >
+              {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+              onClick={() => openFormDrawer(row.original.id)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
+              onClick={() => setDeleteId(row.original.id)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 

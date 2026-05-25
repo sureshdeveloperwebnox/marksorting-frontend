@@ -89,6 +89,21 @@ export const useServiceReport = (id: string | null) => {
     });
 };
 
+export const downloadServiceReportPdf = async (id: string, reportNumber: string) => {
+    const { data } = await api.get<Blob>(`/service-reports/${id}/pdf`, {
+        responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `service-report-${reportNumber}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+};
+
 export const useCreateServiceReport = () => {
     const queryClient = useQueryClient();
     return useMutation({
