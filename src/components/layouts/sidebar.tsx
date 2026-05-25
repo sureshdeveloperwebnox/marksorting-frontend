@@ -61,7 +61,7 @@ const items: SidebarItem[] = [
     icon: Tag,
     subItems: [
       { label: 'Service Category', href: '/service-management/service-category', icon: Tag },
-      { label: 'Service Report', href: '/service-management/service-report', icon: FileText },
+      { label: 'Service List', href: '/service-management/service-report', icon: FileText },
     ]
   },
   {

@@ -186,7 +186,7 @@ export default function ServiceReportPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success("Service report deleted successfully");
+      toast.success("Service deleted successfully");
     } catch {
       // Handled in mutation
     } finally {
@@ -380,13 +380,13 @@ export default function ServiceReportPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
               <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Service Report{" "}
+                Service{" "}
                 <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
                   List
                 </span>
               </h1>
               <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
-                Manage all service reports and track engineer visits
+                Manage all services and track engineer visits
               </p>
             </div>
 
@@ -427,7 +427,7 @@ export default function ServiceReportPage() {
                 className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <FileText size={15} />
-                New Report
+                New Service
               </Button>
             </div>
           </div>
@@ -439,7 +439,7 @@ export default function ServiceReportPage() {
               loading={isLoading}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
-              entityName="service reports"
+              entityName="services"
               pagination={pagination}
               onPaginationChange={setPagination}
               onGlobalFilterChange={setSearch}
@@ -458,13 +458,13 @@ export default function ServiceReportPage() {
       ════════════════════════════════════════ */}
       <div className="xl:col-span-1 flex flex-col gap-4">
         <StatsCard
-          title="Total Reports"
+          title="Total Services"
           value={totalData?.total}
           loading={!totalData}
           icon={<ClipboardCheck size={20} className="text-primary" />}
           iconBg="bg-primary/10 dark:bg-primary/15"
           gradient="bg-primary"
-          trend="All service reports"
+          trend="All services"
         />
         <StatsCard
           title="Completed"
@@ -554,7 +554,7 @@ export default function ServiceReportPage() {
               Confirm Deletion
             </DialogTitle>
             <DialogDescription className="text-center text-gray-500 font-bold">
-              This action cannot be undone. This will permanently remove the service report from the system.
+              This action cannot be undone. This will permanently remove the service from the system.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-3 sm:justify-center pt-6">
@@ -570,7 +570,7 @@ export default function ServiceReportPage() {
               disabled={deleteMutation.isPending}
               className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
             >
-              {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Report"}
+              {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Service"}
             </Button>
           </DialogFooter>
         </DialogContent>

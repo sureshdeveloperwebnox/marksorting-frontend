@@ -473,31 +473,31 @@ export function ServiceReportFormDrawer() {
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-gray-50 dark:bg-gray-950 border-l border-gray-100 dark:border-white/5"
+        className="w-screen sm:max-w-[92vw] xl:max-w-[900px] p-0 flex flex-col h-full bg-gray-50 dark:bg-gray-950 border-l border-gray-100 dark:border-white/5"
       >
-        <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900 z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20">
+        <SheetHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900 z-10">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 pr-8">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20 flex-shrink-0">
               <ClipboardCheck size={24} />
             </div>
-            <div>
-              <SheetTitle className="text-xl">
-                {isEdit ? 'Edit Service Report' : 'New Service Report'}
+            <div className="min-w-0">
+              <SheetTitle className="text-lg sm:text-xl truncate">
+                {isEdit ? 'Edit Service' : 'New Service'}
               </SheetTitle>
-              <SheetDescription>
-                {isEdit ? 'Update service report information.' : 'Create a new service report.'}
+              <SheetDescription className="text-xs sm:text-sm">
+                {isEdit ? 'Update service information.' : 'Create a new service.'}
               </SheetDescription>
             </div>
           </div>
         </SheetHeader>
 
-        <div ref={sheetRef} className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide pb-24">
+        <div ref={sheetRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-6 py-4 sm:py-6 scrollbar-hide pb-32 sm:pb-24">
           {isLoading ? (
             <div className="flex items-center justify-center h-full min-h-[300px]">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
-            <form id="service-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
+            <form id="service-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4 min-w-0">
               {/* Section 1 - General Information */}
               <SectionToggle section={sections[0]}>
                   <div className="space-y-2" data-error={errors.service_category_id ? 'true' : undefined}>
@@ -679,7 +679,7 @@ export function ServiceReportFormDrawer() {
 
               {/* Section 4 - Visit Details */}
               <SectionToggle section={sections[3]}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <CalendarDays size={14} className="text-primary/70" />
@@ -730,7 +730,7 @@ export function ServiceReportFormDrawer() {
                         <DatePicker
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Select call registered date"
+                          placeholder="Select call date"
                         />
                       )}
                     />
@@ -770,7 +770,7 @@ export function ServiceReportFormDrawer() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
@@ -1122,8 +1122,8 @@ export function ServiceReportFormDrawer() {
           )}
         </div>
 
-        <SheetFooter className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5 z-10">
-          <div className="flex gap-3 w-full">
+        <SheetFooter className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5 z-10">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full">
             <Button
               type="button"
               variant="ghost"
@@ -1139,7 +1139,7 @@ export function ServiceReportFormDrawer() {
               className="flex-1 rounded-xl h-11 bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20 gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
-              {isEdit ? 'Update Report' : 'Save Report'}
+              {isEdit ? 'Update Service' : 'Save Service'}
             </Button>
           </div>
         </SheetFooter>

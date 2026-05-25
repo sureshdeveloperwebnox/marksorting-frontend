@@ -28,7 +28,7 @@ export function DatePicker({
   const [isOpen, setIsOpen] = React.useState(false);
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [viewMode, setViewMode] = React.useState<'days' | 'months' | 'years'>('days');
-  const [popoverAlign, setPopoverAlign] = React.useState<'left' | 'right'>('left');
+  const [popoverStyle, setPopoverStyle] = React.useState<React.CSSProperties>({});
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Parse value to Date object or default to null
@@ -55,19 +55,45 @@ export function DatePicker({
   React.useLayoutEffect(() => {
     if (!isOpen || !containerRef.current) return;
 
-    const updateAlignment = () => {
+    const updatePosition = () => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      const popoverWidth = Math.min(310, window.innerWidth - 24);
-      const rightOverflow = rect.left + popoverWidth > window.innerWidth - 12;
-      setPopoverAlign(rightOverflow ? 'right' : 'left');
+      const viewportPadding = 12;
+      const popoverWidth = Math.min(310, window.innerWidth - viewportPadding * 2);
+      const estimatedPopoverHeight = viewMode === 'years' ? 310 : 390;
+      const availableBelow = window.innerHeight - rect.bottom - viewportPadding;
+      const availableAbove = rect.top - viewportPadding;
+
+      const left = Math.min(
+        Math.max(viewportPadding, rect.left),
+        window.innerWidth - popoverWidth - viewportPadding
+      );
+      const top =
+        availableBelow >= estimatedPopoverHeight || availableBelow >= availableAbove
+          ? rect.bottom + 6
+          : Math.max(viewportPadding, rect.top - estimatedPopoverHeight - 6);
+
+      setPopoverStyle({
+        position: 'fixed',
+        top,
+        left,
+        width: popoverWidth,
+        maxHeight: Math.min(
+          estimatedPopoverHeight,
+          window.innerHeight - viewportPadding * 2
+        ),
+      });
     };
 
-    updateAlignment();
-    window.addEventListener('resize', updateAlignment);
-    return () => window.removeEventListener('resize', updateAlignment);
-  }, [isOpen]);
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, viewMode]);
 
   // Handle click outside to close popover
   React.useEffect(() => {
@@ -256,9 +282,9 @@ export function DatePicker({
             animate={{ opacity: 1, y: 4, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
+            style={popoverStyle}
             className={cn(
-              "absolute z-[9999] mt-1 w-[min(310px,calc(100vw-1.5rem))] p-3 sm:p-4 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl",
-              popoverAlign === 'right' ? "right-0 origin-top-right" : "left-0 origin-top-left"
+              "z-[9999] overflow-y-auto p-3 sm:p-4 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl origin-top"
             )}
           >
             {/* Calendar Header */}
