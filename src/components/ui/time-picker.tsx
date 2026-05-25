@@ -180,7 +180,7 @@ export function TimePicker({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "w-full h-11 px-4 rounded-xl flex items-center justify-between text-left text-sm transition-all outline-hidden border border-transparent select-none cursor-pointer",
-          "bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-bold shadow-sm",
+          "bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-medium shadow-sm",
           isOpen && "ring-2 ring-primary/20 bg-white dark:bg-gray-900 border-primary/20",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none",
           className
@@ -217,10 +217,10 @@ export function TimePicker({
           >
             {/* Header Display */}
             <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <span className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
                 Select Time
               </span>
-              <span className="text-sm font-black text-primary bg-primary/5 dark:bg-primary/10 px-2 py-0.5 rounded-lg">
+              <span className="text-sm font-medium text-primary bg-primary/5 dark:bg-primary/10 px-2 py-0.5 rounded-lg">
                 {displayValue || '12:00 AM'}
               </span>
             </div>
@@ -243,7 +243,7 @@ export function TimePicker({
                       onClick={() => handleHourSelect(h)}
                       style={{ scrollSnapAlign: 'center' }}
                       className={cn(
-                        "w-full h-8 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center select-none",
+                        "w-full h-8 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center select-none",
                         isSelected
                           ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
@@ -271,7 +271,7 @@ export function TimePicker({
                       onClick={() => handleMinuteSelect(m)}
                       style={{ scrollSnapAlign: 'center' }}
                       className={cn(
-                        "w-full h-8 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center select-none",
+                        "w-full h-8 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center select-none",
                         isSelected
                           ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
@@ -299,7 +299,7 @@ export function TimePicker({
                       onClick={() => handleAmpmSelect(ampm as 'AM' | 'PM')}
                       style={{ scrollSnapAlign: 'center' }}
                       className={cn(
-                        "w-full h-8 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center select-none",
+                        "w-full h-8 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center justify-center select-none",
                         isSelected
                           ? "bg-primary text-white shadow-md shadow-primary/20 scale-105"
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
@@ -317,14 +317,14 @@ export function TimePicker({
               <button
                 type="button"
                 onClick={handleNow}
-                className="text-xs font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                className="text-xs font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
               >
                 Now
               </button>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="text-xs font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                className="text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
               >
                 Done
               </button>

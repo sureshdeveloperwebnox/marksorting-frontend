@@ -425,7 +425,7 @@ export function InstallationReportFormDrawer() {
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <section.icon size={16} className="text-primary" />
           </div>
-          <span className="font-bold text-sm text-gray-800 dark:text-gray-200">
+          <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
             {section.id}. {section.title}
           </span>
         </div>
@@ -459,7 +459,7 @@ export function InstallationReportFormDrawer() {
   );
 
   const FieldError = ({ message }: { message?: string }) =>
-    message ? <p className="text-[11px] text-rose-500 font-bold ml-1">{message}</p> : null;
+    message ? <p className="text-[11px] text-rose-500 font-medium ml-1">{message}</p> : null;
 
   return (
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
@@ -495,7 +495,7 @@ export function InstallationReportFormDrawer() {
                 <div className="space-y-4">
                   {/* Select Service Engineers */}
                   <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Users size={14} className="text-primary/70" />
                       Select Service Engineers
                     </Label>
@@ -515,7 +515,7 @@ export function InstallationReportFormDrawer() {
 
                   {/* Customer Dropdown */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Users size={14} className="text-primary/70" />
                       Customer
                     </Label>
@@ -531,13 +531,13 @@ export function InstallationReportFormDrawer() {
                         value={selectedCustomerId || ''}
                         items={customers.map((c) => ({ value: c.id, label: c.name }))}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select customer" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
-                          <SelectItem value="all_clear" className="font-bold py-3 text-gray-400">Clear Customer Filter</SelectItem>
+                          <SelectItem value="all_clear" className="font-medium py-3 text-gray-400">Clear Customer Filter</SelectItem>
                           {customers.map((cust) => (
-                            <SelectItem key={cust.id} value={cust.id} className="font-bold py-3">
+                            <SelectItem key={cust.id} value={cust.id} className="font-medium py-3">
                               {cust.name}
                             </SelectItem>
                           ))}
@@ -550,7 +550,7 @@ export function InstallationReportFormDrawer() {
 
                   {/* Mill Name */}
                   <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Building2 size={14} className="text-primary/70" />
                       Mill Name
                     </Label>
@@ -565,18 +565,18 @@ export function InstallationReportFormDrawer() {
                         value={watch('mill_id')}
                         items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder={selectedCustomerId ? "Select mill" : "Select a customer first"} />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
                           {filteredMills.length > 0 ? (
                             filteredMills.map((mill) => (
-                              <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
+                              <SelectItem key={mill.id} value={mill.id} className="font-medium py-3">
                                 {mill.name}
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
+                            <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-medium">
                               {selectedCustomerId ? "No mills found for this customer" : "Please select a customer first"}
                             </SelectItem>
                           )}
@@ -590,14 +590,14 @@ export function InstallationReportFormDrawer() {
 
                   {/* Place */}
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
                       Place
                     </Label>
                     <Input
                       {...register('place')}
                       placeholder="Enter mill place"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                     <FieldError message={errors.place?.message} />
                   </div>
@@ -605,7 +605,7 @@ export function InstallationReportFormDrawer() {
                   {/* Mill Whatsapp Number & Email */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.mill_whatsapp_number ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Phone size={14} className="text-primary/70" />
                         Mill Whatsapp Number
                       </Label>
@@ -625,14 +625,14 @@ export function InstallationReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Mail size={14} className="text-primary/70" />
                         Mill Email ID
                       </Label>
                       <Input
                         {...register('mill_email')}
                         placeholder="mill@example.com (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                       <FieldError message={errors.mill_email?.message} />
                     </div>
@@ -641,7 +641,7 @@ export function InstallationReportFormDrawer() {
                   {/* Date, Time, Call Registered Date */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
                         Date
                       </Label>
@@ -660,7 +660,7 @@ export function InstallationReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.visit_time ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Clock size={14} className="text-primary/70" />
                         Time
                       </Label>
@@ -679,7 +679,7 @@ export function InstallationReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.call_registered_date ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Calendar size={14} className="text-primary/70" />
                         Call Registered Date
                       </Label>
@@ -701,40 +701,40 @@ export function InstallationReportFormDrawer() {
                   {/* Model, Serial, Authorized Person */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2" data-error={errors.machine_model ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Cpu size={14} className="text-primary/70" />
                         Model
                       </Label>
                       <Input
                         {...register('machine_model')}
                         placeholder="Machine model"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                       <FieldError message={errors.machine_model?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.serial_or_frame_no ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Tag size={14} className="text-primary/70" />
                         Serial / Frame No
                       </Label>
                       <Input
                         {...register('serial_or_frame_no')}
                         placeholder="Serial/Frame number"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                       <FieldError message={errors.serial_or_frame_no?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.authorized_person ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Users size={14} className="text-primary/70" />
                         Authorized Person
                       </Label>
                       <Input
                         {...register('authorized_person')}
                         placeholder="Authorized person name"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                       <FieldError message={errors.authorized_person?.message} />
                     </div>
@@ -743,19 +743,19 @@ export function InstallationReportFormDrawer() {
                   {/* Invoice details */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Invoice Number
                       </Label>
                       <Input
                         {...register('invoice_number')}
                         placeholder="Invoice number (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
                         Invoice Date
                       </Label>
@@ -776,7 +776,7 @@ export function InstallationReportFormDrawer() {
                   {/* Warranty details */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <ShieldCheck size={14} className="text-primary/70" />
                         Warranty Start Date
                       </Label>
@@ -794,7 +794,7 @@ export function InstallationReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <ShieldCheck size={14} className="text-primary/70" />
                         Warranty End Date
                       </Label>
@@ -818,67 +818,67 @@ export function InstallationReportFormDrawer() {
               <SectionToggle section={sections[1]}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Package size={14} className="text-primary/70" />
                       Commodity
                     </Label>
                     <Input
                       {...register('commodity')}
                       placeholder="e.g., Rice, Coffee (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Contamination
                     </Label>
                     <Input
                       {...register('contamination')}
                       placeholder="e.g., Black grains, stones (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Output capacity / hour
                     </Label>
                     <Input
                       {...register('output_capacity_per_hour')}
                       placeholder="e.g., 5 tons/hour (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Rejection Ratio
                     </Label>
                     <Input
                       {...register('rejection_ratio')}
                       placeholder="e.g., 1:10 (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Purity
                     </Label>
                     <Input
                       {...register('purity')}
                       placeholder="e.g., 99.9% (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
                       No of Programs set
                     </Label>
@@ -887,7 +887,7 @@ export function InstallationReportFormDrawer() {
                       min={0}
                       {...register('no_of_programs_set', { valueAsNumber: false })}
                       placeholder="0 (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                   </div>
                 </div>
@@ -899,7 +899,7 @@ export function InstallationReportFormDrawer() {
                   {/* AC and Compressor */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.ac_provided ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         Air Conditioner Provided or not?
                       </Label>
@@ -907,47 +907,47 @@ export function InstallationReportFormDrawer() {
                         onValueChange={(val) => setValue('ac_provided', val || '')}
                         value={watch('ac_provided')}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select AC status" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="YES" className="font-bold py-3 text-emerald-500">Yes</SelectItem>
-                          <SelectItem value="NO" className="font-bold py-3 text-rose-500">No</SelectItem>
+                          <SelectItem value="YES" className="font-medium py-3 text-emerald-500">Yes</SelectItem>
+                          <SelectItem value="NO" className="font-medium py-3 text-rose-500">No</SelectItem>
                         </SelectContent>
                       </Select>
                       <FieldError message={errors.ac_provided?.message} />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Compressor Details
                       </Label>
                       <Input
                         {...register('compressor_details')}
                         placeholder="Compressor details (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                     </div>
                   </div>
 
                   {/* Air Drier */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Air Drier details
                     </Label>
                     <Input
                       {...register('air_drier_details')}
                       placeholder="Air drier details (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
                   </div>
 
                   {/* Ground Earth Toggle & Ground Earth Value */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.ground_earth_provided ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         Ground Earth Provided or not?
                       </Label>
@@ -960,19 +960,19 @@ export function InstallationReportFormDrawer() {
                         }}
                         value={watch('ground_earth_provided')}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select Ground Earth status" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="YES" className="font-bold py-3 text-emerald-500">Yes</SelectItem>
-                          <SelectItem value="NO" className="font-bold py-3 text-rose-500">No</SelectItem>
+                          <SelectItem value="YES" className="font-medium py-3 text-emerald-500">Yes</SelectItem>
+                          <SelectItem value="NO" className="font-medium py-3 text-rose-500">No</SelectItem>
                         </SelectContent>
                       </Select>
                       <FieldError message={errors.ground_earth_provided?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.ground_earth_value ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Cpu size={14} className="text-primary/70" />
                         Ground Earth Value Selection (1 - 12)
                       </Label>
@@ -982,14 +982,14 @@ export function InstallationReportFormDrawer() {
                         value={watch('ground_earth_value')?.toString() || ''}
                         items={Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString() }))}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select value (1-12)" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-48">
                           {Array.from({ length: 12 }).map((_, i) => {
                             const valStr = (i + 1).toString();
                             return (
-                              <SelectItem key={valStr} value={valStr} className="font-bold py-2.5">
+                              <SelectItem key={valStr} value={valStr} className="font-medium py-2.5">
                                 {valStr}
                               </SelectItem>
                             );
@@ -1003,7 +1003,7 @@ export function InstallationReportFormDrawer() {
                   {/* Filters installed */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Cpu size={14} className="text-primary/70" />
                         No of filters installed
                       </Label>
@@ -1012,19 +1012,19 @@ export function InstallationReportFormDrawer() {
                         min={0}
                         {...register('no_of_filters_installed', { valueAsNumber: false })}
                         placeholder="0 (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Oil Filter condition
                       </Label>
                       <Input
                         {...register('oil_filter_condition')}
                         placeholder="Oil filter condition (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                     </div>
                   </div>
@@ -1032,19 +1032,19 @@ export function InstallationReportFormDrawer() {
                   {/* Line filter and Auto drain valve */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Line filter condition
                       </Label>
                       <Input
                         {...register('line_filter_condition')}
                         placeholder="Line filter condition (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                     </div>
 
                     <div className="space-y-2" data-error={errors.auto_drain_valve_working ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         Auto drain valve working or not?
                       </Label>
@@ -1052,12 +1052,12 @@ export function InstallationReportFormDrawer() {
                         onValueChange={(val) => setValue('auto_drain_valve_working', val || '')}
                         value={watch('auto_drain_valve_working')}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select Status" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="YES" className="font-bold py-3 text-emerald-500">Yes</SelectItem>
-                          <SelectItem value="NO" className="font-bold py-3 text-rose-500">No</SelectItem>
+                          <SelectItem value="YES" className="font-medium py-3 text-emerald-500">Yes</SelectItem>
+                          <SelectItem value="NO" className="font-medium py-3 text-rose-500">No</SelectItem>
                         </SelectContent>
                       </Select>
                       <FieldError message={errors.auto_drain_valve_working?.message} />
@@ -1071,23 +1071,23 @@ export function InstallationReportFormDrawer() {
                 <div className="space-y-6">
                   {/* Service Engineer Details */}
                   <div className="border-b border-gray-100 dark:border-white/5 pb-6 space-y-4">
-                    <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">Service Engineer Details</h3>
+                    <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200">Service Engineer Details</h3>
                     
                     <div className="space-y-2" data-error={errors.engineer_remarks ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Pen size={14} className="text-primary/70" />
                         Service Engineer Remarks
                       </Label>
                       <Textarea
                         {...register('engineer_remarks')}
                         placeholder="Enter service engineer remarks (max 2000 chars)"
-                        className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
+                        className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium resize-none"
                       />
                       <FieldError message={errors.engineer_remarks?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.engineer_signature ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Pen size={14} className="text-primary/70" />
                         Service Engineer Signature
                       </Label>
@@ -1104,23 +1104,23 @@ export function InstallationReportFormDrawer() {
 
                   {/* Customer Details */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200">Customer Details</h3>
+                    <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200">Customer Details</h3>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Customer Remarks
                       </Label>
                       <Textarea
                         {...register('customer_remarks')}
                         placeholder="Customer remarks (Optional, max 2000 chars)"
-                        className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
+                        className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium resize-none"
                       />
                       <FieldError message={errors.customer_remarks?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.customer_signature ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Pen size={14} className="text-primary/70" />
                         Customer Signature
                       </Label>
@@ -1146,7 +1146,7 @@ export function InstallationReportFormDrawer() {
               type="button"
               variant="ghost"
               onClick={closeFormDrawer}
-              className="flex-1 rounded-xl h-11 font-black text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
+              className="flex-1 rounded-xl h-11 font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
             >
               Cancel
             </Button>
@@ -1154,7 +1154,7 @@ export function InstallationReportFormDrawer() {
               type="submit"
               form="installation-report-form"
               disabled={isSubmitting || isLoading}
-              className="flex-1 rounded-xl h-11 bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20 gap-2"
+              className="flex-1 rounded-xl h-11 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg shadow-primary/20 gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
               {isEdit ? 'Update Installation' : 'Save Installation'}

@@ -154,7 +154,7 @@ export function DatePicker({
             disabled={isDateDisabled}
             onClick={() => !isDateDisabled && handleSelectDate(cloneDay)}
             className={cn(
-              "h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-xs font-bold transition-all relative flex items-center justify-center cursor-pointer select-none",
+              "h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-xs font-medium transition-all relative flex items-center justify-center cursor-pointer select-none",
               !isCurrentMonth && "text-gray-300 dark:text-gray-600 font-medium",
               isCurrentMonth && "text-gray-800 dark:text-gray-200",
               isToday && !isSelected && "border border-primary/40 text-primary dark:text-primary",
@@ -226,7 +226,7 @@ export function DatePicker({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "w-full h-11 px-4 rounded-xl flex items-center justify-between text-left text-sm transition-all outline-hidden border border-transparent select-none cursor-pointer",
-          "bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-bold shadow-sm",
+          "bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-medium shadow-sm",
           isOpen && "ring-2 ring-primary/20 bg-white dark:bg-gray-900 border-primary/20",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none",
           className
@@ -269,26 +269,26 @@ export function DatePicker({
                     <button
                       type="button"
                       onClick={() => setViewMode('months')}
-                      className="px-2 py-1 text-sm font-bold rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
+                      className="px-2 py-1 text-sm font-medium rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
                     >
                       {format(currentMonth, 'MMMM')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setViewMode('years')}
-                      className="px-2 py-1 text-sm font-bold rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
+                      className="px-2 py-1 text-sm font-medium rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer"
                     >
                       {format(currentMonth, 'yyyy')}
                     </button>
                   </>
                 )}
                 {viewMode === 'months' && (
-                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200 px-2">
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200 px-2">
                     Select Month
                   </span>
                 )}
                 {viewMode === 'years' && (
-                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200 px-2">
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200 px-2">
                     Select Year
                   </span>
                 )}
@@ -316,7 +316,7 @@ export function DatePicker({
                 <button
                   type="button"
                   onClick={() => setViewMode('days')}
-                  className="text-xs font-bold text-primary hover:underline px-2 cursor-pointer"
+                  className="text-xs font-medium text-primary hover:underline px-2 cursor-pointer"
                 >
                   Back
                 </button>
@@ -331,7 +331,7 @@ export function DatePicker({
                   {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
                     <div
                       key={d}
-                      className="h-8 flex items-center justify-center text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-wider"
+                      className="h-8 flex items-center justify-center text-[10px] font-medium text-gray-400 dark:text-gray-600 uppercase tracking-wider"
                     >
                       {d}
                     </div>
@@ -354,7 +354,7 @@ export function DatePicker({
                       type="button"
                       onClick={() => handleSelectMonth(idx)}
                       className={cn(
-                        "h-10 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                        "h-10 rounded-xl text-xs font-medium transition-all cursor-pointer",
                         isCurrent 
                           ? "bg-primary text-white shadow-md shadow-primary/20" 
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
@@ -382,7 +382,7 @@ export function DatePicker({
                       data-active={isCurrent ? 'true' : 'false'}
                       onClick={() => handleSelectYear(y)}
                       className={cn(
-                        "h-10 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                        "h-10 rounded-xl text-xs font-medium transition-all cursor-pointer",
                         isCurrent 
                           ? "bg-primary text-white shadow-md shadow-primary/20" 
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
@@ -401,14 +401,14 @@ export function DatePicker({
                 <button
                   type="button"
                   onClick={handleToday}
-                  className="text-xs font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                  className="text-xs font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
                 >
                   Today
                 </button>
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="text-xs font-bold text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
+                  className="text-xs font-medium text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
                 >
                   Clear Selection
                 </button>

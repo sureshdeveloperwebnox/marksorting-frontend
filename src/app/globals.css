@@ -130,6 +130,26 @@
   }
 }
 
+@layer components {
+  [data-slot="sheet-content"] form,
+  [data-slot="sheet-content"] form *,
+  [data-slot="sheet-content"] [data-slot="sheet-footer"],
+  [data-slot="sheet-content"] [data-slot="sheet-footer"] *,
+  [data-slot="select-content"],
+  [data-slot="select-content"] *,
+  .form-typography-normal,
+  .form-typography-normal * {
+    font-weight: 500 !important;
+  }
+
+  [data-slot="sheet-content"] form input::placeholder,
+  [data-slot="sheet-content"] form textarea::placeholder,
+  .form-typography-normal input::placeholder,
+  .form-typography-normal textarea::placeholder {
+    font-weight: 400 !important;
+  }
+}
+
 /* Custom styles for react-phone-number-input */
 .PhoneInput {
   display: flex;
