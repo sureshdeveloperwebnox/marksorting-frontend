@@ -22,6 +22,7 @@ export function TimePicker({
   disabled = false,
 }: TimePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [popoverAlign, setPopoverAlign] = React.useState<'left' | 'right'>('right');
   const containerRef = React.useRef<HTMLDivElement>(null);
   
   const hourListRef = React.useRef<HTMLDivElement>(null);
@@ -118,6 +119,23 @@ export function TimePicker({
     }
   }, [isOpen, scrollToActive]);
 
+  React.useLayoutEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+
+    const updateAlignment = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const popoverWidth = Math.min(260, window.innerWidth - 24);
+      const rightOverflow = rect.left + popoverWidth > window.innerWidth - 12;
+      setPopoverAlign(rightOverflow ? 'right' : 'left');
+    };
+
+    updateAlignment();
+    window.addEventListener('resize', updateAlignment);
+    return () => window.removeEventListener('resize', updateAlignment);
+  }, [isOpen]);
+
   const handleHourSelect = (hour: string) => {
     setTimeValue(hour, parsedTime.minute, parsedTime.ampm);
   };
@@ -164,10 +182,11 @@ export function TimePicker({
           "w-full h-11 px-4 rounded-xl flex items-center justify-between text-left text-sm transition-all outline-hidden border border-transparent select-none cursor-pointer",
           "bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-bold shadow-sm",
           isOpen && "ring-2 ring-primary/20 bg-white dark:bg-gray-900 border-primary/20",
-          disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+          disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+          className
         )}
       >
-        <span className={cn(!value && "text-gray-400 dark:text-gray-600 font-medium")}>
+        <span className={cn("min-w-0 flex-1 truncate", !value && "text-gray-400 dark:text-gray-600 font-medium")}>
           {displayValue || placeholder}
         </span>
         <div className="flex items-center gap-1.5 text-gray-400">
@@ -192,7 +211,8 @@ export function TimePicker({
             exit={{ opacity: 0, y: 8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              "absolute z-[9999] right-0 mt-1 w-[260px] rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl"
+              "absolute z-[9999] mt-1 w-[min(260px,calc(100vw-1.5rem))] rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl",
+              popoverAlign === 'right' ? "right-0 origin-top-right" : "left-0 origin-top-left"
             )}
           >
             {/* Header Display */}

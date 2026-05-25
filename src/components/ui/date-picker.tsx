@@ -28,6 +28,7 @@ export function DatePicker({
   const [isOpen, setIsOpen] = React.useState(false);
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [viewMode, setViewMode] = React.useState<'days' | 'months' | 'years'>('days');
+  const [popoverAlign, setPopoverAlign] = React.useState<'left' | 'right'>('left');
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Parse value to Date object or default to null
@@ -50,6 +51,23 @@ export function DatePicker({
       setViewMode('days'); // Reset view to day grid when closed
     }
   }, [isOpen, selectedDate]);
+
+  React.useLayoutEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+
+    const updateAlignment = () => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const popoverWidth = Math.min(310, window.innerWidth - 24);
+      const rightOverflow = rect.left + popoverWidth > window.innerWidth - 12;
+      setPopoverAlign(rightOverflow ? 'right' : 'left');
+    };
+
+    updateAlignment();
+    window.addEventListener('resize', updateAlignment);
+    return () => window.removeEventListener('resize', updateAlignment);
+  }, [isOpen]);
 
   // Handle click outside to close popover
   React.useEffect(() => {
@@ -136,7 +154,7 @@ export function DatePicker({
             disabled={isDateDisabled}
             onClick={() => !isDateDisabled && handleSelectDate(cloneDay)}
             className={cn(
-              "h-9 w-9 rounded-xl text-xs font-bold transition-all relative flex items-center justify-center cursor-pointer select-none",
+              "h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-xs font-bold transition-all relative flex items-center justify-center cursor-pointer select-none",
               !isCurrentMonth && "text-gray-300 dark:text-gray-600 font-medium",
               isCurrentMonth && "text-gray-800 dark:text-gray-200",
               isToday && !isSelected && "border border-primary/40 text-primary dark:text-primary",
@@ -151,7 +169,7 @@ export function DatePicker({
         day = addDays(day, 1);
       }
       rows.push(
-        <div key={day.toString()} className="grid grid-cols-7 gap-1">
+        <div key={day.toString()} className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {days}
         </div>
       );
@@ -210,10 +228,11 @@ export function DatePicker({
           "w-full h-11 px-4 rounded-xl flex items-center justify-between text-left text-sm transition-all outline-hidden border border-transparent select-none cursor-pointer",
           "bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-bold shadow-sm",
           isOpen && "ring-2 ring-primary/20 bg-white dark:bg-gray-900 border-primary/20",
-          disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+          disabled && "opacity-50 cursor-not-allowed pointer-events-none",
+          className
         )}
       >
-        <span className={cn(!value && "text-gray-400 dark:text-gray-600 font-medium")}>
+        <span className={cn("min-w-0 flex-1 truncate", !value && "text-gray-400 dark:text-gray-600 font-medium")}>
           {selectedDate ? format(selectedDate, 'dd-MM-yyyy') : placeholder}
         </span>
         <div className="flex items-center gap-1.5 text-gray-400">
@@ -238,7 +257,8 @@ export function DatePicker({
             exit={{ opacity: 0, y: 8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              "absolute z-[9999] left-0 mt-1 w-[310px] p-4 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl"
+              "absolute z-[9999] mt-1 w-[min(310px,calc(100vw-1.5rem))] p-3 sm:p-4 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl",
+              popoverAlign === 'right' ? "right-0 origin-top-right" : "left-0 origin-top-left"
             )}
           >
             {/* Calendar Header */}
@@ -307,7 +327,7 @@ export function DatePicker({
             {viewMode === 'days' && (
               <>
                 {/* Weekdays header */}
-                <div className="grid grid-cols-7 gap-1 mt-3">
+                <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mt-3">
                   {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
                     <div
                       key={d}
