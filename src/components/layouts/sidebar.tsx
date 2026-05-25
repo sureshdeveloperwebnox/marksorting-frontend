@@ -68,7 +68,7 @@ const items: SidebarItem[] = [
     label: 'Installation Management',
     icon: Wrench,
     subItems: [
-      { label: 'Installation Report', href: '/installation-management/installation-report', icon: FileText },
+      { label: 'Installation List', href: '/installation-management/installation-report', icon: FileText },
     ]
   },
   {

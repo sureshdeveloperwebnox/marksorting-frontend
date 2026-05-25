@@ -348,13 +348,13 @@ export default function InstallationReportPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
               <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Installation Report{" "}
+                Installation{" "}
                 <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
                   List
                 </span>
               </h1>
               <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
-                Manage all installation reports and setup statuses
+                Manage all installations and setup statuses
               </p>
             </div>
 
@@ -395,7 +395,7 @@ export default function InstallationReportPage() {
                 className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <FileText size={15} />
-                New Report
+                New Installation
               </Button>
             </div>
           </div>

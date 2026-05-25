@@ -474,10 +474,10 @@ export function InstallationReportFormDrawer() {
             </div>
             <div>
               <SheetTitle className="text-xl">
-                {isEdit ? 'Edit Installation Report' : 'New Installation Report'}
+                {isEdit ? 'Edit Installation' : 'New Installation'}
               </SheetTitle>
               <SheetDescription>
-                {isEdit ? 'Update installation report details.' : 'Fill details below to register installation.'}
+                {isEdit ? 'Update installation details.' : 'Fill details below to register installation.'}
               </SheetDescription>
             </div>
           </div>
@@ -1157,7 +1157,7 @@ export function InstallationReportFormDrawer() {
               className="flex-1 rounded-xl h-11 bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20 gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
-              {isEdit ? 'Update Report' : 'Save Report'}
+              {isEdit ? 'Update Installation' : 'Save Installation'}
             </Button>
           </div>
         </SheetFooter>
