@@ -215,6 +215,18 @@ export default function TicketsPage() {
   /* ── Table columns ── */
   const columns: ColumnDef<SupportTicket>[] = [
     {
+      accessorKey: "ticket_number",
+      header: "Ticket ID",
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className="rounded-md font-black text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 border-primary/20 bg-primary/5 text-primary whitespace-nowrap"
+        >
+          {row.original.ticket_number || row.original.id.slice(0, 8).toUpperCase()}
+        </Badge>
+      ),
+    },
+    {
       accessorKey: "subject",
       header: "Subject / Description",
       cell: ({ row }) => (

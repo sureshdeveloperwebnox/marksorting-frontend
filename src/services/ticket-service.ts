@@ -24,6 +24,7 @@ export interface TicketMill {
 
 export interface SupportTicket {
     id: string;
+    ticket_number?: string;
     service_engineer_id?: string;
     customer_id?: string;
     mill_id?: string;
