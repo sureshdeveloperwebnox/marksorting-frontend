@@ -36,6 +36,7 @@ import {
   ChevronDown,
   ChevronRight,
   ShieldCheck,
+  Check,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -62,6 +63,22 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
+
+const GROUND_EARTH_FIELD_OPTIONS = [
+  { value: 'PRIMARY', label: 'Primary' },
+  { value: 'SECONDARY', label: 'Secondary' },
+  { value: 'REJECTION_1', label: 'Rejection 1' },
+  { value: 'REJECTION_2', label: 'Rejection 2' },
+  { value: 'SPLIT', label: 'Split' },
+] as const;
+
+type GroundEarthFieldValue = (typeof GROUND_EARTH_FIELD_OPTIONS)[number]['value'];
+
+const normalizeGroundEarthField = (value?: string | null): GroundEarthFieldValue | '' => {
+  return GROUND_EARTH_FIELD_OPTIONS.some((option) => option.value === value)
+    ? (value as GroundEarthFieldValue)
+    : '';
+};
 
 const installationReportSchema = z.object({
   technician_ids: z.array(z.string()).min(1, 'At least one engineer is required'),
@@ -95,6 +112,7 @@ const installationReportSchema = z.object({
   air_drier_details: z.string().optional().or(z.literal('')),
   ground_earth_provided: z.string().min(1, 'Ground Earth status is required'),
   ground_earth_value: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(1).max(12).optional()),
+  ground_earth_field: z.enum(['PRIMARY', 'SECONDARY', 'REJECTION_1', 'REJECTION_2', 'SPLIT']).optional().or(z.literal('')),
   no_of_filters_installed: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0).optional()),
   oil_filter_condition: z.string().optional().or(z.literal('')),
   line_filter_condition: z.string().optional().or(z.literal('')),
@@ -174,6 +192,7 @@ export function InstallationReportFormDrawer() {
       air_drier_details: '',
       ground_earth_provided: 'NO',
       ground_earth_value: undefined,
+      ground_earth_field: '',
       no_of_filters_installed: undefined,
       oil_filter_condition: '',
       line_filter_condition: '',
@@ -248,6 +267,7 @@ export function InstallationReportFormDrawer() {
           air_drier_details: reportData.air_drier_details || '',
           ground_earth_provided: reportData.ground_earth_provided ? 'YES' : 'NO',
           ground_earth_value: reportData.ground_earth_value ?? undefined,
+          ground_earth_field: normalizeGroundEarthField(reportData.ground_earth_field),
           no_of_filters_installed: reportData.no_of_filters_installed ?? undefined,
           oil_filter_condition: reportData.oil_filter_condition || '',
           line_filter_condition: reportData.line_filter_condition || '',
@@ -286,6 +306,7 @@ export function InstallationReportFormDrawer() {
           air_drier_details: '',
           ground_earth_provided: 'NO',
           ground_earth_value: undefined,
+          ground_earth_field: '',
           no_of_filters_installed: undefined,
           oil_filter_condition: '',
           line_filter_condition: '',
@@ -310,6 +331,7 @@ export function InstallationReportFormDrawer() {
         auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
         no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
         ground_earth_value: data.ground_earth_value ? Number(data.ground_earth_value) : undefined,
+        ground_earth_field: data.ground_earth_field || undefined,
         no_of_filters_installed: data.no_of_filters_installed ? Number(data.no_of_filters_installed) : undefined,
         invoice_date: data.invoice_date || undefined,
         warranty_start_date: data.warranty_start_date || undefined,
@@ -362,6 +384,7 @@ export function InstallationReportFormDrawer() {
     air_drier_details: 3,
     ground_earth_provided: 3,
     ground_earth_value: 3,
+    ground_earth_field: 3,
     no_of_filters_installed: 3,
     oil_filter_condition: 3,
     line_filter_condition: 3,
@@ -945,29 +968,48 @@ export function InstallationReportFormDrawer() {
                   </div>
 
                   {/* Ground Earth Toggle & Ground Earth Value */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2" data-error={errors.ground_earth_provided ? 'true' : undefined}>
                       <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         Ground Earth Provided or not?
                       </Label>
-                      <Select
-                        onValueChange={(val) => {
-                          setValue('ground_earth_provided', val || '');
-                          if (val === 'NO') {
-                            setValue('ground_earth_value', undefined);
-                          }
-                        }}
-                        value={watch('ground_earth_provided')}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
-                          <SelectValue placeholder="Select Ground Earth status" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="YES" className="font-medium py-3 text-emerald-500">Yes</SelectItem>
-                          <SelectItem value="NO" className="font-medium py-3 text-rose-500">No</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="grid grid-cols-2 gap-3">
+                        {(['YES', 'NO'] as const).map((option) => {
+                          const selected = watch('ground_earth_provided') === option;
+                          return (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => {
+                                setValue('ground_earth_provided', option, { shouldDirty: true, shouldValidate: true });
+                                if (option === 'NO') {
+                                  setValue('ground_earth_value', undefined, { shouldDirty: true, shouldValidate: true });
+                                  setValue('ground_earth_field', '', { shouldDirty: true, shouldValidate: true });
+                                }
+                              }}
+                              className={cn(
+                                "flex h-11 items-center gap-3 rounded-xl bg-gray-50/50 px-4 text-left font-medium transition-all dark:bg-white/5",
+                                selected
+                                  ? "ring-2 ring-primary/30 text-primary"
+                                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+                              )}
+                              role="checkbox"
+                              aria-checked={selected}
+                            >
+                              <span
+                                className={cn(
+                                  "flex h-5 w-5 items-center justify-center rounded border-2 transition-colors",
+                                  selected ? "border-primary bg-primary text-white" : "border-gray-300 bg-white dark:border-white/20 dark:bg-gray-950"
+                                )}
+                              >
+                                {selected && <Check size={13} strokeWidth={3} />}
+                              </span>
+                              {option === 'YES' ? 'Yes' : 'No'}
+                            </button>
+                          );
+                        })}
+                      </div>
                       <FieldError message={errors.ground_earth_provided?.message} />
                     </div>
 
@@ -976,30 +1018,92 @@ export function InstallationReportFormDrawer() {
                         <Cpu size={14} className="text-primary/70" />
                         Ground Earth Value Selection (1 - 12)
                       </Label>
-                      <Select
-                        disabled={watch('ground_earth_provided') !== 'YES'}
-                        onValueChange={(val) => setValue('ground_earth_value', val ? Number(val) : undefined)}
-                        value={watch('ground_earth_value')?.toString() || ''}
-                        items={Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString() }))}
+                      <div
+                        className={cn(
+                          "grid grid-cols-3 gap-3 rounded-xl bg-gray-50/50 p-3 dark:bg-white/5 sm:grid-cols-4",
+                          watch('ground_earth_provided') !== 'YES' && "opacity-50"
+                        )}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
-                          <SelectValue placeholder="Select value (1-12)" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-48">
-                          {Array.from({ length: 12 }).map((_, i) => {
-                            const valStr = (i + 1).toString();
-                            return (
-                              <SelectItem key={valStr} value={valStr} className="font-medium py-2.5">
-                                {valStr}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
+                        {Array.from({ length: 12 }).map((_, i) => {
+                          const value = i + 1;
+                          const selected = watch('ground_earth_value') === value;
+                          const disabled = watch('ground_earth_provided') !== 'YES';
+
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => {
+                                setValue(
+                                  'ground_earth_value',
+                                  selected ? undefined : value,
+                                  { shouldDirty: true, shouldValidate: true }
+                                );
+                              }}
+                              className={cn(
+                                "flex min-h-12 items-center justify-center gap-2 rounded-lg border bg-white px-3 text-sm font-black transition-all dark:bg-gray-950",
+                                selected
+                                  ? "border-primary bg-primary/10 text-primary shadow-sm"
+                                  : "border-gray-200 text-gray-700 hover:border-primary/40 hover:text-primary dark:border-white/10 dark:text-gray-300",
+                                disabled && "cursor-not-allowed hover:border-gray-200 hover:text-gray-700 dark:hover:border-white/10 dark:hover:text-gray-300"
+                              )}
+                              role="checkbox"
+                              aria-checked={selected}
+                              aria-label={`Ground Earth value ${value}`}
+                            >
+                              <span
+                                className={cn(
+                                  "flex h-4 w-4 items-center justify-center rounded border transition-colors",
+                                  selected ? "border-primary bg-primary text-white" : "border-gray-300 dark:border-white/20"
+                                )}
+                              >
+                                {selected && <Check size={11} strokeWidth={3} />}
+                              </span>
+                              {value}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] font-medium text-gray-400">
+                        {watch('ground_earth_provided') === 'YES'
+                          ? 'Select one checked value.'
+                          : 'Choose Yes above to enable value selection.'}
+                      </p>
                       <FieldError message={errors.ground_earth_value?.message} />
                     </div>
-                  </div>
 
+                    <div className="space-y-2" data-error={errors.ground_earth_field ? 'true' : undefined}>
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                        <ShieldCheck size={14} className="text-primary/70" />
+                        Ground Field Earth
+                      </Label>
+                      <Select
+                        disabled={watch('ground_earth_provided') !== 'YES'}
+                        onValueChange={(val) => setValue('ground_earth_field', normalizeGroundEarthField(val), { shouldDirty: true, shouldValidate: true })}
+                        value={watch('ground_earth_field') || ''}
+                        items={GROUND_EARTH_FIELD_OPTIONS.map((option) => ({
+                          value: option.value,
+                          label: option.label,
+                        }))}
+                      >
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
+                          <SelectValue placeholder="Select Primary / Secondary / Rejection / Split" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                          {GROUND_EARTH_FIELD_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value} className="font-medium py-3">
+                              <div className="flex items-center gap-3">
+                                <span className="h-4 w-4 rounded border-2 border-primary bg-primary/90" />
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FieldError message={errors.ground_earth_field?.message} />
+                    </div>
+                  </div>
                   {/* Filters installed */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">

@@ -37,6 +37,7 @@ export interface InstallationReport {
     air_drier_details?: string;
     ground_earth_provided: boolean;
     ground_earth_value?: number;
+    ground_earth_field?: string;
     no_of_filters_installed?: number;
     oil_filter_condition?: string;
     line_filter_condition?: string;
