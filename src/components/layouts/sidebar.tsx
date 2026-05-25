@@ -18,6 +18,7 @@ import {
   FileText,
   Wrench,
   Receipt,
+  TicketCheck,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
@@ -80,7 +81,14 @@ const items: SidebarItem[] = [
   },
   { label: 'Orders', href: '/orders', icon: ClipboardList },
   { label: 'Analytics', href: '/analytics', icon: PieChart },
-  { label: 'Settings', href: '/settings', icon: Settings },
+  {
+    label: 'Ticket Management',
+    icon: TicketCheck,
+    subItems: [
+      { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
+      { label: 'Settings', href: '/ticket-management/settings', icon: Settings },
+    ],
+  },
 ];
 
 export function Sidebar() {

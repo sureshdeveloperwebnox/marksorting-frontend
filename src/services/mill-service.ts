@@ -20,7 +20,7 @@ export interface MillsResponse {
   total: number;
 }
 
-export const useMills = (params: { skip: number; take: number; search?: string; status?: string }) => {
+export const useMills = (params: { skip: number; take: number; search?: string; status?: string; customer_id?: string }) => {
   return useQuery({
     queryKey: ["mills", params],
     queryFn: async () => {

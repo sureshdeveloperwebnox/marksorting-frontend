@@ -17,6 +17,7 @@ import {
   Tag,
   FileText,
   Receipt,
+  TicketCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -82,6 +83,14 @@ const navItems: NavItem[] = [
     subItems: [
       { label: 'Expenses', href: '/expense/expenses', icon: FileText },
       { label: 'Expense Category', href: '/expense/expense-category', icon: Tag },
+    ],
+  },
+  {
+    label: 'Ticket Management',
+    icon: TicketCheck,
+    subItems: [
+      { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
+      { label: 'Settings', href: '/ticket-management/settings', icon: Settings },
     ],
   },
 ];
