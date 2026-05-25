@@ -73,6 +73,71 @@ const sections = [
   { id: 4, title: 'Expense Info & Images', icon: DollarSign },
 ];
 
+type ExpenseSection = (typeof sections)[number];
+
+function SectionToggle({
+  section,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  section: ExpenseSection;
+  isOpen: boolean;
+  onToggle: (id: number) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-gray-100 dark:border-white/5 rounded-xl bg-white dark:bg-gray-950">
+      <button
+        type="button"
+        onClick={() => onToggle(section.id)}
+        className={cn(
+          "w-full flex items-center justify-between px-5 py-4 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors",
+          isOpen ? "rounded-t-xl" : "rounded-xl"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <section.icon size={16} className="text-primary" />
+          </div>
+          <span className="font-bold text-sm text-gray-800 dark:text-gray-200">
+            {section.id}. {section.title}
+          </span>
+        </div>
+        {isOpen ? (
+          <ChevronDown size={18} className="text-gray-400" />
+        ) : (
+          <ChevronRight size={18} className="text-gray-400" />
+        )}
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            animate={{
+              height: 'auto',
+              opacity: 1,
+              transitionEnd: { overflow: 'visible' },
+            }}
+            exit={{
+              height: 0,
+              opacity: 0,
+              overflow: 'hidden',
+            }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="px-5 pb-5 pt-4 space-y-4">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <p className="text-[11px] text-rose-500 font-bold ml-1">{message}</p> : null;
+}
+
 export function ExpenseFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedId } = useExpenseStore();
   const isEdit = !!selectedId;
@@ -96,6 +161,7 @@ export function ExpenseFormDrawer() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const sheetRef = React.useRef<HTMLDivElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
+  const initializedFormKeyRef = React.useRef<string | null>(null);
 
   const toggleSection = (id: number) => {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -128,12 +194,11 @@ export function ExpenseFormDrawer() {
   const uploadedImages = watch('expense_images') || [];
 
   const filteredMills = React.useMemo(() => {
-    const currentMillId = watch('mill_id');
     if (!selectedCustomerId) {
-      return mills.filter((m) => m.id === currentMillId);
+      return mills.filter((m) => m.id === selectedMillId);
     }
-    return mills.filter((m) => m.customer_id === selectedCustomerId || m.id === currentMillId);
-  }, [mills, selectedCustomerId, watch('mill_id')]);
+    return mills.filter((m) => m.customer_id === selectedCustomerId || m.id === selectedMillId);
+  }, [mills, selectedCustomerId, selectedMillId]);
 
   // Autofill details based on selected Mill
   React.useEffect(() => {
@@ -151,8 +216,21 @@ export function ExpenseFormDrawer() {
   }, [selectedMillId, mills, setValue, watch, selectedCustomerId]);
 
   React.useEffect(() => {
+    if (!isFormDrawerOpen) {
+      initializedFormKeyRef.current = null;
+      setSelectedCustomerId('');
+      setImagePreviews([]);
+      return;
+    }
+
+    const formKey = isEdit ? `edit:${selectedId}:${expenseData?.id ?? 'loading'}` : 'new';
+    if (initializedFormKeyRef.current === formKey) return;
+    if (isEdit && !expenseData) return;
+
+    initializedFormKeyRef.current = formKey;
+    setOpenSections({ 1: true, 2: false, 3: false, 4: true });
+
     if (isFormDrawerOpen) {
-      setOpenSections({ 1: true, 2: false, 3: false, 4: true });
       if (isEdit && expenseData) {
         const mill = mills.find((m) => m.id === expenseData.mill_id);
         setSelectedCustomerId(mill?.customer_id || '');
@@ -188,11 +266,16 @@ export function ExpenseFormDrawer() {
           expense_images: [],
         });
       }
-    } else {
-      setSelectedCustomerId('');
-      setImagePreviews([]);
     }
-  }, [isFormDrawerOpen, expenseData, reset, isEdit, mills]);
+  }, [isFormDrawerOpen, selectedId, expenseData, reset, isEdit, mills]);
+
+  React.useEffect(() => {
+    if (!isFormDrawerOpen || !isEdit || !expenseData || selectedCustomerId) return;
+    const mill = mills.find((m) => m.id === expenseData.mill_id);
+    if (mill?.customer_id) {
+      setSelectedCustomerId(mill.customer_id);
+    }
+  }, [isFormDrawerOpen, isEdit, expenseData, mills, selectedCustomerId]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -294,56 +377,6 @@ export function ExpenseFormDrawer() {
     }, 150);
   };
 
-  const SectionToggle = ({ section, children }: { section: typeof sections[0]; children: React.ReactNode }) => (
-    <div className="border border-gray-100 dark:border-white/5 rounded-xl bg-white dark:bg-gray-950">
-      <button
-        type="button"
-        onClick={() => toggleSection(section.id)}
-        className={cn(
-          "w-full flex items-center justify-between px-5 py-4 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors",
-          openSections[section.id] ? "rounded-t-xl" : "rounded-xl"
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <section.icon size={16} className="text-primary" />
-          </div>
-          <span className="font-bold text-sm text-gray-800 dark:text-gray-200">
-            {section.id}. {section.title}
-          </span>
-        </div>
-        {openSections[section.id] ? (
-          <ChevronDown size={18} className="text-gray-400" />
-        ) : (
-          <ChevronRight size={18} className="text-gray-400" />
-        )}
-      </button>
-      <AnimatePresence initial={false}>
-        {openSections[section.id] && (
-          <motion.div
-            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-            animate={{
-              height: 'auto',
-              opacity: 1,
-              transitionEnd: { overflow: 'visible' },
-            }}
-            exit={{
-              height: 0,
-              opacity: 0,
-              overflow: 'hidden',
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="px-5 pb-5 pt-4 space-y-4">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
-  const FieldError = ({ message }: { message?: string }) =>
-    message ? <p className="text-[11px] text-rose-500 font-bold ml-1">{message}</p> : null;
-
   return (
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
       <SheetContent
@@ -374,7 +407,7 @@ export function ExpenseFormDrawer() {
           ) : (
             <form id="expense-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
               {/* Section 1 - Engineer & Mill Details */}
-              <SectionToggle section={sections[0]}>
+              <SectionToggle section={sections[0]} isOpen={!!openSections[1]} onToggle={toggleSection}>
                 <div className="space-y-4">
                   {/* Select Service Engineers */}
                   <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
@@ -470,7 +503,7 @@ export function ExpenseFormDrawer() {
               </SectionToggle>
 
               {/* Section 2 - Alternative / Other Details */}
-              <SectionToggle section={sections[1]}>
+              <SectionToggle section={sections[1]} isOpen={!!openSections[2]} onToggle={toggleSection}>
                 <div className="space-y-4">
                   {/* Others */}
                   <div className="space-y-2" data-error={errors.others ? 'true' : undefined}>
@@ -503,7 +536,7 @@ export function ExpenseFormDrawer() {
               </SectionToggle>
 
               {/* Section 3 - Date & Time */}
-              <SectionToggle section={sections[2]}>
+              <SectionToggle section={sections[2]} isOpen={!!openSections[3]} onToggle={toggleSection}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Date */}
                   <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
@@ -548,7 +581,7 @@ export function ExpenseFormDrawer() {
               </SectionToggle>
 
               {/* Section 4 - Expense Info & Images */}
-              <SectionToggle section={sections[3]}>
+              <SectionToggle section={sections[3]} isOpen={!!openSections[4]} onToggle={toggleSection}>
                 <div className="space-y-4">
                   {/* Expense Type & Amount */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
