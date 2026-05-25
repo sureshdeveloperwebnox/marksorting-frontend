@@ -82,11 +82,11 @@ const items: SidebarItem[] = [
   { label: 'Orders', href: '/orders', icon: ClipboardList },
   { label: 'Analytics', href: '/analytics', icon: PieChart },
   {
-    label: 'Ticket Management',
+    label: 'Settings',
     icon: TicketCheck,
     subItems: [
       { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
-      { label: 'Settings', href: '/ticket-management/settings', icon: Settings },
+      { label: 'Ticket Settings', href: '/ticket-management/settings', icon: Settings },
     ],
   },
 ];

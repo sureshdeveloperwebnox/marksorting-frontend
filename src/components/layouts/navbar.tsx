@@ -86,11 +86,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Ticket Management',
+    label: 'Settings',
     icon: TicketCheck,
     subItems: [
       { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
-      { label: 'Settings', href: '/ticket-management/settings', icon: Settings },
+      { label: 'Ticket Settings', href: '/ticket-management/settings', icon: Settings },
     ],
   },
 ];
@@ -143,9 +143,17 @@ function DropdownNavItem({
   }, []);
 
   return (
-    <div ref={ref} className="relative">
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => {
+        if (!isGroupActive) setOpen(false);
+      }}
+    >
       <button
         onClick={() => setOpen((v) => !v)}
+        onFocus={() => setOpen(true)}
         className={cn(
           'relative flex items-center gap-1 xl:gap-1.5 px-2 xl:px-3.5 py-2 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
