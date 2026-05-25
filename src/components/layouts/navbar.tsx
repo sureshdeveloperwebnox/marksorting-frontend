@@ -87,10 +87,9 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Settings',
-    icon: TicketCheck,
+    icon: Settings,
     subItems: [
       { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
-      { label: 'Ticket Settings', href: '/ticket-management/settings', icon: Settings },
     ],
   },
 ];

@@ -83,10 +83,9 @@ const items: SidebarItem[] = [
   { label: 'Analytics', href: '/analytics', icon: PieChart },
   {
     label: 'Settings',
-    icon: TicketCheck,
+    icon: Settings,
     subItems: [
       { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
-      { label: 'Ticket Settings', href: '/ticket-management/settings', icon: Settings },
     ],
   },
 ];
