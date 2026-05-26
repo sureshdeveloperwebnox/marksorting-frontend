@@ -1,6 +1,7 @@
 import api from "@/lib/api";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth-store";
 
 export interface Customer {
     id: string;
@@ -24,10 +25,14 @@ export const useCustomers = (params: {
     search?: string;
     status?: string;
 }) => {
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
     return useQuery({
-        queryKey: ["customers", params],
+        queryKey: ["customers", params, isServiceEngineer],
         queryFn: async () => {
-            const { data } = await api.get<CustomersResponse>("/customers", { params });
+            const endpoint = isServiceEngineer ? "/mobile/customers" : "/customers";
+            const { data } = await api.get<CustomersResponse>(endpoint, { params });
             return data;
         },
         placeholderData: keepPreviousData,
