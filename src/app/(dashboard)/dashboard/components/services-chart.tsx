@@ -10,18 +10,24 @@ export interface ServicesChartDataPoint {
   name: string;
   completed: number;
   pending: number; // expressed as positive or negative, we will normalize it to negative for display
+  completedPercentage?: number;
+  pendingPercentage?: number;
 }
 
 interface ServicesChartProps {
   title?: string;
   data?: ServicesChartDataPoint[];
   prefix?: string;
+  completedLabel?: string;
+  pendingLabel?: string;
 }
 
-export const ServicesChart = memo(function ServicesChart({ 
-  title = "Services Volume", 
+export const ServicesChart = memo(function ServicesChart({
+  title = "Services Volume",
   data = [],
-  prefix = ""
+  prefix = "",
+  completedLabel = "Completed",
+  pendingLabel = "Pending"
 }: ServicesChartProps) {
 
   const isCurrency = prefix === '₹';
@@ -33,9 +39,12 @@ export const ServicesChart = memo(function ServicesChart({
     pending: -Math.abs(item.pending),
   }));
 
-  // Calculate totals
+  // Calculate totals and percentages
   const totalCompleted = data.reduce((acc, curr) => acc + Math.abs(curr.completed), 0);
   const totalPending = data.reduce((acc, curr) => acc + Math.abs(curr.pending), 0);
+  const totalAll = totalCompleted + totalPending;
+  const overallCompletedPct = totalAll > 0 ? Math.round((totalCompleted / totalAll) * 100) : 0;
+  const overallPendingPct = totalAll > 0 ? Math.round((totalPending / totalAll) * 100) : 0;
 
   return (
     <Card className="border-none shadow-sm bg-white dark:bg-[#1a1c1b] rounded-[32px] border border-gray-100/50 dark:border-white/5 h-full transition-all duration-300 hover:shadow-md">
@@ -51,7 +60,10 @@ export const ServicesChart = memo(function ServicesChart({
                 {isCurrency ? `₹${totalCompleted.toLocaleString('en-IN')}` : totalCompleted}
               </span>
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-1.5">
-                {isCurrency ? 'Approved' : 'Completed'}
+                {isCurrency ? 'Approved' : completedLabel}
+              </span>
+              <span className="text-[10px] text-emerald-500 font-bold ml-1">
+                ({overallCompletedPct}%)
               </span>
             </div>
             <div className="border-l border-gray-100 dark:border-white/5 h-6" />
@@ -60,7 +72,10 @@ export const ServicesChart = memo(function ServicesChart({
                 {isCurrency ? `₹${totalPending.toLocaleString('en-IN')}` : totalPending}
               </span>
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-1.5">
-                {isCurrency ? 'Pending' : 'Pending'}
+                {pendingLabel}
+              </span>
+              <span className="text-[10px] text-cyan-500 font-bold ml-1">
+                ({overallPendingPct}%)
               </span>
             </div>
           </div>
@@ -70,11 +85,11 @@ export const ServicesChart = memo(function ServicesChart({
         <div className="flex items-center gap-4 text-xs font-bold mt-1">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: isCurrency ? '#ea580c' : '#8b5cf6' }} />
-            <span className="text-gray-500 dark:text-gray-400">{isCurrency ? 'Approved' : 'Completed'}</span>
+            <span className="text-gray-500 dark:text-gray-400">{isCurrency ? 'Approved' : completedLabel}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: isCurrency ? '#f59e0b' : '#06b6d4' }} />
-            <span className="text-gray-500 dark:text-gray-400">Pending</span>
+            <span className="text-gray-500 dark:text-gray-400">{pendingLabel}</span>
           </div>
         </div>
       </CardHeader>
@@ -120,13 +135,24 @@ export const ServicesChart = memo(function ServicesChart({
                   backgroundColor: '#1e293b',
                   color: '#fff'
                 }} 
-                formatter={(value: any, name: any) => {
+                formatter={(value: any, name: any, props: any) => {
                   const absVal = Math.abs(value);
                   const formattedValue = isCurrency ? `₹${absVal.toLocaleString('en-IN')}` : absVal;
-                  const label = isCurrency 
-                    ? (name === 'completed' ? 'Approved' : 'Pending')
-                    : (name === 'completed' ? 'Completed' : 'Pending');
-                  return [formattedValue, label];
+                  const label = isCurrency
+                    ? (name === 'completed' ? 'Approved' : pendingLabel)
+                    : (name === 'completed' ? completedLabel : pendingLabel);
+                  
+                  // Add percentage display from backend data
+                  let percentageDisplay = '';
+                  if (props.payload) {
+                    if (name === 'completed' && props.payload.completedPercentage !== undefined) {
+                      percentageDisplay = ` (${props.payload.completedPercentage}%)`;
+                    } else if (name === 'pending' && props.payload.pendingPercentage !== undefined) {
+                      percentageDisplay = ` (${props.payload.pendingPercentage}%)`;
+                    }
+                  }
+                  
+                  return [formattedValue + percentageDisplay, label];
                 }}
               />
               <Bar 

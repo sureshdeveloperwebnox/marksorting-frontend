@@ -49,28 +49,44 @@ export default function DashboardPage() {
           performanceTitle: 'Customer Growth & Signup Trends',
           comparisonTitle: 'Customer Status Breakdown',
           listTitle: 'Recent Registered Customers',
-          prefix: ''
+          prefix: '',
+          totalLabel: 'Total Customers',
+          successLabel: 'Active Customers',
+          completedLabel: 'Active',
+          pendingLabel: 'Inactive'
         };
       case 'installations':
         return {
           performanceTitle: 'Installation Trends & Status',
-          comparisonTitle: 'Service Metrics',
+          comparisonTitle: 'Installations Ratio',
           listTitle: 'Recent Installation Reports',
-          prefix: ''
+          prefix: '',
+          totalLabel: 'Total Installations',
+          successLabel: 'Completed Installations',
+          completedLabel: 'Completed',
+          pendingLabel: 'Pending'
         };
       case 'services':
         return {
           performanceTitle: 'Service Reports Volume',
           comparisonTitle: 'Services Volume Comparison',
           listTitle: 'Recent Service Actions',
-          prefix: ''
+          prefix: '',
+          totalLabel: 'Total Service Reports',
+          successLabel: 'Completed Service Reports',
+          completedLabel: 'Completed',
+          pendingLabel: 'Pending'
         };
       case 'expenses':
         return {
           performanceTitle: 'Expense Disbursements Output',
           comparisonTitle: 'Expense Status Comparison',
           listTitle: 'Recent Expense Transactions',
-          prefix: '₹'
+          prefix: '₹',
+          totalLabel: 'Total Expenses',
+          successLabel: 'Approved Expenses',
+          completedLabel: 'Approved',
+          pendingLabel: 'Pending'
         };
     }
   };
@@ -111,6 +127,8 @@ export default function DashboardPage() {
               title={metadata.performanceTitle} 
               data={activeContext.performance as Array<{ name: string; success: number; total: number }>} 
               prefix={metadata.prefix}
+              totalLabel={metadata.totalLabel}
+              successLabel={metadata.successLabel}
             />
           </div>
           <div className="lg:col-span-2">
@@ -118,6 +136,8 @@ export default function DashboardPage() {
               title={metadata.comparisonTitle} 
               data={activeContext.comparison} 
               prefix={metadata.prefix}
+              completedLabel={metadata.completedLabel}
+              pendingLabel={metadata.pendingLabel}
             />
           </div>
         </div>

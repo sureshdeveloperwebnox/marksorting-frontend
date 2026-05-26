@@ -11,20 +11,26 @@ interface SalesOverviewProps {
     name: string;
     success: number;
     total: number;
+    successPercentage?: number;
   }>;
   prefix?: string;
+  totalLabel?: string;
+  successLabel?: string;
 }
 
-export function SalesOverview({ title = "Sorting Performance", data = [], prefix = "" }: SalesOverviewProps) {
+export function SalesOverview({ title = "Sorting Performance", data = [], prefix = "", totalLabel = "Total Runs", successLabel = "Successful Sorts" }: SalesOverviewProps) {
   const isCurrency = prefix === '₹';
   
   // Calculate total expense amount if currency, otherwise use efficiency
   const totalAmount = data.reduce((acc, curr) => acc + curr.total, 0);
+  const totalSuccess = data.reduce((acc, curr) => acc + curr.success, 0);
   const displayValue = isCurrency 
     ? `₹${totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
-    : `${data.length > 0 
-        ? ((data.reduce((acc, curr) => acc + curr.success, 0) / data.reduce((acc, curr) => acc + curr.total, 0) || 1) * 100).toFixed(1)
-        : '94.2'}%`;
+    : `${totalAmount > 0 
+        ? ((totalSuccess / totalAmount) * 100).toFixed(1)
+        : data.length > 0 && data[0].successPercentage !== undefined 
+          ? data[0].successPercentage.toFixed(1)
+          : '94.2'}%`;
 
   return (
     <Card className="border-none shadow-sm bg-white dark:bg-[#1a1c1b] rounded-[32px] border border-gray-100/50 dark:border-white/5 h-full transition-all duration-300 hover:shadow-md">
@@ -81,22 +87,32 @@ export function SalesOverview({ title = "Sorting Performance", data = [], prefix
                 width={isCurrency ? 70 : 40}
               />
               <Tooltip 
-                contentStyle={{ 
-                  borderRadius: '16px', 
-                  border: 'none', 
+                contentStyle={{
+                  borderRadius: '16px',
+                  border: 'none',
                   boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                   padding: '12px',
                   backgroundColor: '#1e293b',
                   color: '#fff'
-                }} 
-                formatter={(value: any, name: any) => {
-                  const label = isCurrency 
-                    ? (name === 'Total Runs' || name === 'total' || name === 'Total Expenses' ? 'Total Expenses' : 'Approved Expenses')
-                    : (name === 'Total Runs' || name === 'total' ? 'Total Runs' : 'Successful Sorts');
-                  const formattedValue = isCurrency 
-                    ? `₹${Number(value).toLocaleString('en-IN')}` 
+                }}
+                formatter={(value: any, name: any, props: any) => {
+                  const label = isCurrency
+                    ? (name === 'Total Runs' || name === 'total' || name === 'Total Expenses' || name === totalLabel ? totalLabel : successLabel)
+                    : (name === 'Total Runs' || name === 'total' || name === totalLabel ? totalLabel : successLabel);
+                  const formattedValue = isCurrency
+                    ? `₹${Number(value).toLocaleString('en-IN')}`
                     : value;
-                  return [formattedValue, label];
+                  
+                  // Add percentage display for non-currency data
+                  let percentageDisplay = '';
+                  if (!isCurrency && props.payload) {
+                    const successPct = props.payload.successPercentage;
+                    if (successPct !== undefined && name === successLabel) {
+                      percentageDisplay = ` (${successPct}%)`;
+                    }
+                  }
+                  
+                  return [formattedValue + percentageDisplay, label];
                 }}
               />
               <Legend 
@@ -105,8 +121,8 @@ export function SalesOverview({ title = "Sorting Performance", data = [], prefix
                 iconType="circle"
                 wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: 700 }}
               />
-              <Area type="monotone" dataKey="total" name={isCurrency ? "Total Expenses" : "Total Runs"} stroke={isCurrency ? "#f97316" : "#3b82f6"} strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
-              <Area type="monotone" dataKey="success" name={isCurrency ? "Approved Expenses" : "Successful Sorts"} stroke={isCurrency ? "#f59e0b" : "#10b981"} strokeWidth={3} fillOpacity={1} fill="url(#colorSuccess)" />
+              <Area type="monotone" dataKey="total" name={totalLabel} stroke={isCurrency ? "#f97316" : "#3b82f6"} strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+              <Area type="monotone" dataKey="success" name={successLabel} stroke={isCurrency ? "#f59e0b" : "#10b981"} strokeWidth={3} fillOpacity={1} fill="url(#colorSuccess)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

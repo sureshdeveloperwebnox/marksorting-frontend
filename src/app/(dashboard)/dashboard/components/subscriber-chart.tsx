@@ -11,12 +11,18 @@ interface SubscriberChartProps {
   data?: Array<{
     name: string;
     value: number;
+    percentage?: number;
   }>;
 }
 
 export function SubscriberChart({ title = "Mill Production", prefix = "", data = [] }: SubscriberChartProps) {
   // Sum up total units from data
   const totalProduction = data.reduce((acc, curr) => acc + curr.value, 0);
+  
+  // Calculate average percentage if available from backend
+  const avgPercentage = data.length > 0 && data[0].percentage !== undefined
+    ? Math.round(data.reduce((acc, curr) => acc + (curr.percentage || 0), 0) / data.length)
+    : null;
 
   return (
     <Card className="border-none shadow-sm bg-white dark:bg-[#1a1c1b] rounded-[32px] border border-gray-100/50 dark:border-white/5 h-full transition-all duration-300 hover:shadow-md">
@@ -30,6 +36,11 @@ export function SubscriberChart({ title = "Mill Production", prefix = "", data =
             <span className="text-3xl font-black text-gray-900 dark:text-white">
               {prefix}{totalProduction > 0 ? totalProduction.toLocaleString() : '0'}
             </span>
+            {avgPercentage !== null && (
+              <span className="text-sm font-bold text-purple-500">
+                ({avgPercentage}% avg)
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs font-bold text-emerald-500">4.3% ↗</span>
@@ -68,7 +79,15 @@ export function SubscriberChart({ title = "Mill Production", prefix = "", data =
                   padding: '12px',
                   backgroundColor: '#1e293b',
                   color: '#fff'
-                }} 
+                }}
+                formatter={(value: any, name: any, props: any) => {
+                  const formattedValue = `${prefix}${value}`;
+                  let percentageDisplay = '';
+                  if (props.payload && props.payload.percentage !== undefined) {
+                    percentageDisplay = ` (${props.payload.percentage}%)`;
+                  }
+                  return [formattedValue + percentageDisplay, name];
+                }}
               />
               <Bar dataKey="value" radius={[10, 10, 10, 10]} barSize={40}>
                 {data.map((entry, index) => (

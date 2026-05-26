@@ -9,6 +9,7 @@ interface DistributionChartProps {
     name: string;
     value: number;
     color: string;
+    percentage?: number;
   }>;
   change?: string;
   trend?: 'up' | 'down' | 'neutral';
@@ -55,6 +56,11 @@ export function DistributionChart({ data = [], change = '+8.4%', trend = 'up' }:
                   <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 truncate max-w-[85px]">
                     {item.name}
                   </span>
+                  {item.percentage !== undefined && (
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">
+                      {item.percentage}%
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -86,7 +92,14 @@ export function DistributionChart({ data = [], change = '+8.4%', trend = 'up' }:
                     backgroundColor: '#1e293b',
                     color: '#fff'
                   }} 
-                  formatter={(value: any, name: any) => [`₹${Number(value).toLocaleString('en-IN')}`, name]}
+                  formatter={(value: any, name: any, props: any) => {
+                    const formattedValue = `₹${Number(value).toLocaleString('en-IN')}`;
+                    let percentageDisplay = '';
+                    if (props.payload && props.payload.percentage !== undefined) {
+                      percentageDisplay = ` (${props.payload.percentage}%)`;
+                    }
+                    return [formattedValue + percentageDisplay, name];
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
