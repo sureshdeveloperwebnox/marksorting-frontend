@@ -2,6 +2,8 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { StatCardSkeleton } from "@/components/dashboard/stat-card";
+import { ServicesChartSkeleton } from "./services-chart";
 
 export function DashboardSkeleton() {
   return (
@@ -16,21 +18,9 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Top Stats Skeleton */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="border-none shadow-sm bg-white dark:bg-[#1a1c1b] rounded-3xl overflow-hidden">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <Skeleton className="h-5 w-[120px]" />
-              <Skeleton className="h-8 w-8 rounded-full" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-10 w-[140px] mb-3" />
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-5 w-[60px] rounded-full" />
-                <Skeleton className="h-3 w-[80px]" />
-              </div>
-            </CardContent>
-          </Card>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <StatCardSkeleton key={i} />
         ))}
       </div>
 
@@ -49,15 +39,9 @@ export function DashboardSkeleton() {
           </CardContent>
         </Card>
         
-        <Card className="lg:col-span-2 border-none shadow-sm bg-white dark:bg-[#1a1c1b] rounded-3xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <Skeleton className="h-6 w-[150px]" />
-            <Skeleton className="h-8 w-[80px] rounded-lg" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-[300px] w-full rounded-2xl" />
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2">
+          <ServicesChartSkeleton />
+        </div>
       </div>
 
       {/* Bottom Row Skeleton */}

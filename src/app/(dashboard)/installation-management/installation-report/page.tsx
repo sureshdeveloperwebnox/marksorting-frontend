@@ -8,6 +8,7 @@ import {
   InstallationReport,
   useDeleteInstallationReport,
   useUpdateInstallationReport,
+  downloadInstallationReportPdf,
 } from "@/services/installation-report-service";
 import useInstallationReportStore from "@/store/useInstallationReportStore";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ import {
   Clock,
   AlertTriangle,
   Calendar,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -142,6 +144,7 @@ export default function InstallationReportPage() {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
+  const [downloadingPdfId, setDownloadingPdfId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -182,6 +185,18 @@ export default function InstallationReportPage() {
       // Handled in mutation
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handleDownloadPdf = async (report: InstallationReport) => {
+    try {
+      setDownloadingPdfId(report.id);
+      await downloadInstallationReportPdf(report.id, report.report_number);
+      toast.success("Installation report PDF downloaded");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to download installation report PDF");
+    } finally {
+      setDownloadingPdfId(null);
     }
   };
 
@@ -312,6 +327,20 @@ export default function InstallationReportPage() {
       header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-xl text-sky-600 dark:text-sky-400 bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100/50 dark:border-sky-900/30 hover:text-sky-700 hover:bg-sky-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            onClick={() => handleDownloadPdf(row.original)}
+            disabled={downloadingPdfId === row.original.id}
+            title="Download PDF"
+          >
+            {downloadingPdfId === row.original.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+          </Button>
           <Button
             variant="ghost"
             size="icon"

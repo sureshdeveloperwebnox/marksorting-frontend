@@ -88,6 +88,21 @@ export const useInstallationReport = (id: string | null) => {
     });
 };
 
+export const downloadInstallationReportPdf = async (id: string, reportNumber: string) => {
+    const { data } = await api.get(`/installation-reports/${id}/pdf`, {
+        responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(new Blob([data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `installation-report-${reportNumber}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+};
+
 export const useCreateInstallationReport = () => {
     const queryClient = useQueryClient();
     return useMutation({

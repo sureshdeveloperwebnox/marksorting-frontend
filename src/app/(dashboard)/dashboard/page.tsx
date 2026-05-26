@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useDashboard } from '@/services/dashboard-service';
 import { DashboardStats } from './components/dashboard-stats';
 import { SalesOverview } from './components/sales-overview';
-import { SubscriberChart } from './components/subscriber-chart';
+import { ServicesChart } from './components/services-chart';
 import { DistributionChart } from './components/distribution-chart';
 import { IntegrationList } from './components/integration-list';
 import { DashboardSkeleton } from './components/dashboard-skeleton';
@@ -22,37 +21,74 @@ const container = {
   }
 };
 
+type MetricType = 'customers' | 'installations' | 'services' | 'expenses';
+
 export default function DashboardPage() {
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading } = useDashboard();
+  const [activeMetric, setActiveMetric] = useState<MetricType>('installations');
 
-  useEffect(() => {
-    // Simulate initial loading for performance demonstration
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
+  if (isLoading || !data) {
     return <DashboardSkeleton />;
   }
+
+  const expensesStat = data.stats?.find(s => s.id === 'expenses');
+
+  // Get active context data (fallback to safe empty structures if not present)
+  const activeContext = data.contexts?.[activeMetric] || {
+    performance: [],
+    production: [],
+    comparison: [],
+    statusList: []
+  };
+
+  // Resolve dynamic headings and prefixes based on selected context
+  const getContextMetadata = (metric: MetricType) => {
+    switch (metric) {
+      case 'customers':
+        return {
+          performanceTitle: 'Customer Growth & Signup Trends',
+          comparisonTitle: 'Customer Status Breakdown',
+          listTitle: 'Recent Registered Customers',
+          prefix: ''
+        };
+      case 'installations':
+        return {
+          performanceTitle: 'Installation Trends & Status',
+          comparisonTitle: 'Service Metrics',
+          listTitle: 'Recent Installation Reports',
+          prefix: ''
+        };
+      case 'services':
+        return {
+          performanceTitle: 'Service Reports Volume',
+          comparisonTitle: 'Services Volume Comparison',
+          listTitle: 'Recent Service Actions',
+          prefix: ''
+        };
+      case 'expenses':
+        return {
+          performanceTitle: 'Expense Disbursements Output',
+          comparisonTitle: 'Expense Status Comparison',
+          listTitle: 'Recent Expense Transactions',
+          prefix: '₹'
+        };
+    }
+  };
+
+  const metadata = getContextMetadata(activeMetric);
 
   return (
     <div className="space-y-8 pb-10">
       {/* Header section with refined typography */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white mb-1">
             Dashboard <span className="text-primary text-4xl leading-none">.</span>
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 font-medium">
-            Welcome back! Here's what's happening with your sorting systems today.
+          <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">
+            Welcome back! Click any card to drill down and analyze active real-time sorting metrics.
           </p>
         </div>
-        <Button className="rounded-[18px] font-black px-6 py-6 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 gap-2 bg-primary hover:bg-primary/90 text-white">
-          <Download size={18} />
-          Generate Report
-        </Button>
       </div>
 
       <motion.div 
@@ -61,30 +97,48 @@ export default function DashboardPage() {
         animate="show"
         className="space-y-8"
       >
-        {/* Top Stats Row */}
-        <DashboardStats />
+        {/* Top Stats Row (Supports Clicking & Marking) */}
+        <DashboardStats 
+          stats={data.stats} 
+          activeId={activeMetric}
+          onSelect={(id) => setActiveMetric(id)}
+        />
 
         {/* Middle Charts Row */}
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3">
-            <SalesOverview />
+            <SalesOverview 
+              title={metadata.performanceTitle} 
+              data={activeContext.performance as Array<{ name: string; success: number; total: number }>} 
+              prefix={metadata.prefix}
+            />
           </div>
           <div className="lg:col-span-2">
-            <SubscriberChart />
+            <ServicesChart 
+              title={metadata.comparisonTitle} 
+              data={activeContext.comparison} 
+              prefix={metadata.prefix}
+            />
           </div>
         </div>
 
         {/* Bottom Row: Distribution and Integrations */}
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <DistributionChart />
+            <DistributionChart 
+              data={data.expenseRatio} 
+              change={expensesStat?.change}
+              trend={expensesStat?.trend}
+            />
           </div>
           <div className="lg:col-span-3">
-            <IntegrationList />
+            <IntegrationList 
+              title={metadata.listTitle} 
+              data={activeContext.statusList} 
+            />
           </div>
         </div>
       </motion.div>
     </div>
   );
 }
-
