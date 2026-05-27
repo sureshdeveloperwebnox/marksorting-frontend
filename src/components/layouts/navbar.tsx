@@ -19,6 +19,7 @@ import {
   Receipt,
   TicketCheck,
   Building2,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,6 +48,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    href: '/dashboard',
+  },
   {
     label: 'User Management',
     icon: Users,
