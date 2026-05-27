@@ -8,6 +8,7 @@ import {
   Menu,
   LogOut,
   Settings,
+  User,
   ChevronDown,
   Users,
   Factory,
@@ -32,6 +33,7 @@ import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { EditProfileDrawer } from '@/components/forms/edit-profile-drawer';
 
 /* ─── Nav data types ─────────────────────────────────────────── */
 
@@ -272,6 +274,7 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   // Mobile sheet accordion state
   const [mobileOpenGroups, setMobileOpenGroups] = useState<Record<string, boolean>>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -541,6 +544,13 @@ export function Navbar() {
                     </p>
                     <p className="text-[11px] text-gray-400 mt-0.5 truncate">{user?.email || ''}</p>
                   </div>
+                  <button
+                    onClick={() => { setUserMenuOpen(false); setProfileDrawerOpen(true); }}
+                    className="flex items-center gap-2.5 px-3 py-2.5 w-full rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all text-left"
+                  >
+                    <User size={15} className="text-gray-400" />
+                    Edit Profile
+                  </button>
                   <Link
                     href="/settings"
                     prefetch
@@ -723,6 +733,7 @@ export function Navbar() {
 
         </div>
       </div>
+      <EditProfileDrawer open={profileDrawerOpen} onOpenChange={setProfileDrawerOpen} />
     </header>
   );
 }

@@ -75,6 +75,20 @@ export function useAuth() {
     }
   };
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async (values: any) => {
+      const response = await api.put('/auth/profile', values);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setAuth(data);
+      toast.success('Profile updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    },
+  });
+
   return {
     register: registerMutation.mutate,
     isRegistering: registerMutation.isPending,
@@ -82,6 +96,8 @@ export function useAuth() {
     isLoggingIn: loginMutation.isPending,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
+    updateProfile: updateProfileMutation.mutateAsync,
+    isUpdatingProfile: updateProfileMutation.isPending,
     checkAuth,
   };
 }
