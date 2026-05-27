@@ -87,6 +87,8 @@ export const useReportsServices = (params: {
     categoryId?: string;
     dateFrom?: string;
     dateTo?: string;
+    millId?: string;
+    technicianId?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "services", params],
@@ -105,6 +107,8 @@ export const useReportsInstallations = (params: {
     status?: string;
     dateFrom?: string;
     dateTo?: string;
+    millId?: string;
+    technicianId?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "installations", params],
@@ -124,6 +128,8 @@ export const useReportsExpenses = (params: {
     categoryId?: string;
     dateFrom?: string;
     dateTo?: string;
+    millId?: string;
+    technicianId?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "expenses", params],

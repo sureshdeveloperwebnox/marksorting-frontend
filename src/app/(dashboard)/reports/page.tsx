@@ -15,9 +15,12 @@ import {
 import useReportsStore from "@/store/useReportsStore";
 import { useServiceCategories } from "@/services/service-category-service";
 import { useExpenseCategories } from "@/services/expense-category-service";
+import { useMills } from "@/services/mill-service";
+import { useTechnicians } from "@/services/technician-service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import {
     TrendingUp,
     FileText,
@@ -140,11 +143,16 @@ export default function ReportsPage() {
         setDateFrom,
         dateTo,
         setDateTo,
+        millFilter,
+        setMillFilter,
+        technicianFilter,
+        setTechnicianFilter,
         resetFilters,
     } = useReportsStore();
 
     const [isExporting, setIsExporting] = React.useState<"pdf" | "csv" | "excel" | null>(null);
     const [localSearch, setLocalSearch] = React.useState(search);
+    const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
 
     // Debounce search input
     React.useEffect(() => {
@@ -163,6 +171,8 @@ export default function ReportsPage() {
         categoryId: categoryFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        millId: millFilter || undefined,
+        technicianId: technicianFilter || undefined,
     });
 
     const installationsQuery = useReportsInstallations({
@@ -172,6 +182,8 @@ export default function ReportsPage() {
         status: statusFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        millId: millFilter || undefined,
+        technicianId: technicianFilter || undefined,
     });
 
     const expensesQuery = useReportsExpenses({
@@ -182,11 +194,15 @@ export default function ReportsPage() {
         categoryId: categoryFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        millId: millFilter || undefined,
+        technicianId: technicianFilter || undefined,
     });
 
-    // Fetch categories for select dropdowns
+    // Fetch categories + lookup data for filter drawer
     const { data: serviceCategoriesData } = useServiceCategories({ skip: 0, take: 100 });
     const { data: expenseCategoriesData } = useExpenseCategories({ skip: 0, take: 100 });
+    const { data: millsData } = useMills({ skip: 0, take: 500 });
+    const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
 
     const handleExport = async (format: "pdf" | "csv" | "excel") => {
         setIsExporting(format);
@@ -197,6 +213,8 @@ export default function ReportsPage() {
                 categoryId: categoryFilter || undefined,
                 dateFrom: dateFrom || undefined,
                 dateTo: dateTo || undefined,
+                millId: millFilter || undefined,
+                technicianId: technicianFilter || undefined,
             };
             await downloadReportFile(activeTab, format, params);
             toast.success(`${format.toUpperCase()} report downloaded successfully`);
@@ -208,7 +226,82 @@ export default function ReportsPage() {
         }
     };
 
-    const hasActiveFilters = !!(search || statusFilter || categoryFilter || dateFrom || dateTo);
+    const hasActiveFilters = !!(search || statusFilter || categoryFilter || dateFrom || dateTo || millFilter || technicianFilter);
+    const activeFilterCount = [statusFilter, categoryFilter, millFilter, technicianFilter].filter(Boolean).length;
+
+    // Build tab-aware filter fields for the drawer
+    const filterFields: FilterField[] = React.useMemo(() => {
+        const statusField: FilterField = {
+            id: "status",
+            label: "Status",
+            placeholder: "All Statuses",
+            options: [
+                { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+                { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
+                { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
+                { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500" },
+                { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500" },
+            ],
+        };
+
+        const millField: FilterField = {
+            id: "millId",
+            label: "Mill",
+            placeholder: "All Mills",
+            options: [
+                { value: "ALL", label: "All Mills" },
+                ...(millsData?.mills ?? []).map((m) => ({ value: m.id, label: m.name })),
+            ],
+        };
+
+        const techField: FilterField = {
+            id: "technicianId",
+            label: "Technician",
+            placeholder: "All Technicians",
+            options: [
+                { value: "ALL", label: "All Technicians" },
+                ...(techniciansData?.technicians ?? []).map((t) => ({ value: t.id, label: t.full_name })),
+            ],
+        };
+
+        const serviceCategoryField: FilterField = {
+            id: "categoryId",
+            label: "Service Category",
+            placeholder: "All Service Categories",
+            options: [
+                { value: "ALL", label: "All Service Categories" },
+                ...(serviceCategoriesData?.serviceCategories ?? []).map((c) => ({ value: c.id, label: c.name })),
+            ],
+        };
+
+        const expenseCategoryField: FilterField = {
+            id: "categoryId",
+            label: "Expense Category",
+            placeholder: "All Expense Categories",
+            options: [
+                { value: "ALL", label: "All Expense Categories" },
+                ...(expenseCategoriesData?.expenseCategories ?? []).map((c) => ({ value: c.id, label: c.name })),
+            ],
+        };
+
+        if (activeTab === "services") return [statusField, serviceCategoryField, millField, techField];
+        if (activeTab === "installations") return [statusField, millField, techField];
+        return [statusField, expenseCategoryField, millField, techField];
+    }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData]);
+
+    const filterActiveValues: Record<string, string> = {
+        status: statusFilter || "ALL",
+        categoryId: categoryFilter || "ALL",
+        millId: millFilter || "ALL",
+        technicianId: technicianFilter || "ALL",
+    };
+
+    const handleFilterApply = (values: Record<string, string>) => {
+        setStatusFilter(values.status === "ALL" ? "" : values.status);
+        setCategoryFilter(values.categoryId === "ALL" ? "" : (values.categoryId ?? ""));
+        setMillFilter(values.millId === "ALL" ? "" : (values.millId ?? ""));
+        setTechnicianFilter(values.technicianId === "ALL" ? "" : (values.technicianId ?? ""));
+    };
 
     /* ─── TABLE COLUMNS DEFINITION ────────────────────────────────── */
 
@@ -614,60 +707,22 @@ export default function ReportsPage() {
                             />
                         </div>
 
-                        {/* Status Filter */}
-                        <div className="relative">
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="h-11 px-4 rounded-xl border border-transparent bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-semibold text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all cursor-pointer appearance-none pr-8 min-w-[140px]"
-                            >
-                                <option value="" className="dark:bg-gray-900 text-gray-400 font-semibold">All Statuses</option>
-                                <option value="PENDING" className="dark:bg-gray-900">Pending</option>
-                                <option value="IN_PROGRESS" className="dark:bg-gray-900">In Progress</option>
-                                <option value="COMPLETED" className="dark:bg-gray-900">Completed</option>
-                                <option value="CANCELLED" className="dark:bg-gray-900">Cancelled</option>
-                            </select>
-                            <ChevronDownIconForSelect />
-                        </div>
+                        {/* Filter Drawer Trigger */}
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsFilterDrawerOpen(true)}
+                            className="h-11 gap-2 rounded-xl font-bold border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-all cursor-pointer select-none"
+                        >
+                            <Filter size={15} />
+                            Filters
+                            {activeFilterCount > 0 && (
+                                <span className="ml-0.5 w-5 h-5 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center shadow-sm shadow-primary/30">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </Button>
 
-                        {/* Conditional Category Filter (Only for services or expenses) */}
-                        {activeTab === "services" && (
-                            <div className="relative">
-                                <select
-                                    value={categoryFilter}
-                                    onChange={(e) => setCategoryFilter(e.target.value)}
-                                    className="h-11 px-4 rounded-xl border border-transparent bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-semibold text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all cursor-pointer appearance-none pr-8 min-w-[160px]"
-                                >
-                                    <option value="" className="dark:bg-gray-900 text-gray-400 font-semibold">All Service Categories</option>
-                                    {serviceCategoriesData?.serviceCategories?.map((cat) => (
-                                        <option key={cat.id} value={cat.id} className="dark:bg-gray-900">
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDownIconForSelect />
-                            </div>
-                        )}
-
-                        {activeTab === "expenses" && (
-                            <div className="relative">
-                                <select
-                                    value={categoryFilter}
-                                    onChange={(e) => setCategoryFilter(e.target.value)}
-                                    className="h-11 px-4 rounded-xl border border-transparent bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-semibold text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all cursor-pointer appearance-none pr-8 min-w-[160px]"
-                                >
-                                    <option value="" className="dark:bg-gray-900 text-gray-400 font-semibold">All Expense Categories</option>
-                                    {expenseCategoriesData?.expenseCategories?.map((cat) => (
-                                        <option key={cat.id} value={cat.id} className="dark:bg-gray-900">
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDownIconForSelect />
-                            </div>
-                        )}
-
-                        {/* Reset Filters Trigger */}
+                        {/* Clear Filters */}
                         {hasActiveFilters && (
                             <Button
                                 variant="ghost"
@@ -678,7 +733,7 @@ export default function ReportsPage() {
                                 className="h-11 px-3 rounded-xl gap-2 font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 transition-colors cursor-pointer"
                             >
                                 <X size={15} />
-                                Clear Filters
+                                Clear
                             </Button>
                         )}
                     </div>
@@ -744,21 +799,21 @@ export default function ReportsPage() {
                     />
                 </div>
             </div>
-        </div>
-    );
-}
 
-/* Custom indicator chevron for drop-down */
-function ChevronDownIconForSelect() {
-    return (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 flex items-center text-gray-400">
-            <svg
-                className="w-4 h-4 fill-none stroke-current stroke-2"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        </span>
+            {/* Filter Drawer */}
+            <GenericFilterDrawer
+                isOpen={isFilterDrawerOpen}
+                onClose={() => setIsFilterDrawerOpen(false)}
+                title="Report Filters"
+                description="Refine the report list by status, category, mill, and technician."
+                fields={filterFields}
+                activeValues={filterActiveValues}
+                onApply={handleFilterApply}
+                onReset={() => {
+                    resetFilters();
+                    setLocalSearch("");
+                }}
+            />
+        </div>
     );
 }

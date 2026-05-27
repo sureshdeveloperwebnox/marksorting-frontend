@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { RotateCcw, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +32,9 @@ export interface FilterField {
   id: string;
   label: string;
   placeholder?: string;
-  options: FilterOption[];
+  /** "select" (default) renders a dropdown; "date" renders a DatePicker */
+  type?: "select" | "date";
+  options?: FilterOption[];
 }
 
 interface GenericFilterDrawerProps {
@@ -63,7 +66,7 @@ export function GenericFilterDrawer({
     if (isOpen) {
       const initial: Record<string, string> = {};
       fields.forEach((field) => {
-        initial[field.id] = activeValues[field.id] || "ALL";
+        initial[field.id] = activeValues[field.id] || (field.type === "date" ? "" : "ALL");
       });
       setLocalValues(initial);
     }
@@ -77,7 +80,7 @@ export function GenericFilterDrawer({
   const handleReset = () => {
     const cleared: Record<string, string> = {};
     fields.forEach((field) => {
-      cleared[field.id] = "ALL";
+      cleared[field.id] = field.type === "date" ? "" : "ALL";
     });
     setLocalValues(cleared);
     onReset();
@@ -113,45 +116,55 @@ export function GenericFilterDrawer({
         {/* Content Area - Scrollable */}
         <div className="flex-1 overflow-y-auto py-8 space-y-6">
           {fields.map((field) => {
-            const currentValue = localValues[field.id] || "ALL";
+            const currentValue = localValues[field.id] || "";
+            const isDateField = field.type === "date";
+
             return (
               <div key={field.id} className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-widest text-primary/70 dark:text-primary/60 block">
                   {field.label}
                 </label>
-                
-                <Select 
-                  value={currentValue} 
-                  onValueChange={(val) => handleValueChange(field.id, val ?? "ALL")}
-                >
-                  <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300">
-                    <SelectValue placeholder={field.placeholder || "Select option..."} />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl border border-gray-100 dark:border-white/5 shadow-2xl p-1 bg-white dark:bg-gray-900 z-50 min-w-[var(--radix-select-trigger-width)]">
-                    {field.options.map((option) => (
-                      <SelectItem 
-                        key={option.value} 
-                        value={option.value} 
-                        className={cn(
-                          "font-bold py-3 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300"
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          {option.iconColor && (
-                            <div 
-                              className={cn(
-                                "w-2.5 h-2.5 rounded-full shadow-sm",
-                                option.iconColor,
-                                option.animatePulse && "animate-pulse"
-                              )} 
-                            />
+
+                {isDateField ? (
+                  <DatePicker
+                    value={currentValue}
+                    onChange={(val) => handleValueChange(field.id, val)}
+                    placeholder={field.placeholder || "Select date..."}
+                  />
+                ) : (
+                  <Select
+                    value={currentValue || "ALL"}
+                    onValueChange={(val) => handleValueChange(field.id, val ?? "ALL")}
+                  >
+                    <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300">
+                      <SelectValue placeholder={field.placeholder || "Select option..."} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border border-gray-100 dark:border-white/5 shadow-2xl p-1 bg-white dark:bg-gray-900 z-50 min-w-[var(--radix-select-trigger-width)]">
+                      {(field.options ?? []).map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className={cn(
+                            "font-bold py-3 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 rounded-xl transition-all duration-200 text-gray-700 dark:text-gray-300"
                           )}
-                          <span>{option.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        >
+                          <div className="flex items-center gap-3">
+                            {option.iconColor && (
+                              <div
+                                className={cn(
+                                  "w-2.5 h-2.5 rounded-full shadow-sm",
+                                  option.iconColor,
+                                  option.animatePulse && "animate-pulse"
+                                )}
+                              />
+                            )}
+                            <span>{option.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             );
           })}

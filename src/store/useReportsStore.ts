@@ -11,6 +11,8 @@ interface ReportsState {
     categoryFilter: string;
     dateFrom: string;
     dateTo: string;
+    millFilter: string;
+    technicianFilter: string;
     setActiveTab: (tab: "services" | "installations" | "expenses") => void;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
@@ -18,6 +20,8 @@ interface ReportsState {
     setCategoryFilter: (categoryId: string) => void;
     setDateFrom: (date: string) => void;
     setDateTo: (date: string) => void;
+    setMillFilter: (millId: string) => void;
+    setTechnicianFilter: (technicianId: string) => void;
     resetFilters: () => void;
 }
 
@@ -32,6 +36,8 @@ const useReportsStore = create<ReportsState>((set) => ({
     categoryFilter: "",
     dateFrom: "",
     dateTo: "",
+    millFilter: "",
+    technicianFilter: "",
     setActiveTab: (activeTab) =>
         set((state) => ({
             activeTab,
@@ -41,6 +47,8 @@ const useReportsStore = create<ReportsState>((set) => ({
             categoryFilter: "",
             dateFrom: "",
             dateTo: "",
+            millFilter: "",
+            technicianFilter: "",
         })),
     setPagination: (pagination) => set({ pagination }),
     setSearch: (search) =>
@@ -68,6 +76,16 @@ const useReportsStore = create<ReportsState>((set) => ({
             dateTo,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setMillFilter: (millFilter) =>
+        set((state) => ({
+            millFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setTechnicianFilter: (technicianFilter) =>
+        set((state) => ({
+            technicianFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
     resetFilters: () =>
         set((state) => ({
             search: "",
@@ -75,6 +93,8 @@ const useReportsStore = create<ReportsState>((set) => ({
             categoryFilter: "",
             dateFrom: "",
             dateTo: "",
+            millFilter: "",
+            technicianFilter: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
 }));
