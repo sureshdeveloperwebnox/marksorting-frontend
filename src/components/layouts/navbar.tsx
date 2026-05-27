@@ -20,6 +20,7 @@ import {
   TicketCheck,
   Building2,
   LayoutDashboard,
+  Store,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,6 +97,11 @@ const navItems: NavItem[] = [
     label: 'Reports',
     icon: FileText,
     href: '/reports',
+  },
+  {
+    label: 'Stores',
+    icon: Store,
+    href: '/stores',
   },
   {
     label: 'Settings',
@@ -364,6 +370,7 @@ export function Navbar() {
               width={120}
               height={36}
               className="h-9 w-auto object-contain"
+              style={{ width: 'auto' }}
               priority
             />
           </div>
@@ -582,6 +589,7 @@ export function Navbar() {
                     width={130}
                     height={40}
                     className="h-10 w-auto object-contain"
+                    style={{ width: 'auto' }}
                     priority
                   />
                 </div>

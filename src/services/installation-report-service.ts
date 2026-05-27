@@ -127,7 +127,7 @@ export const useUpdateInstallationReport = () => {
             const { data } = await api.put(`/installation-reports/${id}`, reportData);
             return data;
         },
-        onSuccess: (updatedReport) => {
+        onSuccess: (updatedReport: any) => {
             queryClient.invalidateQueries({ queryKey: ["installationReports"] });
             queryClient.setQueryData(["installationReport", updatedReport.id], updatedReport);
             toast.success("Installation report updated successfully");

@@ -457,7 +457,13 @@ export function ExpenseFormDrawer() {
                         items={customers.map((c) => ({ value: c.id, label: c.name }))}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue placeholder="Select customer" />
+                          {selectedCustomerId ? (
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                              {customers.find((c) => c.id === selectedCustomerId)?.name ?? 'Unknown Customer'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select customer</span>
+                          )}
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
                           <SelectItem value="all_clear" className="font-bold py-3 text-gray-400">Clear Customer Filter</SelectItem>
@@ -489,7 +495,15 @@ export function ExpenseFormDrawer() {
                         items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue placeholder={selectedCustomerId ? "Select mill" : "Select a customer first (Optional)"} />
+                          {watch('mill_id') ? (
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                              {mills.find((m) => m.id === watch('mill_id'))?.name ?? 'Unknown Mill'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                              {selectedCustomerId ? 'Select mill' : 'Select a customer first (Optional)'}
+                            </span>
+                          )}
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
                           {filteredMills.length > 0 ? (
@@ -610,7 +624,13 @@ export function ExpenseFormDrawer() {
                           items={categories.map((c) => ({ value: c.id, label: c.name }))}
                         >
                           <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                            <SelectValue placeholder="Select category" />
+                            {watch('expense_category_id') ? (
+                              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                {categories.find((c) => c.id === watch('expense_category_id'))?.name ?? 'Unknown Category'}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select category</span>
+                            )}
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
                             {categories.map((cat) => (

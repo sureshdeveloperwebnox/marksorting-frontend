@@ -74,7 +74,7 @@ const GROUND_EARTH_FIELD_OPTIONS = [
 
 type GroundEarthFieldValue = (typeof GROUND_EARTH_FIELD_OPTIONS)[number]['value'];
 
-const normalizeGroundEarthField = (value?: string | null): GroundEarthFieldValue | '' => {
+const normalizeGroundEarthField = (value?: string | null | undefined): GroundEarthFieldValue | '' => {
   return GROUND_EARTH_FIELD_OPTIONS.some((option) => option.value === value)
     ? (value as GroundEarthFieldValue)
     : '';
@@ -588,7 +588,13 @@ export function InstallationReportFormDrawer() {
                         items={customers.map((c) => ({ value: c.id, label: c.name }))}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
-                          <SelectValue placeholder="Select customer" />
+                          {selectedCustomerId ? (
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                              {customers.find((c) => c.id === selectedCustomerId)?.name ?? 'Unknown Customer'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-600 text-sm">Select customer</span>
+                          )}
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
                           <SelectItem value="all_clear" className="font-medium py-3 text-gray-400">Clear Customer Filter</SelectItem>
@@ -622,7 +628,15 @@ export function InstallationReportFormDrawer() {
                         items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
-                          <SelectValue placeholder={selectedCustomerId ? "Select mill" : "Select a customer first"} />
+                          {watch('mill_id') ? (
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                              {mills.find((m) => m.id === watch('mill_id'))?.name ?? 'Unknown Mill'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-600 text-sm">
+                              {selectedCustomerId ? 'Select mill' : 'Select a customer first'}
+                            </span>
+                          )}
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
                           {filteredMills.length > 0 ? (

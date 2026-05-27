@@ -235,7 +235,13 @@ export function MillFormDrawer() {
                         items={customers.map((c) => ({ value: c.id, label: c.name }))}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue placeholder="Select customer for this mill..." />
+                          {field.value ? (
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                              {customers.find((c) => c.id === field.value)?.name ?? 'Unknown Customer'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select customer for this mill...</span>
+                          )}
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-[300px] overflow-y-auto">
                           <SelectItem value="" className="font-bold py-3 text-gray-400">None / Clear</SelectItem>

@@ -136,6 +136,10 @@ export function GenericFilterDrawer({
                   <Select
                     value={currentValue || "ALL"}
                     onValueChange={(val) => handleValueChange(field.id, val ?? "ALL")}
+                    items={field.options?.map((option) => ({
+                      value: option.value,
+                      label: option.label,
+                    }))}
                   >
                     <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300">
                       <SelectValue placeholder={field.placeholder || "Select option..."} />

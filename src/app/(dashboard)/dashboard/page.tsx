@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useDashboard } from '@/services/dashboard-service';
 import { DashboardStats } from './components/dashboard-stats';
@@ -26,8 +26,13 @@ type MetricType = 'customers' | 'installations' | 'services' | 'expenses';
 export default function DashboardPage() {
   const { data, isLoading } = useDashboard();
   const [activeMetric, setActiveMetric] = useState<MetricType>('installations');
+  const [mounted, setMounted] = useState(false);
 
-  if (isLoading || !data) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (isLoading || !data || !mounted) {
     return <DashboardSkeleton />;
   }
 

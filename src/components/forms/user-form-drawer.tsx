@@ -298,7 +298,15 @@ export function UserFormDrawer() {
                     items={roles?.map(r => ({ value: r.id, label: r.name }))}
                   >
                     <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                      <SelectValue placeholder={isLoadingRoles ? "Loading roles..." : "Select a role"} />
+                      {watch('role_id') ? (
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                          {roles?.find((r) => r.id === watch('role_id'))?.name ?? 'Unknown Role'}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                          {isLoadingRoles ? 'Loading roles...' : 'Select a role'}
+                        </span>
+                      )}
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                       {roles?.map((role) => (

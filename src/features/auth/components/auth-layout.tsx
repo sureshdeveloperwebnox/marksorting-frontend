@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { motion } from 'framer-motion';
 import { Logo } from '@/components/ui/logo';
 import { ShieldCheck, Zap, Activity } from 'lucide-react';
@@ -11,6 +12,12 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-white dark:bg-[#0a0a0a] overflow-hidden">
       {/* Left Side: Animated Brand Experience (Hidden on Mobile) */}
@@ -20,7 +27,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(0,0,0,0.1)_0%,transparent_50%)]" />
         
         {/* Floating Particles Animation */}
-        {[...Array(20)].map((_, i) => (
+        {mounted && [...Array(20)].map((_, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, scale: 0 }}
