@@ -443,7 +443,6 @@ export default function ReportsPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                        <span>Centralized</span>
                         <span className="bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">
                             Reports
                         </span>
