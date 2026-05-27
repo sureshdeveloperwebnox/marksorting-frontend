@@ -181,18 +181,17 @@ function DropdownNavItem({
         onClick={() => setOpen((v) => !v)}
         onFocus={() => setOpen(true)}
         className={cn(
-          'relative flex items-center gap-1 xl:gap-1.5 px-2 xl:px-3.5 py-2 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
+          'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-bold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
             ? 'text-primary'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
         )}
       >
-        <item.icon size={14} strokeWidth={isGroupActive ? 2.5 : 2} />
         {item.label}
         <ChevronDown
-          size={12}
+          size={11}
           className={cn(
-            'transition-transform duration-200 ml-0.5',
+            'transition-transform duration-200 ml-0.5 hidden xl:block',
             open && 'rotate-180'
           )}
         />
@@ -371,7 +370,7 @@ export function Navbar() {
         </Link>
 
         {/* ── Desktop Nav ── */}
-        <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 flex-1 min-w-0">
+        <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-1 flex-1 min-w-0">
           {navItems.map((item) => {
             // Dropdown item
             if (item.subItems) {
@@ -395,13 +394,12 @@ export function Navbar() {
                 onPointerEnter={() => prefetchRoute(item.href!)}
                 onFocus={() => prefetchRoute(item.href!)}
                 className={cn(
-                  'relative flex items-center gap-1 xl:gap-1.5 px-2 xl:px-3.5 py-2 text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
+                  'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-bold rounded-lg transition-all duration-200 whitespace-nowrap group',
                   active
                     ? 'text-primary'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
                 )}
               >
-                <item.icon size={14} strokeWidth={active ? 2.5 : 2} />
                 {item.label}
                 {active && (
                   <motion.span
@@ -411,7 +409,7 @@ export function Navbar() {
                   />
                 )}
                 <span className={cn(
-                  'absolute bottom-0 left-2 xl:left-3 right-2 xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+                  'absolute bottom-0 left-1 xl:left-2 2xl:left-3 right-1 xl:right-2 2xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
                   active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
                 )} />
               </Link>
@@ -488,7 +486,7 @@ export function Navbar() {
           </div>
 
           {/* Divider */}
-          <div className="hidden lg:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+          <div className="hidden xl:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
 
           {/* User menu */}
           <div ref={userMenuRef} className="relative">
@@ -504,7 +502,7 @@ export function Navbar() {
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
-              <div className="hidden lg:flex flex-col items-start leading-none">
+              <div className="hidden 2xl:flex flex-col items-start leading-none">
                 <span className="text-[13px] font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                   {user?.full_name || 'User'}
                 </span>
@@ -515,7 +513,7 @@ export function Navbar() {
               <ChevronDown
                 size={14}
                 className={cn(
-                  'hidden lg:block text-gray-400 transition-transform duration-200',
+                  'hidden 2xl:block text-gray-400 transition-transform duration-200',
                   userMenuOpen && 'rotate-180'
                 )}
               />
@@ -566,7 +564,7 @@ export function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex lg:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
+                className="flex xl:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
               >
                 <Menu size={18} />
               </motion.button>
