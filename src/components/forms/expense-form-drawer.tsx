@@ -150,9 +150,10 @@ export function ExpenseFormDrawer() {
   const { mutateAsync: updateExpense, isPending: isUpdating } = useUpdateExpense();
   const { uploadFile, isUploading, uploadProgress } = useS3Upload();
 
-  const mills = millsData?.mills || [];
-  const customers = customersData?.customers || [];
-  const categories = categoriesData?.expenseCategories || [];
+  const mills = React.useMemo(() => millsData?.mills || [], [millsData?.mills]);
+  const customers = React.useMemo(() => customersData?.customers || [], [customersData?.customers]);
+  const categories = React.useMemo(() => categoriesData?.expenseCategories || [], [categoriesData?.expenseCategories]);
+
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true });
@@ -218,8 +219,12 @@ export function ExpenseFormDrawer() {
   React.useEffect(() => {
     if (!isFormDrawerOpen) {
       initializedFormKeyRef.current = null;
-      setSelectedCustomerId('');
-      setImagePreviews([]);
+      if (selectedCustomerId !== '') {
+        setSelectedCustomerId('');
+      }
+      if (imagePreviews.length > 0) {
+        setImagePreviews([]);
+      }
       return;
     }
 
@@ -233,7 +238,10 @@ export function ExpenseFormDrawer() {
     if (isFormDrawerOpen) {
       if (isEdit && expenseData) {
         const mill = mills.find((m) => m.id === expenseData.mill_id);
-        setSelectedCustomerId(mill?.customer_id || '');
+        const newCustId = mill?.customer_id || '';
+        if (selectedCustomerId !== newCustId) {
+          setSelectedCustomerId(newCustId);
+        }
         reset({
           technician_ids: expenseData.technicians?.map((t: any) => t.technician.id) || [],
           mill_id: expenseData.mill_id || '',
@@ -246,14 +254,17 @@ export function ExpenseFormDrawer() {
           expense_images: expenseData.expense_images || [],
         });
         // Previews from existing images
-        setImagePreviews(
-          expenseData.expense_images?.map((img: string) => 
-            img.startsWith('http') ? img : `https://blr1.digitaloceanspaces.com/webnox/marksorting/${img}`
-          ) || []
-        );
+        const newPreviews = expenseData.expense_images?.map((img: string) => 
+          img.startsWith('http') ? img : `https://blr1.digitaloceanspaces.com/webnox/marksorting/${img}`
+        ) || [];
+        setImagePreviews(newPreviews);
       } else if (!isEdit) {
-        setSelectedCustomerId('');
-        setImagePreviews([]);
+        if (selectedCustomerId !== '') {
+          setSelectedCustomerId('');
+        }
+        if (imagePreviews.length > 0) {
+          setImagePreviews([]);
+        }
         reset({
           technician_ids: [],
           mill_id: '',
@@ -267,7 +278,7 @@ export function ExpenseFormDrawer() {
         });
       }
     }
-  }, [isFormDrawerOpen, selectedId, expenseData, reset, isEdit, mills]);
+  }, [isFormDrawerOpen, selectedId, expenseData, reset, isEdit, mills, selectedCustomerId, imagePreviews.length]);
 
   React.useEffect(() => {
     if (!isFormDrawerOpen || !isEdit || !expenseData || selectedCustomerId) return;
