@@ -96,14 +96,14 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    label: 'Store Management',
+    icon: Store,
+    href: '/stores',
+  },
+  {
     label: 'Reports',
     icon: FileText,
     href: '/reports',
-  },
-  {
-    label: 'Stores',
-    icon: Store,
-    href: '/stores',
   },
   {
     label: 'Settings',
@@ -551,7 +551,7 @@ export function Navbar() {
                     <User size={15} className="text-gray-400" />
                     Edit Profile
                   </button>
-                  <Link
+                  {/* <Link
                     href="/settings"
                     prefetch
                     onPointerEnter={() => prefetchRoute('/settings')}
@@ -561,7 +561,7 @@ export function Navbar() {
                   >
                     <Settings size={15} className="text-gray-400" />
                     Settings
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={() => { setUserMenuOpen(false); logout(); }}
                     disabled={isLoggingOut}
