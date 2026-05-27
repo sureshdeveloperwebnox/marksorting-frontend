@@ -189,7 +189,7 @@ function DropdownNavItem({
         onClick={() => setOpen((v) => !v)}
         onFocus={() => setOpen(true)}
         className={cn(
-          'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-bold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
+          'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
             ? 'text-primary'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
@@ -404,7 +404,7 @@ export function Navbar() {
                 onPointerEnter={() => prefetchRoute(item.href!)}
                 onFocus={() => prefetchRoute(item.href!)}
                 className={cn(
-                  'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-bold rounded-lg transition-all duration-200 whitespace-nowrap group',
+                  'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
                   active
                     ? 'text-primary'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
