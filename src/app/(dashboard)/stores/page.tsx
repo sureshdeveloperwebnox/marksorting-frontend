@@ -494,9 +494,9 @@ export default function StoresPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
               <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Store Records &amp;{" "}
+                Store Management
                 <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-                  Inventory
+                  {/* Inventory */}
                 </span>
               </h1>
               <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
