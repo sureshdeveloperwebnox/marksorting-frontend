@@ -1,6 +1,7 @@
 import api from "@/lib/api";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth-store";
 
 export interface Mill {
   id: string;
@@ -21,10 +22,14 @@ export interface MillsResponse {
 }
 
 export const useMills = (params: { skip: number; take: number; search?: string; status?: string; customer_id?: string }) => {
+  const user = useAuthStore((state) => state.user);
+  const isServiceEngineer = user?.role === 'Service Engineer';
+
   return useQuery({
-    queryKey: ["mills", params],
+    queryKey: ["mills", params, isServiceEngineer],
     queryFn: async () => {
-      const { data } = await api.get<MillsResponse>("/mills", { params });
+      const endpoint = isServiceEngineer ? "/mobile/mills" : "/mills";
+      const { data } = await api.get<MillsResponse>(endpoint, { params });
       return data;
     },
     placeholderData: keepPreviousData,
@@ -32,11 +37,15 @@ export const useMills = (params: { skip: number; take: number; search?: string; 
 };
 
 export const useMill = (id: string | null) => {
+  const user = useAuthStore((state) => state.user);
+  const isServiceEngineer = user?.role === 'Service Engineer';
+
   return useQuery({
-    queryKey: ["mill", id],
+    queryKey: ["mill", id, isServiceEngineer],
     queryFn: async () => {
       if (!id) return null;
-      const { data } = await api.get<Mill>(`/mills/${id}`);
+      const endpoint = isServiceEngineer ? `/mobile/mills/${id}` : `/mills/${id}`;
+      const { data } = await api.get<Mill>(endpoint);
       return data;
     },
     enabled: !!id,

@@ -1,5 +1,6 @@
 import api from "@/lib/api";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useAuthStore } from "@/store/auth-store";
 
 export interface Technician {
     id: string;
@@ -23,12 +24,17 @@ export const useTechnicians = (params?: {
     status?: string;
 }) => {
     const queryParams = { skip: 0, take: 500, ...params };
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
     return useQuery({
-        queryKey: ["technicians", queryParams],
+        queryKey: ["technicians", queryParams, isServiceEngineer],
         queryFn: async () => {
-            const { data } = await api.get<TechniciansResponse>("/technicians", { params: queryParams });
+            const endpoint = isServiceEngineer ? "/mobile/technicians" : "/technicians";
+            const { data } = await api.get<TechniciansResponse>(endpoint, { params: queryParams });
             return data;
         },
         placeholderData: keepPreviousData,
     });
 };
+

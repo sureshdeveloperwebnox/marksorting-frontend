@@ -1,6 +1,7 @@
 import api from "@/lib/api";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth-store";
 
 export interface ExpenseTechnicianEntry {
     technician: {
@@ -41,10 +42,14 @@ export const useExpenses = (params: {
     dateFrom?: string;
     dateTo?: string;
 }) => {
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
     return useQuery({
-        queryKey: ["expenses", params],
+        queryKey: ["expenses", params, isServiceEngineer],
         queryFn: async () => {
-            const { data } = await api.get<ExpensesResponse>("/expenses", { params });
+            const endpoint = isServiceEngineer ? "/mobile/expenses" : "/expenses";
+            const { data } = await api.get<ExpensesResponse>(endpoint, { params });
             return data;
         },
         placeholderData: keepPreviousData,
@@ -52,11 +57,15 @@ export const useExpenses = (params: {
 };
 
 export const useExpense = (id: string | null) => {
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
     return useQuery({
-        queryKey: ["expense", id],
+        queryKey: ["expense", id, isServiceEngineer],
         queryFn: async () => {
             if (!id) return null;
-            const { data } = await api.get<Expense>(`/expenses/${id}`);
+            const endpoint = isServiceEngineer ? `/mobile/expenses/${id}` : `/expenses/${id}`;
+            const { data } = await api.get<Expense>(endpoint);
             return data;
         },
         enabled: !!id,
@@ -65,9 +74,13 @@ export const useExpense = (id: string | null) => {
 
 export const useCreateExpense = () => {
     const queryClient = useQueryClient();
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
     return useMutation({
         mutationFn: async (expenseData: any) => {
-            const { data } = await api.post("/expenses", expenseData);
+            const endpoint = isServiceEngineer ? "/mobile/expenses" : "/expenses";
+            const { data } = await api.post(endpoint, expenseData);
             return data;
         },
         onSuccess: () => {
@@ -82,9 +95,13 @@ export const useCreateExpense = () => {
 
 export const useUpdateExpense = () => {
     const queryClient = useQueryClient();
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
     return useMutation({
         mutationFn: async ({ id, ...expenseData }: any) => {
-            const { data } = await api.put(`/expenses/${id}`, expenseData);
+            const endpoint = isServiceEngineer ? `/mobile/expenses/${id}` : `/expenses/${id}`;
+            const { data } = await api.put(endpoint, expenseData);
             return data;
         },
         onSuccess: (updatedExpense) => {
@@ -100,9 +117,13 @@ export const useUpdateExpense = () => {
 
 export const useDeleteExpense = () => {
     const queryClient = useQueryClient();
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
     return useMutation({
         mutationFn: async (id: string) => {
-            const { data } = await api.delete(`/expenses/${id}`);
+            const endpoint = isServiceEngineer ? `/mobile/expenses/${id}` : `/expenses/${id}`;
+            const { data } = await api.delete(endpoint);
             return data;
         },
         onMutate: async (id) => {
