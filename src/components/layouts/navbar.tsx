@@ -93,6 +93,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    label: 'Reports',
+    icon: FileText,
+    href: '/reports',
+  },
+  {
     label: 'Settings',
     icon: Settings,
     subItems: [

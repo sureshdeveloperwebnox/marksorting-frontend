@@ -82,6 +82,7 @@ const items: SidebarItem[] = [
   },
   { label: 'Orders', href: '/orders', icon: ClipboardList },
   { label: 'Analytics', href: '/analytics', icon: PieChart },
+  { label: 'Reports', href: '/reports', icon: FileText },
   {
     label: 'Settings',
     icon: Settings,
