@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
+import { ExportReportDrawer } from "@/components/forms/export-report-drawer";
 import {
     TrendingUp,
     FileText,
@@ -150,7 +151,7 @@ export default function ReportsPage() {
         resetFilters,
     } = useReportsStore();
 
-    const [isExporting, setIsExporting] = React.useState<"pdf" | "csv" | "excel" | null>(null);
+    const [isExportDrawerOpen, setIsExportDrawerOpen] = React.useState(false);
     const [localSearch, setLocalSearch] = React.useState(search);
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
 
@@ -203,28 +204,6 @@ export default function ReportsPage() {
     const { data: expenseCategoriesData } = useExpenseCategories({ skip: 0, take: 100 });
     const { data: millsData } = useMills({ skip: 0, take: 500 });
     const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
-
-    const handleExport = async (format: "pdf" | "csv" | "excel") => {
-        setIsExporting(format);
-        try {
-            const params = {
-                search: search || undefined,
-                status: statusFilter || undefined,
-                categoryId: categoryFilter || undefined,
-                dateFrom: dateFrom || undefined,
-                dateTo: dateTo || undefined,
-                millId: millFilter || undefined,
-                technicianId: technicianFilter || undefined,
-            };
-            await downloadReportFile(activeTab, format, params);
-            toast.success(`${format.toUpperCase()} report downloaded successfully`);
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to generate report download");
-        } finally {
-            setIsExporting(null);
-        }
-    };
 
     const hasActiveFilters = !!(search || statusFilter || categoryFilter || dateFrom || dateTo || millFilter || technicianFilter);
     const activeFilterCount = [statusFilter, categoryFilter, millFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
@@ -756,38 +735,16 @@ export default function ReportsPage() {
                         )}
                     </div>
 
-                    {/* Report Export Button Group */}
-                    <div className="flex items-center gap-2 border border-gray-200/50 dark:border-white/5 p-1 rounded-xl bg-gray-50/30 dark:bg-white/5 shadow-sm">
-                        {[
-                            { format: "pdf", label: "PDF" },
-                            { format: "excel", label: "Excel" },
-                            { format: "csv", label: "CSV" },
-                        ].map((exp) => {
-                            const isThisExporting = isExporting === exp.format;
-                            return (
-                                <button
-                                    key={exp.format}
-                                    disabled={!!isExporting || isReportsLoading}
-                                    onClick={() => handleExport(exp.format as any)}
-                                    className={cn(
-                                        "flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border transition-all duration-300 cursor-pointer shadow-xs select-none disabled:opacity-50 disabled:cursor-not-allowed",
-                                        exp.format === "pdf"
-                                            ? "border-rose-100 dark:border-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/5"
-                                            : exp.format === "excel"
-                                            ? "border-emerald-100 dark:border-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/5"
-                                            : "border-blue-100 dark:border-blue-950/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/5"
-                                    )}
-                                >
-                                    {isThisExporting ? (
-                                        <Loader2 size={13} className="animate-spin" />
-                                    ) : (
-                                        <FileDown size={13} />
-                                    )}
-                                    {exp.label}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    {/* Report Export Button */}
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsExportDrawerOpen(true)}
+                        disabled={isReportsLoading}
+                        className="h-11 gap-2 rounded-xl font-bold border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-all cursor-pointer select-none"
+                    >
+                        <FileDown size={15} />
+                        Export
+                    </Button>
                 </div>
 
                 {/* Paginated Reports Data Table */}
@@ -830,6 +787,34 @@ export default function ReportsPage() {
                 onReset={() => {
                     resetFilters();
                     setLocalSearch("");
+                }}
+            />
+
+            {/* Export Drawer */}
+            <ExportReportDrawer
+                isOpen={isExportDrawerOpen}
+                onClose={() => setIsExportDrawerOpen(false)}
+                activeTab={activeTab}
+                initialDateFrom={dateFrom}
+                initialDateTo={dateTo}
+                onExport={async (fmt, from, to) => {
+                    try {
+                        const params = {
+                            search: search || undefined,
+                            status: statusFilter || undefined,
+                            categoryId: categoryFilter || undefined,
+                            dateFrom: from || undefined,
+                            dateTo: to || undefined,
+                            millId: millFilter || undefined,
+                            technicianId: technicianFilter || undefined,
+                        };
+                        await downloadReportFile(activeTab, fmt, params);
+                        toast.success(`${fmt.toUpperCase()} report downloaded successfully`);
+                    } catch (error) {
+                        console.error(error);
+                        toast.error("Failed to generate report download");
+                        throw error;
+                    }
                 }}
             />
         </div>
