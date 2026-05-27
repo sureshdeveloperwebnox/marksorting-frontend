@@ -96,8 +96,9 @@ export function GenericFilterDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="flex flex-col h-full sm:max-w-md bg-white dark:bg-gray-900 border-none shadow-2xl p-6">
-        <SheetHeader className="pb-6 border-b border-gray-100 dark:border-white/5">
+      <SheetContent className="sm:max-w-md bg-white dark:bg-gray-900 border-none shadow-2xl !p-0 overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-5 border-b border-gray-100 dark:border-white/5">
           <div className="flex items-center gap-3 text-primary">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-inner">
               <ShieldCheck className="w-6 h-6 text-primary" />
@@ -111,10 +112,10 @@ export function GenericFilterDrawer({
               </SheetDescription>
             </div>
           </div>
-        </SheetHeader>
+        </div>
 
-        {/* Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto py-8 space-y-6">
+        {/* Scrollable Content — ends above the absolute footer (pb = footer height ~88px) */}
+        <div className="overflow-y-auto px-6 py-6 space-y-6" style={{ height: "calc(100% - 80px - 88px)" }}>
           {fields.map((field) => {
             const currentValue = localValues[field.id] || "";
             const isDateField = field.type === "date";
@@ -170,8 +171,8 @@ export function GenericFilterDrawer({
           })}
         </div>
 
-        {/* Footer Area */}
-        <SheetFooter className="mt-auto pt-6 border-t border-gray-100 dark:border-white/5 flex gap-3">
+        {/* Footer — absolute, always visible at bottom */}
+        <SheetFooter className="px-6 py-5 gap-3">
           <Button
             variant="ghost"
             onClick={handleReset}

@@ -227,7 +227,7 @@ export default function ReportsPage() {
     };
 
     const hasActiveFilters = !!(search || statusFilter || categoryFilter || dateFrom || dateTo || millFilter || technicianFilter);
-    const activeFilterCount = [statusFilter, categoryFilter, millFilter, technicianFilter].filter(Boolean).length;
+    const activeFilterCount = [statusFilter, categoryFilter, millFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
 
     // Build tab-aware filter fields for the drawer
     const filterFields: FilterField[] = React.useMemo(() => {
@@ -284,9 +284,23 @@ export default function ReportsPage() {
             ],
         };
 
-        if (activeTab === "services") return [statusField, serviceCategoryField, millField, techField];
-        if (activeTab === "installations") return [statusField, millField, techField];
-        return [statusField, expenseCategoryField, millField, techField];
+        const dateFromField: FilterField = {
+            id: "dateFrom",
+            label: "From Date",
+            type: "date",
+            placeholder: "From Date",
+        };
+
+        const dateToField: FilterField = {
+            id: "dateTo",
+            label: "To Date",
+            type: "date",
+            placeholder: "To Date",
+        };
+
+        if (activeTab === "services") return [statusField, serviceCategoryField, millField, techField, dateFromField, dateToField];
+        if (activeTab === "installations") return [statusField, millField, techField, dateFromField, dateToField];
+        return [statusField, expenseCategoryField, millField, techField, dateFromField, dateToField];
     }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData]);
 
     const filterActiveValues: Record<string, string> = {
@@ -294,6 +308,8 @@ export default function ReportsPage() {
         categoryId: categoryFilter || "ALL",
         millId: millFilter || "ALL",
         technicianId: technicianFilter || "ALL",
+        dateFrom: dateFrom || "",
+        dateTo: dateTo || "",
     };
 
     const handleFilterApply = (values: Record<string, string>) => {
@@ -301,6 +317,8 @@ export default function ReportsPage() {
         setCategoryFilter(values.categoryId === "ALL" ? "" : (values.categoryId ?? ""));
         setMillFilter(values.millId === "ALL" ? "" : (values.millId ?? ""));
         setTechnicianFilter(values.technicianId === "ALL" ? "" : (values.technicianId ?? ""));
+        setDateFrom(values.dateFrom ?? "");
+        setDateTo(values.dateTo ?? "");
     };
 
     /* ─── TABLE COLUMNS DEFINITION ────────────────────────────────── */
