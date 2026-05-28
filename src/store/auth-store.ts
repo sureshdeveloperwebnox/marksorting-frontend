@@ -7,7 +7,7 @@ interface User {
   full_name: string;
   email: string;
   role: string;
-  permissions?: string[];
+  permissions: string[];
   profile_image?: string;
   profile_image_url?: string;
   background_image?: string;

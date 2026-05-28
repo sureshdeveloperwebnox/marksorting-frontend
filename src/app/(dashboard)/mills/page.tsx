@@ -37,6 +37,7 @@ import { motion } from "framer-motion";
 import { cn, formatPhoneNumber } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { MillFormDrawer } from "@/components/forms/mill-form-drawer";
+import { RouteGuard } from "@/components/guards/route-guard";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -306,6 +307,7 @@ export default function MillsPage() {
 
   /* ── Render ── */
   return (
+    <RouteGuard>
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -480,5 +482,6 @@ export default function MillsPage() {
         </DialogContent>
       </Dialog>
     </motion.div>
+    </RouteGuard>
   );
 }

@@ -108,3 +108,20 @@ export const useRole = (id: string | null) => {
     enabled: !!id,
   });
 };
+
+export interface Permission {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export const useAllPermissions = () => {
+  return useQuery({
+    queryKey: ["permissions", "all"],
+    queryFn: async () => {
+      const { data } = await api.get<Permission[]>("/roles/meta/permissions");
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};

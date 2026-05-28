@@ -42,6 +42,7 @@ import { motion } from "framer-motion";
 import { cn, formatPhoneNumber } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { CustomerFormDrawer } from "@/components/forms/customer-form-drawer";
+import { RouteGuard } from "@/components/guards/route-guard";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -309,6 +310,7 @@ export default function CustomersPage() {
 
     /* ── Render ── */
     return (
+        <RouteGuard module="customers" action="view">
         <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -479,5 +481,6 @@ export default function CustomersPage() {
                 </DialogContent>
             </Dialog>
         </motion.div>
+        </RouteGuard>
     );
 }

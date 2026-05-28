@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/auth-store';
+import { usePermissions } from '@/hooks/use-permissions';
 import {
   Bell,
   Sun,
@@ -45,6 +46,9 @@ interface NavSubItem {
   label: string;
   href: string;
   icon: any;
+  permission?: string;
+  module?: string;
+  action?: 'view' | 'create' | 'update' | 'delete' | 'export';
 }
 
 interface NavItem {
@@ -52,6 +56,9 @@ interface NavItem {
   icon: any;
   href?: string;           // flat link
   subItems?: NavSubItem[]; // dropdown
+  permission?: string;
+  module?: string;
+  action?: 'view' | 'create' | 'update' | 'delete' | 'export';
 }
 
 const navItems: NavItem[] = [
@@ -59,63 +66,153 @@ const navItems: NavItem[] = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     href: '/dashboard',
+    module: 'dashboard',
+    action: 'view',
   },
   {
     label: 'User Management',
     icon: Users,
+    module: 'users',
+    action: 'view',
     subItems: [
-      { label: 'Users', href: '/users', icon: Users },
-      { label: 'Roles', href: '/roles', icon: Shield },
+      { 
+        label: 'Users', 
+        href: '/users', 
+        icon: Users,
+        module: 'users',
+        action: 'view',
+      },
+      { 
+        label: 'Roles', 
+        href: '/roles', 
+        icon: Shield,
+        module: 'roles',
+        action: 'view',
+      },
     ],
   },
   {
     label: 'Mill Management',
     icon: Factory,
+    module: 'mills',
+    action: 'view',
     subItems: [
-      { label: 'Mills', href: '/mills', icon: Factory },
-      { label: 'Customers', href: '/mills/customers', icon: Users2 },
+      { 
+        label: 'Mills', 
+        href: '/mills', 
+        icon: Factory,
+        module: 'mills',
+        action: 'view',
+      },
+      { 
+        label: 'Customers', 
+        href: '/mills/customers', 
+        icon: Users2,
+        module: 'customers',
+        action: 'view',
+      },
     ],
   },
   {
     label: 'Service Management',
     icon: Tag,
+    module: 'service_categories',
+    action: 'view',
     subItems: [
-      { label: 'Service Category', href: '/service-management/service-category', icon: Tag },
-      { label: 'Service List', href: '/service-management/service-report', icon: FileText },
+      { 
+        label: 'Service Category', 
+        href: '/service-management/service-category', 
+        icon: Tag,
+        module: 'service_categories',
+        action: 'view',
+      },
+      { 
+        label: 'Service List', 
+        href: '/service-management/service-report', 
+        icon: FileText,
+        module: 'service_reports',
+        action: 'view',
+      },
     ],
   },
   {
     label: 'Installation Management',
     icon: Wrench,
+    module: 'installation_reports',
+    action: 'view',
     subItems: [
-      { label: 'Installation List', href: '/installation-management/installation-report', icon: FileText },
+      { 
+        label: 'Installation List', 
+        href: '/installation-management/installation-report', 
+        icon: FileText,
+        module: 'installation_reports',
+        action: 'view',
+      },
     ],
   },
   {
     label: 'Expense',
     icon: Receipt,
+    module: 'expenses',
+    action: 'view',
     subItems: [
-      { label: 'Expenses', href: '/expense/expenses', icon: FileText },
-      { label: 'Expense Category', href: '/expense/expense-category', icon: Tag },
+      { 
+        label: 'Expenses', 
+        href: '/expense/expenses', 
+        icon: FileText,
+        module: 'expenses',
+        action: 'view',
+      },
+      { 
+        label: 'Expense Category', 
+        href: '/expense/expense-category', 
+        icon: Tag,
+        module: 'expense_categories',
+        action: 'view',
+      },
     ],
   },
   {
     label: 'Store Management',
     icon: Store,
     href: '/stores',
+    module: 'stores',
+    action: 'view',
   },
   {
     label: 'Reports',
     icon: FileText,
     href: '/reports',
+    module: 'reports',
+    action: 'view',
   },
   {
     label: 'Settings',
     icon: Settings,
+    module: 'settings',
+    action: 'view',
     subItems: [
-      { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
-      { label: 'Company Settings', href: '/settings/company', icon: Building2 },
-      { label: 'Notifications', href: '/settings/notifications', icon: Bell },
+      { 
+        label: 'Tickets', 
+        href: '/ticket-management/tickets', 
+        icon: TicketCheck,
+        module: 'tickets',
+        action: 'view',
+      },
+      { 
+        label: 'Company Settings', 
+        href: '/settings/company', 
+        icon: Building2,
+        module: 'settings',
+        action: 'view',
+      },
+      { 
+        label: 'Notifications', 
+        href: '/settings/notifications', 
+        icon: Bell,
+        module: 'notifications',
+        action: 'view',
+      },
     ],
   },
 ];
@@ -274,6 +371,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const { can, isSuperAdmin, isAdmin } = usePermissions();
   const { theme, setTheme } = useTheme();
   const { logout, isLoggingOut } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useSocket();
@@ -293,6 +391,55 @@ export function Navbar() {
     if (href !== pathname) {
       router.prefetch(href);
     }
+  };
+
+  // Filter navigation items based on permissions
+  const getFilteredNavItems = (): NavItem[] => {
+    return navItems.filter(item => {
+      // Super admin / Admin sees everything
+      if (isSuperAdmin() || isAdmin()) return true;
+
+      // Check main item permission
+      if (item.module && item.action) {
+        if (!can(item.action, item.module)) return false;
+      }
+
+      // Filter sub-items if they exist
+      if (item.subItems) {
+        const filteredSubItems = item.subItems.filter(subItem => {
+          // Super admin / Admin sees everything
+          if (isSuperAdmin() || isAdmin()) return true;
+
+          if (subItem.module && subItem.action) {
+            return can(subItem.action, subItem.module);
+          }
+
+          return true; // Show if no specific permission required
+        });
+
+        // Only show the main item if there are visible sub-items
+        return filteredSubItems.length > 0;
+      }
+
+      return true; // Show if no specific permission required
+    }).map(item => {
+      // Filter sub-items for dropdowns
+      if (item.subItems) {
+        return {
+          ...item,
+          subItems: item.subItems.filter(subItem => {
+            if (isSuperAdmin() || isAdmin()) return true;
+            
+            if (subItem.module && subItem.action) {
+              return can(subItem.action, subItem.module);
+            }
+            
+            return true;
+          })
+        };
+      }
+      return item;
+    });
   };
 
   useEffect(() => {
@@ -388,7 +535,7 @@ export function Navbar() {
 
         {/* ── Desktop Nav ── */}
         <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-1 flex-1 min-w-0">
-          {navItems.map((item) => {
+          {getFilteredNavItems().map((item) => {
             // Dropdown item
             if (item.subItems) {
               return (
@@ -680,7 +827,7 @@ export function Navbar() {
               </SheetHeader>
 
               <nav className="flex flex-col gap-1 pt-5 flex-1 overflow-y-auto scrollbar-none">
-                {navItems.map((item) => {
+                {getFilteredNavItems().map((item) => {
                   if (item.subItems) {
                     const isGroupActive = item.subItems.some((s) => {
                       if (pathname !== s.href && !pathname.startsWith(`${s.href}/`)) return false;

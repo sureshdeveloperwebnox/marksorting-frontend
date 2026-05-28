@@ -30,6 +30,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { RoleFormDrawer } from "@/components/forms/role-form-drawer";
+import { RouteGuard } from "@/components/guards/route-guard";
 
 const roleFilterFields: FilterField[] = [];
 
@@ -196,12 +197,13 @@ export default function RolesPage() {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="grid grid-cols-1 xl:grid-cols-4 gap-5"
-    >
+    <RouteGuard module="roles" action="view">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+      >
       {/* LEFT — Role List Card (3/4 width) */}
       <div className="xl:col-span-3">
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
@@ -209,9 +211,9 @@ export default function RolesPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
               <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Role List &amp;{" "}
+                Role &amp;{" "}
                 <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-                  Details
+                  Management
                 </span>
               </h1>
               <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
@@ -328,6 +330,7 @@ export default function RolesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+      </motion.div>
+    </RouteGuard>
   );
 }

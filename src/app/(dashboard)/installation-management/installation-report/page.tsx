@@ -48,6 +48,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { InstallationReportFormDrawer } from "@/components/forms/installation-report-form-drawer";
+import { RouteGuard } from "@/components/guards/route-guard";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -365,6 +366,7 @@ export default function InstallationReportPage() {
 
   /* ── Render ── */
   return (
+    <RouteGuard module="installation_reports" action="view">
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -569,5 +571,6 @@ export default function InstallationReportPage() {
         </DialogContent>
       </Dialog>
     </motion.div>
+    </RouteGuard>
   );
 }

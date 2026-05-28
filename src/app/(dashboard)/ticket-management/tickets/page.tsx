@@ -46,6 +46,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { TicketFormDrawer } from "@/components/forms/ticket-form-drawer";
+import { RouteGuard } from "@/components/guards/route-guard";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -401,6 +402,7 @@ export default function TicketsPage() {
 
   /* ── Render ── */
   return (
+    <RouteGuard module="tickets" action="view">
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -589,5 +591,6 @@ export default function TicketsPage() {
         </DialogContent>
       </Dialog>
     </motion.div>
+    </RouteGuard>
   );
 }
