@@ -339,9 +339,9 @@ export default function UsersPage() {
             {/* Title */}
             <div>
               <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                User List &amp;{" "}
+                User {" "}
                 <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-                  Details
+                  Management
                 </span>
               </h1>
               <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
