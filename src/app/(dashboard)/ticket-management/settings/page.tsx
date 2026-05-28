@@ -98,7 +98,7 @@ function StatsCard({ title, value, icon, iconBg, gradient, loading }: StatsCardP
           {loading ? (
             <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
           ) : (
-            <p className="text-4xl font-black text-gray-900 dark:text-white leading-none">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
               {value ?? 0}
             </p>
           )}
