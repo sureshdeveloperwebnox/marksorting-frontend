@@ -34,6 +34,8 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { EditProfileDrawer } from '@/components/forms/edit-profile-drawer';
+import { useSocket } from '@/providers/socket-provider';
+import { format } from 'date-fns';
 
 /* ─── Nav data types ─────────────────────────────────────────── */
 
@@ -111,6 +113,7 @@ const navItems: NavItem[] = [
     subItems: [
       { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
       { label: 'Company Settings', href: '/settings/company', icon: Building2 },
+      { label: 'Notifications', href: '/settings/notifications', icon: Bell },
     ],
   },
 ];
@@ -271,6 +274,7 @@ export function Navbar() {
   const user = useAuthStore((state) => state.user);
   const { theme, setTheme } = useTheme();
   const { logout, isLoggingOut } = useAuth();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useSocket();
   const [mounted, setMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -463,7 +467,11 @@ export function Navbar() {
               aria-label="Notifications"
             >
               <Bell size={17} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-2 ring-white dark:ring-gray-900" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-primary rounded-full ring-2 ring-white dark:ring-gray-900 flex items-center justify-center text-[9px] font-bold text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </motion.button>
             <AnimatePresence>
               {notifOpen && (
@@ -472,23 +480,68 @@ export function Navbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.96 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl shadow-black/8 p-4 z-50"
+                  className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl shadow-black/8 z-50 overflow-hidden"
                 >
-                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Notifications</p>
-                  <div className="flex flex-col gap-3">
-                    {[
-                      { msg: 'New user registered', time: '2m ago', dot: 'bg-emerald-500' },
-                      { msg: 'Installation #142 completed', time: '1h ago', dot: 'bg-blue-500' },
-                      { msg: 'Report generated', time: '3h ago', dot: 'bg-primary' },
-                    ].map((n, i) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <span className={cn('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', n.dot)} />
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{n.msg}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{n.time}</p>
-                        </div>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/10">
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                      Notifications {unreadCount > 0 && <span className="ml-1 text-primary">({unreadCount})</span>}
+                    </p>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={() => markAllAsRead()}
+                        className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  {/* List */}
+                  <div className="flex flex-col max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <Bell size={28} className="text-gray-300 dark:text-gray-600 mb-2" />
+                        <p className="text-sm text-gray-400 dark:text-gray-500">No notifications yet</p>
                       </div>
-                    ))}
+                    ) : (
+                      notifications.map((n) => {
+                        const dotColor =
+                          n.type === 'SERVICE_REPORT' ? 'bg-blue-500' :
+                          n.type === 'INSTALLATION' ? 'bg-indigo-500' :
+                          n.type === 'EXPENSE' ? 'bg-amber-500' :
+                          n.type === 'TICKET' ? 'bg-rose-500' :
+                          'bg-primary';
+                        return (
+                          <button
+                            key={n.id}
+                            onClick={() => n.status === 'UNREAD' && markAsRead(n.id)}
+                            className={cn(
+                              'flex items-start gap-3 px-4 py-3 text-left w-full transition-colors',
+                              n.status === 'UNREAD'
+                                ? 'bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/15'
+                                : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                            )}
+                          >
+                            <span className={cn('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', dotColor)} />
+                            <div className="flex-1 min-w-0">
+                              <p className={cn(
+                                'text-sm truncate',
+                                n.status === 'UNREAD'
+                                  ? 'font-bold text-gray-900 dark:text-white'
+                                  : 'font-semibold text-gray-700 dark:text-gray-300'
+                              )}>
+                                {n.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                                {format(new Date(n.created_at), 'h:mm a, MMM d')}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </motion.div>
               )}

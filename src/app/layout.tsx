@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import QueryProvider from "@/providers/query-provider";
 import { AuthProvider } from "@/providers/auth-provider";
+import { SocketProvider } from "@/providers/socket-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 const poppins = Poppins({
@@ -38,8 +39,10 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <AuthProvider>
-              {children}
-              <Toaster position="top-right" richColors closeButton />
+              <SocketProvider>
+                {children}
+                <Toaster position="top-right" richColors closeButton />
+              </SocketProvider>
             </AuthProvider>
           </ThemeProvider>
         </QueryProvider>
