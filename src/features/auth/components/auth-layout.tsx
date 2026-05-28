@@ -98,7 +98,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 sm:p-12 relative">
         <div className="w-full max-w-md">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-12 flex flex-col items-center lg:items-start"
           >

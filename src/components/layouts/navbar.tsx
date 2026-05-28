@@ -22,6 +22,7 @@ import {
   Building2,
   LayoutDashboard,
   Store,
+  ArrowRight,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +32,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader } from '@/components/ui/sheet';
+import { NotificationsDrawer } from '@/components/notifications/notifications-drawer';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { EditProfileDrawer } from '@/components/forms/edit-profile-drawer';
@@ -278,6 +280,7 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   // Mobile sheet accordion state
   const [mobileOpenGroups, setMobileOpenGroups] = useState<Record<string, boolean>>({});
@@ -498,7 +501,7 @@ export function Navbar() {
                   </div>
 
                   {/* List */}
-                  <div className="flex flex-col max-h-80 overflow-y-auto">
+                  <div className="flex flex-col max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10 scrollbar-track-transparent">
                     {notifications.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-10 text-center">
                         <Bell size={28} className="text-gray-300 dark:text-gray-600 mb-2" />
@@ -543,10 +546,28 @@ export function Navbar() {
                       })
                     )}
                   </div>
+
+                  {/* Footer */}
+                  <div className="border-t border-gray-100 dark:border-white/10">
+                    <button
+                      onClick={() => { setNotifOpen(false); setNotifDrawerOpen(true); }}
+                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors w-full"
+                    >
+                      View all notifications
+                      <ArrowRight size={12} />
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
+
+          {/* All-Notifications Drawer */}
+          <NotificationsDrawer
+            open={notifDrawerOpen}
+            onOpenChange={setNotifDrawerOpen}
+            onMarkAllRead={markAllAsRead}
+          />
 
           {/* Divider */}
           <div className="hidden xl:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
