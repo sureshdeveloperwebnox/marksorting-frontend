@@ -213,6 +213,13 @@ const navItems: NavItem[] = [
         module: 'notifications',
         action: 'view',
       },
+      { 
+        label: 'Activity Logs', 
+        href: '/settings/activity-logs', 
+        icon: FileText,
+        module: 'activity_logs',
+        action: 'view',
+      },
     ],
   },
 ];

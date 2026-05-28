@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Loader2, Shield, FileText, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { Save, Loader2, Shield, FileText, ChevronDown, ChevronRight, Check, LayoutDashboard, Users, Building2, Briefcase, Wrench, FileBarChart, ShoppingCart, Ticket, Settings, Activity, UserCog } from 'lucide-react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,13 +29,60 @@ const roleSchema = z.object({
 
 type RoleFormValues = z.infer<typeof roleSchema>;
 
+// Module configuration with display names, icons, and order
+const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; description: string; order: number }> = {
+  dashboard: { label: 'Dashboard', icon: LayoutDashboard, description: 'View system dashboard', order: 1 },
+  users: { label: 'User Management', icon: Users, description: 'Manage system users', order: 2 },
+  roles: { label: 'Role Management', icon: UserCog, description: 'Manage roles and permissions', order: 3 },
+  customers: { label: 'Customer Management', icon: Building2, description: 'Manage customer records', order: 4 },
+  mills: { label: 'Mill Management', icon: Building2, description: 'Manage mill information', order: 5 },
+  service_categories: { label: 'Service Categories', icon: Briefcase, description: 'Manage service categories', order: 6 },
+  service_reports: { label: 'Service Reports', icon: FileBarChart, description: 'Manage service reports', order: 7 },
+  installation_reports: { label: 'Installation Reports', icon: Wrench, description: 'Manage installation reports', order: 8 },
+  expenses: { label: 'Expense Management', icon: ShoppingCart, description: 'Manage expenses', order: 9 },
+  expense_categories: { label: 'Expense Categories', icon: Briefcase, description: 'Manage expense categories', order: 10 },
+  stores: { label: 'Store Management', icon: ShoppingCart, description: 'Manage store records', order: 11 },
+  materials: { label: 'Materials', icon: Briefcase, description: 'Manage materials inventory', order: 12 },
+  technicians: { label: 'Technicians', icon: Users, description: 'Manage technicians', order: 13 },
+  tickets: { label: 'Support Tickets', icon: Ticket, description: 'Manage support tickets', order: 14 },
+  reports: { label: 'Reports', icon: FileBarChart, description: 'Generate and view reports', order: 15 },
+  notifications: { label: 'Notifications', icon: Activity, description: 'Manage notifications', order: 16 },
+  settings: { label: 'System Settings', icon: Settings, description: 'Manage system settings', order: 17 },
+  activity_logs: { label: 'Activity Logs', icon: Activity, description: 'View system activity logs', order: 18 },
+};
+
+// Permission action labels for cleaner display
+const ACTION_LABELS: Record<string, string> = {
+  view: 'View',
+  create: 'Create',
+  update: 'Edit',
+  delete: 'Delete',
+  export: 'Export',
+  assign: 'Assign',
+  assign_role: 'Assign Role',
+  assign_permissions: 'Assign Permissions',
+  manage: 'Manage',
+  broadcast: 'Broadcast',
+  generate: 'Generate',
+  company: 'Company Settings',
+};
+
 function groupPermissions(permissions: Permission[]): Record<string, Permission[]> {
-  return permissions.reduce((acc, perm) => {
+  const grouped = permissions.reduce((acc, perm) => {
     const module = perm.name.split('.')[0];
     if (!acc[module]) acc[module] = [];
     acc[module].push(perm);
     return acc;
   }, {} as Record<string, Permission[]>);
+
+  // Sort modules by configured order
+  return Object.fromEntries(
+    Object.entries(grouped).sort(([a], [b]) => {
+      const orderA = MODULE_CONFIG[a]?.order || 99;
+      const orderB = MODULE_CONFIG[b]?.order || 99;
+      return orderA - orderB;
+    })
+  );
 }
 
 export function RoleFormDrawer() {
@@ -178,13 +225,13 @@ export function RoleFormDrawer() {
               </form>
 
               {/* Permissions Section */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Check size={14} className="text-primary/70" />
-                    Permissions
-                    <span className="ml-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
-                      {selectedPermIds.size} selected
+                    Module Permissions
+                    <span className="ml-1 text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                      {selectedPermIds.size} / {allPermissions.length}
                     </span>
                   </Label>
                   <button
@@ -196,81 +243,139 @@ export function RoleFormDrawer() {
                         setSelectedPermIds(new Set(allPermissions.map((p) => p.id)));
                       }
                     }}
-                    className="text-[11px] font-bold text-primary hover:underline"
+                    className="text-[11px] font-bold text-primary hover:underline px-2 py-1 rounded hover:bg-primary/5 transition-colors"
                   >
                     {selectedPermIds.size === allPermissions.length ? 'Deselect All' : 'Select All'}
                   </button>
                 </div>
 
-                <div className="space-y-2">
+                {/* Module Cards Grid */}
+                <div className="grid grid-cols-1 gap-3">
                   {Object.entries(grouped).map(([module, perms]) => {
                     const allSelected = perms.every((p) => selectedPermIds.has(p.id));
                     const someSelected = perms.some((p) => selectedPermIds.has(p.id));
-                    const isOpen = openGroups[module] ?? true;
+                    const isOpen = openGroups[module] ?? false;
+                    const config = MODULE_CONFIG[module];
+                    const ModuleIcon = config?.icon || Shield;
 
                     return (
-                      <div key={module} className="rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
-                        {/* Module header */}
-                        <button
-                          type="button"
-                          onClick={() => setOpenGroups((prev) => ({ ...prev, [module]: !prev[module] }))}
-                          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50/70 dark:bg-white/4 hover:bg-gray-100 dark:hover:bg-white/8 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              onClick={(e) => { e.stopPropagation(); toggleGroup(module, perms); }}
-                              className={cn(
-                                'w-4 h-4 rounded flex items-center justify-center border-2 transition-colors cursor-pointer',
-                                allSelected
-                                  ? 'bg-primary border-primary'
-                                  : someSelected
-                                  ? 'bg-primary/30 border-primary'
-                                  : 'border-gray-300 dark:border-white/20'
-                              )}
-                            >
-                              {(allSelected || someSelected) && <Check size={10} className="text-white" strokeWidth={3} />}
-                            </div>
-                            <span className="text-sm font-black capitalize text-gray-800 dark:text-white">
-                              {module.replace(/_/g, ' ')}
-                            </span>
-                            <span className="text-[10px] text-gray-400 font-semibold">
-                              {perms.filter((p) => selectedPermIds.has(p.id)).length}/{perms.length}
-                            </span>
-                          </div>
-                          {isOpen ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />}
-                        </button>
+                      <div
+                        key={module}
+                        className={cn(
+                          'rounded-xl border overflow-hidden transition-all duration-200',
+                          allSelected
+                            ? 'border-primary/30 bg-primary/[0.02] dark:bg-primary/5'
+                            : someSelected
+                            ? 'border-primary/20 bg-gray-50/50 dark:bg-white/[0.02]'
+                            : 'border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900'
+                        )}
+                      >
+                        {/* Module Header Card */}
+                        <div className="flex items-center gap-3 p-3">
+                          {/* Checkbox */}
+                          <button
+                            type="button"
+                            onClick={() => toggleGroup(module, perms)}
+                            className={cn(
+                              'w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all duration-150 flex-shrink-0',
+                              allSelected
+                                ? 'bg-primary border-primary text-white'
+                                : someSelected
+                                ? 'bg-primary/20 border-primary/50 text-primary'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-primary/50'
+                            )}
+                          >
+                            {allSelected && <Check size={12} strokeWidth={3} />}
+                            {someSelected && <Check size={12} strokeWidth={3} className="opacity-60" />}
+                          </button>
 
-                        {/* Permission rows */}
+                          {/* Icon */}
+                          <div className={cn(
+                            'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+                            allSelected
+                              ? 'bg-primary text-white'
+                              : someSelected
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                          )}>
+                            <ModuleIcon size={18} />
+                          </div>
+
+                          {/* Module Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                {config?.label || module.replace(/_/g, ' ')}
+                              </span>
+                              <span className={cn(
+                                'text-[10px] px-1.5 py-0.5 rounded-full font-semibold',
+                                allSelected
+                                  ? 'bg-primary/10 text-primary'
+                                  : someSelected
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                  : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                              )}>
+                                {perms.filter((p) => selectedPermIds.has(p.id)).length}/{perms.length}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                              {config?.description || 'Module permissions'}
+                            </p>
+                          </div>
+
+                          {/* Expand Button */}
+                          <button
+                            type="button"
+                            onClick={() => setOpenGroups((prev) => ({ ...prev, [module]: !prev[module] }))}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-400 hover:text-gray-600"
+                          >
+                            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                        </div>
+
+                        {/* Permission Actions Grid */}
                         {isOpen && (
-                          <div className="divide-y divide-gray-50 dark:divide-white/5">
-                            {perms.map((perm) => {
-                              const action = perm.name.split('.')[1] ?? perm.name;
-                              const checked = selectedPermIds.has(perm.id);
-                              return (
-                                <label
-                                  key={perm.id}
-                                  className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/3 transition-colors"
-                                >
-                                  <div
-                                    onClick={() => togglePerm(perm.id)}
+                          <div className="px-3 pb-3">
+                            <div className="ml-11 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {perms.map((perm) => {
+                                const actionKey = perm.name.split('.')[1] ?? perm.name;
+                                const actionLabel = ACTION_LABELS[actionKey] || actionKey.replace(/_/g, ' ');
+                                const checked = selectedPermIds.has(perm.id);
+
+                                return (
+                                  <label
+                                    key={perm.id}
                                     className={cn(
-                                      'w-4 h-4 rounded flex items-center justify-center border-2 transition-colors flex-shrink-0',
-                                      checked ? 'bg-primary border-primary' : 'border-gray-300 dark:border-white/20'
+                                      'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all duration-150 border',
+                                      checked
+                                        ? 'bg-primary/5 border-primary/20 dark:bg-primary/10 dark:border-primary/30'
+                                        : 'bg-gray-50/50 border-transparent hover:bg-gray-100 dark:bg-white/[0.02] dark:hover:bg-white/5'
                                     )}
                                   >
-                                    {checked && <Check size={10} className="text-white" strokeWidth={3} />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <span className="text-sm font-semibold capitalize text-gray-700 dark:text-gray-200">
-                                      {action}
+                                    <button
+                                      type="button"
+                                      onClick={() => togglePerm(perm.id)}
+                                      className={cn(
+                                        'w-4 h-4 rounded flex items-center justify-center border transition-all duration-150 flex-shrink-0',
+                                        checked
+                                          ? 'bg-primary border-primary text-white'
+                                          : 'border-gray-300 dark:border-gray-600 hover:border-primary/50'
+                                      )}
+                                    >
+                                      {checked && <Check size={10} strokeWidth={3} />}
+                                    </button>
+                                    <span className={cn(
+                                      'text-xs font-medium capitalize',
+                                      checked
+                                        ? 'text-gray-900 dark:text-white'
+                                        : 'text-gray-600 dark:text-gray-400'
+                                    )}>
+                                      {actionLabel}
                                     </span>
-                                    {perm.description && (
-                                      <p className="text-[11px] text-gray-400 truncate">{perm.description}</p>
-                                    )}
-                                  </div>
-                                </label>
-                              );
-                            })}
+                                  </label>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>
