@@ -83,7 +83,7 @@ const navItems: NavItem[] = [
         action: 'view',
       },
       { 
-        label: 'Roles', 
+        label: 'Role Management', 
         href: '/roles', 
         icon: Shield,
         module: 'roles',

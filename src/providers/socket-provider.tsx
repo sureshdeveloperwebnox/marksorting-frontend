@@ -13,6 +13,7 @@ import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth-store';
 import api from '@/lib/api';
+import { PushNotificationToast } from '@/components/notifications/push-notification-toast';
 
 export interface AppNotification {
   id: string;
@@ -117,10 +118,18 @@ export function SocketProvider({ children }: SocketProviderProps) {
     socket.on('notification', (notification: AppNotification) => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
-      toast(notification.title, {
-        description: notification.message,
-        duration: 5000,
-      });
+      toast.custom(
+        (toastId) => (
+          <PushNotificationToast
+            title={notification.title}
+            message={notification.message}
+            type={notification.type}
+            createdAt={notification.created_at}
+            onDismiss={() => toast.dismiss(toastId)}
+          />
+        ),
+        { duration: 6000 },
+      );
     });
 
     socketRef.current = socket;
