@@ -11,8 +11,6 @@ import {
   Settings,
   User,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Users,
   Factory,
   Wrench,
@@ -300,7 +298,7 @@ function DropdownNavItem({
         onClick={() => setOpen((v) => !v)}
         onFocus={() => setOpen(true)}
         className={cn(
-          'relative flex items-center gap-1 px-1.5 lg:px-2 py-2 text-[11px] lg:text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
+          'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
             ? 'text-primary'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
@@ -310,7 +308,7 @@ function DropdownNavItem({
         <ChevronDown
           size={11}
           className={cn(
-            'transition-transform duration-200 ml-0.5 hidden lg:block',
+            'transition-transform duration-200 ml-0.5 hidden xl:block',
             open && 'rotate-180'
           )}
         />
@@ -324,7 +322,7 @@ function DropdownNavItem({
         )}
         {/* Hover / active underline */}
         <span className={cn(
-          'absolute bottom-0 left-1.5 lg:left-2 right-1.5 lg:right-2 h-[2px] rounded-full bg-primary transition-all duration-300',
+          'absolute bottom-0 left-2 xl:left-3 right-2 xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
           isGroupActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
         )} />
       </button>
@@ -543,24 +541,8 @@ export function Navbar() {
         </Link>
 
         {/* ── Desktop Nav ── */}
-        <div className="hidden lg:flex flex-1 min-w-0 items-center relative group/nav">
-          {/* Left scroll indicator */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-gray-900 to-transparent z-10 pointer-events-none opacity-0 group-hover/nav:opacity-100 transition-opacity" />
-          
-          {/* Left scroll button */}
-          <button
-            onClick={() => {
-              const nav = document.querySelector('nav[role="navigation"]') as HTMLElement;
-              if (nav) nav.scrollBy({ left: -200, behavior: 'smooth' });
-            }}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-white/10 opacity-0 group-hover/nav:opacity-100 transition-opacity hover:bg-gray-50 dark:hover:bg-gray-700"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={14} className="text-gray-600 dark:text-gray-300" />
-          </button>
-          
-          <nav role="navigation" className="flex items-center gap-0.5 lg:gap-1 flex-1 min-w-0 overflow-x-auto scrollbar-none scroll-smooth px-1">
-            {getFilteredNavItems().map((item) => {
+        <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-1 flex-1 min-w-0">
+          {getFilteredNavItems().map((item) => {
             // Dropdown item
             if (item.subItems) {
               return (
@@ -583,7 +565,7 @@ export function Navbar() {
                 onPointerEnter={() => prefetchRoute(item.href!)}
                 onFocus={() => prefetchRoute(item.href!)}
                 className={cn(
-                  'relative flex items-center gap-1 px-1.5 lg:px-2 py-2 text-[11px] lg:text-xs xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
+                  'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
                   active
                     ? 'text-primary'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
@@ -598,29 +580,13 @@ export function Navbar() {
                   />
                 )}
                 <span className={cn(
-                  'absolute bottom-0 left-1.5 lg:left-2 right-1.5 lg:right-2 h-[2px] rounded-full bg-primary transition-all duration-300',
+                  'absolute bottom-0 left-1 xl:left-2 2xl:left-3 right-1 xl:right-2 2xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
                   active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
                 )} />
               </Link>
             );
           })}
-          </nav>
-          
-          {/* Right scroll indicator */}
-          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-gray-900 to-transparent z-10 pointer-events-none opacity-0 group-hover/nav:opacity-100 transition-opacity" />
-          
-          {/* Right scroll button */}
-          <button
-            onClick={() => {
-              const nav = document.querySelector('nav[role="navigation"]') as HTMLElement;
-              if (nav) nav.scrollBy({ left: 200, behavior: 'smooth' });
-            }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-20 w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-100 dark:border-white/10 opacity-0 group-hover/nav:opacity-100 transition-opacity hover:bg-gray-50 dark:hover:bg-gray-700"
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={14} className="text-gray-600 dark:text-gray-300" />
-          </button>
-        </div>
+        </nav>
 
         {/* ── Right Section ── */}
         <div className="ml-auto flex items-center gap-1.5 md:gap-2 flex-shrink-0">
@@ -758,7 +724,7 @@ export function Navbar() {
           />
 
           {/* Divider */}
-          <div className="hidden lg:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+          <div className="hidden xl:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
 
           {/* User menu */}
           <div ref={userMenuRef} className="relative">
@@ -774,7 +740,7 @@ export function Navbar() {
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
-              <div className="hidden lg:flex flex-col items-start leading-none">
+              <div className="hidden 2xl:flex flex-col items-start leading-none">
                 <span className="text-[13px] font-bold text-gray-900 dark:text-white uppercase tracking-wide">
                   {user?.full_name || 'User'}
                 </span>
@@ -785,7 +751,7 @@ export function Navbar() {
               <ChevronDown
                 size={14}
                 className={cn(
-                  'hidden lg:block text-gray-400 transition-transform duration-200',
+                  'hidden 2xl:block text-gray-400 transition-transform duration-200',
                   userMenuOpen && 'rotate-180'
                 )}
               />
@@ -843,7 +809,7 @@ export function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex lg:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
+                className="flex xl:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
               >
                 <Menu size={18} />
               </motion.button>
