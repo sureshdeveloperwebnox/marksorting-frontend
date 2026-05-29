@@ -151,7 +151,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Expense',
+    label: 'Expenses',
     icon: Receipt,
     module: 'expenses',
     action: 'view',
