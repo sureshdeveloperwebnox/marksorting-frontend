@@ -9,6 +9,7 @@ import {
   useDeleteServiceReport,
   useUpdateServiceReport,
   downloadServiceReportPdf,
+  useServiceReport,
 } from "@/services/service-report-service";
 import useServiceReportStore from "@/store/useServiceReportStore";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,19 @@ import {
   Users,
   Calendar,
   Download,
+  Eye,
+  Hash,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Activity,
+  Package,
+  Settings,
+  Wrench,
+  Check,
+  X,
+  Info,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -52,6 +66,7 @@ import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer"
 import { ServiceReportFormDrawer } from "@/components/forms/service-report-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { useServiceCategories } from "@/services/service-category-service";
+import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -151,6 +166,10 @@ export default function ServiceReportPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
   const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
+  const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+
+  const { data: viewReportData, isLoading: isViewReportLoading } = useServiceReport(selectedViewId);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -209,6 +228,332 @@ export default function ServiceReportPage() {
       setDownloadingId(null);
     }
   };
+
+  const safeFormatDate = (dateStr?: string) => {
+    if (!dateStr) return "—";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "—";
+      return format(d, "MMM dd, yyyy");
+    } catch {
+      return "—";
+    }
+  };
+
+  const viewSections = React.useMemo(() => {
+    if (!viewReportData) return [];
+
+    const renderSignature = (sig?: string, altText?: string) => {
+      if (!sig) return <span className="text-gray-400 dark:text-gray-600 font-medium">No signature captured</span>;
+      
+      const isValid = sig.startsWith('http://') || sig.startsWith('https://') || 
+                      (sig.startsWith('data:image/') && !sig.includes('...') && sig.length >= 100);
+
+      if (!isValid) {
+        return <span className="text-gray-400 dark:text-gray-600 font-medium">No signature captured</span>;
+      }
+
+      const src = sig.startsWith("data:") || sig.startsWith("http://") || sig.startsWith("https://") ? sig : `data:image/png;base64,${sig}`;
+      return (
+        <div className="mt-1 p-2 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl flex items-center justify-center min-h-[90px] w-full">
+          <img
+            src={src}
+            alt={altText || "Signature"}
+            className="max-h-20 object-contain dark:invert"
+          />
+        </div>
+      );
+    };
+
+    return [
+      {
+        title: "General Information",
+        items: [
+          {
+            label: "Report Number",
+            value: (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewReportData.report_number}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
+            label: "Category",
+            value: (
+              <Badge variant="outline" className="font-semibold text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 rounded-md shadow-sm bg-primary/5 dark:bg-primary/10 text-primary border-primary/30">
+                {viewReportData.serviceCategory?.name || "—"}
+              </Badge>
+            ),
+            icon: FileText,
+          },
+          {
+            label: "Status",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  getStatusColors(viewReportData.status)
+                )}
+              >
+                {viewReportData.status?.replace("_", " ")}
+              </Badge>
+            ),
+            icon: Activity,
+          },
+          {
+            label: "Visit Date",
+            value: safeFormatDate(viewReportData.visit_date),
+            icon: Calendar,
+          },
+          {
+            label: "Visit Time",
+            value: viewReportData.visit_time || "—",
+            icon: Clock,
+          },
+          {
+            label: "Call Registered Date",
+            value: safeFormatDate(viewReportData.call_registered_date),
+            icon: Calendar,
+          },
+        ],
+      },
+      {
+        title: "Mill & Client Details",
+        items: [
+          {
+            label: "Mill / Place",
+            value: viewReportData.mill?.name || "—",
+            icon: Building2,
+          },
+          {
+            label: "Location / Place",
+            value: viewReportData.place || "—",
+            icon: MapPin,
+          },
+          {
+            label: "Authorized Person",
+            value: viewReportData.authorized_person || "—",
+            icon: User,
+          },
+          {
+            label: "WhatsApp Number",
+            value: viewReportData.mill_whatsapp_number ? (
+              <a href={`https://wa.me/${viewReportData.mill_whatsapp_number.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary font-bold">
+                {viewReportData.mill_whatsapp_number}
+              </a>
+            ) : "—",
+            icon: Phone,
+          },
+          {
+            label: "Email Address",
+            value: viewReportData.mill_email ? (
+              <a href={`mailto:${viewReportData.mill_email}`} className="hover:underline text-primary font-bold">
+                {viewReportData.mill_email}
+              </a>
+            ) : "—",
+            icon: Mail,
+          },
+        ],
+      },
+      {
+        title: "Machine Details",
+        items: [
+          {
+            label: "Machine Model",
+            value: viewReportData.machine_model || "—",
+            icon: Settings,
+          },
+          {
+            label: "Serial / Frame No",
+            value: (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewReportData.serial_or_frame_no || "—"}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
+            label: "Manufacturing Date",
+            value: safeFormatDate(viewReportData.machine_mfg_date),
+            icon: Calendar,
+          },
+          {
+            label: "Installation Date",
+            value: safeFormatDate(viewReportData.machine_installation_date),
+            icon: Calendar,
+          },
+        ],
+      },
+      {
+        title: "Performance Parameters",
+        items: [
+          {
+            label: "Commodity",
+            value: viewReportData.commodity || "—",
+            icon: Package,
+          },
+          {
+            label: "Contamination",
+            value: viewReportData.contamination || "—",
+            icon: Activity,
+          },
+          {
+            label: "Output Capacity / Hour",
+            value: viewReportData.output_capacity_per_hour || "—",
+            icon: Activity,
+          },
+          {
+            label: "Rejection Ratio",
+            value: viewReportData.rejection_ratio || "—",
+            icon: Activity,
+          },
+          {
+            label: "Purity",
+            value: viewReportData.purity || "—",
+            icon: Activity,
+          },
+          {
+            label: "No of Programs Set",
+            value: viewReportData.no_of_programs_set !== undefined && viewReportData.no_of_programs_set !== null ? viewReportData.no_of_programs_set : "—",
+            icon: Hash,
+          },
+        ],
+      },
+      {
+        title: "Utilities & Environment",
+        items: [
+          {
+            label: "A/C Provided",
+            value: (
+              <div className="flex items-center gap-1.5">
+                {viewReportData.ac_provided ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-500" />
+                    <span className="text-emerald-500 font-bold text-xs uppercase tracking-wider">Yes</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="w-4 h-4 text-rose-500" />
+                    <span className="text-rose-500 font-bold text-xs uppercase tracking-wider">No</span>
+                  </>
+                )}
+              </div>
+            ),
+            icon: Settings,
+          },
+          {
+            label: "Auto Drain Valve Working",
+            value: (
+              <div className="flex items-center gap-1.5">
+                {viewReportData.auto_drain_valve_working ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-500" />
+                    <span className="text-emerald-500 font-bold text-xs uppercase tracking-wider">Working</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="w-4 h-4 text-rose-500" />
+                    <span className="text-rose-500 font-bold text-xs uppercase tracking-wider">Not Working</span>
+                  </>
+                )}
+              </div>
+            ),
+            icon: Settings,
+          },
+          {
+            label: "Compressor Details",
+            value: viewReportData.compressor_details || "—",
+            icon: Settings,
+          },
+          {
+            label: "Air Drier Details",
+            value: viewReportData.air_drier_details || "—",
+            icon: Settings,
+          },
+          {
+            label: "Line Filter Condition",
+            value: viewReportData.line_filter_condition || "—",
+            icon: Settings,
+          },
+          {
+            label: "Machine Filter Condition",
+            value: viewReportData.machine_filter_condition || "—",
+            icon: Settings,
+          },
+        ],
+      },
+      {
+        title: "Complaint & Findings",
+        items: [
+          {
+            label: "Nature of Complaint",
+            value: viewReportData.nature_of_complaint || "—",
+            icon: Info,
+            fullWidth: true,
+          },
+          {
+            label: "Problem Observed",
+            value: viewReportData.problem_observed || "—",
+            icon: Info,
+            fullWidth: true,
+          },
+          {
+            label: "Action Taken",
+            value: viewReportData.action_taken || "—",
+            icon: Info,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Assigned Engineers & Remarks",
+        items: [
+          {
+            label: "Engineers",
+            value: viewReportData.technicians?.map((t: any) => t.technician.full_name).join(", ") || "—",
+            icon: Wrench,
+            fullWidth: true,
+          },
+          {
+            label: "Previous Visit Engineer",
+            value: viewReportData.previous_visit_engineer || "—",
+            icon: User,
+          },
+          {
+            label: "Engineer Remarks",
+            value: viewReportData.engineer_remarks || "—",
+            icon: Info,
+            fullWidth: true,
+          },
+          {
+            label: "Customer Remarks",
+            value: viewReportData.customer_remarks || "—",
+            icon: Info,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Signatures",
+        items: [
+          {
+            label: "Engineer Signature",
+            value: renderSignature(viewReportData.engineer_signature, "Engineer Signature"),
+            icon: User,
+            fullWidth: true,
+          },
+          {
+            label: "Customer Signature",
+            value: renderSignature(viewReportData.customer_signature, "Customer Signature"),
+            icon: User,
+            fullWidth: true,
+          },
+        ],
+      },
+    ];
+  }, [viewReportData]);
 
   const activeFilterCount = [statusFilter, categoryFilter, dateFrom, dateTo].filter(Boolean).length;
 
@@ -360,6 +705,18 @@ export default function ServiceReportPage() {
         const isDownloading = downloadingId === row.original.id;
         return (
           <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 hover:text-indigo-700 hover:bg-indigo-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+              onClick={() => {
+                setSelectedViewId(row.original.id);
+                setIsViewDrawerOpen(true);
+              }}
+              title="View Details"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -572,6 +929,21 @@ export default function ServiceReportPage() {
 
       {/* ── Form Drawer ── */}
       <ServiceReportFormDrawer />
+
+      {/* ── View Details Drawer ── */}
+      <ViewDetailsDrawer
+        isOpen={isViewDrawerOpen}
+        onClose={() => {
+          setIsViewDrawerOpen(false);
+          setSelectedViewId(null);
+        }}
+        title="Service Report Details"
+        description="Comprehensive view of the service and maintenance report."
+        icon={<FileText size={24} />}
+        isLoading={isViewReportLoading}
+        sections={viewSections}
+        size="2xl"
+      />
 
       {/* ── Delete Confirm Dialog ── */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

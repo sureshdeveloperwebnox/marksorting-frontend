@@ -48,6 +48,7 @@ import useServiceReportStore from '@/store/useServiceReportStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { useS3Upload } from '@/hooks/use-s3-upload';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import {
   Sheet,
@@ -194,6 +195,27 @@ export function ServiceReportFormDrawer() {
   const { data: customersData } = useCustomers({ skip: 0, take: 500, status: 'ACTIVE' });
   const { mutateAsync: createReport, isPending: isCreating } = useCreateServiceReport();
   const { mutateAsync: updateReport, isPending: isUpdating } = useUpdateServiceReport();
+  const { uploadFile, isUploading } = useS3Upload();
+
+  const base64ToFile = (base64DataUrl: string, filename: string): File => {
+    const arr = base64DataUrl.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
+    const bstr = atob(arr[arr.length - 1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  const isValidBase64Image = (str?: string): boolean => {
+    if (!str) return false;
+    if (!str.startsWith('data:image/')) return false;
+    if (str.includes('...')) return false;
+    if (str.length < 100) return false;
+    return true;
+  };
 
   const categories = categoriesData?.serviceCategories || [];
   const mills = millsData?.mills || [];
@@ -390,11 +412,54 @@ export function ServiceReportFormDrawer() {
 
   const onSubmit: SubmitHandler<ServiceReportFormValues> = async (data) => {
     try {
+      let engineerSignatureUrl = data.engineer_signature;
+      let customerSignatureUrl = data.customer_signature;
+
+      if (data.engineer_signature && data.engineer_signature.startsWith('data:')) {
+        if (isValidBase64Image(data.engineer_signature)) {
+          try {
+            const file = base64ToFile(data.engineer_signature, `eng-sig-${Date.now()}.png`);
+            const uploadResult = await uploadFile(file);
+            if (!uploadResult) {
+              toast.error('Failed to upload engineer signature');
+              return;
+            }
+            engineerSignatureUrl = uploadResult.fileUrl;
+          } catch (error) {
+            console.error('Error processing engineer signature:', error);
+            engineerSignatureUrl = '';
+          }
+        } else {
+          engineerSignatureUrl = '';
+        }
+      }
+
+      if (data.customer_signature && data.customer_signature.startsWith('data:')) {
+        if (isValidBase64Image(data.customer_signature)) {
+          try {
+            const file = base64ToFile(data.customer_signature, `cust-sig-${Date.now()}.png`);
+            const uploadResult = await uploadFile(file);
+            if (!uploadResult) {
+              toast.error('Failed to upload customer signature');
+              return;
+            }
+            customerSignatureUrl = uploadResult.fileUrl;
+          } catch (error) {
+            console.error('Error processing customer signature:', error);
+            customerSignatureUrl = '';
+          }
+        } else {
+          customerSignatureUrl = '';
+        }
+      }
+
       const payload = {
         ...data,
         ac_provided: data.ac_provided === 'YES',
         auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
         no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
+        engineer_signature: engineerSignatureUrl,
+        customer_signature: customerSignatureUrl,
       };
 
       if (isEdit) {
@@ -409,7 +474,7 @@ export function ServiceReportFormDrawer() {
   };
 
   const isLoading = isEdit && reportLoading;
-  const isSubmitting = isCreating || isUpdating;
+  const isSubmitting = isCreating || isUpdating || isUploading;
 
   const fieldToSectionMap: Record<string, number> = {
     // Section 1
