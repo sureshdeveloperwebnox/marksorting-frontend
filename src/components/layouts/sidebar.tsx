@@ -287,10 +287,15 @@ export function Sidebar() {
   };
 
   return (
-    <div className="relative h-full hidden md:block">
+    <div className="relative h-full hidden md:block select-none">
       <motion.div
         initial={false}
         animate={{ width: isCollapsed ? 80 : 280 }}
+        transition={{
+          type: 'tween',
+          ease: [0.16, 1, 0.3, 1],
+          duration: 0.22,
+        }}
         className="h-full bg-gradient-to-b from-primary to-primary/90 flex flex-col z-40 rounded-[32px] overflow-hidden shadow-2xl relative border border-white/10"
       >
         <div className="p-6 mb-2">
@@ -300,17 +305,7 @@ export function Sidebar() {
           />
         </div>
 
-        <div className="px-6 mb-4">
-          {!isCollapsed && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-white/40 text-[11px] font-black uppercase tracking-[0.2em] ml-4 font-poppins"
-            >
-              Management
-            </motion.p>
-          )}
-        </div>
+
 
         <nav className="flex-1 px-4 space-y-1 relative pt-4 overflow-y-auto max-h-[calc(100vh-220px)] scrollbar-none">
           {getFilteredNavItems().map((item) => {
@@ -326,7 +321,6 @@ export function Sidebar() {
             });
 
             const isMainActive = !hasSubItems && item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`));
-
             const isMenuOpen = openMenus[item.label];
 
             if (hasSubItems) {
@@ -343,15 +337,13 @@ export function Sidebar() {
                       }
                     }}
                     className={cn(
-                      'w-full flex items-center justify-between py-3.5 transition-all duration-300 relative text-left group',
-                      isCollapsed ? 'px-0 justify-center' : 'px-6',
-                      isSubActive && !isCollapsed
-                        ? 'text-white font-semibold'
-                        : 'text-white hover:bg-white/5 rounded-2xl font-semibold'
+                      'w-full flex items-center py-3.5 transition-all duration-300 relative text-left group px-4 rounded-2xl text-white hover:bg-white/5 font-semibold cursor-pointer',
+                      isSubActive && !isCollapsed && 'text-white font-semibold'
                     )}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="relative z-10 flex items-center justify-center w-6 h-6">
+                    <div className="flex items-center w-full">
+                      {/* Centered Icon Container */}
+                      <div className="relative z-10 flex items-center justify-center w-12 h-6 flex-shrink-0">
                         <item.icon
                           size={20}
                           strokeWidth={isSubActive ? 2.5 : 2}
@@ -359,103 +351,113 @@ export function Sidebar() {
                         />
                       </div>
 
-                      {!isCollapsed && (
-                        <motion.span
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins"
-                        >
+                      {/* Collapsible Label/Chevron wrapper */}
+                      <motion.div
+                        animate={{
+                          width: isCollapsed ? 0 : 'auto',
+                          opacity: isCollapsed ? 0 : 1,
+                          marginLeft: isCollapsed ? 0 : 12,
+                        }}
+                        transition={{
+                          type: 'tween',
+                          ease: [0.16, 1, 0.3, 1],
+                          duration: 0.22,
+                        }}
+                        className="flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
+                      >
+                        <span className="font-semibold text-[14px] tracking-tight font-poppins">
                           {item.label}
-                        </motion.span>
-                      )}
+                        </span>
+                        <ChevronRight
+                          size={16}
+                          className={cn(
+                            "transition-transform duration-300 text-white/40 group-hover:text-white ml-2",
+                            isMenuOpen && "rotate-90"
+                          )}
+                        />
+                      </motion.div>
                     </div>
-
-                    {!isCollapsed && (
-                      <ChevronRight
-                        size={16}
-                        className={cn(
-                          "transition-transform duration-300 text-white/40 group-hover:text-white",
-                          isMenuOpen && "rotate-90"
-                        )}
-                      />
-                    )}
                   </button>
 
                   {/* Submenu container */}
-                  {!isCollapsed && (
-                    <motion.div
-                      initial={false}
-                      animate={isMenuOpen ? { height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } } : { height: 0, opacity: 0, overflow: 'hidden' }}
-                      className="overflow-hidden pl-6 -mr-4 pr-4 space-y-1 relative"
-                    >
-                      {/* Vertical line indicator */}
-                      <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      height: (isMenuOpen && !isCollapsed) ? 'auto' : 0,
+                      opacity: (isMenuOpen && !isCollapsed) ? 1 : 0,
+                    }}
+                    transition={{
+                      type: 'tween',
+                      ease: [0.16, 1, 0.3, 1],
+                      duration: 0.22,
+                    }}
+                    className="overflow-hidden pl-6 -mr-4 pr-4 space-y-1 relative"
+                  >
+                    {/* Vertical line indicator */}
+                    <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
 
-                      {item.subItems!.map((subItem) => {
-                        const isSubItemActive = (() => {
-                          if (pathname !== subItem.href && !pathname.startsWith(`${subItem.href}/`)) return false;
-                          const betterMatch = item.subItems!.some(
-                            (o) => o.href !== subItem.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > subItem.href.length
-                          );
-                          return !betterMatch;
-                        })();
-                        return (
-                          <Link
-                            key={subItem.href}
-                            href={subItem.href}
-                            className="relative block group"
-                          >
-                            <div
-                                className={cn(
-                                  'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
-                                  isSubItemActive
-                                    ? 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
-                                    : 'text-white hover:bg-white/5 rounded-xl font-semibold'
-                                )}
-                            >
-                              {isSubItemActive && (
-                                <>
-                                  {/* Inverted Corner Top */}
-                                  <div className="absolute -top-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
-                                    <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
-                                    <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
-                                  </div>
-
-                                  {/* Inverted Corner Bottom */}
-                                  <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
-                                    <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
-                                    <div className="absolute inset-0 bg-primary rounded-tr-[20px]" />
-                                  </div>
-                                </>
-                              )}
-
-                              {subItem.icon ? (
-                                <subItem.icon
-                                  size={16}
-                                  strokeWidth={isSubItemActive ? 2.5 : 2}
-                                  className={cn("relative z-10 transition-colors", isSubItemActive ? "text-primary" : "text-white")}
-                                />
-                              ) : (
-                                <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/70 group-hover:bg-white transition-colors" />
-                              )}
-
-                              <span className="relative z-10 font-semibold text-[13px] tracking-tight font-poppins">
-                                {subItem.label}
-                              </span>
-
-                              {isSubItemActive && (
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
-                                />
-                              )}
-                            </div>
-                          </Link>
+                    {item.subItems!.map((subItem) => {
+                      const isSubItemActive = (() => {
+                        if (pathname !== subItem.href && !pathname.startsWith(`${subItem.href}/`)) return false;
+                        const betterMatch = item.subItems!.some(
+                          (o) => o.href !== subItem.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > subItem.href.length
                         );
-                      })}
-                    </motion.div>
-                  )}
+                        return !betterMatch;
+                      })();
+                      return (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          className="relative block group"
+                        >
+                          <div
+                            className={cn(
+                              'flex items-center py-3 pl-6 pr-4 transition-all duration-300 relative rounded-l-3xl text-white hover:bg-white/5 font-semibold',
+                              isSubItemActive && 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                            )}
+                          >
+                            {isSubItemActive && (
+                              <>
+                                {/* Inverted Corner Top */}
+                                <div className="absolute -top-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
+                                  <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
+                                  <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
+                                </div>
+
+                                {/* Inverted Corner Bottom */}
+                                <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
+                                  <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
+                                  <div className="absolute inset-0 bg-primary rounded-tr-[20px]" />
+                                </div>
+                              </>
+                            )}
+
+                            {subItem.icon ? (
+                              <subItem.icon
+                                size={16}
+                                strokeWidth={isSubItemActive ? 2.5 : 2}
+                                className={cn("relative z-10 transition-colors flex-shrink-0", isSubItemActive ? "text-primary" : "text-white")}
+                              />
+                            ) : (
+                              <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/70 group-hover:bg-white transition-colors flex-shrink-0" />
+                            )}
+
+                            <span className="relative z-10 font-semibold text-[13px] tracking-tight font-poppins ml-3">
+                              {subItem.label}
+                            </span>
+
+                            {isSubItemActive && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
+                              />
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </motion.div>
                 </div>
               );
             }
@@ -468,11 +470,8 @@ export function Sidebar() {
               >
                 <div
                   className={cn(
-                    'flex items-center gap-4 py-3.5 transition-all duration-300 relative',
-                    isCollapsed ? 'px-0 justify-center' : 'px-6',
-                    isMainActive
-                      ? 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
-                      : 'text-white hover:bg-white/5 rounded-2xl font-semibold'
+                    'flex items-center py-3.5 transition-all duration-300 relative rounded-l-3xl text-white hover:bg-white/5 font-semibold pl-4 pr-4',
+                    isMainActive && 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
                   )}
                 >
                   {isMainActive && (
@@ -491,7 +490,7 @@ export function Sidebar() {
                     </>
                   )}
 
-                  <div className="relative z-10 flex items-center justify-center w-6 h-6">
+                  <div className="relative z-10 flex items-center justify-center w-12 h-6 flex-shrink-0">
                     <item.icon
                       size={20}
                       strokeWidth={isMainActive ? 2.5 : 2}
@@ -499,23 +498,31 @@ export function Sidebar() {
                     />
                   </div>
 
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins"
-                    >
+                  <motion.div
+                    animate={{
+                      width: isCollapsed ? 0 : 'auto',
+                      opacity: isCollapsed ? 0 : 1,
+                      marginLeft: isCollapsed ? 0 : 12,
+                    }}
+                    transition={{
+                      type: 'tween',
+                      ease: [0.16, 1, 0.3, 1],
+                      duration: 0.22,
+                    }}
+                    className="flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
+                  >
+                    <span className="relative z-10 font-semibold text-[14px] tracking-tight font-poppins">
                       {item.label}
-                    </motion.span>
-                  )}
+                    </span>
 
-                  {isMainActive && !isCollapsed && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
-                    />
-                  )}
+                    {isMainActive && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute right-8 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(255,107,0,0.4)]"
+                      />
+                    )}
+                  </motion.div>
                 </div>
               </Link>
             );
@@ -527,20 +534,36 @@ export function Sidebar() {
             onClick={handleLogout}
             disabled={isLoggingOut}
             className={cn(
-              "flex items-center gap-3 px-6 py-4 w-full text-white hover:bg-white/10 rounded-2xl transition-all duration-300 group font-semibold",
-              isCollapsed && "justify-center px-0",
+              "flex items-center w-full text-white hover:bg-white/10 rounded-2xl transition-all duration-300 group font-semibold p-4 relative cursor-pointer",
               isLoggingOut && "opacity-50 cursor-not-allowed"
             )}
           >
-            <LogOut size={20} className={cn("group-hover:rotate-12 transition-transform", isLoggingOut && "animate-pulse")} />
-            {!isCollapsed && <span className="font-bold text-[14px] font-poppins">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
+            <div className="relative z-10 flex items-center justify-center w-12 h-6 flex-shrink-0">
+              <LogOut size={20} className={cn("group-hover:rotate-12 transition-transform", isLoggingOut && "animate-pulse")} />
+            </div>
+
+            <motion.div
+              animate={{
+                width: isCollapsed ? 0 : 'auto',
+                opacity: isCollapsed ? 0 : 1,
+                marginLeft: isCollapsed ? 0 : 12,
+              }}
+              transition={{
+                type: 'tween',
+                ease: [0.16, 1, 0.3, 1],
+                duration: 0.22,
+              }}
+              className="flex-1 text-left overflow-hidden whitespace-nowrap"
+            >
+              <span className="font-bold text-[14px] font-poppins">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+            </motion.div>
           </button>
         </div>
 
         {/* Collapse Toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-1 top-20 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 active:scale-95 transition-all z-50 translate-x-1/2 border-2 border-primary/10"
+          className="absolute -right-1 top-20 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 active:scale-95 transition-all z-50 translate-x-1/2 border-2 border-primary/10 cursor-pointer"
         >
           <ChevronRight
             size={16}
