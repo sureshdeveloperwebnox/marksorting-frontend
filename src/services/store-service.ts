@@ -36,6 +36,8 @@ export interface Store {
   return_status: string;
   inflow_status: string;
   barcode?: string;
+  provider_name?: string;
+  invoice_number?: string;
   created_at: string;
   updated_at: string;
   materials: StoreMaterialRelation[];

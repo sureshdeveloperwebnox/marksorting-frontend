@@ -65,6 +65,7 @@ const getReturnColors = (status: string) => {
     case "Returned": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20";
     case "Pending": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20";
     case "Not Returned": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20";
+    case "Completed": return "bg-teal-500/5 dark:bg-teal-500/10 text-teal-500 dark:text-teal-400 border-teal-500/20";
     default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500/20";
   }
 };
@@ -74,6 +75,7 @@ const getReturnDotColors = (status: string) => {
     case "Returned": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
     case "Pending": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
     case "Not Returned": return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
+    case "Completed": return "bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]";
     default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
   }
 };
@@ -342,6 +344,25 @@ export default function StoresPage() {
           },
         ],
       },
+      ...(viewStoreData.provider_name || viewStoreData.invoice_number
+        ? [
+            {
+              title: "Return Shipment Details",
+              items: [
+                {
+                  label: "Provider Name",
+                  value: viewStoreData.provider_name || "—",
+                  icon: Users,
+                },
+                {
+                  label: "Invoice/Receipt Number",
+                  value: viewStoreData.invoice_number || "—",
+                  icon: Hash,
+                },
+              ],
+            },
+          ]
+        : []),
       {
         title: "Metadata",
         items: [
@@ -410,6 +431,7 @@ export default function StoresPage() {
         { value: "Returned", label: "Returned", iconColor: "bg-emerald-500" },
         { value: "Pending", label: "Pending", iconColor: "bg-amber-500" },
         { value: "Not Returned", label: "Not Returned", iconColor: "bg-rose-500" },
+        { value: "Completed", label: "Completed", iconColor: "bg-teal-500" },
       ],
     },
     {
