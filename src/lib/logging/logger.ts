@@ -38,19 +38,21 @@ interface FrontendLogEntry {
 }
 
 class FrontendLogger {
-  private sessionId: string;
-  private correlationId: string;
+  private sessionId: string = 'server';
+  private correlationId: string = 'server';
   private logBuffer: FrontendLogEntry[] = [];
-  private flushInterval: NodeJS.Timeout;
+  private flushInterval: NodeJS.Timeout | null = null;
   private readonly BUFFER_SIZE = 50;
   private readonly FLUSH_INTERVAL = 10000;
+  private isClient: boolean = false;
 
   constructor() {
-    this.sessionId = this.getOrCreateSessionId();
-    this.correlationId = uuidv4();
-    this.flushInterval = setInterval(() => this.flush(), this.FLUSH_INTERVAL);
-    
+    // Only initialize on client side to avoid hydration mismatches
     if (typeof window !== 'undefined') {
+      this.isClient = true;
+      this.sessionId = this.getOrCreateSessionId();
+      this.correlationId = uuidv4();
+      this.flushInterval = setInterval(() => this.flush(), this.FLUSH_INTERVAL);
       window.addEventListener('beforeunload', () => this.flush());
     }
   }
@@ -58,12 +60,16 @@ class FrontendLogger {
   private getOrCreateSessionId(): string {
     if (typeof window === 'undefined') return 'server';
     
-    let sessionId = sessionStorage.getItem('log_session_id');
-    if (!sessionId) {
-      sessionId = uuidv4();
-      sessionStorage.setItem('log_session_id', sessionId);
+    try {
+      let sessionId = sessionStorage.getItem('log_session_id');
+      if (!sessionId) {
+        sessionId = uuidv4();
+        sessionStorage.setItem('log_session_id', sessionId);
+      }
+      return sessionId;
+    } catch {
+      return 'server';
     }
-    return sessionId;
   }
 
   private createLogEntry(
@@ -73,7 +79,7 @@ class FrontendLogger {
     metadata?: Record<string, any>,
   ): FrontendLogEntry {
     return {
-      id: uuidv4(),
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uuidv4(),
       timestamp: new Date().toISOString(),
       level,
       action,
@@ -82,10 +88,10 @@ class FrontendLogger {
       userId: this.getUserId(),
       sessionId: this.sessionId,
       correlationId: this.correlationId,
-      pageUrl: typeof window !== 'undefined' ? window.location.href : '',
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-      screenResolution: typeof window !== 'undefined' 
-        ? `${window.screen.width}x${window.screen.height}` 
+      pageUrl: this.isClient && typeof window !== 'undefined' ? window.location.href : '',
+      userAgent: this.isClient && typeof navigator !== 'undefined' ? navigator.userAgent : '',
+      screenResolution: this.isClient && typeof window !== 'undefined'
+        ? `${window.screen.width}x${window.screen.height}`
         : '',
     };
   }
@@ -133,6 +139,7 @@ class FrontendLogger {
 
   private async flush(): Promise<void> {
     if (this.logBuffer.length === 0) return;
+    if (!this.isClient || typeof window === 'undefined') return;
 
     const logs = [...this.logBuffer];
     this.logBuffer = [];
@@ -152,6 +159,8 @@ class FrontendLogger {
   }
 
   async retryFailedLogs(): Promise<void> {
+    if (!this.isClient || typeof window === 'undefined') return;
+    
     const failed = JSON.parse(localStorage.getItem('failed_logs') || '[]');
     if (failed.length === 0) return;
 
@@ -170,7 +179,9 @@ class FrontendLogger {
   }
 
   newCorrelationId(): string {
-    this.correlationId = uuidv4();
+    if (this.isClient) {
+      this.correlationId = uuidv4();
+    }
     return this.correlationId;
   }
 
