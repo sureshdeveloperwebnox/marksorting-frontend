@@ -2,6 +2,7 @@
 
 import { useAuthStore } from '@/store/auth-store';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useLayoutStore } from '@/store/layout-store';
 import {
   Bell,
   Sun,
@@ -24,6 +25,8 @@ import {
   LayoutDashboard,
   Store,
   ArrowRight,
+  Sidebar as SidebarIcon,
+  LayoutGrid,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -70,7 +73,7 @@ const navItems: NavItem[] = [
     action: 'view',
   },
   {
-    label: 'User Management',
+    label: 'Users',
     icon: Users,
     module: 'users',
     action: 'view',
@@ -92,7 +95,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Mill Management',
+    label: 'Mills',
     icon: Factory,
     module: 'mills',
     action: 'view',
@@ -114,7 +117,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Service Management',
+    label: 'Services',
     icon: Tag,
     module: 'service_categories',
     action: 'view',
@@ -136,7 +139,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Installation Management',
+    label: 'Installations',
     icon: Wrench,
     module: 'installation_reports',
     action: 'view',
@@ -173,7 +176,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Store Management',
+    label: 'Stores',
     icon: Store,
     href: '/stores',
     module: 'stores',
@@ -298,7 +301,7 @@ function DropdownNavItem({
         onClick={() => setOpen((v) => !v)}
         onFocus={() => setOpen(true)}
         className={cn(
-          'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
+          'relative flex items-center gap-1 px-1.5 min-[1360px]:px-2 min-[1600px]:px-2.5 py-2 text-[11px] min-[1360px]:text-xs min-[1600px]:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
             ? 'text-primary'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
@@ -308,7 +311,7 @@ function DropdownNavItem({
         <ChevronDown
           size={11}
           className={cn(
-            'transition-transform duration-200 ml-0.5 hidden xl:block',
+            'transition-transform duration-200 ml-0.5 hidden min-[1360px]:block',
             open && 'rotate-180'
           )}
         />
@@ -322,7 +325,7 @@ function DropdownNavItem({
         )}
         {/* Hover / active underline */}
         <span className={cn(
-          'absolute bottom-0 left-2 xl:left-3 right-2 xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+          'absolute bottom-0 left-2 min-[1360px]:left-3 right-2 min-[1360px]:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
           isGroupActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
         )} />
       </button>
@@ -374,7 +377,7 @@ function DropdownNavItem({
 
 /* ─── Main Navbar ────────────────────────────────────────────── */
 
-export function Navbar() {
+export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -382,6 +385,7 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
   const { logout, isLoggingOut } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useSocket();
+  const { layoutType, toggleLayoutType } = useLayoutStore();
   const [mounted, setMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -541,7 +545,7 @@ export function Navbar() {
         </Link>
 
         {/* ── Desktop Nav ── */}
-        <nav className="hidden xl:flex items-center gap-0.5 2xl:gap-1 flex-1 min-w-0">
+        <nav className={cn("hidden min-[1360px]:flex items-center gap-0.5 min-[1600px]:gap-1 flex-1 min-w-0", isSidebarLayout && "min-[1360px]:hidden")}>
           {getFilteredNavItems().map((item) => {
             // Dropdown item
             if (item.subItems) {
@@ -565,7 +569,7 @@ export function Navbar() {
                 onPointerEnter={() => prefetchRoute(item.href!)}
                 onFocus={() => prefetchRoute(item.href!)}
                 className={cn(
-                  'relative flex items-center gap-1 px-1.5 xl:px-2 2xl:px-2.5 py-2 text-[11px] xl:text-xs 2xl:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
+                  'relative flex items-center gap-1 px-1.5 min-[1360px]:px-2 min-[1600px]:px-2.5 py-2 text-[11px] min-[1360px]:text-xs min-[1600px]:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
                   active
                     ? 'text-primary'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
@@ -580,7 +584,7 @@ export function Navbar() {
                   />
                 )}
                 <span className={cn(
-                  'absolute bottom-0 left-1 xl:left-2 2xl:left-3 right-1 xl:right-2 2xl:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+                  'absolute bottom-0 left-1 min-[1360px]:left-2 min-[1600px]:left-3 right-1 min-[1360px]:right-2 min-[1600px]:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
                   active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
                 )} />
               </Link>
@@ -590,6 +594,30 @@ export function Navbar() {
 
         {/* ── Right Section ── */}
         <div className="ml-auto flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+
+          {/* Layout switcher toggle */}
+          {mounted && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => toggleLayoutType()}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/8 transition-all cursor-pointer"
+              aria-label="Toggle layout style"
+              title={layoutType === 'navbar' ? 'Switch to Sidebar Layout' : 'Switch to Header Navbar Layout'}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={layoutType}
+                  initial={{ scale: 0, rotate: -45, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                  exit={{ scale: 0, rotate: 45, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  {layoutType === 'navbar' ? <SidebarIcon size={17} /> : <LayoutGrid size={17} />}
+                </motion.div>
+              </AnimatePresence>
+            </motion.button>
+          )}
 
           {/* Theme toggle */}
           <motion.button
@@ -724,7 +752,7 @@ export function Navbar() {
           />
 
           {/* Divider */}
-          <div className="hidden xl:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
+          <div className="hidden min-[1360px]:block w-px h-6 bg-gray-200 dark:bg-white/10 mx-1" />
 
           {/* User menu */}
           <div ref={userMenuRef} className="relative">
@@ -809,7 +837,7 @@ export function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex xl:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
+                className="flex min-[1360px]:hidden w-9 h-9 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/8 transition-all"
               >
                 <Menu size={18} />
               </motion.button>

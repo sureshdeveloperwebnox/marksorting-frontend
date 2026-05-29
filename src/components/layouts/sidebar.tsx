@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -10,8 +10,6 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  ClipboardList,
-  PieChart,
   Shield,
   Users2,
   Tag,
@@ -20,8 +18,12 @@ import {
   Receipt,
   TicketCheck,
   Building2,
+  Store,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
+import { useAuthStore } from '@/store/auth-store';
 import { Logo } from '@/components/ui/logo';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -30,6 +32,9 @@ interface SidebarSubItem {
   label: string;
   href: string;
   icon?: any;
+  permission?: string;
+  module?: string;
+  action?: 'view' | 'create' | 'update' | 'delete' | 'export';
 }
 
 interface SidebarItem {
@@ -37,58 +42,170 @@ interface SidebarItem {
   icon: any;
   href?: string;
   subItems?: SidebarSubItem[];
+  permission?: string;
+  module?: string;
+  action?: 'view' | 'create' | 'update' | 'delete' | 'export';
 }
 
 const items: SidebarItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   {
-    label: 'User Management',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    href: '/dashboard',
+    module: 'dashboard',
+    action: 'view',
+  },
+  {
+    label: 'Users',
     icon: Users,
+    module: 'users',
+    action: 'view',
     subItems: [
-      { label: 'Users', href: '/users', icon: Users },
-      { label: 'Roles', href: '/roles', icon: Shield }
-    ]
+      {
+        label: 'Users',
+        href: '/users',
+        icon: Users,
+        module: 'users',
+        action: 'view',
+      },
+      {
+        label: 'Role Management',
+        href: '/roles',
+        icon: Shield,
+        module: 'roles',
+        action: 'view',
+      },
+    ],
   },
   {
-    label: 'Mill Management',
+    label: 'Mills',
     icon: Factory,
+    module: 'mills',
+    action: 'view',
     subItems: [
-      { label: 'Mills', href: '/mills', icon: Factory },
-      { label: 'Customers', href: '/mills/customers', icon: Users2 },
-    ]
+      {
+        label: 'Mills',
+        href: '/mills',
+        icon: Factory,
+        module: 'mills',
+        action: 'view',
+      },
+      {
+        label: 'Customers',
+        href: '/mills/customers',
+        icon: Users2,
+        module: 'customers',
+        action: 'view',
+      },
+    ],
   },
   {
-    label: 'Service Management',
+    label: 'Services',
     icon: Tag,
+    module: 'service_categories',
+    action: 'view',
     subItems: [
-      { label: 'Service Category', href: '/service-management/service-category', icon: Tag },
-      { label: 'Service List', href: '/service-management/service-report', icon: FileText },
-    ]
+      {
+        label: 'Service Category',
+        href: '/service-management/service-category',
+        icon: Tag,
+        module: 'service_categories',
+        action: 'view',
+      },
+      {
+        label: 'Service List',
+        href: '/service-management/service-report',
+        icon: FileText,
+        module: 'service_reports',
+        action: 'view',
+      },
+    ],
   },
   {
-    label: 'Installation Management',
+    label: 'Installations',
     icon: Wrench,
+    module: 'installation_reports',
+    action: 'view',
     subItems: [
-      { label: 'Installation List', href: '/installation-management/installation-report', icon: FileText },
-    ]
+      {
+        label: 'Installation List',
+        href: '/installation-management/installation-report',
+        icon: FileText,
+        module: 'installation_reports',
+        action: 'view',
+      },
+    ],
   },
   {
-    label: 'Expense',
+    label: 'Expenses',
     icon: Receipt,
+    module: 'expenses',
+    action: 'view',
     subItems: [
-      { label: 'Expenses', href: '/expense/expenses', icon: FileText },
-      { label: 'Expense Category', href: '/expense/expense-category', icon: Tag },
-    ]
+      {
+        label: 'Expenses',
+        href: '/expense/expenses',
+        icon: FileText,
+        module: 'expenses',
+        action: 'view',
+      },
+      {
+        label: 'Expense Category',
+        href: '/expense/expense-category',
+        icon: Tag,
+        module: 'expense_categories',
+        action: 'view',
+      },
+    ],
   },
-  { label: 'Orders', href: '/orders', icon: ClipboardList },
-  { label: 'Analytics', href: '/analytics', icon: PieChart },
-  { label: 'Reports', href: '/reports', icon: FileText },
+  {
+    label: 'Stores',
+    icon: Store,
+    href: '/stores',
+    module: 'stores',
+    action: 'view',
+  },
+  {
+    label: 'Reports',
+    icon: FileText,
+    href: '/reports',
+    module: 'reports',
+    action: 'view',
+  },
   {
     label: 'Settings',
     icon: Settings,
+    module: 'settings',
+    action: 'view',
     subItems: [
-      { label: 'Tickets', href: '/ticket-management/tickets', icon: TicketCheck },
-      { label: 'Company Settings', href: '/settings/company', icon: Building2 },
+      {
+        label: 'Tickets',
+        href: '/ticket-management/tickets',
+        icon: TicketCheck,
+        module: 'tickets',
+        action: 'view',
+      },
+      {
+        label: 'Company Settings',
+        href: '/settings/company',
+        icon: Building2,
+        module: 'settings',
+        action: 'view',
+      },
+      {
+        label: 'Notifications',
+        href: '/settings/notifications',
+        icon: Bell,
+        module: 'notifications',
+        action: 'view',
+      },
+      {
+        label: 'Activity Logs',
+        href: '/settings/activity-logs',
+        icon: FileText,
+        module: 'activity_logs',
+        action: 'view',
+      },
     ],
   },
 ];
@@ -98,10 +215,58 @@ export function Sidebar() {
   const { logout, isLoggingOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+  const { can, isSuperAdmin, isAdmin } = usePermissions();
+
+  const getFilteredNavItems = (): SidebarItem[] => {
+    return items.filter(item => {
+      // Super admin / Admin sees everything
+      if (isSuperAdmin() || isAdmin()) return true;
+
+      // Check main item permission
+      if (item.module && item.action) {
+        if (!can(item.action, item.module)) return false;
+      }
+
+      // Filter sub-items if they exist
+      if (item.subItems) {
+        const filteredSubItems = item.subItems.filter(subItem => {
+          if (isSuperAdmin() || isAdmin()) return true;
+
+          if (subItem.module && subItem.action) {
+            return can(subItem.action, subItem.module);
+          }
+
+          return true; // Show if no specific permission required
+        });
+
+        // Only show the main item if there are visible sub-items
+        return filteredSubItems.length > 0;
+      }
+
+      return true; // Show if no specific permission required
+    }).map(item => {
+      // Filter sub-items for dropdowns
+      if (item.subItems) {
+        return {
+          ...item,
+          subItems: item.subItems.filter(subItem => {
+            if (isSuperAdmin() || isAdmin()) return true;
+
+            if (subItem.module && subItem.action) {
+              return can(subItem.action, subItem.module);
+            }
+
+            return true;
+          })
+        };
+      }
+      return item;
+    });
+  };
 
   // Auto-expand menu when subitem is active
   useEffect(() => {
-    items.forEach((item) => {
+    getFilteredNavItems().forEach((item) => {
       if (item.subItems) {
         const hasActiveSub = item.subItems.some((sub) => {
           if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
@@ -148,7 +313,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 px-4 space-y-1 relative pt-4 overflow-y-auto max-h-[calc(100vh-220px)] scrollbar-none">
-          {items.map((item) => {
+          {getFilteredNavItems().map((item) => {
             const hasSubItems = !!item.subItems;
 
             // Check if any sub-item is active (best match wins)
@@ -241,24 +406,24 @@ export function Sidebar() {
                             className="relative block group"
                           >
                             <div
-                              className={cn(
-                                'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
-                                isSubItemActive
-                                  ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
-                                  : 'text-white hover:bg-white/5 rounded-xl font-semibold'
-                              )}
+                                className={cn(
+                                  'flex items-center gap-3 py-3 px-6 transition-all duration-300 relative pl-6',
+                                  isSubItemActive
+                                    ? 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                                    : 'text-white hover:bg-white/5 rounded-xl font-semibold'
+                                )}
                             >
                               {isSubItemActive && (
                                 <>
                                   {/* Inverted Corner Top */}
                                   <div className="absolute -top-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
-                                    <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                                    <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
                                     <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
                                   </div>
 
                                   {/* Inverted Corner Bottom */}
                                   <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
-                                    <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                                    <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
                                     <div className="absolute inset-0 bg-primary rounded-tr-[20px]" />
                                   </div>
                                 </>
@@ -306,7 +471,7 @@ export function Sidebar() {
                     'flex items-center gap-4 py-3.5 transition-all duration-300 relative',
                     isCollapsed ? 'px-0 justify-center' : 'px-6',
                     isMainActive
-                      ? 'bg-gray-50 dark:bg-[#0f1110] text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                      ? 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
                       : 'text-white hover:bg-white/5 rounded-2xl font-semibold'
                   )}
                 >
@@ -314,13 +479,13 @@ export function Sidebar() {
                     <>
                       {/* Inverted Corner Top */}
                       <div className="absolute -top-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
-                        <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                        <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
                         <div className="absolute inset-0 bg-primary rounded-br-[20px]" />
                       </div>
 
                       {/* Inverted Corner Bottom */}
                       <div className="absolute -bottom-[20px] right-0 w-[20px] h-[20px] bg-transparent pointer-events-none hidden md:block">
-                        <div className="w-full h-full bg-gray-50 dark:bg-[#0f1110]" />
+                        <div className="w-full h-full bg-gray-50 dark:bg-gray-900" />
                         <div className="absolute inset-0 bg-primary rounded-tr-[20px]" />
                       </div>
                     </>
