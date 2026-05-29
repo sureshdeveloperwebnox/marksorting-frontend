@@ -37,8 +37,10 @@ export const useS3Upload = () => {
       toast.success('Image uploaded successfully');
       return { fileUrl, key: data.key };
     } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload image');
+      console.error('S3 Upload error details:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      toast.error(error.response?.data?.message || error.message || 'Failed to upload image to S3');
       return null;
     } finally {
       setIsUploading(false);

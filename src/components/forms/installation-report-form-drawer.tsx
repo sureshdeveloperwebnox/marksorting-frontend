@@ -49,6 +49,7 @@ import useInstallationReportStore from '@/store/useInstallationReportStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { useS3Upload } from '@/hooks/use-s3-upload';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import {
   Sheet,
@@ -209,6 +210,28 @@ export function InstallationReportFormDrawer() {
 
   const mills = millsData?.mills || [];
   const customers = customersData?.customers || [];
+
+  const { uploadFile, isUploading } = useS3Upload();
+
+  const base64ToFile = (base64DataUrl: string, filename: string): File => {
+    const arr = base64DataUrl.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
+    const bstr = atob(arr[arr.length - 1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  const isValidBase64Image = (str?: string): boolean => {
+    if (!str) return false;
+    if (!str.startsWith('data:image/')) return false;
+    if (str.includes('...')) return false;
+    if (str.length < 100) return false;
+    return true;
+  };
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
 
@@ -407,6 +430,55 @@ export function InstallationReportFormDrawer() {
 
   const onSubmit: SubmitHandler<InstallationReportFormValues> = async (data) => {
     try {
+      let engineerSignatureUrl = data.engineer_signature;
+      let customerSignatureUrl = data.customer_signature;
+
+      // Upload engineer signature if it's base64 data (new drawing)
+      if (data.engineer_signature && data.engineer_signature.startsWith('data:')) {
+        if (isValidBase64Image(data.engineer_signature)) {
+          try {
+            const file = base64ToFile(data.engineer_signature, `eng-sig-${Date.now()}.png`);
+            const uploadResult = await uploadFile(file);
+            if (uploadResult && uploadResult.fileUrl) {
+              engineerSignatureUrl = uploadResult.fileUrl;
+            } else {
+              toast.error('Failed to upload engineer signature to S3');
+              return; // Stop submission if upload fails
+            }
+          } catch (error) {
+            console.error('Error processing engineer signature:', error);
+            toast.error('Failed to process engineer signature');
+            return; // Stop submission on error
+          }
+        } else {
+          toast.error('Invalid engineer signature image');
+          return;
+        }
+      }
+
+      // Upload customer signature if it's base64 data (new drawing)
+      if (data.customer_signature && data.customer_signature.startsWith('data:')) {
+        if (isValidBase64Image(data.customer_signature)) {
+          try {
+            const file = base64ToFile(data.customer_signature, `cust-sig-${Date.now()}.png`);
+            const uploadResult = await uploadFile(file);
+            if (uploadResult && uploadResult.fileUrl) {
+              customerSignatureUrl = uploadResult.fileUrl;
+            } else {
+              toast.error('Failed to upload customer signature to S3');
+              return; // Stop submission if upload fails
+            }
+          } catch (error) {
+            console.error('Error processing customer signature:', error);
+            toast.error('Failed to process customer signature');
+            return; // Stop submission on error
+          }
+        } else {
+          toast.error('Invalid customer signature image');
+          return;
+        }
+      }
+
       const payload = {
         ...data,
         ac_provided: data.ac_provided === 'YES',
@@ -419,6 +491,8 @@ export function InstallationReportFormDrawer() {
         invoice_date: data.invoice_date || undefined,
         warranty_start_date: data.warranty_start_date || undefined,
         warranty_end_date: data.warranty_end_date || undefined,
+        engineer_signature: engineerSignatureUrl,
+        customer_signature: customerSignatureUrl,
       };
 
       if (isEdit) {
@@ -433,7 +507,7 @@ export function InstallationReportFormDrawer() {
   };
 
   const isLoading = isEdit && reportLoading;
-  const isSubmitting = isCreating || isUpdating;
+  const isSubmitting = isCreating || isUpdating || isUploading;
 
   const fieldToSectionMap: Record<string, number> = {
     // Section 1

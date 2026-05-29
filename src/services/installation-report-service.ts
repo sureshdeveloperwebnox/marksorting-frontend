@@ -129,7 +129,10 @@ export const useUpdateInstallationReport = () => {
         },
         onSuccess: (updatedReport: any) => {
             queryClient.invalidateQueries({ queryKey: ["installationReports"] });
-            queryClient.setQueryData(["installationReport", updatedReport.id], updatedReport);
+            // Invalidate (not setQueryData) so the view drawer always refetches
+            // fresh data from the server, especially updated S3 signature URLs.
+            const reportId = updatedReport.id || updatedReport.after?.id;
+            queryClient.invalidateQueries({ queryKey: ["installationReport", reportId] });
             toast.success("Installation report updated successfully");
         },
         onError: (error: any) => {

@@ -128,9 +128,12 @@ export const useUpdateServiceReport = () => {
             const { data } = await api.put(`/service-reports/${id}`, reportData);
             return data;
         },
-        onSuccess: (updatedReport) => {
+        onSuccess: (updatedReport: any) => {
             queryClient.invalidateQueries({ queryKey: ["serviceReports"] });
-            queryClient.setQueryData(["serviceReport", updatedReport.id], updatedReport);
+            // Invalidate the single-report cache so the view drawer refetches
+            // fresh data from the server (e.g. updated S3 signature URLs).
+            const reportId = updatedReport.id || updatedReport.after?.id;
+            queryClient.invalidateQueries({ queryKey: ["serviceReport", reportId] });
             toast.success("Service report updated successfully");
         },
         onError: (error: any) => {

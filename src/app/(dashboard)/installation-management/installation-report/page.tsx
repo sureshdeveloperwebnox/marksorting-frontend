@@ -9,6 +9,7 @@ import {
   useDeleteInstallationReport,
   useUpdateInstallationReport,
   downloadInstallationReportPdf,
+  useInstallationReport,
 } from "@/services/installation-report-service";
 import useInstallationReportStore from "@/store/useInstallationReportStore";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,23 @@ import {
   AlertTriangle,
   Calendar,
   Download,
+  Eye,
+  Hash,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Activity,
+  Package,
+  Settings,
+  Wrench,
+  Check,
+  X,
+  Info,
+  Building2,
+  ShieldCheck,
+  Gauge,
+  Wind,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -49,6 +67,7 @@ import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { InstallationReportFormDrawer } from "@/components/forms/installation-report-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
+import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -146,6 +165,10 @@ export default function InstallationReportPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
   const [downloadingPdfId, setDownloadingPdfId] = React.useState<string | null>(null);
+  const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+
+  const { data: viewReportData, isLoading: isViewReportLoading } = useInstallationReport(selectedViewId);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -200,6 +223,343 @@ export default function InstallationReportPage() {
       setDownloadingPdfId(null);
     }
   };
+
+  const safeFormatDate = (dateStr?: string) => {
+    if (!dateStr) return "—";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "—";
+      return format(d, "MMM dd, yyyy");
+    } catch {
+      return "—";
+    }
+  };
+
+  /* ── View Sections ── */
+  const viewSections = React.useMemo(() => {
+    if (!viewReportData) return [];
+
+    const renderSignature = (sig?: string, altText?: string) => {
+      if (!sig) return <span className="text-gray-400 dark:text-gray-600 font-medium">No signature captured</span>;
+
+      const isValid =
+        sig.startsWith("http://") ||
+        sig.startsWith("https://") ||
+        (sig.startsWith("data:image/") && !sig.includes("...") && sig.length >= 100);
+
+      if (!isValid) {
+        return <span className="text-gray-400 dark:text-gray-600 font-medium">No signature captured</span>;
+      }
+
+      const src =
+        sig.startsWith("data:") || sig.startsWith("http://") || sig.startsWith("https://")
+          ? sig
+          : `data:image/png;base64,${sig}`;
+
+      return (
+        <div className="mt-1 p-2 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl flex items-center justify-center min-h-[90px] w-full">
+          <img
+            src={src}
+            alt={altText || "Signature"}
+            className="max-h-20 object-contain dark:invert"
+          />
+        </div>
+      );
+    };
+
+    const boolField = (val: boolean, trueLabel = "Yes", falseLabel = "No") => (
+      <div className="flex items-center gap-1.5">
+        {val ? (
+          <>
+            <Check className="w-4 h-4 text-emerald-500" />
+            <span className="text-emerald-500 font-bold text-xs uppercase tracking-wider">{trueLabel}</span>
+          </>
+        ) : (
+          <>
+            <X className="w-4 h-4 text-rose-500" />
+            <span className="text-rose-500 font-bold text-xs uppercase tracking-wider">{falseLabel}</span>
+          </>
+        )}
+      </div>
+    );
+
+    return [
+      {
+        title: "General Information",
+        items: [
+          {
+            label: "Report Number",
+            value: (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewReportData.report_number}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
+            label: "Status",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  getStatusColors(viewReportData.status)
+                )}
+              >
+                {viewReportData.status?.replace("_", " ")}
+              </Badge>
+            ),
+            icon: Activity,
+          },
+          {
+            label: "Visit Date",
+            value: safeFormatDate(viewReportData.visit_date),
+            icon: Calendar,
+          },
+          {
+            label: "Visit Time",
+            value: viewReportData.visit_time || "—",
+            icon: Clock,
+          },
+          {
+            label: "Call Registered Date",
+            value: safeFormatDate(viewReportData.call_registered_date),
+            icon: Calendar,
+          },
+        ],
+      },
+      {
+        title: "Mill & Client Details",
+        items: [
+          {
+            label: "Mill Name",
+            value: viewReportData.mill?.name || "—",
+            icon: Building2,
+          },
+          {
+            label: "Location / Place",
+            value: viewReportData.place || "—",
+            icon: MapPin,
+          },
+          {
+            label: "Authorized Person",
+            value: viewReportData.authorized_person || "—",
+            icon: User,
+          },
+          {
+            label: "WhatsApp Number",
+            value: viewReportData.mill_whatsapp_number ? (
+              <a
+                href={`https://wa.me/${viewReportData.mill_whatsapp_number.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline text-primary font-bold"
+              >
+                {viewReportData.mill_whatsapp_number}
+              </a>
+            ) : "—",
+            icon: Phone,
+          },
+          {
+            label: "Email Address",
+            value: viewReportData.mill_email ? (
+              <a href={`mailto:${viewReportData.mill_email}`} className="hover:underline text-primary font-bold">
+                {viewReportData.mill_email}
+              </a>
+            ) : "—",
+            icon: Mail,
+          },
+        ],
+      },
+      {
+        title: "Machine Details",
+        items: [
+          {
+            label: "Machine Model",
+            value: viewReportData.machine_model || "—",
+            icon: Settings,
+          },
+          {
+            label: "Serial / Frame No",
+            value: (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewReportData.serial_or_frame_no || "—"}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
+            label: "Invoice Number",
+            value: viewReportData.invoice_number ? (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewReportData.invoice_number}
+              </span>
+            ) : "—",
+            icon: FileText,
+          },
+          {
+            label: "Invoice Date",
+            value: safeFormatDate(viewReportData.invoice_date),
+            icon: Calendar,
+          },
+          {
+            label: "Warranty Start",
+            value: safeFormatDate(viewReportData.warranty_start_date),
+            icon: ShieldCheck,
+          },
+          {
+            label: "Warranty End",
+            value: safeFormatDate(viewReportData.warranty_end_date),
+            icon: ShieldCheck,
+          },
+        ],
+      },
+      {
+        title: "Machine Performance",
+        items: [
+          {
+            label: "Commodity",
+            value: viewReportData.commodity || "—",
+            icon: Package,
+          },
+          {
+            label: "Contamination",
+            value: viewReportData.contamination || "—",
+            icon: Activity,
+          },
+          {
+            label: "Output Capacity / Hour",
+            value: viewReportData.output_capacity_per_hour || "—",
+            icon: Gauge,
+          },
+          {
+            label: "Rejection Ratio",
+            value: viewReportData.rejection_ratio || "—",
+            icon: Activity,
+          },
+          {
+            label: "Purity",
+            value: viewReportData.purity || "—",
+            icon: Activity,
+          },
+          {
+            label: "No of Programs Set",
+            value:
+              viewReportData.no_of_programs_set !== undefined &&
+              viewReportData.no_of_programs_set !== null
+                ? String(viewReportData.no_of_programs_set)
+                : "—",
+            icon: Hash,
+          },
+        ],
+      },
+      {
+        title: "Utility & Equipment Details",
+        items: [
+          {
+            label: "A/C Provided",
+            value: boolField(viewReportData.ac_provided),
+            icon: Wind,
+          },
+          {
+            label: "Ground Earth Provided",
+            value: boolField(viewReportData.ground_earth_provided),
+            icon: Settings,
+          },
+          {
+            label: "Ground Earth Value (Ω)",
+            value:
+              viewReportData.ground_earth_value !== undefined && viewReportData.ground_earth_value !== null
+                ? `${viewReportData.ground_earth_value} Ω`
+                : "—",
+            icon: Gauge,
+          },
+          {
+            label: "Ground Earth Field",
+            value: viewReportData.ground_earth_field
+              ? viewReportData.ground_earth_field.replace(/_/g, " ")
+              : "—",
+            icon: Settings,
+          },
+          {
+            label: "Auto Drain Valve",
+            value: boolField(viewReportData.auto_drain_valve_working, "Working", "Not Working"),
+            icon: Settings,
+          },
+          {
+            label: "No of Filters Installed",
+            value:
+              viewReportData.no_of_filters_installed !== undefined &&
+              viewReportData.no_of_filters_installed !== null
+                ? String(viewReportData.no_of_filters_installed)
+                : "—",
+            icon: Hash,
+          },
+          {
+            label: "Compressor Details",
+            value: viewReportData.compressor_details || "—",
+            icon: Settings,
+          },
+          {
+            label: "Air Drier Details",
+            value: viewReportData.air_drier_details || "—",
+            icon: Wind,
+          },
+          {
+            label: "Oil Filter Condition",
+            value: viewReportData.oil_filter_condition || "—",
+            icon: Settings,
+          },
+          {
+            label: "Line Filter Condition",
+            value: viewReportData.line_filter_condition || "—",
+            icon: Settings,
+          },
+        ],
+      },
+      {
+        title: "Assigned Engineers & Remarks",
+        items: [
+          {
+            label: "Engineers",
+            value:
+              viewReportData.technicians?.map((t: any) => t.technician.full_name).join(", ") || "—",
+            icon: Wrench,
+            fullWidth: true,
+          },
+          {
+            label: "Engineer Remarks",
+            value: viewReportData.engineer_remarks || "—",
+            icon: Info,
+            fullWidth: true,
+          },
+          {
+            label: "Customer Remarks",
+            value: viewReportData.customer_remarks || "—",
+            icon: Info,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Signatures",
+        items: [
+          {
+            label: "Engineer Signature",
+            value: renderSignature(viewReportData.engineer_signature, "Engineer Signature"),
+            icon: User,
+            fullWidth: true,
+          },
+          {
+            label: "Customer Signature",
+            value: renderSignature(viewReportData.customer_signature, "Customer Signature"),
+            icon: User,
+            fullWidth: true,
+          },
+        ],
+      },
+    ];
+  }, [viewReportData]);
 
   const activeFilterCount = [statusFilter, dateFrom, dateTo].filter(Boolean).length;
 
@@ -326,41 +686,60 @@ export default function InstallationReportPage() {
     {
       id: "actions",
       header: () => <div className="text-right w-full font-bold">Actions</div>,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-xl text-sky-600 dark:text-sky-400 bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100/50 dark:border-sky-900/30 hover:text-sky-700 hover:bg-sky-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
-            onClick={() => handleDownloadPdf(row.original)}
-            disabled={downloadingPdfId === row.original.id}
-            title="Download PDF"
-          >
-            {downloadingPdfId === row.original.id ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
-            onClick={() => openFormDrawer(row.original.id)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
-            onClick={() => setDeleteId(row.original.id)}
-            disabled={deleteMutation.isPending}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isDownloading = downloadingPdfId === row.original.id;
+        return (
+          <div className="flex items-center justify-end gap-2">
+            {/* View Details */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 hover:text-indigo-700 hover:bg-indigo-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+              onClick={() => {
+                setSelectedViewId(row.original.id);
+                setIsViewDrawerOpen(true);
+              }}
+              title="View Details"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            {/* Download PDF */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-sky-600 dark:text-sky-400 bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100/50 dark:border-sky-900/30 hover:text-sky-700 hover:bg-sky-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+              onClick={() => handleDownloadPdf(row.original)}
+              disabled={isDownloading}
+              title="Download PDF"
+            >
+              {isDownloading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+            </Button>
+            {/* Edit */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+              onClick={() => openFormDrawer(row.original.id)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            {/* Delete */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
+              onClick={() => setDeleteId(row.original.id)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -537,6 +916,29 @@ export default function InstallationReportPage() {
 
       {/* Form Drawer */}
       <InstallationReportFormDrawer />
+
+      {/* View Details Drawer */}
+      <ViewDetailsDrawer
+        isOpen={isViewDrawerOpen}
+        onClose={() => {
+          setIsViewDrawerOpen(false);
+          setSelectedViewId(null);
+        }}
+        title={
+          viewReportData
+            ? `Installation #${viewReportData.report_number}`
+            : "Installation Details"
+        }
+        description={
+          viewReportData
+            ? `${viewReportData.mill?.name || "—"} · ${safeFormatDate(viewReportData.visit_date)}`
+            : "Loading installation report..."
+        }
+        icon={<ClipboardCheck size={22} />}
+        isLoading={isViewReportLoading}
+        sections={viewSections}
+        size="2xl"
+      />
 
       {/* Delete Confirm Dialog */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

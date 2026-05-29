@@ -415,41 +415,49 @@ export function ServiceReportFormDrawer() {
       let engineerSignatureUrl = data.engineer_signature;
       let customerSignatureUrl = data.customer_signature;
 
+      // Upload engineer signature if it's base64 data (new drawing)
       if (data.engineer_signature && data.engineer_signature.startsWith('data:')) {
         if (isValidBase64Image(data.engineer_signature)) {
           try {
             const file = base64ToFile(data.engineer_signature, `eng-sig-${Date.now()}.png`);
             const uploadResult = await uploadFile(file);
-            if (!uploadResult) {
-              toast.error('Failed to upload engineer signature');
-              return;
+            if (uploadResult && uploadResult.fileUrl) {
+              engineerSignatureUrl = uploadResult.fileUrl;
+            } else {
+              toast.error('Failed to upload engineer signature to S3');
+              return; // Stop submission if upload fails
             }
-            engineerSignatureUrl = uploadResult.fileUrl;
           } catch (error) {
             console.error('Error processing engineer signature:', error);
-            engineerSignatureUrl = '';
+            toast.error('Failed to process engineer signature');
+            return; // Stop submission on error
           }
         } else {
-          engineerSignatureUrl = '';
+          toast.error('Invalid engineer signature image');
+          return;
         }
       }
 
+      // Upload customer signature if it's base64 data (new drawing)
       if (data.customer_signature && data.customer_signature.startsWith('data:')) {
         if (isValidBase64Image(data.customer_signature)) {
           try {
             const file = base64ToFile(data.customer_signature, `cust-sig-${Date.now()}.png`);
             const uploadResult = await uploadFile(file);
-            if (!uploadResult) {
-              toast.error('Failed to upload customer signature');
-              return;
+            if (uploadResult && uploadResult.fileUrl) {
+              customerSignatureUrl = uploadResult.fileUrl;
+            } else {
+              toast.error('Failed to upload customer signature to S3');
+              return; // Stop submission if upload fails
             }
-            customerSignatureUrl = uploadResult.fileUrl;
           } catch (error) {
             console.error('Error processing customer signature:', error);
-            customerSignatureUrl = '';
+            toast.error('Failed to process customer signature');
+            return; // Stop submission on error
           }
         } else {
-          customerSignatureUrl = '';
+          toast.error('Invalid customer signature image');
+          return;
         }
       }
 
