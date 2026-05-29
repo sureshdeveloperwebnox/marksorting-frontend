@@ -75,16 +75,16 @@ const navItems: NavItem[] = [
     module: 'users',
     action: 'view',
     subItems: [
-      { 
-        label: 'Users', 
-        href: '/users', 
+      {
+        label: 'Users',
+        href: '/users',
         icon: Users,
         module: 'users',
         action: 'view',
       },
-      { 
-        label: 'Role Management', 
-        href: '/roles', 
+      {
+        label: 'Role Management',
+        href: '/roles',
         icon: Shield,
         module: 'roles',
         action: 'view',
@@ -97,16 +97,16 @@ const navItems: NavItem[] = [
     module: 'mills',
     action: 'view',
     subItems: [
-      { 
-        label: 'Mills', 
-        href: '/mills', 
+      {
+        label: 'Mills',
+        href: '/mills',
         icon: Factory,
         module: 'mills',
         action: 'view',
       },
-      { 
-        label: 'Customers', 
-        href: '/mills/customers', 
+      {
+        label: 'Customers',
+        href: '/mills/customers',
         icon: Users2,
         module: 'customers',
         action: 'view',
@@ -119,16 +119,16 @@ const navItems: NavItem[] = [
     module: 'service_categories',
     action: 'view',
     subItems: [
-      { 
-        label: 'Service Category', 
-        href: '/service-management/service-category', 
+      {
+        label: 'Service Category',
+        href: '/service-management/service-category',
         icon: Tag,
         module: 'service_categories',
         action: 'view',
       },
-      { 
-        label: 'Service List', 
-        href: '/service-management/service-report', 
+      {
+        label: 'Service List',
+        href: '/service-management/service-report',
         icon: FileText,
         module: 'service_reports',
         action: 'view',
@@ -141,9 +141,9 @@ const navItems: NavItem[] = [
     module: 'installation_reports',
     action: 'view',
     subItems: [
-      { 
-        label: 'Installation List', 
-        href: '/installation-management/installation-report', 
+      {
+        label: 'Installation List',
+        href: '/installation-management/installation-report',
         icon: FileText,
         module: 'installation_reports',
         action: 'view',
@@ -156,16 +156,16 @@ const navItems: NavItem[] = [
     module: 'expenses',
     action: 'view',
     subItems: [
-      { 
-        label: 'Expenses', 
-        href: '/expense/expenses', 
+      {
+        label: 'Expenses',
+        href: '/expense/expenses',
         icon: FileText,
         module: 'expenses',
         action: 'view',
       },
-      { 
-        label: 'Expense Category', 
-        href: '/expense/expense-category', 
+      {
+        label: 'Expense Category',
+        href: '/expense/expense-category',
         icon: Tag,
         module: 'expense_categories',
         action: 'view',
@@ -192,30 +192,30 @@ const navItems: NavItem[] = [
     module: 'settings',
     action: 'view',
     subItems: [
-      { 
-        label: 'Tickets', 
-        href: '/ticket-management/tickets', 
+      {
+        label: 'Tickets',
+        href: '/ticket-management/tickets',
         icon: TicketCheck,
         module: 'tickets',
         action: 'view',
       },
-      { 
-        label: 'Company Settings', 
-        href: '/settings/company', 
+      {
+        label: 'Company Settings',
+        href: '/settings/company',
         icon: Building2,
         module: 'settings',
         action: 'view',
       },
-      { 
-        label: 'Notifications', 
-        href: '/settings/notifications', 
+      {
+        label: 'Notifications',
+        href: '/settings/notifications',
         icon: Bell,
         module: 'notifications',
         action: 'view',
       },
-      { 
-        label: 'Activity Logs', 
-        href: '/settings/activity-logs', 
+      {
+        label: 'Activity Logs',
+        href: '/settings/activity-logs',
         icon: FileText,
         module: 'activity_logs',
         action: 'view',
@@ -436,11 +436,11 @@ export function Navbar() {
           ...item,
           subItems: item.subItems.filter(subItem => {
             if (isSuperAdmin() || isAdmin()) return true;
-            
+
             if (subItem.module && subItem.action) {
               return can(subItem.action, subItem.module);
             }
-            
+
             return true;
           })
         };
@@ -460,13 +460,13 @@ export function Navbar() {
     const cancelPrefetch =
       typeof window.requestIdleCallback === 'function'
         ? (() => {
-            const idleId = window.requestIdleCallback(prefetchAll, { timeout: 1500 });
-            return () => window.cancelIdleCallback(idleId);
-          })()
+          const idleId = window.requestIdleCallback(prefetchAll, { timeout: 1500 });
+          return () => window.cancelIdleCallback(idleId);
+        })()
         : (() => {
-            const timeoutId = globalThis.setTimeout(prefetchAll, 250);
-            return () => globalThis.clearTimeout(timeoutId);
-          })();
+          const timeoutId = globalThis.setTimeout(prefetchAll, 250);
+          return () => globalThis.clearTimeout(timeoutId);
+        })();
 
     return () => {
       cancelPrefetch();
@@ -665,10 +665,10 @@ export function Navbar() {
                       notifications.map((n) => {
                         const dotColor =
                           n.type === 'SERVICE_REPORT' ? 'bg-blue-500' :
-                          n.type === 'INSTALLATION' ? 'bg-indigo-500' :
-                          n.type === 'EXPENSE' ? 'bg-amber-500' :
-                          n.type === 'TICKET' ? 'bg-rose-500' :
-                          'bg-primary';
+                            n.type === 'INSTALLATION' ? 'bg-indigo-500' :
+                              n.type === 'EXPENSE' ? 'bg-amber-500' :
+                                n.type === 'TICKET' ? 'bg-rose-500' :
+                                  'bg-primary';
                         return (
                           <button
                             key={n.id}
