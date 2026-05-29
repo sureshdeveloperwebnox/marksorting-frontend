@@ -28,6 +28,11 @@ interface StoreItemState {
   selectedStoreId: string | null;
   openFormDrawer: (id?: string) => void;
   closeFormDrawer: () => void;
+  // View Details Drawer UI State
+  isViewDrawerOpen: boolean;
+  selectedViewStoreId: string | null;
+  openViewDrawer: (id: string) => void;
+  closeViewDrawer: () => void;
 }
 
 export const useStoreItemStore = create<StoreItemState>((set) => ({
@@ -97,4 +102,10 @@ export const useStoreItemStore = create<StoreItemState>((set) => ({
     set({ isFormDrawerOpen: true, selectedStoreId: id || null }),
   closeFormDrawer: () =>
     set({ isFormDrawerOpen: false, selectedStoreId: null }),
+  isViewDrawerOpen: false,
+  selectedViewStoreId: null,
+  openViewDrawer: (id) =>
+    set({ isViewDrawerOpen: true, selectedViewStoreId: id }),
+  closeViewDrawer: () =>
+    set({ isViewDrawerOpen: false, selectedViewStoreId: null }),
 }));

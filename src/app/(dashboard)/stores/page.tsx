@@ -3,7 +3,7 @@
 import * as React from "react";
 import { DataTable } from "@/components/tables/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { useStores, Store, useDeleteStore, useUpdateStore } from "@/services/store-service";
+import { useStores, Store, useDeleteStore, useUpdateStore, useStore } from "@/services/store-service";
 import { useStoreItemStore } from "@/store/useStoreItemStore";
 import { useTechnicians } from "@/services/technician-service";
 import { useCustomers } from "@/services/customer-service";
@@ -18,6 +18,13 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  Eye,
+  Wrench,
+  Users,
+  Hash,
+  Package,
+  ShieldAlert,
+  Barcode,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -41,6 +48,7 @@ import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { StoreFormDrawer } from "@/components/forms/store-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
+import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -165,6 +173,10 @@ export default function StoresPage() {
     deleteId,
     setDeleteId,
     openFormDrawer,
+    isViewDrawerOpen,
+    selectedViewStoreId,
+    openViewDrawer,
+    closeViewDrawer,
   } = useStoreItemStore();
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
@@ -197,8 +209,160 @@ export default function StoresPage() {
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
   const { data: customersData } = useCustomers({ skip: 0, take: 500 });
 
+  const { data: viewStoreData, isLoading: isViewStoreLoading } = useStore(selectedViewStoreId);
+
   const deleteStoreMutation = useDeleteStore();
   const updateStoreMutation = useUpdateStore();
+
+  const viewSections = React.useMemo(() => {
+    if (!viewStoreData) return [];
+
+    return [
+      {
+        title: "People & Ownership",
+        items: [
+          {
+            label: "Service Engineer",
+            value: viewStoreData.service_engineer?.full_name || "—",
+            icon: Wrench,
+          },
+          {
+            label: "Customer",
+            value: viewStoreData.customer?.name || "—",
+            icon: Users,
+          },
+        ],
+      },
+      {
+        title: "Item Details",
+        items: [
+          {
+            label: "Frame Number",
+            value: (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewStoreData.frame_number}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
+            label: "Quantity",
+            value: <span className="font-extrabold text-gray-900 dark:text-white">{viewStoreData.quantity}</span>,
+            icon: Hash,
+          },
+          {
+            label: "Materials",
+            value: (
+              <div className="flex flex-wrap gap-1">
+                {viewStoreData.materials?.map((m) => (
+                  <Badge
+                    key={m.material.id}
+                    variant="outline"
+                    className="text-[10px] font-bold py-0.5 px-2 bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300 rounded-md"
+                  >
+                    {m.material.name}
+                  </Badge>
+                ))}
+                {!viewStoreData.materials?.length && "—"}
+              </div>
+            ),
+            icon: Package,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Status & Warranties",
+        items: [
+          {
+            label: "Warranty Status",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  getWarrantyColors(viewStoreData.warranty_status)
+                )}
+              >
+                {viewStoreData.warranty_status}
+              </Badge>
+            ),
+            icon: ShieldAlert,
+          },
+          {
+            label: "Return Status",
+            value: (
+              <div className="flex items-center gap-1.5">
+                <div className={cn("w-2 h-2 rounded-full", getReturnDotColors(viewStoreData.return_status))} />
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                    getReturnColors(viewStoreData.return_status)
+                  )}
+                >
+                  {viewStoreData.return_status}
+                </Badge>
+              </div>
+            ),
+            icon: Clock,
+          },
+          {
+            label: "Stock Status",
+            value: (
+              <div className="flex items-center gap-1.5">
+                <div className={cn("w-2 h-2 rounded-full", getInflowDotColors(viewStoreData.inflow_status))} />
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                    getInflowColors(viewStoreData.inflow_status)
+                  )}
+                >
+                  {viewStoreData.inflow_status}
+                </Badge>
+              </div>
+            ),
+            icon: StoreIcon,
+          },
+          {
+            label: "Barcode",
+            value: viewStoreData.barcode ? (
+              <div className="flex items-center gap-2 p-2 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl">
+                <Barcode className="w-4 h-4 text-gray-400" />
+                <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                  {viewStoreData.barcode}
+                </span>
+              </div>
+            ) : (
+              "—"
+            ),
+            icon: Barcode,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Metadata",
+        items: [
+          {
+            label: "Created At",
+            value: viewStoreData.created_at
+              ? format(new Date(viewStoreData.created_at), "PPP p")
+              : "—",
+            icon: Clock,
+          },
+          {
+            label: "Updated At",
+            value: viewStoreData.updated_at
+              ? format(new Date(viewStoreData.updated_at), "PPP p")
+              : "—",
+            icon: Clock,
+          },
+        ],
+      },
+    ];
+  }, [viewStoreData]);
 
   const confirmDelete = async () => {
     if (!deleteId) return;
@@ -443,6 +607,14 @@ export default function StoresPage() {
           <Button
             variant="ghost"
             size="icon"
+            className="h-9 w-9 rounded-xl text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 hover:text-blue-700 hover:bg-blue-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            onClick={() => openViewDrawer(row.original.id)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
             onClick={() => openFormDrawer(row.original.id)}
           >
@@ -601,6 +773,18 @@ export default function StoresPage() {
 
       {/* ── Store Form Drawer ── */}
       <StoreFormDrawer />
+
+      {/* ── View Details Drawer ── */}
+      <ViewDetailsDrawer
+        isOpen={isViewDrawerOpen}
+        onClose={closeViewDrawer}
+        title="Store Record Details"
+        description="Detailed view of the registered stores inventory record."
+        icon={<StoreIcon size={24} />}
+        isLoading={isViewStoreLoading}
+        sections={viewSections}
+        size="xl"
+      />
 
       {/* ── Delete Confirm Dialog ── */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
