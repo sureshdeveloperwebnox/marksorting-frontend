@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, RefreshCcw, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, RefreshCcw, ArrowRight, Eye, EyeOff, UserPlus, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 const registerSchema = z.object({
@@ -23,6 +23,10 @@ const registerSchema = z.object({
     .regex(/[A-Z]/, 'Include an uppercase letter')
     .regex(/[0-9]/, 'Include a number')
     .regex(/[^A-Za-z0-9]/, 'Include a special character'),
+  confirm_password: z.string()
+}).refine((data) => data.password === data.confirm_password, {
+  message: "Passwords don't match",
+  path: ["confirm_password"],
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -30,6 +34,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const { register, isRegistering } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -37,119 +42,188 @@ export function RegisterForm() {
       full_name: '',
       email: '',
       password: '',
+      confirm_password: '',
     },
   });
 
   const onSubmit = (values: RegisterFormValues) => {
-    register(values);
+    const { full_name, email, password } = values;
+    register({ full_name, email, password });
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="w-full"
     >
-      <Card className="border-none shadow-none bg-transparent lg:bg-white/80 dark:lg:bg-[#121212]/80 lg:backdrop-blur-xl lg:rounded-[40px] overflow-hidden relative lg:border lg:border-white/20">
-        <CardContent className="px-0 lg:px-10 pb-12">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            <div className="space-y-2">
-              <Label className="text-[13px] font-black uppercase tracking-[0.15em] text-gray-400 ml-1">
-                Full Name
-              </Label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
-                  <User size={18} />
-                </div>
-                <Input 
-                  {...form.register('full_name')} 
-                  placeholder="John Doe" 
-                  className="rounded-2xl bg-gray-50/50 dark:bg-white/5 border-none h-14 pl-12 focus:ring-2 focus:ring-primary/20 transition-all font-bold"
-                />
-              </div>
-              {form.formState.errors.full_name && (
-                <p className="text-xs font-bold text-red-500 mt-1 ml-1">{form.formState.errors.full_name.message}</p>
-              )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+        {/* User Name / Full Name Field */}
+        <div className="space-y-1">
+          <Label htmlFor="full_name" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+            User Name
+          </Label>
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-12 group">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+              <User size={18} />
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-[13px] font-black uppercase tracking-[0.15em] text-gray-400 ml-1">
-                Email Address
-              </Label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
-                  <Mail size={18} />
-                </div>
-                <Input 
-                  type="email" 
-                  {...form.register('email')} 
-                  placeholder="name@company.com" 
-                  className="rounded-2xl bg-gray-50/50 dark:bg-white/5 border-none h-14 pl-12 focus:ring-2 focus:ring-primary/20 transition-all font-bold"
-                />
-              </div>
-              {form.formState.errors.email && (
-                <p className="text-xs font-bold text-red-500 mt-1 ml-1">{form.formState.errors.email.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label className="text-[13px] font-black uppercase tracking-[0.15em] text-gray-400 ml-1">
-                Secure Password
-              </Label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
-                  <Lock size={18} />
-                </div>
-                <Input 
-                  type={showPassword ? 'text' : 'password'} 
-                  {...form.register('password')} 
-                  placeholder="••••••••"
-                  className="rounded-2xl bg-gray-50/50 dark:bg-white/5 border-none h-14 pl-12 pr-12 focus:ring-2 focus:ring-primary/20 transition-all font-bold"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {form.formState.errors.password && (
-                <p className="text-xs font-bold text-red-500 mt-1 ml-1">{form.formState.errors.password.message}</p>
-              )}
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full h-14 rounded-2xl font-black text-lg shadow-[0_20px_40px_-10px_rgba(255,107,0,0.3)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 mt-6" 
-              disabled={isRegistering}
-            >
-              {isRegistering ? (
-                <div className="flex items-center gap-2">
-                  <RefreshCcw className="animate-spin" size={20} />
-                  <span>Creating...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>Create My Account</span>
-                  <ArrowRight size={20} />
-                </div>
-              )}
-            </Button>
-          </form>
-          
-          <div className="mt-10 text-center">
-            <p className="text-sm text-gray-500 font-bold">
-              Already have an account? <Link href="/login" className="text-primary hover:underline underline-offset-4">Sign In Instead</Link>
-            </p>
+            <input 
+              id="full_name"
+              type="text"
+              {...form.register('full_name')} 
+              placeholder="Enter your user name" 
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+            />
           </div>
-        </CardContent>
-      </Card>
+          {form.formState.errors.full_name && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {form.formState.errors.full_name.message}
+            </motion.p>
+          )}
+        </div>
+
+        {/* Email Address Field */}
+        <div className="space-y-1">
+          <Label htmlFor="email" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+            Email Address
+          </Label>
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-12 group">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+              <Mail size={18} />
+            </div>
+            <input 
+              id="email"
+              type="email" 
+              {...form.register('email')} 
+              placeholder="Enter your email address" 
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+            />
+          </div>
+          {form.formState.errors.email && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {form.formState.errors.email.message}
+            </motion.p>
+          )}
+        </div>
+        
+        {/* Password Field */}
+        <div className="space-y-1">
+          <Label htmlFor="password" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+            Password
+          </Label>
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-12 group">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+              <Lock size={18} />
+            </div>
+            <input 
+              id="password"
+              type={showPassword ? 'text' : 'password'} 
+              {...form.register('password')} 
+              placeholder="Enter your password"
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="h-full px-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {form.formState.errors.password && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {form.formState.errors.password.message}
+            </motion.p>
+          )}
+        </div>
+
+        {/* Confirm Password Field */}
+        <div className="space-y-1">
+          <Label htmlFor="confirm_password" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+            Confirm Password
+          </Label>
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-12 group">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+              <Lock size={18} />
+            </div>
+            <input 
+              id="confirm_password"
+              type={showConfirmPassword ? 'text' : 'password'} 
+              {...form.register('confirm_password')} 
+              placeholder="Confirm your password"
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="h-full px-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {form.formState.errors.confirm_password && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {form.formState.errors.confirm_password.message}
+            </motion.p>
+          )}
+        </div>
+        
+        {/* Security & Badges Container */}
+        <div className="pt-1">
+          <div className="grid grid-cols-3 gap-1 py-2 px-3 rounded-[16px] bg-[#f0f6f2] dark:bg-[#121c15] border border-emerald-100/50 dark:border-emerald-950/20">
+            <div className="flex items-center justify-center gap-1 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+              Strong Security
+            </div>
+            <div className="flex items-center justify-center gap-1 text-[9px] font-semibold text-[#ff6b00] border-x border-gray-200/60 dark:border-white/5">
+              <Lock className="w-3.5 h-3.5 shrink-0" />
+              Data Protection
+            </div>
+            <div className="flex items-center justify-center gap-1 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+              Your Privacy
+            </div>
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <Button 
+          type="submit" 
+          className="relative w-full h-12 rounded-2xl font-bold text-base shadow-[0_10px_20px_-8px_rgba(255,107,0,0.3)] bg-gradient-to-r from-[#ff6b00] to-[#ff3b00] text-white hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mt-2 flex items-center justify-center cursor-pointer border-none" 
+          disabled={isRegistering}
+        >
+          {isRegistering ? (
+            <div className="flex items-center gap-2">
+              <RefreshCcw className="animate-spin" size={18} />
+              <span>Creating...</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <UserPlus size={18} />
+                <span>Create Account</span>
+              </div>
+              <ArrowRight className="absolute right-6 w-5 h-5" />
+            </>
+          )}
+        </Button>
+      </form>
       
-      <p className="text-center mt-10 text-xs text-gray-400 font-black uppercase tracking-widest">
-        &copy; 2024 Mark Sorting System. Advanced Sorting Solutions.
-      </p>
+      {/* Redirect Footer Link */}
+      <div className="text-center mt-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium flex items-center justify-center gap-1">
+          Already have an account?{' '}
+          <Link href="/login" className="text-[#ff6b00] hover:text-[#ff5a00] font-semibold inline-flex items-center gap-0.5 group">
+            Sign In
+            <span className="transition-transform duration-200 group-hover:translate-x-0.5">&gt;</span>
+          </Link>
+        </p>
+      </div>
     </motion.div>
   );
 }

@@ -237,3 +237,11 @@
   }
 }
 
+/* Hide Next.js dev indicators and static route indicator portals in dev mode */
+nextjs-portal,
+[data-nextjs-indicator],
+[data-nextjs-static-indicator],
+#nextjs-portal {
+  display: none !important;
+}
+
