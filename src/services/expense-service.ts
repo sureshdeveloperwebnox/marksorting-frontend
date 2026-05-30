@@ -104,9 +104,12 @@ export const useUpdateExpense = () => {
             const { data } = await api.put(endpoint, expenseData);
             return data;
         },
-        onSuccess: (updatedExpense) => {
+        onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["expenses"] });
-            queryClient.setQueryData(["expense", updatedExpense.id], updatedExpense);
+            queryClient.invalidateQueries({ queryKey: ["expense", variables.id] });
+            if (data?.after) {
+                queryClient.setQueryData(["expense", variables.id, isServiceEngineer], data.after);
+            }
             toast.success("Expense updated successfully");
         },
         onError: (error: any) => {
