@@ -1,28 +1,31 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Users, ClipboardList, Wrench, Receipt } from 'lucide-react';
-import { StatCard } from '@/components/dashboard/stat-card';
+import { ClipboardList, Wrench, Receipt, CreditCard, Users } from 'lucide-react';
+import { StatCard, StatCardVariant } from '@/components/dashboard/stat-card';
 
 const iconMap: Record<string, any> = {
-  'Total Customers': Users,
-  'Installations Done': ClipboardList,
-  'Services Completed': Wrench,
-  'Total Expenses': Receipt,
+  'TOTAL SERVICES': Wrench,
+  'TOTAL INSTALLATIONS': ClipboardList,
+  'TOTAL EXPENSES': Receipt,
+  'TOTAL REVENUE': CreditCard,
+  'TOTAL CUSTOMERS': Users,
 };
 
 interface DashboardStatsProps {
   stats?: Array<{
-    id: 'customers' | 'installations' | 'services' | 'expenses';
+    id: 'customers' | 'installations' | 'services' | 'expenses' | 'revenue';
     title: string;
     value: string;
     change: string;
     trend: 'up' | 'down' | 'neutral';
-    variant: 'emerald' | 'blue' | 'rose' | 'amber' | 'violet' | 'cyan' | 'orange';
+    variant: StatCardVariant;
     subtitle: string;
+    sparklineData?: number[];
   }>;
+  // Kept for backward compatibility to avoid type errors during refactoring
   activeId?: string;
-  onSelect?: (id: 'customers' | 'installations' | 'services' | 'expenses') => void;
+  onSelect?: (id: any) => void;
 }
 
 const containerVariants = {
@@ -33,16 +36,18 @@ const containerVariants = {
   },
 };
 
-export function DashboardStats({ stats = [], activeId, onSelect }: DashboardStatsProps) {
+export function DashboardStats({ stats = [] }: DashboardStatsProps) {
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+      className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 mb-6"
     >
       {stats.map((stat, idx) => {
         const IconComponent = iconMap[stat.title] || Users;
+        const sparkData = stat.sparklineData || [30, 40, 35, 50, 49, 60, 70, 91];
+
         return (
           <StatCard
             key={stat.title}
@@ -53,9 +58,8 @@ export function DashboardStats({ stats = [], activeId, onSelect }: DashboardStat
             variant={stat.variant}
             subtitle={stat.subtitle}
             icon={IconComponent}
+            sparklineData={sparkData}
             delay={idx * 0.08}
-            active={activeId === stat.id}
-            onClick={() => onSelect?.(stat.id)}
           />
         );
       })}

@@ -2,19 +2,11 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SparklineChart } from './sparkline-chart';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export type StatCardVariant =
-  | 'emerald'
-  | 'blue'
-  | 'rose'
-  | 'amber'
-  | 'violet'
-  | 'cyan'
-  | 'orange';
+export type StatCardVariant = 'emerald' | 'blue' | 'rose' | 'amber' | 'violet' | 'cyan' | 'orange';
 
 export interface StatCardProps {
   title: string;
@@ -23,119 +15,87 @@ export interface StatCardProps {
   trend: 'up' | 'down' | 'neutral';
   icon: LucideIcon;
   variant: StatCardVariant;
+  sparklineData?: number[];
   subtitle?: string;
   className?: string;
-  /** Animation delay in seconds for staggered entry */
   delay?: number;
-  active?: boolean;
-  onClick?: () => void;
 }
 
-// ─── Variant config ───────────────────────────────────────────────────────────
-
-const variantConfig: Record<
+const colorConfig: Record<
   StatCardVariant,
   {
+    stroke: string;
+    fill: string;
     gradient: string;
     shadow: string;
-    orb: string;
+    trendColor: string;
   }
 > = {
   emerald: {
-    gradient: 'from-emerald-500 via-emerald-400 to-teal-400',
-    shadow: 'shadow-emerald-400/40',
-    orb: 'bg-emerald-300/30',
-  },
-  blue: {
-    gradient: 'from-blue-500 via-blue-400 to-indigo-400',
-    shadow: 'shadow-blue-400/40',
-    orb: 'bg-blue-300/30',
+    stroke: '#10b981',
+    fill: '#10b981',
+    gradient: 'from-emerald-400 to-teal-500',
+    shadow: 'shadow-emerald-500/25',
+    trendColor: 'text-emerald-500',
   },
   rose: {
-    gradient: 'from-rose-500 via-pink-400 to-rose-400',
-    shadow: 'shadow-rose-400/40',
-    orb: 'bg-rose-300/30',
-  },
-  amber: {
-    gradient: 'from-amber-500 via-orange-400 to-yellow-400',
-    shadow: 'shadow-amber-400/40',
-    orb: 'bg-amber-300/30',
-  },
-  violet: {
-    gradient: 'from-violet-500 via-purple-400 to-fuchsia-400',
-    shadow: 'shadow-violet-400/40',
-    orb: 'bg-violet-300/30',
-  },
-  cyan: {
-    gradient: 'from-cyan-500 via-sky-400 to-cyan-400',
-    shadow: 'shadow-cyan-400/40',
-    orb: 'bg-cyan-300/30',
+    stroke: '#ec4899',
+    fill: '#ec4899',
+    gradient: 'from-pink-400 to-rose-500',
+    shadow: 'shadow-rose-500/25',
+    trendColor: 'text-emerald-500',
   },
   orange: {
-    gradient: 'from-orange-500 via-amber-400 to-orange-400',
-    shadow: 'shadow-orange-400/40',
-    orb: 'bg-orange-300/30',
+    stroke: '#f97316',
+    fill: '#f97316',
+    gradient: 'from-orange-400 to-amber-500',
+    shadow: 'shadow-orange-500/25',
+    trendColor: 'text-emerald-500',
+  },
+  blue: {
+    stroke: '#3b82f6',
+    fill: '#3b82f6',
+    gradient: 'from-blue-400 to-indigo-500',
+    shadow: 'shadow-blue-500/25',
+    trendColor: 'text-emerald-500',
+  },
+  amber: {
+    stroke: '#f59e0b',
+    fill: '#f59e0b',
+    gradient: 'from-amber-400 to-yellow-500',
+    shadow: 'shadow-amber-500/25',
+    trendColor: 'text-emerald-500',
+  },
+  violet: {
+    stroke: '#8b5cf6',
+    fill: '#8b5cf6',
+    gradient: 'from-violet-400 to-fuchsia-500',
+    shadow: 'shadow-violet-500/25',
+    trendColor: 'text-emerald-500',
+  },
+  cyan: {
+    stroke: '#06b6d4',
+    fill: '#06b6d4',
+    gradient: 'from-cyan-400 to-sky-500',
+    shadow: 'shadow-cyan-500/25',
+    trendColor: 'text-emerald-500',
   },
 };
 
-// ─── Animation variants ───────────────────────────────────────────────────────
-
 const cardVariants = {
-  hidden: { opacity: 0, y: 28, scale: 0.94 },
+  hidden: { opacity: 0, y: 15, scale: 0.97 },
   show: (delay: number) => ({
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
       type: 'spring' as const,
-      stiffness: 320,
-      damping: 28,
+      stiffness: 300,
+      damping: 24,
       delay,
     },
   }),
 };
-
-const shimmerVariants = {
-  initial: { x: '-120%', skewX: '-12deg' },
-  animate: {
-    x: '220%',
-    skewX: '-12deg',
-    transition: {
-      duration: 2.4,
-      ease: 'linear' as const,
-      repeat: Infinity,
-      repeatDelay: 3.5,
-    },
-  },
-};
-
-const iconVariants = {
-  idle: { rotate: -4 },
-  float: {
-    rotate: 4,
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      repeatType: 'reverse' as const,
-      ease: 'easeInOut' as const,
-    },
-  },
-};
-
-const orbVariants = {
-  idle: { scale: 1, opacity: 0.5 },
-  pulse: {
-    scale: [1, 1.15, 1],
-    opacity: [0.5, 0.7, 0.5],
-    transition: {
-      duration: 4,
-      repeat: Infinity,
-      ease: 'easeInOut' as const,
-    },
-  },
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const StatCard = memo(function StatCard({
   title,
@@ -144,16 +104,12 @@ export const StatCard = memo(function StatCard({
   trend,
   icon: Icon,
   variant,
-  subtitle = 'this month',
+  sparklineData = [30, 40, 35, 50, 49, 60, 70, 91],
+  subtitle = 'vs last month',
   className,
   delay = 0,
-  active = false,
-  onClick,
 }: StatCardProps) {
-  const config = variantConfig[variant];
-
-  const TrendIcon =
-    trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+  const config = colorConfig[variant] || colorConfig.blue;
 
   return (
     <motion.div
@@ -161,143 +117,122 @@ export const StatCard = memo(function StatCard({
       variants={cardVariants}
       initial="hidden"
       animate="show"
-      whileHover={{ scale: active ? 1.04 : 1.025, y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+      whileHover={{ y: -3, scale: 1.015, boxShadow: '0 12px 30px rgba(0,0,0,0.04)' }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
-        'relative cursor-pointer select-none group isolate transition-all duration-300',
-        active ? 'opacity-100 scale-[1.02]' : 'opacity-85 hover:opacity-100',
+        'relative overflow-hidden rounded-[24px] border border-zinc-100 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.015)] dark:border-zinc-800/80 dark:bg-zinc-950/80 transition-all duration-300 group min-h-[145px] flex flex-col justify-between',
         className
       )}
     >
-      {/* Glowing Backing Halo on Hover / Active */}
-      <div
-        className={cn(
-          'absolute -inset-1.5 rounded-2xl bg-gradient-to-br',
-          config.gradient,
-          'transition-all duration-500 ease-out -z-10 blur-[16px]',
-          active ? 'opacity-50 scale-[1.01]' : 'opacity-0 group-hover:opacity-30 dark:group-hover:opacity-45',
-        )}
-        aria-hidden
+      {/* Inline styles for the water glow wave keyframes */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes wave-motion {
+          0% { transform: translateX(0) translateZ(0) scaleY(1); }
+          50% { transform: translateX(-25%) translateZ(0) scaleY(0.85); }
+          100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+        }
+        .water-glow-wave-1 {
+          animation: wave-motion 16s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+        }
+        .water-glow-wave-2 {
+          animation: wave-motion 10s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+        }
+      `}} />
+
+      {/* Decorative Sparkline Background across the bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-[65px] overflow-hidden pointer-events-none z-10">
+        <SparklineChart
+          data={sparklineData}
+          strokeColor={config.stroke}
+          fillColor={config.fill}
+          height={65}
+        />
+      </div>
+
+      {/* Fluid Glowing Water Backdrop */}
+      <motion.div
+        animate={{
+          scale: [1, 1.06, 0.94, 1],
+          opacity: [0.15, 0.28, 0.15],
+        }}
+        transition={{
+          duration: 7,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        className="absolute inset-0 pointer-events-none z-0 select-none"
+        style={{
+          background: `radial-gradient(circle at 50% 120%, ${config.stroke}35, transparent 65%)`
+        }}
       />
 
-      {/* Interactive Glowing Border Overlay */}
+      {/* Moving Water Wave SVG Layers */}
+      <div className="absolute bottom-0 left-0 right-0 h-[35px] overflow-hidden pointer-events-none z-0 select-none opacity-20 dark:opacity-15">
+        <svg className="water-glow-wave-1 absolute bottom-0 left-0 w-[200%] h-full" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,60 C150,100 350,20 500,60 C650,100 850,20 1000,60 C1150,100 1350,20 1500,60 L1500,120 L0,120 Z" fill={config.stroke} />
+        </svg>
+        <svg className="water-glow-wave-2 absolute bottom-0 left-0 w-[200%] h-[90%]" viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ opacity: 0.6 }}>
+          <path d="M0,50 C180,90 300,30 480,50 C660,70 780,30 960,50 C1140,70 1260,30 1440,50 L1440,120 L0,120 Z" fill={config.stroke} />
+        </svg>
+      </div>
+
+      {/* Subtle Glowing outline on hover */}
       <div
         className={cn(
-          'absolute inset-0 rounded-2xl border transition-all duration-500 pointer-events-none z-20',
-          active ? 'border-white/40 shadow-[0_0_8px_rgba(255,255,255,0.15)]' : 'border-white/10 opacity-0 group-hover:opacity-100',
+          'absolute inset-0 rounded-[24px] border border-transparent pointer-events-none z-30 transition-all duration-500',
+          'group-hover:border-zinc-200/50 dark:group-hover:border-zinc-700/50'
         )}
-        aria-hidden
+        style={{
+          boxShadow: `inset 0 0 16px 1px ${config.stroke}05`
+        }}
       />
 
-      {/* Card surface */}
-      <div
-        className={cn(
-          'relative overflow-hidden rounded-2xl p-5 border border-white/10 group-hover:border-white/20 transition-all duration-500',
-          'bg-gradient-to-br',
+      <div className="relative z-20 flex items-start gap-4">
+        {/* Left: Glowing Icon Circle */}
+        <div className={cn(
+          'flex items-center justify-center w-14 h-14 rounded-full shrink-0 shadow-lg text-white bg-gradient-to-tr transition-transform duration-500 group-hover:scale-105',
           config.gradient,
-          active ? 'shadow-[0_20px_35px_rgba(0,0,0,0.22)]' : 'shadow-xl group-hover:shadow-[0_20px_35px_rgba(0,0,0,0.18)]',
-          config.shadow,
-        )}
-      >
-        {/* ── Shimmer sweep ── */}
-        <motion.div
-          variants={shimmerVariants}
-          initial="initial"
-          animate="animate"
-          className="absolute inset-0 w-[38%] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
-          aria-hidden
-        />
+          config.shadow
+        )}>
+          <Icon size={24} className="text-white" />
+        </div>
 
-        {/* ── Decorative radial orb (top-right) ── */}
-        <motion.div
-          variants={orbVariants}
-          initial="idle"
-          animate="pulse"
-          className={cn(
-            'absolute -top-6 -right-6 w-28 h-28 rounded-full blur-2xl pointer-events-none',
-            config.orb,
-          )}
-          aria-hidden
-        />
-
-        {/* ── Bottom-left soft orb ── */}
-        <div
-          className={cn(
-            'absolute -bottom-8 -left-8 w-24 h-24 rounded-full blur-3xl opacity-30 pointer-events-none',
-            config.orb,
-          )}
-          aria-hidden
-        />
-
-        {/* ── Content ── */}
-        <div className="relative z-10 flex items-start justify-between gap-3">
-          {/* Left: metric text */}
-          <div className="flex-1 min-w-0">
-            {/* Title */}
-            <p className="text-[10px] font-black text-white uppercase tracking-[0.12em] mb-2 truncate">
-              {title}
-            </p>
-
-            {/* Value */}
-            <div className="text-[2.2rem] font-black text-white tracking-tight leading-none mb-3">
-              {value}
-            </div>
-
-            {/* Trend badge + subtitle */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/25 text-white backdrop-blur-sm group-hover:bg-white/35 transition-colors duration-300">
-                <TrendIcon size={10} className="shrink-0" />
-                {change}
-              </span>
-              <span className="text-[10px] text-white/90 font-extrabold capitalize">
-                {subtitle}
-              </span>
-            </div>
-          </div>
-
-          {/* Right: Floating icon */}
-          <motion.div
-            variants={iconVariants}
-            initial="idle"
-            animate="float"
-            className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 group-hover:bg-white/30 backdrop-blur-sm shrink-0 shadow-inner shadow-white/10 transition-all duration-300"
-          >
-            <Icon size={22} className="text-white drop-shadow-sm group-hover:scale-110 transition-transform duration-300" />
-          </motion.div>
+        {/* Right: Title & Value */}
+        <div className="flex flex-col min-w-0">
+          <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest leading-none">
+            {title}
+          </span>
+          <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight mt-2 leading-none">
+            {value}
+          </span>
         </div>
       </div>
+
+
     </motion.div>
   );
 });
-
-// ─── Skeleton variant ─────────────────────────────────────────────────────────
 
 export function StatCardSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl p-5 bg-gray-100 dark:bg-white/5',
-        className,
+        'relative overflow-hidden rounded-[24px] border border-zinc-100 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950 shadow-sm min-h-[145px] flex flex-col justify-between',
+        className
       )}
       aria-busy
       aria-label="Loading stat"
     >
-      {/* Shimmer sweep */}
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.6s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.6s_infinite] bg-gradient-to-r from-transparent via-zinc-100/50 dark:via-zinc-800/10 to-transparent pointer-events-none" />
 
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 space-y-3">
-          <div className="h-2.5 w-24 rounded-full bg-gray-200 dark:bg-white/10 animate-pulse" />
-          <div className="h-8 w-32 rounded-lg bg-gray-200 dark:bg-white/10 animate-pulse" />
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-white/10 animate-pulse" />
-            <div className="h-3 w-20 rounded bg-gray-200 dark:bg-white/10 animate-pulse" />
-          </div>
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-full bg-zinc-100 dark:bg-zinc-800 animate-pulse shrink-0" />
+        <div className="flex flex-col gap-2 flex-1">
+          <div className="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+          <div className="h-8 w-24 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
         </div>
-        <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-white/10 animate-pulse shrink-0" />
       </div>
+
     </div>
   );
 }

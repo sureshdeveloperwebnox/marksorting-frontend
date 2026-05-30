@@ -16,6 +16,13 @@ export interface ChartDataPoint {
   [key: string]: any;
 }
 
+export interface CombinedTrendPoint {
+  name: string;
+  services: number;
+  installations: number;
+  expenses: number;
+}
+
 export interface MillStatus {
   id: string;
   name: string;
@@ -28,6 +35,8 @@ export interface MillStatus {
 
 export interface DashboardContext {
   performance: ChartDataPoint[];
+  weeklyTrend?: ChartDataPoint[];
+  thisMonthTrend?: ChartDataPoint[];
   production: ChartDataPoint[];
   comparison: Array<{ name: string; completed: number; pending: number }>;
   statusList: MillStatus[];
