@@ -523,26 +523,28 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
       <div className="flex items-center h-16 px-4 lg:px-6 gap-3 lg:gap-4">
 
         {/* ── Logo ── */}
-        <Link
-          href="/dashboard"
-          prefetch
-          onPointerEnter={() => prefetchRoute('/dashboard')}
-          onFocus={() => prefetchRoute('/dashboard')}
-          className="flex-shrink-0 flex items-center mr-1 lg:mr-4"
-          aria-label="Go to dashboard"
-        >
-          <div className="relative h-9 w-auto">
-            <Image
-              src="/assets/logo.png"
-              alt="Mark Sorting Logo"
-              width={120}
-              height={36}
-              className="h-9 w-auto object-contain"
-              style={{ width: 'auto' }}
-              priority
-            />
-          </div>
-        </Link>
+        {!isSidebarLayout && (
+          <Link
+            href="/dashboard"
+            prefetch
+            onPointerEnter={() => prefetchRoute('/dashboard')}
+            onFocus={() => prefetchRoute('/dashboard')}
+            className="flex-shrink-0 flex items-center mr-1 lg:mr-4"
+            aria-label="Go to dashboard"
+          >
+            <div className="relative h-9 w-auto">
+              <Image
+                src="/assets/logo.png"
+                alt="Mark Sorting Logo"
+                width={120}
+                height={36}
+                className="h-9 w-auto object-contain"
+                style={{ width: 'auto' }}
+                priority
+              />
+            </div>
+          </Link>
+        )}
 
         {/* ── Desktop Nav ── */}
         <nav className={cn("hidden min-[1360px]:flex items-center gap-0.5 min-[1600px]:gap-1 flex-1 min-w-0", isSidebarLayout && "min-[1360px]:hidden")}>
