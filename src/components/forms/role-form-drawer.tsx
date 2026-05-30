@@ -256,7 +256,7 @@ export function RoleFormDrawer() {
                     const someSelected = perms.some((p) => selectedPermIds.has(p.id));
                     const isOpen = openGroups[module] ?? false;
                     const config = MODULE_CONFIG[module];
-                    const ModuleIcon = config?.icon || Shield;
+                    const ModuleIcon = (config?.icon || Shield) as any;
 
                     return (
                       <div

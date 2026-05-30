@@ -105,7 +105,7 @@ export function PushNotificationToast({
   onDismiss,
 }: PushNotificationToastProps) {
   const config = TYPE_CONFIG[type] ?? FALLBACK_CONFIG;
-  const Icon = config.icon;
+  const Icon = config.icon as any;
 
   return (
     <div

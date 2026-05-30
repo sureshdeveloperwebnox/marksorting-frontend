@@ -13,6 +13,8 @@ import {
   Award, 
   ThumbsUp 
 } from 'lucide-react';
+import { gsap } from 'gsap';
+import { Antigravity } from '@/components/Antigravity';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -23,23 +25,160 @@ interface AuthLayoutProps {
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   const [mounted, setMounted] = React.useState(false);
 
+  const sidecardRef = React.useRef<HTMLDivElement>(null);
+  const logoRef = React.useRef<HTMLDivElement>(null);
+  const titleRef = React.useRef<HTMLHeadingElement>(null);
+  const textRef = React.useRef<HTMLParagraphElement>(null);
+  const dividerRef = React.useRef<HTMLDivElement>(null);
+  const interactiveGlowRef = React.useRef<HTMLDivElement>(null);
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  React.useEffect(() => {
+    if (!mounted) return;
+
+    // 1. Entry Stagger Animation using GSAP
+    const tl = gsap.timeline();
+    
+    // Quick hide to prevent flash of content before GSAP handles it
+    gsap.set([logoRef.current, titleRef.current, dividerRef.current, textRef.current], { opacity: 0 });
+    gsap.set('.footer-stat-item', { opacity: 0 });
+
+    tl.fromTo(logoRef.current, 
+      { opacity: 0, scale: 0.8, y: -25 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.8, ease: 'back.out(1.7)' }
+    );
+    tl.fromTo(titleRef.current,
+      { opacity: 0, y: 35 },
+      { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' },
+      '-=0.4'
+    );
+    tl.fromTo(dividerRef.current,
+      { scaleX: 0, opacity: 0 },
+      { scaleX: 1, opacity: 1, transformOrigin: 'left center', duration: 0.5, ease: 'power2.out' },
+      '-=0.5'
+    );
+    tl.fromTo(textRef.current,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+      '-=0.4'
+    );
+    tl.fromTo('.footer-stat-item',
+      { opacity: 0, y: 15 },
+      { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: 'power2.out' },
+      '-=0.3'
+    );
+
+    // 2. Interactive Parallax and Mouse Tracking Glow
+    const sidecard = sidecardRef.current;
+    if (!sidecard) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = sidecard.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const rotateX = ((y - centerY) / centerY) * -8; // Tilt up to 8 degrees
+      const rotateY = ((x - centerX) / centerX) * 8;  // Tilt up to 8 degrees
+
+      // Tilt the text container
+      gsap.to('.sidecard-interactive-content', {
+        rotateX: rotateX,
+        rotateY: rotateY,
+        transformPerspective: 800,
+        ease: 'power2.out',
+        duration: 0.4
+      });
+
+      // Smoothly follow cursor with glow spotlight
+      gsap.to(interactiveGlowRef.current, {
+        left: x,
+        top: y,
+        opacity: 1,
+        scale: 1,
+        ease: 'power2.out',
+        duration: 0.4
+      });
+    };
+
+    const handleMouseLeave = () => {
+      // Reset text tilt
+      gsap.to('.sidecard-interactive-content', {
+        rotateX: 0,
+        rotateY: 0,
+        ease: 'power3.out',
+        duration: 0.8
+      });
+
+      // Hide glow spotlight
+      gsap.to(interactiveGlowRef.current, {
+        opacity: 0,
+        scale: 0.8,
+        ease: 'power3.out',
+        duration: 0.8
+      });
+    };
+
+    sidecard.addEventListener('mousemove', handleMouseMove);
+    sidecard.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      sidecard.removeEventListener('mousemove', handleMouseMove);
+      sidecard.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [mounted]);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#f7f8fa] dark:bg-[#0a0a0a]">
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row relative overflow-hidden">
         {/* Left Side: Animated Brand Experience (Hidden on Mobile) */}
-        <div className="hidden lg:flex lg:w-[48%] xl:w-[50%] h-full relative bg-gradient-to-br from-[#e04a00] via-[#c63400] to-[#3a0600] overflow-hidden p-8 xl:p-12 flex-col justify-between">
-          {/* Animated Background Grid & Radial Glows */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2)_0%,transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(0,0,0,0.4)_0%,transparent_50%)]" />
-          
-          {/* Dot Grid overlay representing world map coordinates / high tech */}
+        <div 
+          ref={sidecardRef}
+          className="hidden lg:flex lg:w-[48%] xl:w-[50%] h-full relative bg-gradient-to-br from-[#e04a00] via-[#c63400] to-[#3a0600] overflow-hidden p-8 xl:p-12 flex-col justify-between"
+          style={{ perspective: '1000px' }}
+        >
+          {/* Antigravity interactive background */}
+          {mounted && (
+            <div className="absolute inset-0 z-0 opacity-70 pointer-events-none select-none">
+              <Antigravity
+                count={250}
+                magnetRadius={12}
+                ringRadius={8}
+                waveSpeed={0.3}
+                waveAmplitude={1.2}
+                particleSize={1.5}
+                lerpSpeed={0.06}
+                color="#ffa066"
+                autoAnimate={true}
+                particleVariance={1.2}
+                rotationSpeed={0.01}
+                depthFactor={1.2}
+                pulseSpeed={2.5}
+                particleShape="capsule"
+                fieldStrength={8}
+              />
+            </div>
+          )}
+
+          {/* Mouse follow spotlight glow */}
           <div 
-            className="absolute inset-0 opacity-[0.15] mix-blend-overlay"
+            ref={interactiveGlowRef}
+            className="absolute pointer-events-none rounded-full blur-[100px] bg-[radial-gradient(circle,rgba(255,255,255,0.15)_0%,transparent_70%)] w-[350px] h-[350px] -translate-x-1/2 -translate-y-1/2 opacity-0 z-1" 
+          />
+
+          {/* Animated Background Grid & Radial Glows */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)] z-2 pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(0,0,0,0.3)_0%,transparent_50%)] z-2 pointer-events-none" />
+          
+          {/* Dot Grid overlay representing world map coordinates */}
+          <div 
+            className="absolute inset-0 opacity-[0.1] mix-blend-overlay z-2 pointer-events-none"
             style={{
               backgroundImage: 'radial-gradient(circle, #fff 1.5px, transparent 1.5px)',
               backgroundSize: '24px 24px',
@@ -47,7 +186,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           />
 
           {/* Dotted World Map Silhouette SVG Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none select-none">
+          <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none z-2">
             <svg width="100%" height="80%" viewBox="0 0 1000 500" fill="currentColor" className="text-white">
               {/* Abstract map pattern dots */}
               <circle cx="150" cy="180" r="4" />
@@ -103,8 +242,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             <path d="M100,0 C45,18 20,38 52,50 C82,62 60,82 100,100 Z" />
           </svg>
 
-          {/* Top-Left Logo (Flex element in normal document flow) */}
-          <div className="z-30 shrink-0 mb-4 select-none mt-4">
+          {/* Top-Left Logo */}
+          <div ref={logoRef} className="z-30 shrink-0 mb-4 select-none mt-4 pointer-events-none">
             <div className="bg-white shadow-lg flex items-center justify-center overflow-hidden rounded-2xl p-3 w-44 h-16 relative">
               <div className="relative w-full h-full">
                 <Image
@@ -118,25 +257,23 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             </div>
           </div>
           
-          {/* Left Side Content Container - Dynamic height, scrollable internally if viewport is extremely short */}
-          <div className="relative z-10 w-full max-w-md flex-1 min-h-0 flex flex-col justify-center py-2">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              className="space-y-4"
+          {/* Left Side Content Container - Interactive tilting */}
+          <div className="relative z-30 w-full max-w-md flex-1 min-h-0 flex flex-col justify-center py-2 pointer-events-none">
+            <div
+              className="sidecard-interactive-content space-y-4"
+              style={{ transformStyle: 'preserve-3d' }}
             >
               <div className="space-y-3">
-                <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight">
+                <h1 ref={titleRef} className="text-4xl xl:text-5xl font-extrabold text-white leading-tight tracking-tight">
                   Revolutionizing
                   <span className="block text-[#ff7c30] mt-1">Food Processing.</span>
                 </h1>
-                <div className="w-16 h-1 bg-[#ff5a00] rounded-full" />
-                <p className="text-white/80 text-base xl:text-lg font-medium leading-relaxed max-w-sm pt-2">
+                <div ref={dividerRef} className="w-16 h-1 bg-[#ff5a00] rounded-full" />
+                <p ref={textRef} className="text-white/80 text-base xl:text-lg font-medium leading-relaxed max-w-sm pt-2">
                   Promech Industries delivers international standard color sorting solutions to the global market since 2005.
                 </p>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
 
@@ -182,7 +319,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             { icon: Award, num: '20+', label: 'Years of Excellence' },
             { icon: ThumbsUp, num: '100%', label: 'Customer Satisfaction' }
           ].map((stat, idx) => (
-            <div key={idx} className="flex items-center gap-1.5">
+            <div key={idx} className="footer-stat-item flex items-center gap-1.5">
               <stat.icon className="w-3.5 h-3.5 text-[#ff6b00] shrink-0" />
               <span className="text-gray-900 dark:text-white font-extrabold">{stat.num}</span>
               <span className="text-gray-500 dark:text-gray-400 font-medium">{stat.label}</span>
@@ -196,4 +333,5 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
     </div>
   );
 }
+
 
