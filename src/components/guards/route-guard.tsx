@@ -34,7 +34,7 @@ export function RouteGuard({
   fallback,
 }: RouteGuardProps) {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, isInitialized } = useAuthStore();
   const {
     hasPermission,
     hasAnyPermission,
@@ -45,6 +45,11 @@ export function RouteGuard({
   } = usePermissions();
 
   useEffect(() => {
+    // Wait for the auth store to be initialized
+    if (!isInitialized) {
+      return;
+    }
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       router.push('/login');
@@ -99,6 +104,7 @@ export function RouteGuard({
     }
   }, [
     isAuthenticated,
+    isInitialized,
     requiredPermission,
     requiredPermissions,
     anyPermission,
@@ -118,7 +124,7 @@ export function RouteGuard({
   ]);
 
   // Show loading state while checking permissions
-  if (!isAuthenticated || !user) {
+  if (!isInitialized || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

@@ -21,7 +21,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
-    if (isPublicPath) return;
+    if (isPublicPath) {
+      useAuthStore.getState().setInitialized(true);
+      return;
+    }
 
     const now = Date.now();
     const authIsFresh = isAuthenticated && now - lastCheckedAt.current < AUTH_RECHECK_MS;
@@ -40,6 +43,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       .finally(() => {
         lastCheckedAt.current = Date.now();
         inFlightCheck.current = null;
+        useAuthStore.getState().setInitialized(true);
       });
   }, [isAuthenticated, pathname, setAuth]);
 
