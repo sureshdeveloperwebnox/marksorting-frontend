@@ -8,6 +8,7 @@ import {
   Expense,
   useDeleteExpense,
   useUpdateExpense,
+  useExpense,
 } from "@/services/expense-service";
 import useExpenseStore from "@/store/useExpenseStore";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,13 @@ import {
   AlertTriangle,
   Calendar,
   DollarSign,
+  Eye,
+  Hash,
+  User,
+  MapPin,
+  Activity,
+  Building2,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -48,6 +56,7 @@ import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { ExpenseFormDrawer } from "@/components/forms/expense-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
+import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -144,6 +153,10 @@ export default function ExpensesPage() {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
+  const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+
+  const { data: viewExpenseData, isLoading: isViewExpenseLoading } = useExpense(selectedViewId);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -186,6 +199,161 @@ export default function ExpensesPage() {
       setDeleteId(null);
     }
   };
+
+  const safeFormatDate = (dateStr?: string) => {
+    if (!dateStr) return "—";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "—";
+      return format(d, "MMM dd, yyyy");
+    } catch {
+      return "—";
+    }
+  };
+
+  /* ── View Sections ── */
+  const viewSections = React.useMemo(() => {
+    if (!viewExpenseData) return [];
+
+    return [
+      {
+        title: "General Information",
+        items: [
+          {
+            label: "Expense Number",
+            value: (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewExpenseData.expense_number}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
+            label: "Status",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  getStatusColors(viewExpenseData.status)
+                )}
+              >
+                {viewExpenseData.status?.replace("_", " ")}
+              </Badge>
+            ),
+            icon: Activity,
+          },
+          {
+            label: "Category",
+            value: (
+              <Badge variant="outline" className="font-bold text-xs capitalize py-0.5 px-2 bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 text-gray-600 dark:text-gray-400">
+                {viewExpenseData.expenseCategory?.name?.toLowerCase().replace(/_/g, " ") || "—"}
+              </Badge>
+            ),
+            icon: FileText,
+          },
+          {
+            label: "Amount",
+            value: (
+              <span className="font-bold text-gray-900 dark:text-white">
+                ₹{Number(viewExpenseData.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </span>
+            ),
+            icon: DollarSign,
+          },
+        ],
+      },
+      {
+        title: "Visit Details",
+        items: [
+          {
+            label: "Visit Date",
+            value: safeFormatDate(viewExpenseData.visit_date),
+            icon: Calendar,
+          },
+          {
+            label: "Visit Time",
+            value: viewExpenseData.visit_time || "—",
+            icon: Clock,
+          },
+        ],
+      },
+      {
+        title: "Mill & Location",
+        items: [
+          {
+            label: "Mill Name",
+            value: viewExpenseData.mill?.name || "—",
+            icon: Building2,
+          },
+          {
+            label: "Location / Place",
+            value: viewExpenseData.place || "—",
+            icon: MapPin,
+          },
+          {
+            label: "Other Details",
+            value: viewExpenseData.others || "—",
+            icon: FileText,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Assigned Engineers",
+        items: [
+          {
+            label: "Engineers",
+            value: viewExpenseData.technicians?.map((t: any) => t.technician.full_name).join(", ") || "—",
+            icon: User,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Expense Images",
+        items: [
+          {
+            label: "Receipts & Photos",
+            value: viewExpenseData.expense_images?.length ? (
+              <div className="grid grid-cols-2 gap-2">
+                {viewExpenseData.expense_images.map((img, idx) => {
+                  const src = img.startsWith("http") || img.startsWith("data:") ? img : `https://webnox.blr1.digitaloceanspaces.com/${img}`;
+                  return (
+                    <img
+                      key={idx}
+                      src={src}
+                      alt={`Expense image ${idx + 1}`}
+                      className="max-h-32 object-contain rounded-lg border border-gray-200 dark:border-white/10"
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="text-gray-400 dark:text-gray-600 font-medium">No images attached</span>
+            ),
+            icon: ImageIcon,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "System Information",
+        items: [
+          {
+            label: "Created At",
+            value: safeFormatDate(viewExpenseData.created_at),
+            icon: Calendar,
+          },
+          {
+            label: "Updated At",
+            value: safeFormatDate(viewExpenseData.updated_at),
+            icon: Calendar,
+          },
+        ],
+      },
+    ];
+  }, [viewExpenseData]);
 
   const activeFilterCount = [statusFilter, dateFrom, dateTo].filter(Boolean).length;
 
@@ -340,6 +508,20 @@ export default function ExpensesPage() {
       header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
+          {/* View Details */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 hover:text-indigo-700 hover:bg-indigo-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            onClick={() => {
+              setSelectedViewId(row.original.id);
+              setIsViewDrawerOpen(true);
+            }}
+            title="View Details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          {/* Edit */}
           <Button
             variant="ghost"
             size="icon"
@@ -348,6 +530,7 @@ export default function ExpensesPage() {
           >
             <Edit className="h-4 w-4" />
           </Button>
+          {/* Delete */}
           <Button
             variant="ghost"
             size="icon"
@@ -535,6 +718,29 @@ export default function ExpensesPage() {
 
       {/* Form Drawer */}
       <ExpenseFormDrawer />
+
+      {/* View Details Drawer */}
+      <ViewDetailsDrawer
+        isOpen={isViewDrawerOpen}
+        onClose={() => {
+          setIsViewDrawerOpen(false);
+          setSelectedViewId(null);
+        }}
+        title={
+          viewExpenseData
+            ? `Expense #${viewExpenseData.expense_number}`
+            : "Expense Details"
+        }
+        description={
+          viewExpenseData
+            ? `${viewExpenseData.mill?.name || viewExpenseData.others || "—"} · ${safeFormatDate(viewExpenseData.visit_date)}`
+            : "Loading expense details..."
+        }
+        icon={<DollarSign size={22} />}
+        isLoading={isViewExpenseLoading}
+        sections={viewSections}
+        size="lg"
+      />
 
       {/* Delete Confirm Dialog */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

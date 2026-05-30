@@ -255,7 +255,7 @@ export function ExpenseFormDrawer() {
         });
         // Previews from existing images
         const newPreviews = expenseData.expense_images?.map((img: string) => 
-          img.startsWith('http') ? img : `https://blr1.digitaloceanspaces.com/webnox/marksorting/${img}`
+          img.startsWith('http') ? img : `https://webnox.blr1.digitaloceanspaces.com/${img}`
         ) || [];
         setImagePreviews(newPreviews);
       } else if (!isEdit) {
@@ -278,7 +278,7 @@ export function ExpenseFormDrawer() {
         });
       }
     }
-  }, [isFormDrawerOpen, selectedId, expenseData, reset, isEdit, mills, selectedCustomerId, imagePreviews.length]);
+  }, [isFormDrawerOpen, selectedId, expenseData, reset, isEdit, mills]);
 
   React.useEffect(() => {
     if (!isFormDrawerOpen || !isEdit || !expenseData || selectedCustomerId) return;
@@ -292,23 +292,56 @@ export function ExpenseFormDrawer() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      // local preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreviews((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+    const fileArray = Array.from(files);
 
-      // upload to S3
-      const result = await uploadFile(file);
+    // Create local previews immediately for all files
+    const previewPromises = fileArray.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const preview = reader.result as string;
+          setImagePreviews((prev) => [...prev, preview]);
+          resolve(preview);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const previews = await Promise.all(previewPromises);
+
+    // Upload files to S3 in parallel
+    const uploadResults = await Promise.all(
+      fileArray.map((file) => uploadFile(file))
+    );
+
+    // Process results and update form values
+    const successfulKeys: string[] = [];
+    const failedIndices: number[] = [];
+
+    uploadResults.forEach((result, index) => {
       if (result) {
-        const currentImages = watch('expense_images') || [];
-        setValue('expense_images', [...currentImages, result.key]);
+        successfulKeys.push(result.key);
       } else {
-        setImagePreviews((prev) => prev.slice(0, -1)); // Remove the preview if upload failed
+        failedIndices.push(index);
       }
+    });
+
+    // Add successful uploads to form
+    if (successfulKeys.length > 0) {
+      const currentImages = watch('expense_images') || [];
+      setValue('expense_images', [...currentImages, ...successfulKeys]);
+    }
+
+    // Remove failed upload previews
+    if (failedIndices.length > 0) {
+      setImagePreviews((prev) =>
+        prev.filter((_, i) => !failedIndices.includes(i))
+      );
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -340,7 +373,7 @@ export function ExpenseFormDrawer() {
   };
 
   const isLoading = isEdit && expenseLoading;
-  const isSubmitting = isCreating || isUpdating;
+  const isSubmitting = isCreating || isUpdating || isUploading;
 
   const fieldToSectionMap: Record<string, number> = {
     technician_ids: 1,
