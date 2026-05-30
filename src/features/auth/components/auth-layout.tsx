@@ -327,7 +327,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           ))}
         </div>
         <div className="text-center md:text-right font-medium text-[10px] text-gray-400 dark:text-gray-500">
-          © 2005-2026 <span className="text-[#ff6b00] font-bold">Promech Industries</span>. All rights reserved.
+          © {new Date().getFullYear()} <span className="text-[#ff6b00] font-bold">Promech Industries</span>. All rights reserved.
         </div>
       </footer>
     </div>
