@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
+import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/store/auth-store';
 
 // Global styles for particles canvas
@@ -13,6 +14,7 @@ const particlesStyles = `
     width: 100% !important;
     height: 100% !important;
     z-index: 0 !important;
+    background: transparent !important;
   }
 `;
 
@@ -61,6 +63,26 @@ function ParticlesCursor({ containerRef }: { containerRef: React.RefObject<HTMLD
 
     const container = containerRef.current;
 
+    // Intercept canvas getContext to make the WebGL background transparent
+    const originalGetContext = HTMLCanvasElement.prototype.getContext;
+    (HTMLCanvasElement.prototype as any).getContext = function (type: string, attributes?: any) {
+      if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+        const gl = originalGetContext.call(this, type as any, {
+          ...attributes,
+          alpha: true, // Force WebGL context to support alpha/transparency
+        });
+        if (gl) {
+          const originalClearColor = (gl as any).clearColor;
+          (gl as any).clearColor = function (r: number, g: number, b: number, a: number) {
+            // Force alpha to 0 for transparency
+            return originalClearColor.call(this, r, g, b, 0);
+          };
+        }
+        return gl;
+      }
+      return originalGetContext.call(this, type as any, attributes);
+    };
+
     // Load threejs-toys via script tag
     const scriptId = 'threejs-toys-cursor';
     
@@ -74,11 +96,16 @@ function ParticlesCursor({ containerRef }: { containerRef: React.RefObject<HTMLD
     script.id = scriptId;
     script.type = 'module';
     script.textContent = `
-      import { particlesCursor } from 'https://unpkg.com/threejs-toys@0.0.8/build/threejs-toys.module.cdn.min.js';
+      import { particlesCursor } from '/assets/threejs-toys.js';
       
       window.__initParticlesCursor = function(el) {
         if (window.__particlesCursor) {
-          window.__particlesCursor.destroy();
+          if (typeof window.__particlesCursor.destroy === 'function') {
+            window.__particlesCursor.destroy();
+          } else if (el) {
+            const canvases = el.querySelectorAll('canvas');
+            canvases.forEach(canvas => canvas.remove());
+          }
           window.__particlesCursor = undefined;
         }
         
@@ -97,6 +124,20 @@ function ParticlesCursor({ containerRef }: { containerRef: React.RefObject<HTMLD
           sleepTimeCoefX: 0.001,
           sleepTimeCoefY: 0.002
         });
+        
+        pc.destroy = function() {
+          if (pc.three) {
+            pc.three.isDestroyed = true;
+            if (pc.three.renderer) {
+              try {
+                pc.three.renderer.dispose();
+              } catch (e) {}
+              try {
+                pc.three.renderer.domElement.remove();
+              } catch (e) {}
+            }
+          }
+        };
         
         window.__particlesCursor = pc;
         return pc;
@@ -129,8 +170,14 @@ function ParticlesCursor({ containerRef }: { containerRef: React.RefObject<HTMLD
     }
 
     return () => {
+      HTMLCanvasElement.prototype.getContext = originalGetContext;
       if (window.__particlesCursor) {
-        window.__particlesCursor.destroy();
+        if (typeof window.__particlesCursor.destroy === 'function') {
+          window.__particlesCursor.destroy();
+        } else if (container) {
+          const canvases = container.querySelectorAll('canvas');
+          canvases.forEach(canvas => canvas.remove());
+        }
         window.__particlesCursor = undefined;
       }
     };
@@ -156,8 +203,20 @@ export function ParticlesGreeting({ className }: ParticlesGreetingProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const user = useAuthStore((state) => state.user);
   const greeting = useGreeting();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
 
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = resolvedTheme === 'dark';
   const name = user?.full_name || 'User';
+
+  // Prevent hydration mismatch - show light mode gradient by default
+  const bgClass = mounted && isDark
+    ? 'bg-black'
+    : 'bg-gradient-to-br from-primary via-[oklch(0.64_0.21_44/80%)] to-[oklch(0.64_0.21_44/60%)]';
 
   return (
     <>
@@ -169,13 +228,17 @@ export function ParticlesGreeting({ className }: ParticlesGreetingProps) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={`
           particles-greeting-container
-          relative overflow-hidden rounded-2xl 
-          bg-gradient-to-br from-primary via-[oklch(0.64_0.21_44/80%)] to-[oklch(0.64_0.21_44/60%)]
-          dark:from-zinc-900 dark:via-zinc-800 dark:to-zinc-950
+          relative overflow-hidden rounded-2xl
+          ${bgClass}
           px-7 py-6 shadow-lg border border-white/20 dark:border-zinc-700
           min-h-[120px] select-none
           ${className}
         `}
+        style={{
+          background: mounted && isDark
+            ? undefined
+            : 'linear-gradient(135deg, #ff6600 0%, #ff8000 100%)'
+        }}
       >
       {/* Particles Cursor Layer */}
       <ParticlesCursor containerRef={containerRef} />
