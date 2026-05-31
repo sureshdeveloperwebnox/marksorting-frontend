@@ -119,13 +119,14 @@ export function UserFormDrawer() {
       }
     }
   }, [isFormDrawerOpen, userData, reset, isEdit]);
-
   const onSubmit: SubmitHandler<UserFormValues> = async (data) => {
     try {
       if (isEdit) {
-        const updatedUser = await updateUser({ id: selectedUserId, ...data });
+        const { password, ...rest } = data;
+        const payload = password ? data : rest;
+        const updatedUser = await updateUser({ id: selectedUserId, ...payload });
         
-        if (currentUser && currentUser.id === selectedUserId) {
+        if (currentUser && currentUser.id === selectedUserId && updatedUser) {
           setAuth({
             ...currentUser,
             full_name: updatedUser.full_name,
@@ -136,22 +137,18 @@ export function UserFormDrawer() {
             background_image_url: updatedUser.background_image_url,
           });
         }
-        
-        toast.success('User updated successfully');
       } else {
         if (!data.password) {
           toast.error('Password is required for new users');
           return;
         }
         await createUser(data);
-        toast.success('User created successfully');
       }
       closeFormDrawer();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Something went wrong');
+    } catch (error) {
+      // Errors and success toasts are handled by mutations in user-service
     }
   };
-
   const isLoading = isEdit && userLoading;
   const isSubmitting = isCreating || isUpdating;
 

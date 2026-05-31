@@ -53,6 +53,7 @@ export const useCreateUser = () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       // Pre-populate the cache for the individual user
       queryClient.setQueryData(["user", newUser.id], newUser);
+      toast.success("User created successfully");
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to create user");
@@ -65,7 +66,7 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: async ({ id, ...userData }: any) => {
       const { data } = await api.put(`/users/${id}`, userData);
-      return data;
+      return data.after;
     },
     onSuccess: (updatedUser) => {
       // Invalidate list and specific user

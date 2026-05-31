@@ -13,8 +13,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     
-    // NEVER try to refresh tokens if we are logging out
-    if (originalRequest.url?.includes('/auth/logout')) {
+    // NEVER try to refresh tokens for logout, login, register, forgot-password, or reset-password
+    if (
+      originalRequest.url?.includes('/auth/logout') ||
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/register') ||
+      originalRequest.url?.includes('/auth/forgot-password') ||
+      originalRequest.url?.includes('/auth/reset-password')
+    ) {
       return Promise.reject(error);
     }
 

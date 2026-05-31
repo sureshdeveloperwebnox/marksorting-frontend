@@ -88,7 +88,7 @@ export function ResetPasswordForm() {
         <CardContent className="px-0 lg:px-10 pb-12 pt-4">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2.5">
-              <Label className="text-[13px] font-black uppercase tracking-[0.15em] text-gray-400 ml-1">
+              <Label className="text-[13px] font-semibold uppercase tracking-[0.15em] text-gray-400 ml-1">
                 New Secure Password
               </Label>
               <div className="relative group">
@@ -115,7 +115,7 @@ export function ResetPasswordForm() {
             </div>
 
             <div className="space-y-2.5">
-              <Label className="text-[13px] font-black uppercase tracking-[0.15em] text-gray-400 ml-1">
+              <Label className="text-[13px] font-semibold uppercase tracking-[0.15em] text-gray-400 ml-1">
                 Confirm New Password
               </Label>
               <div className="relative group">
