@@ -115,7 +115,7 @@ export function LoginForm() {
             href="/forgot-password" 
             className="text-xs font-semibold text-[#ff6b00] hover:text-[#ff5a00] transition-colors"
           >
-            Forgot Password?
+            Reset Password?
           </Link>
         </div>
         
