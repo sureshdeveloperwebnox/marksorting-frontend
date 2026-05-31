@@ -279,11 +279,11 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
 
         {/* Right Side: Clean, High-End Floating Form Card Area - Scrollable if it overflows */}
         <div className="flex-1 h-full overflow-y-auto flex items-center justify-center p-4 sm:p-6 md:p-8">
-          <div className="w-full max-w-[430px] bg-white dark:bg-[#111] rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-white/5 p-6 sm:p-8 relative z-10 my-auto">
+          <div className="w-full max-w-[500px] bg-white dark:bg-[#111] rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-white/5 p-8 sm:p-10 relative z-10 my-auto">
             {/* Header logo, title and subtitle inside the white card */}
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-col items-center mb-8">
               {/* Centered logo */}
-              <div className="relative w-36 h-12 mb-1.5">
+              <div className="relative w-40 h-14 mb-2">
                 <Image
                   src="/assets/logo.png"
                   alt="Mark Sorting System"
@@ -295,11 +295,11 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
               {/* Orange indicator dot below the logo */}
               <div className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full mb-4" />
               
-              <div className="text-center space-y-1.5">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                   {title}
                 </h2>
-                <p className="text-gray-500 dark:text-gray-400 font-medium text-xs leading-relaxed max-w-xs">
+                <p className="text-gray-500 dark:text-gray-400 font-medium text-sm leading-relaxed max-w-sm">
                   {subtitle}
                 </p>
               </div>

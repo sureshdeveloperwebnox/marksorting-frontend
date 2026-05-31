@@ -63,7 +63,7 @@ export function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="text-center space-y-6">
+      <div className="text-center space-y-6 py-4">
         <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mx-auto">
           <ShieldCheck size={40} />
         </div>
@@ -71,7 +71,7 @@ export function ResetPasswordForm() {
           <h3 className="text-2xl font-black text-gray-900 dark:text-white">Invalid Link</h3>
           <p className="text-gray-500 font-medium">This reset link is invalid or has expired.</p>
         </div>
-        <Link href="/forgot-password" className="block text-primary font-black uppercase tracking-widest hover:underline underline-offset-8">
+        <Link href="/forgot-password" className="block text-sm text-[#ff6b00] hover:text-[#ff5a00] font-semibold">
           Request New Link
         </Link>
       </div>
@@ -84,73 +84,79 @@ export function ResetPasswordForm() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <Card className="border-none shadow-none bg-transparent lg:bg-white/80 dark:lg:bg-[#121212]/80 lg:backdrop-blur-xl lg:rounded-[40px] overflow-hidden relative lg:border lg:border-white/20">
-        <CardContent className="px-0 lg:px-10 pb-12 pt-4">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2.5">
-              <Label className="text-[13px] font-semibold uppercase tracking-[0.15em] text-gray-400 ml-1">
-                New Secure Password
-              </Label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
-                  <Lock size={18} />
-                </div>
-                <Input 
-                  type={showPassword ? 'text' : 'password'} 
-                  {...form.register('password')} 
-                  placeholder="••••••••"
-                  className="rounded-2xl bg-gray-50/50 dark:bg-white/5 border-none h-14 pl-12 pr-12 focus:ring-2 focus:ring-primary/20 transition-all font-bold"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {form.formState.errors.password && (
-                <p className="text-xs font-bold text-red-500 mt-1 ml-1">{form.formState.errors.password.message}</p>
-              )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* New Secure Password Field */}
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+            New Secure Password
+          </Label>
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-14 group">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+              <Lock size={18} />
             </div>
-
-            <div className="space-y-2.5">
-              <Label className="text-[13px] font-semibold uppercase tracking-[0.15em] text-gray-400 ml-1">
-                Confirm New Password
-              </Label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">
-                  <Lock size={18} />
-                </div>
-                <Input 
-                  type={showPassword ? 'text' : 'password'} 
-                  {...form.register('confirmPassword')} 
-                  placeholder="••••••••"
-                  className="rounded-2xl bg-gray-50/50 dark:bg-white/5 border-none h-14 pl-12 focus:ring-2 focus:ring-primary/20 transition-all font-bold"
-                />
-              </div>
-              {form.formState.errors.confirmPassword && (
-                <p className="text-xs font-bold text-red-500 mt-1 ml-1">{form.formState.errors.confirmPassword.message}</p>
-              )}
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full h-14 rounded-2xl font-black text-lg shadow-[0_20px_40px_-10px_rgba(255,107,0,0.3)] hover:scale-[1.01] active:scale-[0.98] transition-all duration-300" 
-              disabled={form.formState.isSubmitting}
+            <input 
+              id="password"
+              type={showPassword ? 'text' : 'password'} 
+              {...form.register('password')} 
+              placeholder="Enter your new password"
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="h-full px-4 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
             >
-              {form.formState.isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <RefreshCcw className="animate-spin" size={20} />
-                  <span>Updating...</span>
-                </div>
-              ) : (
-                'Update Password'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {form.formState.errors.password && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {form.formState.errors.password.message}
+            </motion.p>
+          )}
+        </div>
+
+        {/* Confirm Password Field */}
+        <div className="space-y-1.5">
+          <Label htmlFor="confirmPassword" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+            Confirm New Password
+          </Label>
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-14 group">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+              <Lock size={18} />
+            </div>
+            <input 
+              id="confirmPassword"
+              type={showPassword ? 'text' : 'password'} 
+              {...form.register('confirmPassword')} 
+              placeholder="Confirm your new password"
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+            />
+          </div>
+          {form.formState.errors.confirmPassword && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              {form.formState.errors.confirmPassword.message}
+            </motion.p>
+          )}
+        </div>
+        
+        <Button 
+          type="submit" 
+          className="relative w-full h-14 rounded-2xl font-bold text-base shadow-[0_10px_20px_-8px_rgba(255,107,0,0.3)] bg-gradient-to-r from-[#ff6b00] to-[#ff3b00] text-white hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mt-2 flex items-center justify-center cursor-pointer border-none"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting ? (
+            <div className="flex items-center gap-2">
+              <RefreshCcw className="animate-spin" size={18} />
+              <span>Updating...</span>
+            </div>
+          ) : (
+            'Update Password'
+          )}
+        </Button>
+      </form>
     </motion.div>
   );
 }

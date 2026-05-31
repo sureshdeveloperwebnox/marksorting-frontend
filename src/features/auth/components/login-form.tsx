@@ -49,7 +49,7 @@ export function LoginForm() {
           <Label htmlFor="email" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
             Email Address
           </Label>
-          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-12 group">
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-14 group">
             <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
               <Mail size={18} />
             </div>
@@ -74,7 +74,7 @@ export function LoginForm() {
           <Label htmlFor="password" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
             Password
           </Label>
-          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-12 group">
+          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-14 group">
             <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
               <Lock size={18} />
             </div>
@@ -122,7 +122,7 @@ export function LoginForm() {
         {/* Submit Button */}
         <Button 
           type="submit" 
-          className="relative w-full h-12 rounded-2xl font-bold text-base shadow-[0_10px_20px_-8px_rgba(255,107,0,0.3)] bg-gradient-to-r from-[#ff6b00] to-[#ff3b00] text-white hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mt-1.5 flex items-center justify-center cursor-pointer border-none" 
+          className="relative w-full h-14 rounded-2xl font-bold text-base shadow-[0_10px_20px_-8px_rgba(255,107,0,0.3)] bg-gradient-to-r from-[#ff6b00] to-[#ff3b00] text-white hover:opacity-95 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mt-1.5 flex items-center justify-center cursor-pointer border-none" 
           disabled={isLoggingIn}
         >
           {isLoggingIn ? (
