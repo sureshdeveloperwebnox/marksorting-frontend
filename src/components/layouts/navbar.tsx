@@ -79,7 +79,7 @@ const navItems: NavItem[] = [
     action: 'view',
     subItems: [
       {
-        label: 'Users',
+        label: 'User List',
         href: '/users',
         icon: Users,
         module: 'users',
@@ -101,7 +101,7 @@ const navItems: NavItem[] = [
     action: 'view',
     subItems: [
       {
-        label: 'Mills',
+        label: 'Mills List',
         href: '/mills',
         icon: Factory,
         module: 'mills',

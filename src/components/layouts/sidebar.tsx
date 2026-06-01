@@ -2,36 +2,43 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
-  Users,
   Factory,
   Settings,
   LogOut,
   ChevronRight,
-  Shield,
   Users2,
   Tag,
   FileText,
-  Wrench,
   Receipt,
   TicketCheck,
   Building2,
-  Store,
   Bell,
 } from 'lucide-react';
+import {
+  InstallationIcon,
+  ServicesIcon,
+  MillsIcon,
+  StoreIcon,
+  UsersIcon,
+  UserListIcon,
+  RoleManagementIcon,
+  MillsListIcon,
+  type IconComponent,
+} from '@/components/icons';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useAuthStore } from '@/store/auth-store';
 import { Logo } from '@/components/ui/logo';
+import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 
 interface SidebarSubItem {
   label: string;
   href: string;
-  icon?: any;
+  icon?: IconComponent;
   permission?: string;
   module?: string;
   action?: 'view' | 'create' | 'update' | 'delete' | 'export';
@@ -39,7 +46,7 @@ interface SidebarSubItem {
 
 interface SidebarItem {
   label: string;
-  icon: any;
+  icon: IconComponent;
   href?: string;
   subItems?: SidebarSubItem[];
   permission?: string;
@@ -57,21 +64,21 @@ const items: SidebarItem[] = [
   },
   {
     label: 'Users',
-    icon: Users,
+    icon: UsersIcon,
     module: 'users',
     action: 'view',
     subItems: [
       {
-        label: 'Users',
+        label: 'User List',
         href: '/users',
-        icon: Users,
+        icon: UserListIcon,
         module: 'users',
         action: 'view',
       },
       {
         label: 'Role Management',
         href: '/roles',
-        icon: Shield,
+        icon: RoleManagementIcon,
         module: 'roles',
         action: 'view',
       },
@@ -79,14 +86,14 @@ const items: SidebarItem[] = [
   },
   {
     label: 'Mills',
-    icon: Factory,
+    icon: MillsIcon,
     module: 'mills',
     action: 'view',
     subItems: [
       {
-        label: 'Mills',
+        label: 'Mills List',
         href: '/mills',
-        icon: Factory,
+        icon: MillsListIcon,
         module: 'mills',
         action: 'view',
       },
@@ -101,7 +108,7 @@ const items: SidebarItem[] = [
   },
   {
     label: 'Services',
-    icon: Tag,
+    icon: ServicesIcon,
     module: 'service_categories',
     action: 'view',
     subItems: [
@@ -123,7 +130,7 @@ const items: SidebarItem[] = [
   },
   {
     label: 'Installations',
-    icon: Wrench,
+    icon: InstallationIcon,
     module: 'installation_reports',
     action: 'view',
     subItems: [
@@ -160,7 +167,7 @@ const items: SidebarItem[] = [
   },
   {
     label: 'Stores',
-    icon: Store,
+    icon: StoreIcon,
     href: '/stores',
     module: 'stores',
     action: 'view',
