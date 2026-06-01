@@ -323,7 +323,7 @@ export default function ExpensesPage() {
             value: viewExpenseData.expense_images?.length ? (
               <div className="grid grid-cols-2 gap-2">
                 {viewExpenseData.expense_images.map((img, idx) => {
-                  const src = img.startsWith("http") || img.startsWith("data:") ? img : `https://webnox.blr1.digitaloceanspaces.com/${img}`;
+                  const src = img.startsWith("http") || img.startsWith("data:") ? img : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
                   return (
                     <img
                       key={idx}

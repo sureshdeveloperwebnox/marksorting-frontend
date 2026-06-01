@@ -254,8 +254,8 @@ export function ExpenseFormDrawer() {
           expense_images: expenseData.expense_images || [],
         });
         // Previews from existing images
-        const newPreviews = expenseData.expense_images?.map((img: string) => 
-          img.startsWith('http') ? img : `https://webnox.blr1.digitaloceanspaces.com/${img}`
+        const newPreviews = expenseData.expense_images?.map((img: string) =>
+          img.startsWith('http') ? img : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`
         ) || [];
         setImagePreviews(newPreviews);
       } else if (!isEdit) {
