@@ -153,3 +153,60 @@ export const useDeleteTicket = () => {
         },
     });
 };
+
+export interface TicketTimeline {
+    id: string;
+    ticket_id: string;
+    user_id: string;
+    notes: string;
+    status?: string | null;
+    timeline_date: string;
+    next_follow_up_date?: string | null;
+    created_at: string;
+    updated_at: string;
+    user: {
+        id: string;
+        full_name: string;
+        email: string;
+    };
+}
+
+export interface CreateTimelineInput {
+    notes: string;
+    timeline_date?: string;
+    next_follow_up_date?: string;
+    status?: string;
+}
+
+export const useTicketTimelines = (ticketId: string | null) => {
+    return useQuery({
+        queryKey: ["ticket-timelines", ticketId],
+        queryFn: async () => {
+            if (!ticketId) return [];
+            const { data } = await api.get<TicketTimeline[]>(`/tickets/${ticketId}/timeline`);
+            return data;
+        },
+        enabled: !!ticketId,
+    });
+};
+
+export const useCreateTicketTimeline = (ticketId: string | null) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (timelineData: CreateTimelineInput) => {
+            if (!ticketId) throw new Error("Ticket ID is required");
+            const { data } = await api.post<TicketTimeline>(`/tickets/${ticketId}/timeline`, timelineData);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["ticket-timelines", ticketId] });
+            queryClient.invalidateQueries({ queryKey: ["tickets"] });
+            queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
+            toast.success("Timeline entry added successfully");
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to add timeline entry");
+        },
+    });
+};
+

@@ -17,6 +17,10 @@ interface TicketState {
     selectedId: string | null;
     openFormDrawer: (id?: string) => void;
     closeFormDrawer: () => void;
+    isTimelineDrawerOpen: boolean;
+    timelineTicketId: string | null;
+    openTimelineDrawer: (id: string) => void;
+    closeTimelineDrawer: () => void;
 }
 
 const useTicketStore = create<TicketState>((set) => ({
@@ -53,6 +57,10 @@ const useTicketStore = create<TicketState>((set) => ({
     selectedId: null,
     openFormDrawer: (id?: string) => set({ isFormDrawerOpen: true, selectedId: id ?? null }),
     closeFormDrawer: () => set({ isFormDrawerOpen: false, selectedId: null }),
+    isTimelineDrawerOpen: false,
+    timelineTicketId: null,
+    openTimelineDrawer: (id) => set({ isTimelineDrawerOpen: true, timelineTicketId: id }),
+    closeTimelineDrawer: () => set({ isTimelineDrawerOpen: false, timelineTicketId: null }),
 }));
 
 export default useTicketStore;

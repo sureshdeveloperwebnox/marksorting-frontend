@@ -25,6 +25,7 @@ import {
   Calendar,
   User,
   ShieldAlert,
+  History,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -46,6 +47,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { TicketFormDrawer } from "@/components/forms/ticket-form-drawer";
+import { TicketTimelineDrawer } from "@/components/forms/ticket-timeline-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
@@ -146,6 +148,7 @@ export default function TicketsPage() {
     deleteId,
     setDeleteId,
     openFormDrawer,
+    openTimelineDrawer,
   } = useTicketStore();
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
@@ -381,6 +384,15 @@ export default function TicketsPage() {
           <Button
             variant="ghost"
             size="icon"
+            className="h-9 w-9 rounded-xl text-primary dark:text-orange-400 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 hover:text-orange-600 hover:bg-orange-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            onClick={() => openTimelineDrawer(row.original.id)}
+            title="View Ticket Timeline"
+          >
+            <History className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
             onClick={() => openFormDrawer(row.original.id)}
           >
@@ -557,6 +569,9 @@ export default function TicketsPage() {
 
       {/* Form Drawer */}
       <TicketFormDrawer />
+
+      {/* Timeline Drawer */}
+      <TicketTimelineDrawer />
 
       {/* Delete Confirm Dialog */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
