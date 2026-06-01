@@ -422,8 +422,10 @@ export function Sidebar() {
                         >
                           <div
                             className={cn(
-                              'flex items-center py-3 pl-6 pr-4 transition-all duration-300 relative rounded-l-3xl text-white hover:bg-white/5 font-semibold',
-                              isSubItemActive && 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] -ml-4 -mr-4 !pl-10'
+                              'flex items-center py-3 pl-6 pr-4 transition-all duration-300 relative rounded-l-3xl font-semibold',
+                              isSubItemActive
+                                ? 'bg-gray-50 dark:bg-gray-900 text-primary hover:text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] -ml-4 -mr-4 !pl-10'
+                                : 'text-white hover:bg-white/5'
                             )}
                           >
                             {isSubItemActive && (
@@ -442,13 +444,13 @@ export function Sidebar() {
                               </>
                             )}
 
-                            {subItem.icon ? (
-                              <subItem.icon
-                                size={16}
-                                strokeWidth={isSubItemActive ? 2.5 : 2}
-                                className={cn("relative z-10 transition-colors flex-shrink-0", isSubItemActive ? "text-primary" : "text-white")}
-                              />
-                            ) : (
+                             {subItem.icon ? (
+                               <subItem.icon
+                                 size={16}
+                                 strokeWidth={isSubItemActive ? 2.5 : 2}
+                                 className={cn("relative z-10 transition-colors flex-shrink-0", isSubItemActive ? "text-primary hover:text-primary" : "text-white")}
+                               />
+                             ) : (
                               <div className="relative z-10 w-1.5 h-1.5 rounded-full bg-white/70 group-hover:bg-white transition-colors flex-shrink-0" />
                             )}
 
@@ -480,8 +482,10 @@ export function Sidebar() {
               >
                 <div
                   className={cn(
-                    'flex items-center py-3.5 transition-all duration-300 relative rounded-l-3xl text-white hover:bg-white/5 font-semibold pl-4 pr-4',
-                    isMainActive && 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                    'flex items-center py-3.5 transition-all duration-300 relative rounded-l-3xl font-semibold pl-4 pr-4',
+                    isMainActive
+                      ? 'bg-gray-50 dark:bg-gray-900 text-primary hover:text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                      : 'text-white hover:bg-white/5'
                   )}
                 >
                   {isMainActive && (
@@ -504,7 +508,7 @@ export function Sidebar() {
                     <item.icon
                       size={20}
                       strokeWidth={isMainActive ? 2.5 : 2}
-                      className={cn("transition-colors", isMainActive ? "text-primary" : "text-white")}
+                      className={cn("transition-colors", isMainActive ? "text-primary hover:text-primary" : "text-white")}
                     />
                   </div>
 
