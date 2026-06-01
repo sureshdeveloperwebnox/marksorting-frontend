@@ -153,16 +153,27 @@ export default function CustomersPage() {
     }, [localSearch, setSearch]);
 
     /* ── Data queries ── */
-    const { data, isLoading } = useCustomers({
+    const { data, isLoading, isFetching, refetch } = useCustomers({
         skip: pagination.pageIndex * pagination.pageSize,
         take: pagination.pageSize,
         search,
         status: statusFilter || undefined,
     });
 
-    const { data: totalData } = useCustomers({ skip: 0, take: 1 });
-    const { data: activeData } = useCustomers({ skip: 0, take: 1, status: "ACTIVE" });
-    const { data: inactiveData } = useCustomers({ skip: 0, take: 1, status: "INACTIVE" });
+    const { data: totalData, isFetching: isFetchingTotal, refetch: refetchTotal } = useCustomers({ skip: 0, take: 1 });
+    const { data: activeData, isFetching: isFetchingActive, refetch: refetchActive } = useCustomers({ skip: 0, take: 1, status: "ACTIVE" });
+    const { data: inactiveData, isFetching: isFetchingInactive, refetch: refetchInactive } = useCustomers({ skip: 0, take: 1, status: "INACTIVE" });
+
+    const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive;
+
+    const handleRefresh = async () => {
+        await Promise.all([
+            refetch(),
+            refetchTotal(),
+            refetchActive(),
+            refetchInactive(),
+        ]);
+    };
 
     const deleteCustomerMutation = useDeleteCustomer();
     const updateCustomerMutation = useUpdateCustomer();
@@ -343,6 +354,8 @@ export default function CustomersPage() {
                             addLabel="Add New Customer"
                             addIcon={<User size={15} />}
                             onAddClick={() => openFormDrawer()}
+                            onRefresh={handleRefresh}
+                            isRefreshing={isRefreshing}
                         />
                     </div>
 
@@ -351,7 +364,7 @@ export default function CustomersPage() {
                         <DataTable
                             columns={columns}
                             data={data?.customers || []}
-                            loading={isLoading}
+                            loading={isLoading || isFetching}
                             pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
                             totalCount={data?.total || 0}
                             entityName="customers"

@@ -38,6 +38,7 @@ import {
     CheckCircle2,
     Clock,
     AlertTriangle,
+    RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -526,6 +527,11 @@ export default function ReportsPage() {
     const reportsTotal = currentQuery.data?.total || 0;
     const reportsMetrics = currentQuery.data?.metrics;
     const isReportsLoading = currentQuery.isLoading;
+    const isRefreshing = currentQuery.isFetching;
+
+    const handleRefresh = async () => {
+        await currentQuery.refetch();
+    };
 
     return (
         <div className="space-y-6">
@@ -674,6 +680,23 @@ export default function ReportsPage() {
             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden p-6 space-y-5">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
+                        {/* Refresh Button */}
+                        <Button
+                            variant="outline"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            className={cn(
+                                "relative h-11 w-11 p-0 rounded-xl transition-all duration-200 justify-center items-center flex flex-shrink-0",
+                                "bg-gray-50/50 dark:bg-white/5 border border-gray-200 dark:border-white/10",
+                                "text-gray-600 dark:text-gray-400",
+                                "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                                "disabled:opacity-50 cursor-pointer"
+                            )}
+                            title="Refresh data"
+                        >
+                            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin text-primary")} />
+                        </Button>
+
                         {/* Search Input */}
                         <div className="relative w-full max-w-xs group">
                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
@@ -758,7 +781,7 @@ export default function ReportsPage() {
                                 : (expenseColumns as any)
                         }
                         data={reportsData as any}
-                        loading={isReportsLoading}
+                        loading={isReportsLoading || isRefreshing}
                         pageCount={Math.ceil(reportsTotal / pagination.pageSize)}
                         totalCount={reportsTotal}
                         entityName={

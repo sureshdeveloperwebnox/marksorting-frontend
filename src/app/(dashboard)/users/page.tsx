@@ -157,7 +157,7 @@ export default function UsersPage() {
   }, [localSearch, setSearch]);
 
   /* ── Data queries ── */
-  const { data, isLoading } = useUsers({
+  const { data, isLoading, isFetching, refetch } = useUsers({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search,
@@ -165,9 +165,20 @@ export default function UsersPage() {
   });
 
   // Stats: total, active, inactive counts via lightweight queries
-  const { data: totalData } = useUsers({ skip: 0, take: 1 });
-  const { data: activeData } = useUsers({ skip: 0, take: 1, status: "ACTIVE" });
-  const { data: inactiveData } = useUsers({ skip: 0, take: 1, status: "INACTIVE" });
+  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useUsers({ skip: 0, take: 1 });
+  const { data: activeData, refetch: refetchActive, isFetching: isFetchingActive } = useUsers({ skip: 0, take: 1, status: "ACTIVE" });
+  const { data: inactiveData, refetch: refetchInactive, isFetching: isFetchingInactive } = useUsers({ skip: 0, take: 1, status: "INACTIVE" });
+
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive;
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetch(),
+      refetchTotal(),
+      refetchActive(),
+      refetchInactive(),
+    ]);
+  };
 
   const deleteUserMutation = useDeleteUser();
   const updateUserMutation = useUpdateUser();
@@ -358,6 +369,8 @@ export default function UsersPage() {
               addLabel="Add New User"
               addIcon={<UserPlus size={15} />}
               onAddClick={() => openFormDrawer()}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
             />
           </div>
 
@@ -366,7 +379,7 @@ export default function UsersPage() {
             <DataTable
               columns={columns}
               data={data?.users || []}
-              loading={isLoading}
+              loading={isLoading || isFetching}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
               entityName="users"

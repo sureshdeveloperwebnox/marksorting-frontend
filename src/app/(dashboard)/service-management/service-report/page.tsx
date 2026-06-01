@@ -67,6 +67,7 @@ import { ServiceReportFormDrawer } from "@/components/forms/service-report-form-
 import { RouteGuard } from "@/components/guards/route-guard";
 import { useServiceCategories } from "@/services/service-category-service";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
+import { PageHeaderControls } from "@/components/ui/page-header-controls";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -176,7 +177,7 @@ export default function ServiceReportPage() {
     return () => clearTimeout(t);
   }, [localSearch, setSearch]);
 
-  const { data, isLoading } = useServiceReports({
+  const { data, isLoading, isFetching, refetch } = useServiceReports({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search,
@@ -186,18 +187,30 @@ export default function ServiceReportPage() {
     dateTo: dateTo || undefined,
   });
 
-  const { data: totalData } = useServiceReports({
+  const { data: totalData, isFetching: isFetchingTotal, refetch: refetchTotal } = useServiceReports({
     skip: 0, take: 1, status: undefined, serviceCategoryId: undefined,
   });
-  const { data: completedData } = useServiceReports({
+  const { data: completedData, isFetching: isFetchingCompleted, refetch: refetchCompleted } = useServiceReports({
     skip: 0, take: 1, status: "COMPLETED",
   });
-  const { data: pendingData } = useServiceReports({
+  const { data: pendingData, isFetching: isFetchingPending, refetch: refetchPending } = useServiceReports({
     skip: 0, take: 1, status: "PENDING",
   });
-  const { data: inProgressData } = useServiceReports({
+  const { data: inProgressData, isFetching: isFetchingInProgress, refetch: refetchInProgress } = useServiceReports({
     skip: 0, take: 1, status: "IN_PROGRESS",
   });
+
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress;
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetch(),
+      refetchTotal(),
+      refetchCompleted(),
+      refetchPending(),
+      refetchInProgress(),
+    ]);
+  };
 
   const { data: categoriesData } = useServiceCategories({ skip: 0, take: 500 });
   const categories = categoriesData?.serviceCategories || [];
@@ -777,53 +790,25 @@ export default function ServiceReportPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-                <input
-                  id="sr-search"
-                  type="text"
-                  placeholder="Search reports..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all w-48 font-medium"
-                />
-              </div>
-
-              <Button
-                id="sr-filter-btn"
-                variant="outline"
-                onClick={() => setIsFilterDrawerOpen(true)}
-                className={cn(
-                  "gap-2 h-10 px-4 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all",
-                  activeFilterCount > 0 && "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
-                )}
-              >
-                <Filter size={14} />
-                Filter
-                {activeFilterCount > 0 && (
-                  <span className="w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                id="sr-add-btn"
-                onClick={() => openFormDrawer()}
-                className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <FileText size={15} />
-                New Service
-              </Button>
-            </div>
+            <PageHeaderControls
+              searchValue={localSearch}
+              onSearchChange={setLocalSearch}
+              searchPlaceholder="Search reports..."
+              onFilterClick={() => setIsFilterDrawerOpen(true)}
+              activeFiltersCount={activeFilterCount}
+              addLabel="New Service"
+              addIcon={<FileText size={15} />}
+              onAddClick={() => openFormDrawer()}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+            />
           </div>
 
           <div className="p-6 pt-4">
             <DataTable
               columns={columns}
               data={data?.serviceReports || []}
-              loading={isLoading}
+              loading={isLoading || isFetching}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
               entityName="services"

@@ -25,7 +25,7 @@
  */
 
 import * as React from "react";
-import { Filter, Search } from "lucide-react";
+import { Filter, Search, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +48,11 @@ export interface PageHeaderControlsProps {
     /** Called when the primary action button is clicked */
     onAddClick: () => void;
 
+    /** Called when the refresh button is clicked */
+    onRefresh?: () => void;
+    /** Whether the data is currently refreshing/refetching */
+    isRefreshing?: boolean;
+
     className?: string;
 }
 
@@ -60,10 +65,31 @@ export function PageHeaderControls({
     addLabel,
     addIcon,
     onAddClick,
+    onRefresh,
+    isRefreshing = false,
     className,
 }: PageHeaderControlsProps) {
     return (
         <div className={cn("flex items-center gap-2.5 flex-wrap", className)}>
+            {/* ── Refresh ── */}
+            {onRefresh && (
+                <Button
+                    variant="outline"
+                    onClick={onRefresh}
+                    disabled={isRefreshing}
+                    className={cn(
+                        "relative h-10 w-10 p-0 rounded-xl transition-all duration-200 justify-center items-center flex",
+                        "bg-transparent border border-gray-200 dark:border-white/10",
+                        "text-gray-600 dark:text-gray-400",
+                        "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                        "disabled:opacity-50 cursor-pointer"
+                    )}
+                    title="Refresh data"
+                >
+                    <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin text-primary")} />
+                </Button>
+            )}
+
             {/* ── Search ── */}
             <div className="relative">
                 <Search

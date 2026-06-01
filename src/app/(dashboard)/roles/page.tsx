@@ -104,13 +104,19 @@ export default function RolesPage() {
     return () => clearTimeout(t);
   }, [localSearch, setSearch]);
 
-  const { data, isLoading } = useRoles({
+  const { data, isLoading, isFetching, refetch } = useRoles({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search,
   });
 
-  const { data: totalData } = useRoles({ skip: 0, take: 1 });
+  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useRoles({ skip: 0, take: 1 });
+
+  const isRefreshing = isFetching || isFetchingTotal;
+
+  const handleRefresh = async () => {
+    await Promise.all([refetch(), refetchTotal()]);
+  };
 
   const deleteRoleMutation = useDeleteRole();
   const updateRoleMutation = useUpdateRole();
@@ -230,6 +236,8 @@ export default function RolesPage() {
               addLabel="Add New Role"
               addIcon={<Shield size={15} />}
               onAddClick={() => openFormDrawer()}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
             />
           </div>
 
@@ -238,7 +246,7 @@ export default function RolesPage() {
             <DataTable
               columns={columns}
               data={data?.roles || []}
-              loading={isLoading}
+              loading={isLoading || isFetching}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
               entityName="roles"

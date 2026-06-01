@@ -18,8 +18,6 @@ import {
   Trash2,
   FileText,
   Loader2,
-  Search,
-  Filter,
   ClipboardCheck,
   TrendingUp,
   CheckCircle2,
@@ -35,6 +33,7 @@ import {
   Building2,
   Image as ImageIcon,
 } from "lucide-react";
+import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -163,7 +162,7 @@ export default function ExpensesPage() {
     return () => clearTimeout(t);
   }, [localSearch, setSearch]);
 
-  const { data, isLoading } = useExpenses({
+  const { data, isLoading, isFetching, refetch } = useExpenses({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search,
@@ -172,18 +171,24 @@ export default function ExpensesPage() {
     dateTo: dateTo || undefined,
   });
 
-  const { data: totalData } = useExpenses({
+  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useExpenses({
     skip: 0, take: 1, status: undefined,
   });
-  const { data: completedData } = useExpenses({
+  const { data: completedData, refetch: refetchCompleted, isFetching: isFetchingCompleted } = useExpenses({
     skip: 0, take: 1, status: "COMPLETED",
   });
-  const { data: pendingData } = useExpenses({
+  const { data: pendingData, refetch: refetchPending, isFetching: isFetchingPending } = useExpenses({
     skip: 0, take: 1, status: "PENDING",
   });
-  const { data: inProgressData } = useExpenses({
+  const { data: inProgressData, refetch: refetchInProgress, isFetching: isFetchingInProgress } = useExpenses({
     skip: 0, take: 1, status: "IN_PROGRESS",
   });
+
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress;
+
+  const handleRefresh = async () => {
+    await Promise.all([refetch(), refetchTotal(), refetchCompleted(), refetchPending(), refetchInProgress()]);
+  };
 
   const deleteMutation = useDeleteExpense();
   const updateExpenseMutation = useUpdateExpense();
@@ -570,53 +575,25 @@ export default function ExpensesPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-                <input
-                  id="expense-search"
-                  type="text"
-                  placeholder="Search expenses..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all w-48 font-medium"
-                />
-              </div>
-
-              <Button
-                id="expense-filter-btn"
-                variant="outline"
-                onClick={() => setIsFilterDrawerOpen(true)}
-                className={cn(
-                  "gap-2 h-10 px-4 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all",
-                  activeFilterCount > 0 && "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
-                )}
-              >
-                <Filter size={14} />
-                Filter
-                {activeFilterCount > 0 && (
-                  <span className="w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                id="expense-add-btn"
-                onClick={() => openFormDrawer()}
-                className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <DollarSign size={15} />
-                New Expense
-              </Button>
-            </div>
+            <PageHeaderControls
+              searchValue={localSearch}
+              onSearchChange={setLocalSearch}
+              searchPlaceholder="Search expenses..."
+              onFilterClick={() => setIsFilterDrawerOpen(true)}
+              activeFiltersCount={activeFilterCount}
+              addLabel="New Expense"
+              addIcon={<DollarSign size={15} />}
+              onAddClick={() => openFormDrawer()}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+            />
           </div>
 
           <div className="p-6 pt-4">
             <DataTable
               columns={columns}
               data={data?.expenses || []}
-              loading={isLoading}
+              loading={isLoading || isFetching}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
               entityName="expenses"

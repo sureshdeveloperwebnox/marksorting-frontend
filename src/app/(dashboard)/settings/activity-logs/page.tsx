@@ -12,7 +12,7 @@ import { ActivityLogExportDrawer } from './components/activity-log-export-drawer
 import { QueryActivityLogsDto, ActivityLog } from './types/activity-log.types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, RefreshCw, FileText, Activity } from 'lucide-react';
+import { Eye, FileText, Activity } from 'lucide-react';
 import { PageHeaderControls } from '@/components/ui/page-header-controls';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -244,8 +244,7 @@ export default function ActivityLogsPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <PageHeaderControls
+              <PageHeaderControls
                   searchValue={localSearch}
                   onSearchChange={setLocalSearch}
                   searchPlaceholder="Search activities..."
@@ -254,17 +253,9 @@ export default function ActivityLogsPage() {
                   addLabel="Export Logs"
                   addIcon={<FileText size={15} />}
                   onAddClick={handleExport}
+                  onRefresh={handleRefresh}
+                  isRefreshing={isLoading}
                 />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRefresh}
-                  disabled={isLoading}
-                  className="h-10 w-10 rounded-xl border-gray-200 dark:border-white/10 hover:border-primary/50 hover:text-primary"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
             </div>
 
             {/* Table */}

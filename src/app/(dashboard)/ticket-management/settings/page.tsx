@@ -40,6 +40,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { SettingFormDrawer } from "@/components/forms/setting-form-drawer";
+import { PageHeaderControls } from "@/components/ui/page-header-controls";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -136,7 +137,7 @@ export default function SettingsPage() {
     return () => clearTimeout(t);
   }, [localSearch, setSearch]);
 
-  const { data, isLoading } = useSettings({
+  const { data, isLoading, isFetching, refetch } = useSettings({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search,
@@ -144,13 +145,28 @@ export default function SettingsPage() {
   });
 
   // Individual group counts
-  const { data: totalData } = useSettings({ skip: 0, take: 1 });
-  const { data: generalData } = useSettings({ skip: 0, take: 1, group: "GENERAL" });
-  const { data: appData } = useSettings({ skip: 0, take: 1, group: "APP" });
-  const { data: paymentData } = useSettings({ skip: 0, take: 1, group: "PAYMENT" });
-  const { data: notificationData } = useSettings({ skip: 0, take: 1, group: "NOTIFICATION" });
-  const { data: securityData } = useSettings({ skip: 0, take: 1, group: "SECURITY" });
-  const { data: companyData } = useSettings({ skip: 0, take: 1, group: "COMPANY" });
+  const { data: totalData, isFetching: isFetchingTotal, refetch: refetchTotal } = useSettings({ skip: 0, take: 1 });
+  const { data: generalData, isFetching: isFetchingGeneral, refetch: refetchGeneral } = useSettings({ skip: 0, take: 1, group: "GENERAL" });
+  const { data: appData, isFetching: isFetchingApp, refetch: refetchApp } = useSettings({ skip: 0, take: 1, group: "APP" });
+  const { data: paymentData, isFetching: isFetchingPayment, refetch: refetchPayment } = useSettings({ skip: 0, take: 1, group: "PAYMENT" });
+  const { data: notificationData, isFetching: isFetchingNotification, refetch: refetchNotification } = useSettings({ skip: 0, take: 1, group: "NOTIFICATION" });
+  const { data: securityData, isFetching: isFetchingSecurity, refetch: refetchSecurity } = useSettings({ skip: 0, take: 1, group: "SECURITY" });
+  const { data: companyData, isFetching: isFetchingCompany, refetch: refetchCompany } = useSettings({ skip: 0, take: 1, group: "COMPANY" });
+
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingGeneral || isFetchingApp || isFetchingPayment || isFetchingNotification || isFetchingSecurity || isFetchingCompany;
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetch(),
+      refetchTotal(),
+      refetchGeneral(),
+      refetchApp(),
+      refetchPayment(),
+      refetchNotification(),
+      refetchSecurity(),
+      refetchCompany(),
+    ]);
+  };
 
   const deleteMutation = useDeleteSetting();
 
@@ -304,53 +320,25 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-                <input
-                  id="setting-search"
-                  type="text"
-                  placeholder="Search settings..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all w-48 font-medium"
-                />
-              </div>
-
-              <Button
-                id="setting-filter-btn"
-                variant="outline"
-                onClick={() => setIsFilterDrawerOpen(true)}
-                className={cn(
-                  "gap-2 h-10 px-4 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all",
-                  activeFilterCount > 0 && "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
-                )}
-              >
-                <Filter size={14} />
-                Filter
-                {activeFilterCount > 0 && (
-                  <span className="w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                id="setting-add-btn"
-                onClick={() => openFormDrawer()}
-                className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Settings size={15} className="animate-spin-slow" />
-                New Parameter
-              </Button>
-            </div>
+            <PageHeaderControls
+              searchValue={localSearch}
+              onSearchChange={setLocalSearch}
+              searchPlaceholder="Search settings..."
+              onFilterClick={() => setIsFilterDrawerOpen(true)}
+              activeFiltersCount={activeFilterCount}
+              addLabel="New Parameter"
+              addIcon={<Settings size={15} className="animate-spin-slow" />}
+              onAddClick={() => openFormDrawer()}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+            />
           </div>
 
           <div className="p-6 pt-4">
             <DataTable
               columns={columns}
               data={data?.settings || []}
-              loading={isLoading}
+              loading={isLoading || isFetching}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
               entityName="settings"

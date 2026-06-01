@@ -17,8 +17,6 @@ import {
   Trash2,
   Ticket,
   Loader2,
-  Search,
-  Filter,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -27,6 +25,7 @@ import {
   ShieldAlert,
   History,
 } from "lucide-react";
+import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -159,7 +158,7 @@ export default function TicketsPage() {
     return () => clearTimeout(t);
   }, [localSearch, setSearch]);
 
-  const { data, isLoading } = useTickets({
+  const { data, isLoading, isFetching, refetch } = useTickets({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search,
@@ -168,11 +167,17 @@ export default function TicketsPage() {
   });
 
   // Individual status queries for stats panel
-  const { data: totalData } = useTickets({ skip: 0, take: 1 });
-  const { data: openData } = useTickets({ skip: 0, take: 1, status: "OPEN" });
-  const { data: inProgressData } = useTickets({ skip: 0, take: 1, status: "IN_PROGRESS" });
-  const { data: resolvedData } = useTickets({ skip: 0, take: 1, status: "RESOLVED" });
-  const { data: escalatedData } = useTickets({ skip: 0, take: 1, status: "ESCALATED" });
+  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useTickets({ skip: 0, take: 1 });
+  const { data: openData, refetch: refetchOpen, isFetching: isFetchingOpen } = useTickets({ skip: 0, take: 1, status: "OPEN" });
+  const { data: inProgressData, refetch: refetchInProgress, isFetching: isFetchingInProgress } = useTickets({ skip: 0, take: 1, status: "IN_PROGRESS" });
+  const { data: resolvedData, refetch: refetchResolved, isFetching: isFetchingResolved } = useTickets({ skip: 0, take: 1, status: "RESOLVED" });
+  const { data: escalatedData, refetch: refetchEscalated, isFetching: isFetchingEscalated } = useTickets({ skip: 0, take: 1, status: "ESCALATED" });
+
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingOpen || isFetchingInProgress || isFetchingResolved || isFetchingEscalated;
+
+  const handleRefresh = async () => {
+    await Promise.all([refetch(), refetchTotal(), refetchOpen(), refetchInProgress(), refetchResolved(), refetchEscalated()]);
+  };
 
   const deleteMutation = useDeleteTicket();
   const updateTicketMutation = useUpdateTicket();
@@ -437,53 +442,25 @@ export default function TicketsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-                <input
-                  id="ticket-search"
-                  type="text"
-                  placeholder="Search tickets..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2.5 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-600 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all w-48 font-medium"
-                />
-              </div>
-
-              <Button
-                id="ticket-filter-btn"
-                variant="outline"
-                onClick={() => setIsFilterDrawerOpen(true)}
-                className={cn(
-                  "gap-2 h-10 px-4 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all",
-                  activeFilterCount > 0 && "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
-                )}
-              >
-                <Filter size={14} />
-                Filter
-                {activeFilterCount > 0 && (
-                  <span className="w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                id="ticket-add-btn"
-                onClick={() => openFormDrawer()}
-                className="gap-2 h-10 px-5 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-white shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Ticket size={15} />
-                New Ticket
-              </Button>
-            </div>
+            <PageHeaderControls
+              searchValue={localSearch}
+              onSearchChange={setLocalSearch}
+              searchPlaceholder="Search tickets..."
+              onFilterClick={() => setIsFilterDrawerOpen(true)}
+              activeFiltersCount={activeFilterCount}
+              addLabel="New Ticket"
+              addIcon={<Ticket size={15} />}
+              onAddClick={() => openFormDrawer()}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+            />
           </div>
 
           <div className="p-6 pt-4">
             <DataTable
               columns={columns}
               data={data?.tickets || []}
-              loading={isLoading}
+              loading={isLoading || isFetching}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
               entityName="support tickets"

@@ -164,16 +164,22 @@ export default function ExpenseCategoryPage() {
     }, [localSearch, setSearch]);
 
     /* ── Data queries ── */
-    const { data, isLoading } = useExpenseCategories({
+    const { data, isLoading, isFetching, refetch } = useExpenseCategories({
         skip: pagination.pageIndex * pagination.pageSize,
         take: pagination.pageSize,
         search,
         status: statusFilter || undefined,
     });
 
-    const { data: totalData } = useExpenseCategories({ skip: 0, take: 1 });
-    const { data: activeData } = useExpenseCategories({ skip: 0, take: 1, status: "ACTIVE" });
-    const { data: inactiveData } = useExpenseCategories({ skip: 0, take: 1, status: "INACTIVE" });
+    const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useExpenseCategories({ skip: 0, take: 1 });
+    const { data: activeData, refetch: refetchActive, isFetching: isFetchingActive } = useExpenseCategories({ skip: 0, take: 1, status: "ACTIVE" });
+    const { data: inactiveData, refetch: refetchInactive, isFetching: isFetchingInactive } = useExpenseCategories({ skip: 0, take: 1, status: "INACTIVE" });
+
+    const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive;
+
+    const handleRefresh = async () => {
+        await Promise.all([refetch(), refetchTotal(), refetchActive(), refetchInactive()]);
+    };
 
     const deleteMutation = useDeleteExpenseCategory();
     const updateMutation = useUpdateExpenseCategory();
@@ -346,6 +352,8 @@ export default function ExpenseCategoryPage() {
                             addLabel="Add New Category"
                             addIcon={<Tag size={15} />}
                             onAddClick={() => openFormDrawer()}
+                            onRefresh={handleRefresh}
+                            isRefreshing={isRefreshing}
                         />
                     </div>
 
@@ -354,7 +362,7 @@ export default function ExpenseCategoryPage() {
                         <DataTable
                             columns={columns}
                             data={data?.expenseCategories || []}
-                            loading={isLoading}
+                            loading={isLoading || isFetching}
                             pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
                             totalCount={data?.total || 0}
                             entityName="categories"

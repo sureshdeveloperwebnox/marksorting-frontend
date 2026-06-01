@@ -191,7 +191,7 @@ export default function StoresPage() {
   }, [localSearch, setSearch]);
 
   /* ── Data queries ── */
-  const { data, isLoading } = useStores({
+  const { data, isLoading, isFetching, refetch } = useStores({
     skip: pagination.pageIndex * pagination.pageSize,
     take: pagination.pageSize,
     search,
@@ -203,10 +203,16 @@ export default function StoresPage() {
     inflow_status: inflowFilter || undefined,
   });
 
-  const { data: totalData } = useStores({ skip: 0, take: 1 });
-  const { data: availableData } = useStores({ skip: 0, take: 1, inflow_status: "Available" });
-  const { data: pendingReturnData } = useStores({ skip: 0, take: 1, return_status: "Pending" });
-  const { data: damagedData } = useStores({ skip: 0, take: 1, inflow_status: "Damaged" });
+  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useStores({ skip: 0, take: 1 });
+  const { data: availableData, refetch: refetchAvailable, isFetching: isFetchingAvailable } = useStores({ skip: 0, take: 1, inflow_status: "Available" });
+  const { data: pendingReturnData, refetch: refetchPending, isFetching: isFetchingPending } = useStores({ skip: 0, take: 1, return_status: "Pending" });
+  const { data: damagedData, refetch: refetchDamaged, isFetching: isFetchingDamaged } = useStores({ skip: 0, take: 1, inflow_status: "Damaged" });
+
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingAvailable || isFetchingPending || isFetchingDamaged;
+
+  const handleRefresh = async () => {
+    await Promise.all([refetch(), refetchTotal(), refetchAvailable(), refetchPending(), refetchDamaged()]);
+  };
 
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
   const { data: customersData } = useCustomers({ skip: 0, take: 500 });
@@ -709,6 +715,8 @@ export default function StoresPage() {
               addLabel="Add Record"
               addIcon={<StoreIcon size={15} />}
               onAddClick={() => openFormDrawer()}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
             />
           </div>
 
@@ -717,7 +725,7 @@ export default function StoresPage() {
             <DataTable
               columns={columns}
               data={data?.stores || []}
-              loading={isLoading}
+              loading={isLoading || isFetching}
               pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
               totalCount={data?.total || 0}
               entityName="store records"

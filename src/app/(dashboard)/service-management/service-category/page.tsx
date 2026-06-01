@@ -166,16 +166,22 @@ export default function ServiceCategoryPage() {
     }, [localSearch, setSearch]);
 
     /* ── Data queries ── */
-    const { data, isLoading } = useServiceCategories({
+    const { data, isLoading, isFetching, refetch } = useServiceCategories({
         skip: pagination.pageIndex * pagination.pageSize,
         take: pagination.pageSize,
         search,
         status: statusFilter || undefined,
     });
 
-    const { data: totalData } = useServiceCategories({ skip: 0, take: 1 });
-    const { data: activeData } = useServiceCategories({ skip: 0, take: 1, status: "ACTIVE" });
-    const { data: inactiveData } = useServiceCategories({ skip: 0, take: 1, status: "INACTIVE" });
+    const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useServiceCategories({ skip: 0, take: 1 });
+    const { data: activeData, refetch: refetchActive, isFetching: isFetchingActive } = useServiceCategories({ skip: 0, take: 1, status: "ACTIVE" });
+    const { data: inactiveData, refetch: refetchInactive, isFetching: isFetchingInactive } = useServiceCategories({ skip: 0, take: 1, status: "INACTIVE" });
+
+    const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive;
+
+    const handleRefresh = async () => {
+        await Promise.all([refetch(), refetchTotal(), refetchActive(), refetchInactive()]);
+    };
 
     const deleteMutation = useDeleteServiceCategory();
     const updateMutation = useUpdateServiceCategory();
@@ -351,6 +357,8 @@ export default function ServiceCategoryPage() {
                             addLabel="Add New Category"
                             addIcon={<Tag size={15} />}
                             onAddClick={() => openFormDrawer()}
+                            onRefresh={handleRefresh}
+                            isRefreshing={isRefreshing}
                         />
                     </div>
 
@@ -359,7 +367,7 @@ export default function ServiceCategoryPage() {
                         <DataTable
                             columns={columns}
                             data={data?.serviceCategories || []}
-                            loading={isLoading}
+                            loading={isLoading || isFetching}
                             pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
                             totalCount={data?.total || 0}
                             entityName="categories"
