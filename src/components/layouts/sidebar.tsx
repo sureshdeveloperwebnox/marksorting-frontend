@@ -215,6 +215,7 @@ export function Sidebar() {
   const { logout, isLoggingOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+  const [isMenuAnimating, setIsMenuAnimating] = useState<Record<string, boolean>>({});
   const { can, isSuperAdmin, isAdmin } = usePermissions();
 
   const getFilteredNavItems = (): SidebarItem[] => {
@@ -386,12 +387,21 @@ export function Sidebar() {
                       height: (isMenuOpen && !isCollapsed) ? 'auto' : 0,
                       opacity: (isMenuOpen && !isCollapsed) ? 1 : 0,
                     }}
+                    onAnimationStart={() => {
+                      setIsMenuAnimating((prev) => ({ ...prev, [item.label]: true }));
+                    }}
+                    onAnimationComplete={() => {
+                      setIsMenuAnimating((prev) => ({ ...prev, [item.label]: false }));
+                    }}
                     transition={{
                       type: 'tween',
                       ease: [0.16, 1, 0.3, 1],
                       duration: 0.22,
                     }}
-                    className="overflow-hidden pl-6 -mr-4 pr-4 space-y-1 relative"
+                    className={cn(
+                      "pl-6 -mr-4 pr-4 space-y-1 relative",
+                      (isMenuOpen && !isCollapsed && !isMenuAnimating[item.label]) ? "overflow-visible" : "overflow-hidden"
+                    )}
                   >
                     {/* Vertical line indicator */}
                     <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
@@ -413,7 +423,7 @@ export function Sidebar() {
                           <div
                             className={cn(
                               'flex items-center py-3 pl-6 pr-4 transition-all duration-300 relative rounded-l-3xl text-white hover:bg-white/5 font-semibold',
-                              isSubItemActive && 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] ml-2 -mr-4'
+                              isSubItemActive && 'bg-gray-50 dark:bg-gray-900 text-primary rounded-l-3xl shadow-[-10px_0_20px_rgba(0,0,0,0.05)] -ml-4 -mr-4 !pl-10'
                             )}
                           >
                             {isSubItemActive && (
@@ -560,18 +570,19 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Collapse Toggle */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-1 top-20 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 active:scale-95 transition-all z-50 translate-x-1/2 border-2 border-primary/10 cursor-pointer"
-        >
-          <ChevronRight
-            size={16}
-            strokeWidth={3}
-            className={cn("transition-transform duration-500", !isCollapsed && "rotate-180")}
-          />
-        </button>
       </motion.div>
+
+      {/* Collapse Toggle */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-1 top-20 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 active:scale-95 transition-all z-50 translate-x-1/2 border-2 border-primary/10 cursor-pointer"
+      >
+        <ChevronRight
+          size={16}
+          strokeWidth={3}
+          className={cn("transition-transform duration-500", !isCollapsed && "rotate-180")}
+        />
+      </button>
     </div>
   );
 }
