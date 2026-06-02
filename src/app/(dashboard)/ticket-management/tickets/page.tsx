@@ -47,6 +47,8 @@ import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { TicketFormDrawer } from "@/components/forms/ticket-form-drawer";
 import { TicketTimelineDrawer } from "@/components/forms/ticket-timeline-drawer";
+import { TicketViewDrawer } from "@/components/forms/ticket-view-drawer";
+import { ViewButton } from "@/components/ui/view-button";
 import { RouteGuard } from "@/components/guards/route-guard";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
@@ -148,6 +150,7 @@ export default function TicketsPage() {
     setDeleteId,
     openFormDrawer,
     openTimelineDrawer,
+    openViewDrawer,
   } = useTicketStore();
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
@@ -386,6 +389,10 @@ export default function TicketsPage() {
       header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
+          <ViewButton
+            onClick={() => openViewDrawer(row.original.id)}
+            title="View Ticket Details"
+          />
           <Button
             variant="ghost"
             size="icon"
@@ -549,6 +556,9 @@ export default function TicketsPage() {
 
       {/* Timeline Drawer */}
       <TicketTimelineDrawer />
+
+      {/* View Drawer */}
+      <TicketViewDrawer />
 
       {/* Delete Confirm Dialog */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

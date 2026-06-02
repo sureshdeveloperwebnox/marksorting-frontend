@@ -21,6 +21,11 @@ interface TicketState {
     timelineTicketId: string | null;
     openTimelineDrawer: (id: string) => void;
     closeTimelineDrawer: () => void;
+    // View Drawer State
+    isViewDrawerOpen: boolean;
+    viewTicketId: string | null;
+    openViewDrawer: (id: string) => void;
+    closeViewDrawer: () => void;
 }
 
 const useTicketStore = create<TicketState>((set) => ({
@@ -61,6 +66,10 @@ const useTicketStore = create<TicketState>((set) => ({
     timelineTicketId: null,
     openTimelineDrawer: (id) => set({ isTimelineDrawerOpen: true, timelineTicketId: id }),
     closeTimelineDrawer: () => set({ isTimelineDrawerOpen: false, timelineTicketId: null }),
+    isViewDrawerOpen: false,
+    viewTicketId: null,
+    openViewDrawer: (id) => set({ isViewDrawerOpen: true, viewTicketId: id }),
+    closeViewDrawer: () => set({ isViewDrawerOpen: false, viewTicketId: null }),
 }));
 
 export default useTicketStore;
