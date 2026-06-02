@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Factory,
-  LogOut,
   ChevronRight,
   Tag,
   Receipt,
@@ -33,6 +32,7 @@ import {
   CompanySettingsIcon,
   NotificationsIcon,
   ActivityLogsIcon,
+  LogoutIcon,
   type IconComponent,
 } from '@/components/icons';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -568,7 +568,7 @@ export function Sidebar() {
             )}
           >
             <div className="relative z-10 flex items-center justify-center w-12 h-6 flex-shrink-0">
-              <LogOut size={20} className={cn("group-hover:rotate-12 transition-transform", isLoggingOut && "animate-pulse")} />
+              <LogoutIcon size={20} className={cn("group-hover:rotate-12 transition-transform", isLoggingOut && "animate-pulse")} />
             </div>
 
             <motion.div

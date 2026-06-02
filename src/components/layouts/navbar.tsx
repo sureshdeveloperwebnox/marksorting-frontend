@@ -33,6 +33,7 @@ import {
   TicketsIcon,
   CompanySettingsIcon,
   NotificationsIcon,
+  NotificationBellIcon,
   ActivityLogsIcon,
   UsersIcon,
   UserListIcon,
@@ -663,7 +664,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
               className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/8 transition-all relative"
               aria-label="Notifications"
             >
-              <NotificationsIcon size={17} />
+              <NotificationBellIcon size={17} />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-primary rounded-full ring-2 ring-white dark:ring-gray-900 flex items-center justify-center text-[9px] font-bold text-white">
                   {unreadCount > 99 ? '99+' : unreadCount}
