@@ -32,6 +32,7 @@ import {
   Activity,
   Building2,
   Image as ImageIcon,
+  Download,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -324,13 +325,28 @@ export default function ExpensesPage() {
               <div className="grid grid-cols-2 gap-2">
                 {viewExpenseData.expense_images.map((img, idx) => {
                   const src = img.startsWith("http") || img.startsWith("data:") ? img : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
+                  const filename = `expense-${viewExpenseData.expense_number}-image-${idx + 1}.jpg`;
                   return (
-                    <img
+                    <a
                       key={idx}
-                      src={src}
-                      alt={`Expense image ${idx + 1}`}
-                      className="max-h-32 object-contain rounded-lg border border-gray-200 dark:border-white/10"
-                    />
+                      href={src}
+                      download={filename}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative block max-h-32 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden cursor-pointer"
+                    >
+                      <img
+                        src={src}
+                        alt={`Expense image ${idx + 1}`}
+                        className="max-h-32 object-contain w-full h-full"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="flex items-center gap-1.5 text-white text-xs font-medium bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download</span>
+                        </div>
+                      </div>
+                    </a>
                   );
                 })}
               </div>
