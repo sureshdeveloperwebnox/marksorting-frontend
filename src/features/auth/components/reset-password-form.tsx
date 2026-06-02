@@ -36,7 +36,7 @@ export function ResetPasswordForm() {
   const [showPassword, setShowPassword] = React.useState(false);
   
   const form = useForm<ResetPasswordValues>({
-    resolver: zodResolver(resetPasswordSchema),
+    resolver: zodResolver(resetPasswordSchema) as any,
     defaultValues: {
       password: '',
       confirmPassword: '',

@@ -244,7 +244,7 @@ export function ServiceReportFormDrawer() {
     reset,
     formState: { errors },
   } = useForm<ServiceReportFormValues>({
-    resolver: zodResolver(serviceReportSchema),
+    resolver: zodResolver(serviceReportSchema) as any,
     defaultValues: {
       service_category_id: '',
       technician_ids: [],

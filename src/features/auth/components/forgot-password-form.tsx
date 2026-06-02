@@ -24,7 +24,7 @@ export function ForgotPasswordForm() {
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   
   const form = useForm<ForgotPasswordValues>({
-    resolver: zodResolver(forgotPasswordSchema),
+    resolver: zodResolver(forgotPasswordSchema) as any,
     defaultValues: {
       email: '',
     },

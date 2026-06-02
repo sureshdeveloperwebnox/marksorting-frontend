@@ -37,7 +37,7 @@ export function RegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   
   const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema) as any,
     defaultValues: {
       full_name: '',
       email: '',
