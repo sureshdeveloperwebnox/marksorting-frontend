@@ -36,7 +36,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils';
@@ -93,7 +93,10 @@ const serviceReportSchema = z.object({
   output_capacity_per_hour: z.string().optional().or(z.literal('')),
   rejection_ratio: z.string().optional().or(z.literal('')),
   purity: z.string().optional().or(z.literal('')),
-  no_of_programs_set: z.number().min(0).optional().or(z.literal('')),
+  no_of_programs_set: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.number().min(0).optional()
+  ),
   ac_provided: z.string().min(1, 'AC status is required'),
   compressor_details: z.string().optional().or(z.literal('')),
   air_drier_details: z.string().optional().or(z.literal('')),
@@ -241,7 +244,7 @@ export function ServiceReportFormDrawer() {
     reset,
     formState: { errors },
   } = useForm<ServiceReportFormValues>({
-    resolver: zodResolver(serviceReportSchema) as any,
+    resolver: zodResolver(serviceReportSchema),
     defaultValues: {
       service_category_id: '',
       technician_ids: [],
@@ -266,7 +269,7 @@ export function ServiceReportFormDrawer() {
       output_capacity_per_hour: '',
       rejection_ratio: '',
       purity: '',
-      no_of_programs_set: '',
+      no_of_programs_set: undefined,
       ac_provided: 'NO',
       compressor_details: '',
       air_drier_details: '',
@@ -348,7 +351,7 @@ export function ServiceReportFormDrawer() {
           output_capacity_per_hour: reportData.output_capacity_per_hour || '',
           rejection_ratio: reportData.rejection_ratio || '',
           purity: reportData.purity || '',
-          no_of_programs_set: reportData.no_of_programs_set ?? '',
+          no_of_programs_set: reportData.no_of_programs_set ?? undefined,
           ac_provided: reportData.ac_provided ? 'YES' : 'NO',
           compressor_details: reportData.compressor_details || '',
           air_drier_details: reportData.air_drier_details || '',
@@ -386,7 +389,7 @@ export function ServiceReportFormDrawer() {
           output_capacity_per_hour: '',
           rejection_ratio: '',
           purity: '',
-          no_of_programs_set: '',
+          no_of_programs_set: undefined,
           ac_provided: 'NO',
           compressor_details: '',
           air_drier_details: '',
@@ -410,7 +413,7 @@ export function ServiceReportFormDrawer() {
     }
   }, [isFormDrawerOpen, isEdit, reportData, mills, selectedCustomerId]);
 
-  const onSubmit: SubmitHandler<ServiceReportFormValues> = async (data) => {
+  const onSubmit = async (data: ServiceReportFormValues) => {
     try {
       let engineerSignatureUrl = data.engineer_signature;
       let customerSignatureUrl = data.customer_signature;
@@ -538,7 +541,7 @@ export function ServiceReportFormDrawer() {
     customer_signature: 9,
   };
 
-  const scrollToFirstError = (errors: any) => {
+  const scrollToFirstError = (errors: FieldErrors<ServiceReportFormValues>) => {
     // Open any section that contains an error
     const sectionsToOpen: Record<number, boolean> = {};
     Object.keys(errors).forEach((fieldName) => {
