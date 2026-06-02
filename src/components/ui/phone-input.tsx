@@ -93,24 +93,11 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
     // Force validation on mount and when value changes externally
     React.useEffect(() => {
       if (value && !isProcessing) {
-        console.log('External value change detected, validating:', value);
         validateAndTruncate(value);
       }
     }, [value, selectedCountry]);
 
-    // Continuous validation to catch any library overrides
-    React.useEffect(() => {
-      const interval = setInterval(() => {
-        if (value && !isProcessing) {
-          validateAndTruncate(value);
-        }
-      }, 100);
-      
-      return () => clearInterval(interval);
-    }, [value, selectedCountry, isProcessing]);
-
     const validateAndTruncate = (phone: string) => {
-      console.log('validateAndTruncate called with:', phone);
       setIsProcessing(true);
       
       if (!phone) {
@@ -124,18 +111,13 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
         const prefix = `+${callingCode}`;
         const cleanPhone = phone.replace(/\s/g, "");
         
-        console.log('Validation details:', { phone, cleanPhone, prefix, selectedCountry });
-        
         if (cleanPhone.startsWith(prefix)) {
           const nationalNumber = cleanPhone.slice(prefix.length).replace(/\D/g, "");
           const maxLen = COUNTRY_MAX_LENGTHS[selectedCountry] || 15;
           
-          console.log('National number analysis:', { nationalNumber, maxLen, length: nationalNumber.length });
-          
           if (nationalNumber.length > maxLen) {
             const truncatedNational = nationalNumber.slice(0, maxLen);
             const correctedPhone = `${prefix}${truncatedNational}`;
-            console.log('Truncating phone from', phone, 'to', correctedPhone);
             setError(`Invalid phone number: Maximum ${maxLen} digits allowed for ${selectedCountry}`);
             
             // Force the corrected value
@@ -151,7 +133,6 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
           setError("Invalid country code");
         }
       } catch (e) {
-        console.error("Validation error:", e);
         setError("Invalid phone number format");
       }
       
@@ -160,8 +141,6 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
 
     // Handle phone number input
     const handlePhoneChange = (val: string) => {
-      console.log('handlePhoneChange called with:', val);
-      
       if (!val) {
         onChange("");
         setError("");
@@ -170,7 +149,6 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
 
       // Remove any non-digit characters except + and spaces
       const cleanVal = val.replace(/[^0-9+\s]/g, "");
-      console.log('After cleaning:', cleanVal);
       
       onChange(cleanVal);
     };
