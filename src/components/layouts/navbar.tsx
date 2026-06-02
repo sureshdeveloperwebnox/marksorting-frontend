@@ -4,30 +4,40 @@ import { useAuthStore } from '@/store/auth-store';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useLayoutStore } from '@/store/layout-store';
 import {
-  Bell,
   Sun,
   Moon,
   Menu,
   LogOut,
-  Settings,
   User,
   ChevronDown,
-  Users,
-  Factory,
-  Wrench,
-  Shield,
-  Users2,
-  Tag,
-  FileText,
-  Receipt,
-  TicketCheck,
-  Building2,
-  LayoutDashboard,
-  Store,
   ArrowRight,
   Sidebar as SidebarIcon,
   LayoutGrid,
 } from 'lucide-react';
+import {
+  DashboardIcon,
+  InstallationIcon,
+  InstallationListIcon,
+  ServicesIcon,
+  ServiceCategoryIcon,
+  ServiceListIcon,
+  MillsIcon,
+  MillsListIcon,
+  CustomersIcon,
+  StoreIcon,
+  ExpensesIcon,
+  ManageExpensesIcon,
+  ExpenseCategoryIcon,
+  ReportsIcon,
+  SettingsIcon,
+  TicketsIcon,
+  CompanySettingsIcon,
+  NotificationsIcon,
+  ActivityLogsIcon,
+  UsersIcon,
+  UserListIcon,
+  RoleManagementIcon,
+} from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -67,28 +77,28 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     label: 'Dashboard',
-    icon: LayoutDashboard,
+    icon: DashboardIcon,
     href: '/dashboard',
     module: 'dashboard',
     action: 'view',
   },
   {
     label: 'Users',
-    icon: Users,
+    icon: UsersIcon,
     module: 'users',
     action: 'view',
     subItems: [
       {
         label: 'User List',
         href: '/users',
-        icon: Users,
+        icon: UserListIcon,
         module: 'users',
         action: 'view',
       },
       {
         label: 'Role Management',
         href: '/roles',
-        icon: Shield,
+        icon: RoleManagementIcon,
         module: 'roles',
         action: 'view',
       },
@@ -96,21 +106,21 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Mills',
-    icon: Factory,
+    icon: MillsIcon,
     module: 'mills',
     action: 'view',
     subItems: [
       {
         label: 'Mills List',
         href: '/mills',
-        icon: Factory,
+        icon: MillsListIcon,
         module: 'mills',
         action: 'view',
       },
       {
         label: 'Customers',
         href: '/mills/customers',
-        icon: Users2,
+        icon: CustomersIcon,
         module: 'customers',
         action: 'view',
       },
@@ -118,21 +128,21 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Services',
-    icon: Tag,
+    icon: ServicesIcon,
     module: 'service_categories',
     action: 'view',
     subItems: [
       {
         label: 'Service Category',
         href: '/service-management/service-category',
-        icon: Tag,
+        icon: ServiceCategoryIcon,
         module: 'service_categories',
         action: 'view',
       },
       {
         label: 'Service List',
         href: '/service-management/service-report',
-        icon: FileText,
+        icon: ServiceListIcon,
         module: 'service_reports',
         action: 'view',
       },
@@ -140,14 +150,14 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Installations',
-    icon: Wrench,
+    icon: InstallationIcon,
     module: 'installation_reports',
     action: 'view',
     subItems: [
       {
         label: 'Installation List',
         href: '/installation-management/installation-report',
-        icon: FileText,
+        icon: InstallationListIcon,
         module: 'installation_reports',
         action: 'view',
       },
@@ -155,21 +165,21 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Expenses',
-    icon: Receipt,
+    icon: ExpensesIcon,
     module: 'expenses',
     action: 'view',
     subItems: [
       {
-        label: 'Expenses',
+        label: 'Manage Expenses',
         href: '/expense/expenses',
-        icon: FileText,
+        icon: ManageExpensesIcon,
         module: 'expenses',
         action: 'view',
       },
       {
         label: 'Expense Category',
         href: '/expense/expense-category',
-        icon: Tag,
+        icon: ExpenseCategoryIcon,
         module: 'expense_categories',
         action: 'view',
       },
@@ -177,49 +187,49 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Stores',
-    icon: Store,
+    icon: StoreIcon,
     href: '/stores',
     module: 'stores',
     action: 'view',
   },
   {
     label: 'Reports',
-    icon: FileText,
+    icon: ReportsIcon,
     href: '/reports',
     module: 'reports',
     action: 'view',
   },
   {
     label: 'Settings',
-    icon: Settings,
+    icon: SettingsIcon,
     module: 'settings',
     action: 'view',
     subItems: [
       {
         label: 'Tickets',
         href: '/ticket-management/tickets',
-        icon: TicketCheck,
+        icon: TicketsIcon,
         module: 'tickets',
         action: 'view',
       },
       {
         label: 'Company Settings',
         href: '/settings/company',
-        icon: Building2,
+        icon: CompanySettingsIcon,
         module: 'settings',
         action: 'view',
       },
       {
         label: 'Notifications',
         href: '/settings/notifications',
-        icon: Bell,
+        icon: NotificationsIcon,
         module: 'notifications',
         action: 'view',
       },
       {
         label: 'Activity Logs',
         href: '/settings/activity-logs',
-        icon: FileText,
+        icon: ActivityLogsIcon,
         module: 'activity_logs',
         action: 'view',
       },
@@ -653,7 +663,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
               className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/8 transition-all relative"
               aria-label="Notifications"
             >
-              <Bell size={17} />
+              <NotificationsIcon size={17} />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-primary rounded-full ring-2 ring-white dark:ring-gray-900 flex items-center justify-center text-[9px] font-bold text-white">
                   {unreadCount > 99 ? '99+' : unreadCount}
@@ -688,7 +698,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
                   <div className="flex flex-col max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10 scrollbar-track-transparent">
                     {notifications.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-10 text-center">
-                        <Bell size={28} className="text-gray-300 dark:text-gray-600 mb-2" />
+                        <NotificationsIcon size={28} className="text-gray-300 dark:text-gray-600 mb-2" />
                         <p className="text-sm text-gray-400 dark:text-gray-500">No notifications yet</p>
                       </div>
                     ) : (
