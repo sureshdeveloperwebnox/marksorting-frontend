@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber } from 'react-phone-number-input';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import {
   Sheet,
   SheetContent,
@@ -22,6 +23,50 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { ImageUpload } from '@/components/common/image-upload';
+
+const COUNTRY_MAX_LENGTHS: Record<string, number> = {
+  IN: 10, // India
+  US: 10, // United States
+  CA: 10, // Canada
+  GB: 10, // United Kingdom
+  AU: 9,  // Australia
+  SG: 8,  // Singapore
+  AE: 9,  // United Arab Emirates
+  SA: 9,  // Saudi Arabia
+  QA: 8,  // Qatar
+  KW: 8,  // Kuwait
+  BH: 8,  // Bahrain
+  MY: 10, // Malaysia
+  ID: 12, // Indonesia
+  PH: 10, // Philippines
+  TH: 9,  // Thailand
+  VN: 9,  // Vietnam
+  JP: 10, // Japan
+  KR: 10, // South Korea
+  CN: 11, // China
+  HK: 8,  // Hong Kong
+  LK: 9,  // Sri Lanka
+  NP: 10, // Nepal
+  BD: 10, // Bangladesh
+  PK: 10, // Pakistan
+};
+
+const validatePhoneLength = (phone: string) => {
+  if (!phone) return true;
+  
+  try {
+    const parsed = parsePhoneNumberFromString(phone);
+    if (parsed && parsed.country) {
+      const maxLen = COUNTRY_MAX_LENGTHS[parsed.country] || 15;
+      if (parsed.nationalNumber && parsed.nationalNumber.length > maxLen) {
+        return false;
+      }
+    }
+    return isValidPhoneNumber(phone);
+  } catch (e) {
+    return false;
+  }
+};
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -37,8 +82,8 @@ const profileSchema = z.object({
     .string()
     .optional()
     .refine(
-      (val) => !val || isValidPhoneNumber(val),
-      { message: 'Please enter a valid phone number with correct country code' }
+      (val) => !val || validatePhoneLength(val),
+      { message: 'Please enter a valid phone number with correct length for your country' }
     ),
   profile_image: z.string().optional().or(z.literal('')),
 });
@@ -77,12 +122,9 @@ export function EditProfileDrawer({ open, onOpenChange }: EditProfileDrawerProps
   React.useEffect(() => {
     if (open && user) {
       let phone = (user as any).phone_number || '';
+      // Only add + if missing, don't assume specific country code
       if (phone && !phone.startsWith('+')) {
-        if (phone.length === 10) {
-          phone = `+91${phone}`;
-        } else {
-          phone = `+${phone}`;
-        }
+        phone = `+${phone}`;
       }
 
       reset({

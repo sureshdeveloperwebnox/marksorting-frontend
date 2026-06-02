@@ -9,8 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 export function normalizePhoneNumber(phone?: string): string {
   if (!phone) return ""
   if (phone.startsWith("+")) return phone
-  if (phone.length === 10) return `+91${phone}`
-  return `+${phone}`
+  // Don't assume country code - let the phone input component handle it
+  return phone
 }
 
 export function formatPhoneNumber(phone?: string): string {
