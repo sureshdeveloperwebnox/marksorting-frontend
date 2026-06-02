@@ -77,7 +77,7 @@ const items: SidebarItem[] = [
     action: 'view',
     subItems: [
       {
-        label: 'User List',
+        label: 'Manage Users',
         href: '/users',
         icon: UserListIcon,
         module: 'users',
@@ -99,7 +99,7 @@ const items: SidebarItem[] = [
     action: 'view',
     subItems: [
       {
-        label: 'Mills List',
+        label: 'Manage Mills',
         href: '/mills',
         icon: MillsListIcon,
         module: 'mills',
@@ -128,7 +128,7 @@ const items: SidebarItem[] = [
         action: 'view',
       },
       {
-        label: 'Service List',
+        label: 'Manage Services',
         href: '/service-management/service-report',
         icon: ServiceListIcon,
         module: 'service_reports',
@@ -194,7 +194,7 @@ const items: SidebarItem[] = [
     action: 'view',
     subItems: [
       {
-        label: 'Tickets',
+        label: 'Ticket Management',
         href: '/ticket-management/tickets',
         icon: TicketsIcon,
         module: 'tickets',
@@ -208,7 +208,7 @@ const items: SidebarItem[] = [
         action: 'view',
       },
       {
-        label: 'Notifications',
+        label: 'Announcement',
         href: '/settings/notifications',
         icon: NotificationsIcon,
         module: 'notifications',

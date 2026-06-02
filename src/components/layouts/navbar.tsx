@@ -112,7 +112,7 @@ const navItems: NavItem[] = [
     action: 'view',
     subItems: [
       {
-        label: 'Mills List',
+        label: 'Manage Mills',
         href: '/mills',
         icon: MillsListIcon,
         module: 'mills',
@@ -141,7 +141,7 @@ const navItems: NavItem[] = [
         action: 'view',
       },
       {
-        label: 'Service List',
+        label: 'Manage Services',
         href: '/service-management/service-report',
         icon: ServiceListIcon,
         module: 'service_reports',
@@ -156,7 +156,7 @@ const navItems: NavItem[] = [
     action: 'view',
     subItems: [
       {
-        label: 'Installation List',
+        label: 'Manage Installation',
         href: '/installation-management/installation-report',
         icon: InstallationListIcon,
         module: 'installation_reports',
@@ -221,7 +221,7 @@ const navItems: NavItem[] = [
         action: 'view',
       },
       {
-        label: 'Notifications',
+        label: 'Announcement',
         href: '/settings/notifications',
         icon: NotificationsIcon,
         module: 'notifications',
