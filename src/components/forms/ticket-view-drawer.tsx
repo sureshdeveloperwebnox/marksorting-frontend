@@ -20,7 +20,6 @@ import {
   FileText,
   Building2,
   UserCircle,
-  AlertCircle,
   Tag,
   History,
 } from "lucide-react";
@@ -251,29 +250,6 @@ export function TicketViewDrawer() {
                 </div>
               </Section>
 
-              {/* Additional Info */}
-              <Section title="Additional Information" icon={<AlertCircle className="w-4 h-4" />}>
-                <div className="p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 space-y-2">
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ticket ID</span>
-                    <span className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/10 px-2 py-1 rounded">{ticket.id}</span>
-                  </div>
-                  {ticket.ticket_number && (
-                    <div className="flex justify-between items-center py-1">
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ticket Number</span>
-                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{ticket.ticket_number}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</span>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{ticket.status}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Priority</span>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{ticket.priority}</span>
-                  </div>
-                </div>
-              </Section>
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
