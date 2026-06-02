@@ -1,4 +1,4 @@
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
@@ -10,9 +10,11 @@ ARG NEXT_PUBLIC_BACKEND_URL
 ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
 ARG BACKEND_API_URL
 ENV BACKEND_API_URL=$BACKEND_API_URL
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TURBOPACK=0
 RUN pnpm run build
 
-FROM node:20-slim
+FROM node:20-alpine
 WORKDIR /app
 RUN npm install -g pnpm
 COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
