@@ -41,6 +41,8 @@ const storeSchema = z.object({
   return_status: z.string().min(1, 'Return status is required'),
   inflow_status: z.string().min(1, 'Stock status is required'),
   barcode: z.string().optional().or(z.literal('')),
+  provider_name: z.string().optional().or(z.literal('')),
+  invoice_number: z.string().optional().or(z.literal('')),
 });
 
 type StoreFormValues = z.infer<typeof storeSchema>;
@@ -79,6 +81,8 @@ export function StoreFormDrawer() {
       return_status: 'Pending',
       inflow_status: 'Available',
       barcode: '',
+      provider_name: '',
+      invoice_number: '',
     }
   });
 
@@ -95,6 +99,8 @@ export function StoreFormDrawer() {
           return_status: storeData.return_status,
           inflow_status: storeData.inflow_status,
           barcode: storeData.barcode || '',
+          provider_name: storeData.provider_name || '',
+          invoice_number: storeData.invoice_number || '',
         });
       } else if (!isEdit) {
         reset({
@@ -107,6 +113,8 @@ export function StoreFormDrawer() {
           return_status: 'Pending',
           inflow_status: 'Available',
           barcode: '',
+          provider_name: '',
+          invoice_number: '',
         });
       }
     }
@@ -131,6 +139,8 @@ export function StoreFormDrawer() {
     const payload = {
       ...data,
       barcode: data.barcode || undefined,
+      provider_name: data.provider_name || undefined,
+      invoice_number: data.invoice_number || undefined,
     };
     try {
       if (isEdit) {
@@ -420,6 +430,34 @@ export function StoreFormDrawer() {
                     {...register('barcode')}
                   />
                   {errors.barcode && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.barcode.message}</p>}
+                </div>
+
+                {/* Provider Name */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Users size={14} className="text-primary/70" />
+                    Return Shipment Provider (Optional)
+                  </Label>
+                  <Input
+                    placeholder="e.g. DHL, FedEx"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    {...register('provider_name')}
+                  />
+                  {errors.provider_name && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.provider_name.message}</p>}
+                </div>
+
+                {/* Invoice/Receipt Number */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Hash size={14} className="text-primary/70" />
+                    Return Invoice/Receipt Number (Optional)
+                  </Label>
+                  <Input
+                    placeholder="e.g. INV-10024"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    {...register('invoice_number')}
+                  />
+                  {errors.invoice_number && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.invoice_number.message}</p>}
                 </div>
 
               </div>

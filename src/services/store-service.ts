@@ -131,6 +131,8 @@ export const useCreateStore = () => {
       return_status: string;
       inflow_status: string;
       barcode?: string;
+      provider_name?: string;
+      invoice_number?: string;
     }) => {
       const { data } = await api.post("/stores", storeData);
       return data;
@@ -159,6 +161,8 @@ export const useUpdateStore = () => {
       return_status?: string;
       inflow_status?: string;
       barcode?: string;
+      provider_name?: string;
+      invoice_number?: string;
     }) => {
       const { data } = await api.put(`/stores/${id}`, storeData);
       return data;

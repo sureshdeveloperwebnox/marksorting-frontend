@@ -350,25 +350,21 @@ export default function StoresPage() {
           },
         ],
       },
-      ...(viewStoreData.provider_name || viewStoreData.invoice_number
-        ? [
-            {
-              title: "Return Shipment Details",
-              items: [
-                {
-                  label: "Provider Name",
-                  value: viewStoreData.provider_name || "—",
-                  icon: Users,
-                },
-                {
-                  label: "Invoice/Receipt Number",
-                  value: viewStoreData.invoice_number || "—",
-                  icon: Hash,
-                },
-              ],
-            },
-          ]
-        : []),
+      {
+        title: "Return Shipment Details",
+        items: [
+          {
+            label: "Provider Name",
+            value: viewStoreData.provider_name || "—",
+            icon: Users,
+          },
+          {
+            label: "Invoice/Receipt Number",
+            value: viewStoreData.invoice_number || "—",
+            icon: Hash,
+          },
+        ],
+      },
       {
         title: "Metadata",
         items: [
