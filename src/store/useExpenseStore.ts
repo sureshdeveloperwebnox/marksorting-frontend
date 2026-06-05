@@ -7,11 +7,13 @@ interface ExpenseState {
     };
     search: string;
     statusFilter: string;
+    technicianFilter: string;
     dateFrom: string;
     dateTo: string;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
     setStatusFilter: (statusFilter: string) => void;
+    setTechnicianFilter: (technicianFilter: string) => void;
     setDateFrom: (dateFrom: string) => void;
     setDateTo: (dateTo: string) => void;
     resetFilters: () => void;
@@ -31,6 +33,7 @@ const useExpenseStore = create<ExpenseState>((set) => ({
     },
     search: "",
     statusFilter: "",
+    technicianFilter: "",
     dateFrom: "",
     dateTo: "",
     setPagination: (pagination) => set({ pagination }),
@@ -42,6 +45,11 @@ const useExpenseStore = create<ExpenseState>((set) => ({
     setStatusFilter: (statusFilter) =>
         set((state) => ({
             statusFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setTechnicianFilter: (technicianFilter) =>
+        set((state) => ({
+            technicianFilter,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
     setDateFrom: (dateFrom) =>
@@ -58,6 +66,7 @@ const useExpenseStore = create<ExpenseState>((set) => ({
         set((state) => ({
             search: "",
             statusFilter: "",
+            technicianFilter: "",
             dateFrom: "",
             dateTo: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },

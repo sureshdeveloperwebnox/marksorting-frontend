@@ -11,6 +11,7 @@ import {
   downloadInstallationReportPdf,
   useInstallationReport,
 } from "@/services/installation-report-service";
+import { useTechnicians } from "@/services/technician-service";
 import useInstallationReportStore from "@/store/useInstallationReportStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -152,9 +153,11 @@ export default function InstallationReportPage() {
     search,
     setSearch,
     statusFilter,
+    technicianFilter,
     dateFrom,
     dateTo,
     setStatusFilter,
+    setTechnicianFilter,
     setDateFrom,
     setDateTo,
     resetFilters,
@@ -171,6 +174,9 @@ export default function InstallationReportPage() {
 
   const { data: viewReportData, isLoading: isViewReportLoading } = useInstallationReport(selectedViewId);
 
+  const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
+  const technicians = techniciansData?.technicians || [];
+
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
     return () => clearTimeout(t);
@@ -181,6 +187,7 @@ export default function InstallationReportPage() {
     take: pagination.pageSize,
     search,
     status: statusFilter || undefined,
+    technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -574,7 +581,7 @@ export default function InstallationReportPage() {
     ];
   }, [viewReportData]);
 
-  const activeFilterCount = [statusFilter, dateFrom, dateTo].filter(Boolean).length;
+  const activeFilterCount = [statusFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Filter fields ── */
   const filterFields: FilterField[] = [
@@ -587,6 +594,18 @@ export default function InstallationReportPage() {
         { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
         { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500", animatePulse: true },
         { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500", animatePulse: true },
+      ],
+    },
+    {
+      id: "technicianId",
+      label: "Service Engineer",
+      options: [
+        { value: "ALL", label: "All Service Engineers", iconColor: "bg-gray-400 dark:bg-gray-500" },
+        ...technicians.map((t) => ({
+          value: t.id,
+          label: t.full_name,
+          iconColor: "bg-primary",
+        })),
       ],
     },
   ];
@@ -890,11 +909,15 @@ export default function InstallationReportPage() {
         fields={filterFields}
         activeValues={{
           status: statusFilter || "ALL",
+          technicianId: technicianFilter || "ALL",
         }}
         onApply={(values) => {
           setStatusFilter(values.status === "ALL" ? "" : values.status);
+          setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
         }}
         onReset={() => {
+          setStatusFilter("");
+          setTechnicianFilter("");
           resetFilters();
         }}
       />

@@ -39,6 +39,7 @@ export const useExpenses = (params: {
     take: number;
     search?: string;
     status?: string;
+    technicianId?: string;
     dateFrom?: string;
     dateTo?: string;
 }) => {
