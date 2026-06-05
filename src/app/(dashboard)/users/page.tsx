@@ -3,7 +3,7 @@
 import * as React from "react";
 import { DataTable } from "@/components/tables/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { useUsers, User, useDeleteUser, useUpdateUser } from "@/services/user-service";
+import { useUsers, User, useDeleteUser, useUpdateUser, useRoles } from "@/services/user-service";
 import { useUserStore } from "@/store/useUserStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,24 +59,12 @@ const getStatusColors = (status: string) => {
 const getStatusDotColors = (status: string) => {
   switch (status?.toUpperCase()) {
     case "ACTIVE": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+    case "ACTIVE": return "bg-emerald-500 shadow-[0_0_8px_rgba(10,185,129,0.5)]";
     case "INACTIVE": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
     case "LOCKED": return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
     default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
   }
 };
-
-const userFilterFields: FilterField[] = [
-  {
-    id: "status",
-    label: "Account Status",
-    options: [
-      { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
-      { value: "ACTIVE", label: "Active Only", iconColor: "bg-emerald-500", animatePulse: true },
-      { value: "INACTIVE", label: "Inactive Only", iconColor: "bg-amber-500", animatePulse: true },
-      { value: "LOCKED", label: "Locked Only", iconColor: "bg-rose-500", animatePulse: true },
-    ],
-  },
-];
 
 /* ─── Stats Card ────────────────────────────────────────────────── */
 
@@ -141,6 +129,8 @@ export default function UsersPage() {
     setSearch,
     statusFilter,
     setStatusFilter,
+    roleIdFilter,
+    setRoleIdFilter,
     resetFilters,
     deleteId,
     setDeleteId,
@@ -149,6 +139,42 @@ export default function UsersPage() {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
+
+  // Load roles dynamically
+  const { data: roles } = useRoles();
+
+  // Dynamically build filter fields
+  const filterFields = React.useMemo<FilterField[]>(() => {
+    const fields: FilterField[] = [
+      {
+        id: "status",
+        label: "Account Status",
+        options: [
+          { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+          { value: "ACTIVE", label: "Active Only", iconColor: "bg-emerald-500", animatePulse: true },
+          { value: "INACTIVE", label: "Inactive Only", iconColor: "bg-amber-500", animatePulse: true },
+          { value: "LOCKED", label: "Locked Only", iconColor: "bg-rose-500", animatePulse: true },
+        ],
+      },
+    ];
+
+    if (roles && roles.length > 0) {
+      fields.push({
+        id: "roleId",
+        label: "User Role",
+        options: [
+          { value: "ALL", label: "All Roles", iconColor: "bg-gray-400 dark:bg-gray-500" },
+          ...roles.map((role) => ({
+            value: role.id,
+            label: role.name.toUpperCase(),
+            iconColor: "bg-primary/70",
+          })),
+        ],
+      });
+    }
+
+    return fields;
+  }, [roles]);
 
   // Debounce search input
   React.useEffect(() => {
@@ -162,6 +188,7 @@ export default function UsersPage() {
     take: pagination.pageSize,
     search,
     status: statusFilter || undefined,
+    roleId: roleIdFilter || undefined,
   });
 
   // Stats: total, active, inactive counts via lightweight queries
@@ -365,7 +392,7 @@ export default function UsersPage() {
               onSearchChange={setLocalSearch}
               searchPlaceholder="Search users..."
               onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={statusFilter ? 1 : 0}
+              activeFiltersCount={(statusFilter ? 1 : 0) + (roleIdFilter ? 1 : 0)}
               addLabel="Add New User"
               addIcon={<UserPlus size={15} />}
               onAddClick={() => openFormDrawer()}
@@ -389,7 +416,7 @@ export default function UsersPage() {
               globalFilterValue={search}
               searchPlaceholder="Search..."
               onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={statusFilter ? 1 : 0}
+              activeFiltersCount={(statusFilter ? 1 : 0) + (roleIdFilter ? 1 : 0)}
               hideToolbar
             />
           </div>
@@ -455,10 +482,20 @@ export default function UsersPage() {
       <GenericFilterDrawer
         isOpen={isFilterDrawerOpen}
         onClose={() => setIsFilterDrawerOpen(false)}
-        fields={userFilterFields}
-        activeValues={{ status: statusFilter || "ALL" }}
-        onApply={(values) => setStatusFilter(values.status === "ALL" ? "" : values.status)}
-        onReset={() => { setStatusFilter(""); resetFilters(); }}
+        fields={filterFields}
+        activeValues={{
+          status: statusFilter || "ALL",
+          roleId: roleIdFilter || "ALL",
+        }}
+        onApply={(values) => {
+          setStatusFilter(values.status === "ALL" ? "" : values.status);
+          setRoleIdFilter(values.roleId === "ALL" ? "" : values.roleId);
+        }}
+        onReset={() => {
+          setStatusFilter("");
+          setRoleIdFilter("");
+          resetFilters();
+        }}
       />
 
       {/* ── User Form Drawer ── */}

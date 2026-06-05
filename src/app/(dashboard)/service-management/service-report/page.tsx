@@ -11,6 +11,7 @@ import {
   downloadServiceReportPdf,
   useServiceReport,
 } from "@/services/service-report-service";
+import { useTechnicians } from "@/services/technician-service";
 import useServiceReportStore from "@/store/useServiceReportStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -152,10 +153,12 @@ export default function ServiceReportPage() {
     setSearch,
     statusFilter,
     categoryFilter,
+    technicianFilter,
     dateFrom,
     dateTo,
     setStatusFilter,
     setCategoryFilter,
+    setTechnicianFilter,
     setDateFrom,
     setDateTo,
     resetFilters,
@@ -183,6 +186,7 @@ export default function ServiceReportPage() {
     search,
     status: statusFilter || undefined,
     serviceCategoryId: categoryFilter || undefined,
+    technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -214,6 +218,9 @@ export default function ServiceReportPage() {
 
   const { data: categoriesData } = useServiceCategories({ skip: 0, take: 500 });
   const categories = categoriesData?.serviceCategories || [];
+
+  const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
+  const technicians = techniciansData?.technicians || [];
 
   const deleteMutation = useDeleteServiceReport();
   const updateReportMutation = useUpdateServiceReport();
@@ -568,7 +575,7 @@ export default function ServiceReportPage() {
     ];
   }, [viewReportData]);
 
-  const activeFilterCount = [statusFilter, categoryFilter, dateFrom, dateTo].filter(Boolean).length;
+  const activeFilterCount = [statusFilter, categoryFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Filter fields ── */
   const filterFields: FilterField[] = [
@@ -591,6 +598,18 @@ export default function ServiceReportPage() {
         ...categories.map((cat) => ({
           value: cat.id,
           label: cat.name,
+          iconColor: "bg-primary",
+        })),
+      ],
+    },
+    {
+      id: "technicianId",
+      label: "Service Engineer",
+      options: [
+        { value: "ALL", label: "All Service Engineers", iconColor: "bg-gray-400 dark:bg-gray-500" },
+        ...technicians.map((t) => ({
+          value: t.id,
+          label: t.full_name,
           iconColor: "bg-primary",
         })),
       ],
@@ -902,12 +921,17 @@ export default function ServiceReportPage() {
         activeValues={{
           status: statusFilter || "ALL",
           category: categoryFilter || "ALL",
+          technicianId: technicianFilter || "ALL",
         }}
         onApply={(values) => {
           setStatusFilter(values.status === "ALL" ? "" : values.status);
           setCategoryFilter(values.category === "ALL" ? "" : values.category);
+          setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
         }}
         onReset={() => {
+          setStatusFilter("");
+          setCategoryFilter("");
+          setTechnicianFilter("");
           resetFilters();
         }}
       />

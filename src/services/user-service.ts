@@ -30,7 +30,7 @@ export interface Role {
   description?: string;
 }
 
-export const useUsers = (params: { skip: number; take: number; search?: string; status?: string }) => {
+export const useUsers = (params: { skip: number; take: number; search?: string; status?: string; roleId?: string }) => {
   return useQuery({
     queryKey: ["users", params],
     queryFn: async () => {

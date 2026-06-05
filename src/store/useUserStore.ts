@@ -7,9 +7,11 @@ interface UserState {
   };
   search: string;
   statusFilter: string;
+  roleIdFilter: string;
   setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
   setSearch: (search: string) => void;
   setStatusFilter: (status: string) => void;
+  setRoleIdFilter: (roleId: string) => void;
   resetFilters: () => void;
   // UI State
   deleteId: string | null;
@@ -27,14 +29,17 @@ export const useUserStore = create<UserState>((set) => ({
   },
   search: "",
   statusFilter: "",
+  roleIdFilter: "",
   setPagination: (pagination) => set({ pagination }),
   setSearch: (search) => set((state) => ({ search, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
   setStatusFilter: (status) => set((state) => ({ statusFilter: status, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
+  setRoleIdFilter: (roleId) => set((state) => ({ roleIdFilter: roleId, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
   resetFilters: () =>
     set({
       pagination: { pageIndex: 0, pageSize: 5 },
       search: "",
       statusFilter: "",
+      roleIdFilter: "",
     }),
   deleteId: null,
   setDeleteId: (id) => set({ deleteId: id }),

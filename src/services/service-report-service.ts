@@ -64,6 +64,7 @@ export const useServiceReports = (params: {
     search?: string;
     status?: string;
     serviceCategoryId?: string;
+    technicianId?: string;
     dateFrom?: string;
     dateTo?: string;
 }) => {
