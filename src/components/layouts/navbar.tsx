@@ -53,6 +53,8 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { EditProfileDrawer } from '@/components/forms/edit-profile-drawer';
 import { useSocket } from '@/providers/socket-provider';
 import { format } from 'date-fns';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { useDashboardFilterStore } from '@/store/dashboard-filter-store';
 
 /* ─── Nav data types ─────────────────────────────────────────── */
 
@@ -397,6 +399,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
   const { logout, isLoggingOut } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useSocket();
   const { layoutType, toggleLayoutType } = useLayoutStore();
+  const { dateRange, setDateRange } = useDashboardFilterStore();
   const [mounted, setMounted] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -607,6 +610,15 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
 
         {/* ── Right Section ── */}
         <div className="ml-auto flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+
+          {/* Centralized Dashboard Date Filter */}
+          {mounted && pathname === '/dashboard' && (
+            <DateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              className="mr-1"
+            />
+          )}
 
           {/* Layout switcher toggle */}
           {mounted && (

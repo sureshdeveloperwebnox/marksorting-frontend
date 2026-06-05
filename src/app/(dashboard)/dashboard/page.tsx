@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import { useDashboard } from '@/services/dashboard-service';
+import { useDashboardFilterStore } from '@/store/dashboard-filter-store';
 import { DashboardGreeting } from './components/dashboard-greeting';
 import { DashboardStats } from './components/dashboard-stats';
 import { CombinedTrendChart } from './components/combined-trend-chart';
@@ -31,7 +32,8 @@ const fallbackInstallations = [
 ];
 
 export default function DashboardPage() {
-  const { data, isLoading } = useDashboard();
+  const { dateRange } = useDashboardFilterStore();
+  const { data, isLoading } = useDashboard(dateRange.startDate, dateRange.endDate);
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -55,36 +57,36 @@ export default function DashboardPage() {
   const expensesCount = data.contexts?.expenses?.statusList?.length || (expensesStat ? parseInt(expensesStat.subtitle.replace(/[^0-9]/g, '')) || 0 : 0);
   const expensesAmount = expensesStat ? parseFloat(expensesStat.value.replace(/[^0-9.]/g, '')) || 0 : 0;
 
-  // Map stats to represent design 100% exactly (with default values matching image)
+  // Map stats dynamically using backend provided data (falling back if not present)
   const mappedStats = [
     {
       id: 'services' as const,
       title: 'TOTAL SERVICES',
-      value: servicesCount > 0 && servicesCount !== 1 ? servicesCount.toString() : '96',
-      change: '18.7%',
-      trend: 'up' as const,
+      value: servicesStat?.value || '96',
+      change: servicesStat?.change || '18.7%',
+      trend: (servicesStat?.trend || 'up') as 'up' | 'down' | 'neutral',
       variant: 'emerald' as const,
-      subtitle: 'vs last month',
+      subtitle: servicesStat?.subtitle || 'vs last month',
       sparklineData: [20, 25, 15, 30, 25, 45, 30, 55, 45, 60],
     },
     {
       id: 'installations' as const,
       title: 'TOTAL INSTALLATIONS',
-      value: installationsCount > 0 && installationsCount !== 2 ? installationsCount.toString() : '128',
-      change: '18.3%',
-      trend: 'up' as const,
+      value: installationsStat?.value || '128',
+      change: installationsStat?.change || '18.3%',
+      trend: (installationsStat?.trend || 'up') as 'up' | 'down' | 'neutral',
       variant: 'rose' as const,
-      subtitle: 'vs last month',
+      subtitle: installationsStat?.subtitle || 'vs last month',
       sparklineData: [15, 20, 10, 25, 20, 35, 25, 45, 40, 55],
     },
     {
       id: 'expenses' as const,
       title: 'TOTAL EXPENSES',
-      value: expensesAmount > 0 && expensesAmount !== 5222 ? `₹${expensesAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '₹9,722',
-      change: '6.1%',
-      trend: 'up' as const,
+      value: expensesStat?.value || '₹9,722',
+      change: expensesStat?.change || '6.1%',
+      trend: (expensesStat?.trend || 'up') as 'up' | 'down' | 'neutral',
       variant: 'orange' as const,
-      subtitle: 'vs last month',
+      subtitle: expensesStat?.subtitle || 'vs last month',
       sparklineData: [30, 25, 40, 35, 50, 45, 60, 55, 70, 65],
     },
     {
@@ -92,9 +94,9 @@ export default function DashboardPage() {
       title: 'TOTAL CUSTOMERS',
       value: customersStat?.value || '1',
       change: customersStat?.change || '15.3%',
-      trend: customersStat?.trend || 'up',
+      trend: (customersStat?.trend || 'up') as 'up' | 'down' | 'neutral',
       variant: 'blue' as const,
-      subtitle: 'vs last month',
+      subtitle: customersStat?.subtitle || 'vs last month',
       sparklineData: [25, 30, 20, 35, 30, 50, 40, 60, 50, 75],
     }
   ];

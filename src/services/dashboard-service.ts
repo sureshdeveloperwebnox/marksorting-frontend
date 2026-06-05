@@ -53,11 +53,16 @@ export interface DashboardResponse {
   expenseRatio: { name: string; value: number; color: string }[];
 }
 
-export const useDashboard = () => {
+export const useDashboard = (startDate?: string, endDate?: string) => {
   return useQuery({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", startDate, endDate],
     queryFn: async () => {
-      const { data } = await api.get<DashboardResponse>("/dashboard");
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      
+      const { data } = await api.get<DashboardResponse>(`/dashboard${queryString}`);
       return data;
     },
     refetchInterval: 15000, // 15 seconds auto background sync
