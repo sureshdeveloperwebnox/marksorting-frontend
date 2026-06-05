@@ -21,9 +21,9 @@ interface RecentInstallationsListProps {
 export function RecentInstallationsList({ data = [] }: RecentInstallationsListProps) {
   const router = useRouter();
 
-  // Handle click to view all reports
+  // Handle click to view all installations
   const handleViewAll = () => {
-    router.push('/service-management/service-report');
+    router.push('/installation-management/installation-report');
   };
 
   const getStatusBadgeClass = (status: string) => {
