@@ -530,7 +530,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
     ? user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
-  const userRoleName = (user as any)?.role?.name || 'Admin';
+  const userRoleName = user?.role || 'Admin';
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-white/5 shadow-sm">
