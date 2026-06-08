@@ -30,6 +30,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth-store';
+import { ImageUpload } from '@/components/common/image-upload';
 
 const userSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -50,6 +51,8 @@ const userSchema = z.object({
     ),
   role_id: z.string().min(1, 'Please select a role'),
   account_status: z.string().min(1, 'Status is required'),
+  profile_image: z.string().optional().or(z.literal('')),
+  background_image: z.string().optional().or(z.literal('')),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -84,6 +87,8 @@ export function UserFormDrawer() {
       phone_number: '',
       role_id: '',
       account_status: 'ACTIVE',
+      profile_image: '',
+      background_image: '',
     }
   });
 
@@ -106,6 +111,8 @@ export function UserFormDrawer() {
           phone_number: phone,
           role_id: userData.role.id || '',
           account_status: userData.account_status,
+          profile_image: userData.profile_image || '',
+          background_image: userData.background_image || '',
         });
       } else if (!isEdit) {
         reset({
@@ -115,6 +122,8 @@ export function UserFormDrawer() {
           phone_number: '',
           role_id: '',
           account_status: 'ACTIVE',
+          profile_image: '',
+          background_image: '',
         });
       }
     }
@@ -179,6 +188,30 @@ export function UserFormDrawer() {
           ) : (
             <form id="user-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="space-y-4">
+                {/* Images Upload Option */}
+                <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100 dark:border-white/5">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest">Profile Photo</Label>
+                    <ImageUpload
+                      value={watch('profile_image')}
+                      previewUrl={isEdit ? userData?.profile_image_url : undefined}
+                      onChange={(url) => setValue('profile_image', url)}
+                      shape="circle"
+                      className="w-28 h-28"
+                    />
+                  </div>
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest">Cover Photo</Label>
+                    <ImageUpload
+                      value={watch('background_image')}
+                      previewUrl={isEdit ? userData?.background_image_url : undefined}
+                      onChange={(url) => setValue('background_image', url)}
+                      shape="rectangle"
+                      className="w-full aspect-video"
+                    />
+                  </div>
+                </div>
+
                 {/* Full Name Field */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
