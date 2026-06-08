@@ -45,6 +45,7 @@ import { TicketViewDrawer } from "@/components/forms/ticket-view-drawer";
 import { ViewButton } from "@/components/ui/view-button";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { TableTabs } from "@/components/ui/table-tabs";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -188,7 +189,7 @@ export default function TicketsPage() {
       accessorKey: "subject",
       header: "Subject / Description",
       cell: ({ row }) => (
-        <div className="flex items-start gap-3.5 max-w-sm sm:max-w-md">
+        <div className="flex items-start gap-3.5 max-w-[240px] sm:max-w-[280px]">
           <div className="relative group flex-shrink-0 mt-0.5">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-all duration-500" />
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-semibold text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-105">
@@ -199,9 +200,18 @@ export default function TicketsPage() {
             <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight truncate">
               {row.original.subject}
             </span>
-            <span className="text-gray-450 dark:text-gray-500 font-medium text-xs line-clamp-1">
-              {row.original.description}
-            </span>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="text-gray-450 dark:text-gray-500 font-medium text-xs line-clamp-1 cursor-help text-left block w-full" />
+                }
+              >
+                {row.original.description}
+              </TooltipTrigger>
+              <TooltipContent>
+                {row.original.description}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       ),
