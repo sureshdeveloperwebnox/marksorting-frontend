@@ -50,6 +50,7 @@ import { TicketTimelineDrawer } from "@/components/forms/ticket-timeline-drawer"
 import { TicketViewDrawer } from "@/components/forms/ticket-view-drawer";
 import { ViewButton } from "@/components/ui/view-button";
 import { RouteGuard } from "@/components/guards/route-guard";
+import { TableTabs } from "@/components/ui/table-tabs";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -83,55 +84,7 @@ const getPriorityColors = (priority: string) => {
   }
 };
 
-/* ─── Stats Card ────────────────────────────────────────────────── */
 
-interface StatsCardProps {
-  title: string;
-  value: number | undefined;
-  icon: React.ReactNode;
-  iconBg: string;
-  gradient: string;
-  trend?: string;
-  loading?: boolean;
-}
-
-function StatsCard({ title, value, icon, iconBg, gradient, trend, loading }: StatsCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className={cn(
-        "relative overflow-hidden rounded-[20px] p-5 border border-gray-100 dark:border-white/5",
-        "bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
-      )}
-    >
-      <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 -translate-y-6 translate-x-6", gradient)} />
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.12em] mb-3">
-            {title}
-          </p>
-          {loading ? (
-            <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
-              {value ?? 0}
-            </p>
-          )}
-          {trend && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-gray-450 dark:text-gray-500 mt-2">
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 
@@ -431,10 +384,10 @@ export default function TicketsPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+      className="w-full"
     >
-      {/* LEFT — Ticket List Card (3/4 width) */}
-      <div className="xl:col-span-3">
+      {/* Ticket List Card (Full width) */}
+      <div className="w-full">
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
@@ -463,6 +416,21 @@ export default function TicketsPage() {
             />
           </div>
 
+          {/* Reusable Table Tabs */}
+          <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+            <TableTabs
+              tabs={[
+                { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <Ticket size={14} /> },
+                { value: "OPEN", label: "Open", count: openData?.total || 0, color: "blue", icon: <Clock size={14} /> },
+                { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
+                { value: "RESOLVED", label: "Resolved", count: resolvedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                { value: "ESCALATED", label: "Escalated", count: escalatedData?.total || 0, color: "rose", icon: <ShieldAlert size={14} /> },
+              ]}
+              activeValue={statusFilter || ""}
+              onChange={(value) => setStatusFilter(value)}
+            />
+          </div>
+
           <div className="p-6 pt-4">
             <DataTable
               columns={columns}
@@ -482,55 +450,6 @@ export default function TicketsPage() {
             />
           </div>
         </div>
-      </div>
-
-      {/* RIGHT — Statistics Panel (1/4 width) */}
-      <div className="xl:col-span-1 flex flex-col gap-4">
-        <StatsCard
-          title="Total Tickets"
-          value={totalData?.total}
-          loading={!totalData}
-          icon={<Ticket size={20} className="text-primary" />}
-          iconBg="bg-primary/10 dark:bg-primary/15"
-          gradient="bg-primary"
-          trend="All registered issues"
-        />
-        <StatsCard
-          title="Open"
-          value={openData?.total}
-          loading={!openData}
-          icon={<Clock size={20} className="text-blue-600 dark:text-blue-400" />}
-          iconBg="bg-blue-50 dark:bg-blue-500/15"
-          gradient="bg-blue-500"
-          trend="Awaiting action"
-        />
-        <StatsCard
-          title="In Progress"
-          value={inProgressData?.total}
-          loading={!inProgressData}
-          icon={<AlertTriangle size={20} className="text-amber-600 dark:text-amber-400" />}
-          iconBg="bg-amber-50 dark:bg-amber-500/15"
-          gradient="bg-amber-500"
-          trend="Currently resolving"
-        />
-        <StatsCard
-          title="Resolved"
-          value={resolvedData?.total}
-          loading={!resolvedData}
-          icon={<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400" />}
-          iconBg="bg-emerald-50 dark:bg-emerald-500/15"
-          gradient="bg-emerald-500"
-          trend="Successfully closed"
-        />
-        <StatsCard
-          title="Escalated"
-          value={escalatedData?.total}
-          loading={!escalatedData}
-          icon={<ShieldAlert size={20} className="text-rose-600 dark:text-rose-400" />}
-          iconBg="bg-rose-50 dark:bg-rose-500/15"
-          gradient="bg-rose-500"
-          trend="High priority attention"
-        />
       </div>
 
       {/* Filter Drawer */}

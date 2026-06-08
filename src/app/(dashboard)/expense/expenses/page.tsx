@@ -20,7 +20,6 @@ import {
   FileText,
   Loader2,
   ClipboardCheck,
-  TrendingUp,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -34,6 +33,7 @@ import {
   Building2,
   Image as ImageIcon,
   Download,
+  XCircle,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -58,6 +58,7 @@ import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer"
 import { ExpenseFormDrawer } from "@/components/forms/expense-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
+import { TableTabs } from "@/components/ui/table-tabs";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -81,56 +82,7 @@ const getStatusDotColors = (status: string) => {
   }
 };
 
-/* ─── Stats Card ────────────────────────────────────────────────── */
 
-interface StatsCardProps {
-  title: string;
-  value: number | string | undefined;
-  icon: React.ReactNode;
-  iconBg: string;
-  gradient: string;
-  trend?: string;
-  loading?: boolean;
-}
-
-function StatsCard({ title, value, icon, iconBg, gradient, trend, loading }: StatsCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className={cn(
-        "relative overflow-hidden rounded-[20px] p-5 border border-gray-100 dark:border-white/5",
-        "bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
-      )}
-    >
-      <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 -translate-y-6 translate-x-6", gradient)} />
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.12em] mb-3">
-            {title}
-          </p>
-          {loading ? (
-            <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
-          ) : (
-            <p className="text-3xl font-black text-gray-900 dark:text-white leading-none">
-              {value ?? 0}
-            </p>
-          )}
-          {trend && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500 mt-2">
-              <TrendingUp size={11} />
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 
@@ -191,11 +143,14 @@ export default function ExpensesPage() {
   const { data: inProgressData, refetch: refetchInProgress, isFetching: isFetchingInProgress } = useExpenses({
     skip: 0, take: 1, status: "IN_PROGRESS",
   });
+  const { data: cancelledData, refetch: refetchCancelled, isFetching: isFetchingCancelled } = useExpenses({
+    skip: 0, take: 1, status: "CANCELLED",
+  });
 
-  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress;
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress || isFetchingCancelled;
 
   const handleRefresh = async () => {
-    await Promise.all([refetch(), refetchTotal(), refetchCompleted(), refetchPending(), refetchInProgress()]);
+    await Promise.all([refetch(), refetchTotal(), refetchCompleted(), refetchPending(), refetchInProgress(), refetchCancelled()]);
   };
 
   const deleteMutation = useDeleteExpense();
@@ -592,10 +547,10 @@ export default function ExpensesPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+      className="w-full"
     >
-      {/* LEFT — Expense List Card (3/4 width) */}
-      <div className="xl:col-span-3">
+      {/* Expense List Card (Full width) */}
+      <div className="w-full">
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
@@ -624,6 +579,21 @@ export default function ExpensesPage() {
             />
           </div>
 
+          {/* Reusable Table Tabs */}
+          <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+            <TableTabs
+              tabs={[
+                { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
+                { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
+                { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+              ]}
+              activeValue={statusFilter || ""}
+              onChange={(value) => setStatusFilter(value)}
+            />
+          </div>
+
           <div className="p-6 pt-4">
             <DataTable
               columns={columns}
@@ -643,73 +613,6 @@ export default function ExpensesPage() {
             />
           </div>
         </div>
-      </div>
-
-      {/* RIGHT — Statistics Panel (1/4 width) */}
-      <div className="xl:col-span-1 flex flex-col gap-4">
-        <StatsCard
-          title="Total Expenses"
-          value={totalData?.total}
-          loading={!totalData}
-          icon={<ClipboardCheck size={20} className="text-primary" />}
-          iconBg="bg-primary/10 dark:bg-primary/15"
-          gradient="bg-primary"
-          trend="All registered expenses"
-        />
-        <StatsCard
-          title="Completed"
-          value={completedData?.total}
-          loading={!completedData}
-          icon={<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400" />}
-          iconBg="bg-emerald-50 dark:bg-emerald-500/15"
-          gradient="bg-emerald-500"
-          trend="Approved & processed"
-        />
-        <StatsCard
-          title="In Progress"
-          value={inProgressData?.total}
-          loading={!inProgressData}
-          icon={<Clock size={20} className="text-blue-600 dark:text-blue-400" />}
-          iconBg="bg-blue-50 dark:bg-blue-500/15"
-          gradient="bg-blue-500"
-          trend="Awaiting approval"
-        />
-        <StatsCard
-          title="Pending"
-          value={pendingData?.total}
-          loading={!pendingData}
-          icon={<AlertTriangle size={20} className="text-amber-600 dark:text-amber-400" />}
-          iconBg="bg-amber-50 dark:bg-amber-500/15"
-          gradient="bg-amber-500"
-          trend="Drafted / Pending"
-        />
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-[20px] p-5 bg-gradient-to-br from-primary to-orange-500 border border-primary/20 shadow-sm shadow-primary/20"
-        >
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMC0xMnY2aDZ2LTZoLTZ6bS0xMiAxMnY2aDZ2LTZoLTZ6bTAtMTJ2Nmg2di02aC02eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-          <p className="text-xs font-bold text-white/70 uppercase tracking-[0.12em] mb-2 relative">Quick Stats</p>
-          <div className="space-y-1.5 relative">
-            {[
-              {
-                label: "Approval rate",
-                value: totalData?.total ? `${Math.round(((completedData?.total || 0) / totalData.total) * 100)}%` : "—",
-              },
-              {
-                label: "Pending rate",
-                value: totalData?.total ? `${Math.round(((pendingData?.total || 0) / totalData.total) * 100)}%` : "—",
-              },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">{s.label}</span>
-                <span className="text-sm font-black text-white">{s.value}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
       </div>
 
       {/* Filter Drawer */}

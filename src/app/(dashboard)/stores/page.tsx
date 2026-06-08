@@ -14,7 +14,6 @@ import {
   Trash2,
   Loader2,
   Store as StoreIcon,
-  TrendingUp,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -49,6 +48,7 @@ import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer"
 import { StoreFormDrawer } from "@/components/forms/store-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
+import { TableTabs } from "@/components/ui/table-tabs";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -100,56 +100,7 @@ const getInflowDotColors = (status: string) => {
   }
 };
 
-/* ─── Stats Card ────────────────────────────────────────────────── */
 
-interface StatsCardProps {
-  title: string;
-  value: number | undefined;
-  icon: React.ReactNode;
-  iconBg: string;
-  gradient: string;
-  trend?: string;
-  loading?: boolean;
-}
-
-function StatsCard({ title, value, icon, iconBg, gradient, trend, loading }: StatsCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className={cn(
-        "relative overflow-hidden rounded-[20px] p-5 border border-gray-100 dark:border-white/5",
-        "bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
-      )}
-    >
-      <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 -translate-y-6 translate-x-6", gradient)} />
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.12em] mb-3">
-            {title}
-          </p>
-          {loading ? (
-            <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
-              {value ?? 0}
-            </p>
-          )}
-          {trend && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500 mt-2">
-              <TrendingUp size={11} />
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 
@@ -681,12 +632,10 @@ export default function StoresPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+      className="w-full"
     >
-      {/* ════════════════════════════════════════
-          LEFT — Store List Card  (3/4 width)
-      ════════════════════════════════════════ */}
-      <div className="xl:col-span-3">
+      {/* Store List Card (Full width) */}
+      <div className="w-full">
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
           {/* Card header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
@@ -716,6 +665,44 @@ export default function StoresPage() {
             />
           </div>
 
+          {/* Reusable Table Tabs */}
+          <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+            <TableTabs
+              tabs={[
+                { value: "ALL", label: "All", count: totalData?.total || 0, color: "primary", icon: <Package size={14} /> },
+                { value: "AVAILABLE", label: "Available", count: availableData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                { value: "PENDING_RETURNS", label: "Pending Returns", count: pendingReturnData?.total || 0, color: "amber", icon: <Clock size={14} /> },
+                { value: "DAMAGED", label: "Damaged Stock", count: damagedData?.total || 0, color: "rose", icon: <AlertTriangle size={14} /> },
+              ]}
+              activeValue={
+                inflowFilter === "Available" && !returnFilter
+                  ? "AVAILABLE"
+                  : returnFilter === "Pending" && !inflowFilter
+                  ? "PENDING_RETURNS"
+                  : inflowFilter === "Damaged" && !returnFilter
+                  ? "DAMAGED"
+                  : inflowFilter === "" && returnFilter === ""
+                  ? "ALL"
+                  : ""
+              }
+              onChange={(value) => {
+                if (value === "ALL") {
+                  setInflowFilter("");
+                  setReturnFilter("");
+                } else if (value === "AVAILABLE") {
+                  setInflowFilter("Available");
+                  setReturnFilter("");
+                } else if (value === "PENDING_RETURNS") {
+                  setInflowFilter("");
+                  setReturnFilter("Pending");
+                } else if (value === "DAMAGED") {
+                  setInflowFilter("Damaged");
+                  setReturnFilter("");
+                }
+              }}
+            />
+          </div>
+
           {/* Table */}
           <div className="p-6 pt-4">
             <DataTable
@@ -736,48 +723,6 @@ export default function StoresPage() {
             />
           </div>
         </div>
-      </div>
-
-      {/* ════════════════════════════════════════
-          RIGHT — Statistics Panel  (1/4 width)
-      ════════════════════════════════════════ */}
-      <div className="xl:col-span-1 flex flex-col gap-4">
-        <StatsCard
-          title="Total Store Records"
-          value={totalData?.total}
-          loading={!totalData}
-          icon={<StoreIcon size={20} className="text-primary" />}
-          iconBg="bg-primary/10 dark:bg-primary/15"
-          gradient="bg-primary"
-          trend="Total logged records"
-        />
-        <StatsCard
-          title="Available Items"
-          value={availableData?.total}
-          loading={!availableData}
-          icon={<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400" />}
-          iconBg="bg-emerald-50 dark:bg-emerald-500/15"
-          gradient="bg-emerald-500"
-          trend="Available in inventory"
-        />
-        <StatsCard
-          title="Pending Returns"
-          value={pendingReturnData?.total}
-          loading={!pendingReturnData}
-          icon={<Clock size={20} className="text-amber-600 dark:text-amber-400" />}
-          iconBg="bg-amber-50 dark:bg-amber-500/15"
-          gradient="bg-amber-500"
-          trend="Items pending return"
-        />
-        <StatsCard
-          title="Damaged Stock"
-          value={damagedData?.total}
-          loading={!damagedData}
-          icon={<AlertTriangle size={20} className="text-rose-600 dark:text-rose-400" />}
-          iconBg="bg-rose-50 dark:bg-rose-500/15"
-          gradient="bg-rose-500"
-          trend="Damaged/unusable items"
-        />
       </div>
 
       {/* ── Filter Drawer ── */}
