@@ -66,7 +66,7 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: async ({ id, ...userData }: any) => {
       const { data } = await api.put(`/users/${id}`, userData);
-      return data.after;
+      return data;
     },
     onSuccess: (updatedUser) => {
       // Invalidate list and specific user
