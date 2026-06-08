@@ -49,7 +49,7 @@ export interface InstallationReport {
     status: string;
     created_at: string;
     updated_at: string;
-    mill: { id: string; name: string };
+    mill: { id: string; name: string; customer?: { id: string; name: string } | null };
     technicians: InstallationReportTechnicianEntry[];
 }
 

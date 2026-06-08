@@ -48,7 +48,7 @@ export interface ServiceReport {
     status: string;
     created_at: string;
     updated_at: string;
-    mill: { id: string; name: string };
+    mill: { id: string; name: string; customer?: { id: string; name: string } | null };
     serviceCategory: { id: string; name: string };
     technicians: ServiceReportTechnicianEntry[];
 }
