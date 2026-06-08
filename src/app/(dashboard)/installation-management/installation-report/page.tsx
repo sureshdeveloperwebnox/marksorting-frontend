@@ -503,7 +503,7 @@ export default function InstallationReportPage() {
           },
           {
             label: "Auto Drain Valve",
-            value: boolField(viewReportData.auto_drain_valve_working, "Working", "Not Working"),
+            value: boolField(viewReportData.auto_drain_valve_working),
             icon: Settings,
           },
           {

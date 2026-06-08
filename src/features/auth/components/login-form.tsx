@@ -12,6 +12,8 @@ import { useAuth } from '@/features/auth/hooks/use-auth';
 import { motion } from 'framer-motion';
 import { Mail, Lock, RefreshCcw, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -23,6 +25,19 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const { login, isLoggingIn } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
+  const searchParams = useSearchParams();
+
+  React.useEffect(() => {
+    if (searchParams.get('expired') === 'true') {
+      const timer = setTimeout(() => {
+        toast.error('Your session has expired. Please sign in again to continue.', {
+          id: 'session-expired-toast',
+          duration: 5000,
+        });
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema) as any,

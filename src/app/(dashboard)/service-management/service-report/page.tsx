@@ -470,12 +470,12 @@ export default function ServiceReportPage() {
                 {viewReportData.auto_drain_valve_working ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-500" />
-                    <span className="text-emerald-500 font-bold text-xs uppercase tracking-wider">Working</span>
+                    <span className="text-emerald-500 font-bold text-xs uppercase tracking-wider">Yes</span>
                   </>
                 ) : (
                   <>
                     <X className="w-4 h-4 text-rose-500" />
-                    <span className="text-rose-500 font-bold text-xs uppercase tracking-wider">Not Working</span>
+                    <span className="text-rose-500 font-bold text-xs uppercase tracking-wider">No</span>
                   </>
                 )}
               </div>

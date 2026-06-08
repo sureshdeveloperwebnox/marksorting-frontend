@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/store/auth-store';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || '/api/v1',
@@ -7,6 +8,21 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+let refreshPromise: Promise<any> | null = null;
+
+const getRefreshTokenPromise = () => {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .get(`${api.defaults.baseURL}/auth/refresh`, {
+        withCredentials: true,
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+};
 
 api.interceptors.response.use(
   (response) => response,
@@ -27,14 +43,18 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        await axios.get(`${api.defaults.baseURL}/auth/refresh`, {
-          withCredentials: true,
-        });
-        
+        await getRefreshTokenPromise();
         return api(originalRequest);
       } catch (refreshError) {
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // Asynchronously clear cookies on the backend
+          axios.post(`${api.defaults.baseURL}/auth/logout`, {}, { withCredentials: true }).catch(() => {});
+          
+          // Clear user profile/state in Zustand
+          useAuthStore.getState().logout();
+          
+          // Redirect to login page with session expired indicator
+          window.location.href = '/login?expired=true';
         }
         return Promise.reject(refreshError);
       }
