@@ -54,9 +54,10 @@ export const useUpdateRole = () => {
       return data;
     },
     onSuccess: (updatedRole) => {
+      // Invalidate both the list and the individual role so the drawer
+      // always re-fetches fresh data (including permissions array)
       queryClient.invalidateQueries({ queryKey: ["roles"] });
-      queryClient.setQueryData(["role", updatedRole.id], updatedRole);
-      toast.success("Role updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["role", updatedRole.id] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to update role");
@@ -106,6 +107,8 @@ export const useRole = (id: string | null) => {
       return data;
     },
     enabled: !!id,
+    staleTime: 0,            // always treat as stale so drawer re-fetches on open
+    refetchOnMount: 'always', // re-fetch every time the drawer mounts
   });
 };
 

@@ -36,6 +36,7 @@ const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; de
   roles: { label: 'Role Management', icon: UserCog, description: 'Manage roles and permissions', order: 3 },
   customers: { label: 'Customer Management', icon: Building2, description: 'Manage customer records', order: 4 },
   mills: { label: 'Mill Management', icon: Building2, description: 'Manage mill information', order: 5 },
+  master_mills: { label: 'Master Mills', icon: FileText, description: 'Manage master mill records', order: 5.5 },
   service_categories: { label: 'Service Categories', icon: Briefcase, description: 'Manage service categories', order: 6 },
   service_reports: { label: 'Service Reports', icon: FileBarChart, description: 'Manage service reports', order: 7 },
   installation_reports: { label: 'Installation Reports', icon: Wrench, description: 'Manage installation reports', order: 8 },
@@ -89,10 +90,13 @@ export function RoleFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedRoleId } = useRoleStore();
   const isEdit = !!selectedRoleId;
 
-  const { data: roleData, isLoading: roleLoading } = useRole(selectedRoleId);
+  const { data: roleData, isLoading: roleLoading, isFetching: roleFetching } = useRole(selectedRoleId);
   const { data: allPermissions = [], isLoading: permsLoading } = useAllPermissions();
   const { mutateAsync: createRole, isPending: isCreating } = useCreateRole();
   const { mutateAsync: updateRole, isPending: isUpdating } = useUpdateRole();
+
+  // Track the last roleId we initialized so we re-init when switching roles
+  const initializedForId = React.useRef<string | null>(null);
 
   const [selectedPermIds, setSelectedPermIds] = React.useState<Set<string>>(new Set());
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
@@ -108,27 +112,35 @@ export function RoleFormDrawer() {
   });
 
   React.useEffect(() => {
-    if (isFormDrawerOpen) {
-      if (isEdit && roleData) {
-        reset({ name: roleData.name, description: roleData.description || '' });
-        const ids = new Set<string>(
-          ((roleData as any).permissions ?? []).map((p: Permission) => p.id)
-        );
-        setSelectedPermIds(ids);
-        const groups = groupPermissions(allPermissions);
-        const expanded: Record<string, boolean> = {};
-        Object.keys(groups).forEach((g) => { expanded[g] = true; });
-        setOpenGroups(expanded);
-      } else if (!isEdit) {
-        reset({ name: '', description: '' });
-        setSelectedPermIds(new Set());
-        const groups = groupPermissions(allPermissions);
-        const expanded: Record<string, boolean> = {};
-        Object.keys(groups).forEach((g) => { expanded[g] = true; });
-        setOpenGroups(expanded);
-      }
+    if (!isFormDrawerOpen) return;
+
+    if (isEdit && roleData) {
+      // Only re-initialize when we have fresh data (not while a background
+      // refetch is still in flight with potentially stale data) OR when the
+      // selected role changes.
+      const freshForThisRole = initializedForId.current !== selectedRoleId || !roleFetching;
+      if (!freshForThisRole) return;
+
+      initializedForId.current = selectedRoleId;
+      reset({ name: roleData.name, description: roleData.description || '' });
+      const ids = new Set<string>(
+        ((roleData as any).permissions ?? []).map((p: Permission) => p.id)
+      );
+      setSelectedPermIds(ids);
+      const groups = groupPermissions(allPermissions);
+      const expanded: Record<string, boolean> = {};
+      Object.keys(groups).forEach((g) => { expanded[g] = true; });
+      setOpenGroups(expanded);
+    } else if (!isEdit) {
+      initializedForId.current = null;
+      reset({ name: '', description: '' });
+      setSelectedPermIds(new Set());
+      const groups = groupPermissions(allPermissions);
+      const expanded: Record<string, boolean> = {};
+      Object.keys(groups).forEach((g) => { expanded[g] = true; });
+      setOpenGroups(expanded);
     }
-  }, [isFormDrawerOpen, roleData, reset, isEdit, allPermissions]);
+  }, [isFormDrawerOpen, roleData, roleFetching, reset, isEdit, selectedRoleId, allPermissions]);
 
   const togglePerm = (id: string) => {
     setSelectedPermIds((prev) => {
@@ -169,7 +181,12 @@ export function RoleFormDrawer() {
   const grouped = groupPermissions(allPermissions);
 
   return (
-    <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
+    <Sheet open={isFormDrawerOpen} onOpenChange={(open) => {
+      if (!open) {
+        initializedForId.current = null; // reset so next open always re-initializes
+        closeFormDrawer();
+      }
+    }}>
       <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5">
         <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
           <div className="flex items-center gap-4">
@@ -266,8 +283,8 @@ export function RoleFormDrawer() {
                           allSelected
                             ? 'border-primary/30 bg-primary/[0.02] dark:bg-primary/5'
                             : someSelected
-                            ? 'border-primary/20 bg-gray-50/50 dark:bg-white/[0.02]'
-                            : 'border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900'
+                              ? 'border-primary/20 bg-gray-50/50 dark:bg-white/[0.02]'
+                              : 'border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900'
                         )}
                       >
                         {/* Module Header Card */}
@@ -281,8 +298,8 @@ export function RoleFormDrawer() {
                               allSelected
                                 ? 'bg-primary border-primary text-white'
                                 : someSelected
-                                ? 'bg-primary/20 border-primary/50 text-primary'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-primary/50'
+                                  ? 'bg-primary/20 border-primary/50 text-primary'
+                                  : 'border-gray-300 dark:border-gray-600 hover:border-primary/50'
                             )}
                           >
                             {allSelected && <Check size={12} strokeWidth={3} />}
@@ -295,8 +312,8 @@ export function RoleFormDrawer() {
                             allSelected
                               ? 'bg-primary text-white'
                               : someSelected
-                              ? 'bg-primary/10 text-primary'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                           )}>
                             <ModuleIcon size={18} />
                           </div>
@@ -312,8 +329,8 @@ export function RoleFormDrawer() {
                                 allSelected
                                   ? 'bg-primary/10 text-primary'
                                   : someSelected
-                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                  : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                               )}>
                                 {perms.filter((p) => selectedPermIds.has(p.id)).length}/{perms.length}
                               </span>

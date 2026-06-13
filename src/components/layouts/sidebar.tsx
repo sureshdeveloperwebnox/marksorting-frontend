@@ -8,6 +8,7 @@ import {
   Tag,
   Receipt,
   Building2,
+  FileText,
 } from 'lucide-react';
 import {
   DashboardIcon,
@@ -102,6 +103,13 @@ const items: SidebarItem[] = [
         label: 'Manage Mills',
         href: '/mills',
         icon: MillsListIcon,
+        module: 'mills',
+        action: 'view',
+      },
+      {
+        label: 'Master Mills',
+        href: '/mills/master-mills',
+        icon: FileText,
         module: 'mills',
         action: 'view',
       },

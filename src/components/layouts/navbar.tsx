@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Sidebar as SidebarIcon,
   LayoutGrid,
+  FileText,
 } from 'lucide-react';
 import {
   DashboardIcon,
@@ -117,6 +118,13 @@ const navItems: NavItem[] = [
         label: 'Manage Mills',
         href: '/mills',
         icon: MillsListIcon,
+        module: 'mills',
+        action: 'view',
+      },
+      {
+        label: 'Master Mills',
+        href: '/mills/master-mills',
+        icon: FileText,
         module: 'mills',
         action: 'view',
       },
