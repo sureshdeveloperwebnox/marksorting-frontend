@@ -601,9 +601,10 @@ export default function ReportsPage() {
                             value={
                                 reportsMetrics
                                     ? `₹${Number((reportsMetrics as any).totalAmount || 0).toLocaleString("en-IN", {
-                                          maximumFractionDigits: 0,
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
                                       })}`
-                                    : "₹0"
+                                    : "₹0.00"
                             }
                             loading={isReportsLoading}
                             icon={<DollarSign size={18} className="text-emerald-500" />}

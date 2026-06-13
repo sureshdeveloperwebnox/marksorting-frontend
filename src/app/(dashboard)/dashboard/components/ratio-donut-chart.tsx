@@ -126,7 +126,10 @@ export function RatioDonutChart({
             </div>
             <div className="text-right">
               <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">
-                ₹{displayExpensesAmount.toLocaleString('en-IN')}
+                ₹{displayExpensesAmount.toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </span>
             </div>
           </div>

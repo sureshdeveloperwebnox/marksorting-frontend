@@ -129,7 +129,7 @@ export function ExpenseOverviewChart({
                 }}
                 labelStyle={{ fontWeight: 700, fontSize: '12px', marginBottom: '4px' }}
                 itemStyle={{ fontSize: '11px', fontWeight: 600 }}
-                formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Amount']}
+                formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Amount']}
               />
               <Bar dataKey="total" fill="url(#colorExpenseBar)" radius={[4, 4, 0, 0]} barSize={8}>
                 {chartData.map((entry, index) => (
