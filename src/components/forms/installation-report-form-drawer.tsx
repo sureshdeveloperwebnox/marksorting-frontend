@@ -93,7 +93,7 @@ const installationReportSchema = z.object({
     }),
   mill_email: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
-  visit_time: z.string().min(1, 'Time is required'),
+  visit_time: z.string().optional(),
   call_registered_date: z.string().min(1, 'Call registered date is required'),
   machine_model: z.string().min(1, 'Machine model is required'),
   serial_or_frame_no: z.string().min(1, 'Serial/Frame no is required'),
@@ -782,8 +782,8 @@ export function InstallationReportFormDrawer() {
                     </div>
                   </div>
 
-                  {/* Date, Time, Call Registered Date */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Date, Call Registered Date */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
                       <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
@@ -801,25 +801,6 @@ export function InstallationReportFormDrawer() {
                         )}
                       />
                       <FieldError message={errors.visit_date?.message} />
-                    </div>
-
-                    <div className="space-y-2" data-error={errors.visit_time ? 'true' : undefined}>
-                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Clock size={14} className="text-primary/70" />
-                        Time
-                      </Label>
-                      <Controller
-                        name="visit_time"
-                        control={control}
-                        render={({ field }) => (
-                          <TimePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Select time"
-                          />
-                        )}
-                      />
-                      <FieldError message={errors.visit_time?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.call_registered_date ? 'true' : undefined}>
