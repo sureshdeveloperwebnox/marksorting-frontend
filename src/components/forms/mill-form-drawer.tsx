@@ -11,7 +11,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Save, Loader2, Mail, Phone, Factory, MapPin, RefreshCcw, Users } from 'lucide-react';
+import { Save, Loader2, Mail, Phone, Factory, MapPin, RefreshCcw, Users, Hash, Plus, Trash2 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -34,6 +34,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const millSchema = z.object({
   name: z.string().min(2, 'Mill Name must be at least 2 characters'),
+  ref_no: z.string().optional().or(z.literal('')),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z
     .string()
@@ -42,7 +43,23 @@ const millSchema = z.object({
       (val) => !val || isValidPhoneNumber(val),
       { message: 'Please enter a valid phone number with correct country code' }
     ),
+  phone_2: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || isValidPhoneNumber(val),
+      { message: 'Please enter a valid phone number with correct country code' }
+    ),
+  phone_3: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || isValidPhoneNumber(val),
+      { message: 'Please enter a valid phone number with correct country code' }
+    ),
   address: z.string().optional().or(z.literal('')),
+  place: z.string().optional().or(z.literal('')),
+  city: z.string().optional().or(z.literal('')),
   status: z.string().min(1, 'Status is required'),
   customer_id: z.string().optional().or(z.literal('')),
 });
@@ -52,6 +69,9 @@ type MillFormValues = z.infer<typeof millSchema>;
 export function MillFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedMillId } = useMillStore();
   const isEdit = !!selectedMillId;
+
+  const [showPhone2, setShowPhone2] = React.useState(false);
+  const [showPhone3, setShowPhone3] = React.useState(false);
 
   const { data: millData, isLoading: millLoading } = useMill(selectedMillId);
   const { data: customersData } = useCustomers({ skip: 0, take: 500, status: 'ACTIVE' });
@@ -72,9 +92,14 @@ export function MillFormDrawer() {
     resolver: zodResolver(millSchema) as any,
     defaultValues: {
       name: '',
+      ref_no: '',
       email: '',
       phone: '',
+      phone_2: '',
+      phone_3: '',
       address: '',
+      place: '',
+      city: '',
       status: 'ACTIVE',
       customer_id: '',
     }
@@ -85,21 +110,35 @@ export function MillFormDrawer() {
       if (isEdit && millData) {
         reset({
           name: millData.name,
+          ref_no: millData.ref_no || '',
           email: millData.email || '',
           phone: normalizePhoneNumber(millData.phone),
+          phone_2: normalizePhoneNumber(millData.phone_2),
+          phone_3: normalizePhoneNumber(millData.phone_3),
           address: millData.address || '',
+          place: millData.place || '',
+          city: millData.city || '',
           status: millData.status,
           customer_id: millData.customer_id || '',
         });
+        setShowPhone2(!!millData.phone_2);
+        setShowPhone3(!!millData.phone_3);
       } else if (!isEdit) {
         reset({
           name: '',
+          ref_no: '',
           email: '',
           phone: '',
+          phone_2: '',
+          phone_3: '',
           address: '',
+          place: '',
+          city: '',
           status: 'ACTIVE',
           customer_id: '',
         });
+        setShowPhone2(false);
+        setShowPhone3(false);
       }
     }
   }, [isFormDrawerOpen, millData, reset, isEdit]);
@@ -165,6 +204,20 @@ export function MillFormDrawer() {
                   {errors.name && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.name.message}</p>}
                 </div>
 
+                {/* Ref No Field */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Hash size={14} className="text-primary/70" />
+                    Ref No
+                  </Label>
+                  <Input
+                    {...register('ref_no')}
+                    placeholder="Enter reference number (Optional)"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                  />
+                  {errors.ref_no && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.ref_no.message}</p>}
+                </div>
+
                 {/* Email Field */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -204,6 +257,104 @@ export function MillFormDrawer() {
                   )}
                 </div>
 
+                {/* Contact No 2 Field */}
+                {showPhone2 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Phone size={14} className="text-primary/70" />
+                        Contact No. 2
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPhone2(false);
+                          setValue('phone_2', '');
+                        }}
+                        className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-wider flex items-center gap-1 cursor-pointer bg-none border-none p-0"
+                      >
+                        <Trash2 size={11} />
+                        Remove
+                      </button>
+                    </div>
+                    <Controller
+                      name="phone_2"
+                      control={control}
+                      render={({ field }) => (
+                        <PhoneInput
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Enter contact number 2"
+                          className="h-11"
+                        />
+                      )}
+                    />
+                    {errors.phone_2 && (
+                      <p className="text-[11px] text-rose-500 font-bold ml-1">
+                        {errors.phone_2.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Contact No 3 Field */}
+                {showPhone3 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Phone size={14} className="text-primary/70" />
+                        Contact No. 3
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPhone3(false);
+                          setValue('phone_3', '');
+                        }}
+                        className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-wider flex items-center gap-1 cursor-pointer bg-none border-none p-0"
+                      >
+                        <Trash2 size={11} />
+                        Remove
+                      </button>
+                    </div>
+                    <Controller
+                      name="phone_3"
+                      control={control}
+                      render={({ field }) => (
+                        <PhoneInput
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Enter contact number 3"
+                          className="h-11"
+                        />
+                      )}
+                    />
+                    {errors.phone_3 && (
+                      <p className="text-[11px] text-rose-500 font-bold ml-1">
+                        {errors.phone_3.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Add Alternate Contact Button */}
+                {(!showPhone2 || !showPhone3) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!showPhone2) {
+                        setShowPhone2(true);
+                      } else {
+                        setShowPhone3(true);
+                      }
+                    }}
+                    className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-primary/5 hover:bg-primary/10 transition-all duration-300 w-fit cursor-pointer border border-primary/10"
+                  >
+                    <Plus size={14} />
+                    Add Alternate Contact
+                  </button>
+                )}
+
                 {/* Location/Address Field */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -216,6 +367,34 @@ export function MillFormDrawer() {
                     className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                   />
                   {errors.address && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.address.message}</p>}
+                </div>
+
+                {/* Place and City Fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <MapPin size={14} className="text-primary/70" />
+                      Place
+                    </Label>
+                    <Input
+                      {...register('place')}
+                      placeholder="Enter place (Optional)"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    />
+                    {errors.place && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.place.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <MapPin size={14} className="text-primary/70" />
+                      City
+                    </Label>
+                    <Input
+                      {...register('city')}
+                      placeholder="Enter city (Optional)"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    />
+                    {errors.city && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.city.message}</p>}
+                  </div>
                 </div>
 
                 {/* Customer */}

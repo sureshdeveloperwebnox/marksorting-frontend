@@ -195,12 +195,19 @@ export default function MillsPage() {
             </div>
           </div>
           <div>
-            <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight">
-              {row.original.name}
-            </span>
-            {row.original.address && (
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight">
+                {row.original.name}
+              </span>
+              {row.original.ref_no && (
+                <span className="text-[10px] font-bold text-primary bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 rounded">
+                  {row.original.ref_no}
+                </span>
+              )}
+            </div>
+            {(row.original.address || row.original.place || row.original.city) && (
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1 max-w-[200px]">
-                {row.original.address}
+                {[row.original.address, row.original.place, row.original.city].filter(Boolean).join(', ')}
               </p>
             )}
           </div>
@@ -218,6 +225,16 @@ export default function MillsPage() {
           {row.original.phone && (
             <span className="text-primary font-bold text-xs bg-primary/5 px-2 py-0.5 rounded w-fit border border-primary/10">
               {formatPhoneNumber(row.original.phone)}
+            </span>
+          )}
+          {row.original.phone_2 && (
+            <span className="text-primary font-bold text-xs bg-primary/5 px-2 py-0.5 rounded w-fit border border-primary/10">
+              {formatPhoneNumber(row.original.phone_2)}
+            </span>
+          )}
+          {row.original.phone_3 && (
+            <span className="text-primary font-bold text-xs bg-primary/5 px-2 py-0.5 rounded w-fit border border-primary/10">
+              {formatPhoneNumber(row.original.phone_3)}
             </span>
           )}
         </div>

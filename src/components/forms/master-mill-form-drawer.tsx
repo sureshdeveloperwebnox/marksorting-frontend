@@ -48,6 +48,7 @@ import { useMills } from '@/services/mill-service';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { normalizePhoneNumber } from '@/lib/utils';
+import { DatePicker } from '@/components/ui/date-picker';
 
 /* ── Indian States List ─────────────────────────────────────── */
 const INDIAN_STATES = [
@@ -324,10 +325,16 @@ export function MasterMillFormDrawer() {
                     <Calendar size={12} />
                     Invoice Date
                   </FieldLabel>
-                  <Input
-                    {...register('invoice_date')}
-                    type="date"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                  <Controller
+                    name="invoice_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select invoice date"
+                      />
+                    )}
                   />
                 </div>
                 <div className="space-y-2 col-span-2">
@@ -529,10 +536,16 @@ export function MasterMillFormDrawer() {
                       <Calendar size={12} />
                       Installation Date
                     </FieldLabel>
-                    <Input
-                      {...register('installation_date')}
-                      type="date"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    <Controller
+                      name="installation_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select installation date"
+                        />
+                      )}
                     />
                   </div>
                   <div className="space-y-2">
@@ -540,11 +553,16 @@ export function MasterMillFormDrawer() {
                       <Calendar size={12} />
                       Warranty Closing
                     </FieldLabel>
-                    <Input
-                      {...register('warranty_closing_date')}
-                      type="date"
-                      placeholder="Auto-calculated"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    <Controller
+                      name="warranty_closing_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Auto-calculated"
+                        />
+                      )}
                     />
                     <p className="text-[10px] text-gray-400 ml-1">
                       Auto-calculated if left blank
@@ -562,10 +580,16 @@ export function MasterMillFormDrawer() {
                       <Calendar size={12} />
                       AMC Start Date
                     </FieldLabel>
-                    <Input
-                      {...register('amc_starting_date')}
-                      type="date"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    <Controller
+                      name="amc_starting_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select start date"
+                        />
+                      )}
                     />
                   </div>
                   <div className="space-y-2">
@@ -595,10 +619,16 @@ export function MasterMillFormDrawer() {
                       <Calendar size={12} />
                       AMC Closing Date
                     </FieldLabel>
-                    <Input
-                      {...register('amc_closing_date')}
-                      type="date"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    <Controller
+                      name="amc_closing_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Auto-calculated"
+                        />
+                      )}
                     />
                     <p className="text-[10px] text-gray-400 ml-1">
                       Auto-calculated if left blank
