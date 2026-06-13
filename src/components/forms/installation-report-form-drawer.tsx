@@ -87,10 +87,8 @@ const installationReportSchema = z.object({
   place: z.string().min(2, 'Place is required'),
   mill_whatsapp_number: z
     .string()
-    .min(1, 'WhatsApp number is required')
-    .refine((val) => !val || isValidPhoneNumber(val), {
-      message: 'Please enter a valid WhatsApp number with country code',
-    }),
+    .optional()
+    .or(z.literal('')),
   mill_email: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
   visit_time: z.string().optional(),
@@ -746,40 +744,17 @@ export function InstallationReportFormDrawer() {
                     <FieldError message={errors.place?.message} />
                   </div>
 
-                  {/* Mill Whatsapp Number & Email */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2" data-error={errors.mill_whatsapp_number ? 'true' : undefined}>
-                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Phone size={14} className="text-primary/70" />
-                        Mill Whatsapp Number
-                      </Label>
-                      <Controller
-                        name="mill_whatsapp_number"
-                        control={control}
-                        render={({ field }) => (
-                          <PhoneInput
-                            value={field.value || ''}
-                            onChange={field.onChange}
-                            placeholder="Enter Whatsapp number"
-                            className="h-11"
-                          />
-                        )}
-                      />
-                      <FieldError message={errors.mill_whatsapp_number?.message} />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Mail size={14} className="text-primary/70" />
-                        Mill Email ID
-                      </Label>
-                      <Input
-                        {...register('mill_email')}
-                        placeholder="mill@example.com (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
-                      />
-                      <FieldError message={errors.mill_email?.message} />
-                    </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Mail size={14} className="text-primary/70" />
+                      Mill Email ID
+                    </Label>
+                    <Input
+                      {...register('mill_email')}
+                      placeholder="mill@example.com (Optional)"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
+                    />
+                    <FieldError message={errors.mill_email?.message} />
                   </div>
 
                   {/* Date, Call Registered Date */}

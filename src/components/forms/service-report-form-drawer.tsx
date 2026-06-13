@@ -71,10 +71,8 @@ const serviceReportSchema = z.object({
   place: z.string().min(2, 'Place is required'),
   mill_whatsapp_number: z
     .string()
-    .min(1, 'WhatsApp number is required')
-    .refine((val) => !val || isValidPhoneNumber(val), {
-      message: 'Please enter a valid WhatsApp number with country code',
-    }),
+    .optional()
+    .or(z.literal('')),
   mill_email: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Visit date is required'),
   visit_time: z.string().optional(),
@@ -765,25 +763,6 @@ export function ServiceReportFormDrawer() {
                     <FieldError message={errors.place?.message} />
                   </div>
 
-                  <div className="space-y-2" data-error={errors.mill_whatsapp_number ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Phone size={14} className="text-primary/70" />
-                      Mill WhatsApp Number
-                    </Label>
-                    <Controller
-                      name="mill_whatsapp_number"
-                      control={control}
-                      render={({ field }) => (
-                        <PhoneInput
-                          value={field.value || ''}
-                          onChange={field.onChange}
-                          placeholder="Enter WhatsApp number"
-                          className="h-11"
-                        />
-                      )}
-                    />
-                    <FieldError message={errors.mill_whatsapp_number?.message} />
-                  </div>
 
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
