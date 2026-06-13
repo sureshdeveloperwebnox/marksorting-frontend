@@ -94,6 +94,16 @@ const getStatusDotColors = (status: string) => {
   }
 };
 
+const getStatusLabel = (status: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING":     return "Pending";
+    case "IN_PROGRESS": return "Work In Progress";
+    case "COMPLETED":   return "Completed";
+    case "CANCELLED":   return "Cancelled";
+    default:            return status || "—";
+  }
+};
+
 
 
 /* ─── Page ──────────────────────────────────────────────────────── */
@@ -282,7 +292,7 @@ export default function InstallationReportPage() {
                   getStatusColors(viewReportData.status)
                 )}
               >
-                {viewReportData.status?.replace("_", " ")}
+                {getStatusLabel(viewReportData.status)}
               </Badge>
             ),
             icon: Activity,
@@ -549,7 +559,7 @@ export default function InstallationReportPage() {
       options: [
         { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
         { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
-        { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
+        { value: "IN_PROGRESS", label: "Work In Progress", iconColor: "bg-blue-500", animatePulse: true },
         { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500", animatePulse: true },
         { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500", animatePulse: true },
       ],
@@ -641,7 +651,7 @@ export default function InstallationReportPage() {
                       getStatusColors(status)
                     )}
                   >
-                    {status?.replace("_", " ")}
+                    {getStatusLabel(status)}
                   </Badge>
                 </button>
               }
@@ -650,7 +660,7 @@ export default function InstallationReportPage() {
               <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">Set Status</div>
               {[
                 { value: "PENDING", label: "Pending", color: "amber" },
-                { value: "IN_PROGRESS", label: "In Progress", color: "blue" },
+                { value: "IN_PROGRESS", label: "Work In Progress", color: "blue" },
                 { value: "COMPLETED", label: "Completed", color: "emerald" },
                 { value: "CANCELLED", label: "Cancelled", color: "rose" },
               ].map((s) => (
@@ -778,7 +788,7 @@ export default function InstallationReportPage() {
               tabs={[
                 { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
                 { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
+                { value: "IN_PROGRESS", label: "Work In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
                 { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
                 { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
               ]}
