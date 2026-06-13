@@ -25,6 +25,7 @@ export interface ServiceReport {
     machine_installation_date?: string;
     serial_or_frame_no: string;
     authorized_person: string;
+    authorized_person_phone?: string;
     previous_visit_engineer?: string;
     nature_of_complaint: string;
     problem_observed?: string;

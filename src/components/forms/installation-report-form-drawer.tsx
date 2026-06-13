@@ -96,6 +96,13 @@ const installationReportSchema = z.object({
   machine_model: z.string().min(1, 'Machine model is required'),
   serial_or_frame_no: z.string().min(1, 'Serial/Frame no is required'),
   authorized_person: z.string().min(1, 'Authorized person is required'),
+  authorized_person_phone: z
+    .string()
+    .optional()
+    .refine((val) => !val || isValidPhoneNumber(val), {
+      message: 'Please enter a valid phone number with country code',
+    })
+    .or(z.literal('')),
   invoice_number: z.string().optional().or(z.literal('')),
   invoice_date: z.string().optional().or(z.literal('')),
   warranty_start_date: z.string().optional().or(z.literal('')),
@@ -264,6 +271,7 @@ export function InstallationReportFormDrawer() {
       machine_model: '',
       serial_or_frame_no: '',
       authorized_person: '',
+      authorized_person_phone: '',
       invoice_number: '',
       invoice_date: '',
       warranty_start_date: '',
@@ -350,6 +358,7 @@ export function InstallationReportFormDrawer() {
           machine_model: reportData.machine_model,
           serial_or_frame_no: reportData.serial_or_frame_no,
           authorized_person: reportData.authorized_person,
+          authorized_person_phone: reportData.authorized_person_phone || '',
           invoice_number: reportData.invoice_number || '',
           invoice_date: reportData.invoice_date?.split('T')[0] || '',
           warranty_start_date: reportData.warranty_start_date?.split('T')[0] || '',
@@ -389,6 +398,7 @@ export function InstallationReportFormDrawer() {
           machine_model: '',
           serial_or_frame_no: '',
           authorized_person: '',
+          authorized_person_phone: '',
           invoice_number: '',
           invoice_date: '',
           warranty_start_date: '',
@@ -489,6 +499,8 @@ export function InstallationReportFormDrawer() {
         invoice_date: data.invoice_date || undefined,
         warranty_start_date: data.warranty_start_date || undefined,
         warranty_end_date: data.warranty_end_date || undefined,
+        authorized_person_phone: data.authorized_person_phone || undefined,
+        visit_time: data.visit_time || undefined,
         engineer_signature: engineerSignatureUrl,
         customer_signature: customerSignatureUrl,
       };
@@ -520,6 +532,7 @@ export function InstallationReportFormDrawer() {
     machine_model: 1,
     serial_or_frame_no: 1,
     authorized_person: 1,
+    authorized_person_phone: 1,
     invoice_number: 1,
     invoice_date: 1,
     warranty_start_date: 1,
@@ -825,7 +838,9 @@ export function InstallationReportFormDrawer() {
                       />
                       <FieldError message={errors.serial_or_frame_no?.message} />
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.authorized_person ? 'true' : undefined}>
                       <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <Users size={14} className="text-primary/70" />
@@ -837,6 +852,26 @@ export function InstallationReportFormDrawer() {
                         className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                       <FieldError message={errors.authorized_person?.message} />
+                    </div>
+
+                    <div className="space-y-2" data-error={errors.authorized_person_phone ? 'true' : undefined}>
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Phone size={14} className="text-primary/70" />
+                        Authorized Person Contact No
+                      </Label>
+                      <Controller
+                        name="authorized_person_phone"
+                        control={control}
+                        render={({ field }) => (
+                          <PhoneInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            placeholder="Enter contact number"
+                            className="h-11"
+                          />
+                        )}
+                      />
+                      <FieldError message={errors.authorized_person_phone?.message} />
                     </div>
                   </div>
 

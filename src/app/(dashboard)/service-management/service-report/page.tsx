@@ -312,7 +312,9 @@ export default function ServiceReportPage() {
           },
           {
             label: "Authorized Person",
-            value: viewReportData.authorized_person || "—",
+            value: viewReportData.authorized_person
+              ? `${viewReportData.authorized_person}${viewReportData.authorized_person_phone ? ` (${viewReportData.authorized_person_phone})` : ""}`
+              : "—",
             icon: User,
           },
           {

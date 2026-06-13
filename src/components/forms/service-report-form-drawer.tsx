@@ -82,6 +82,13 @@ const serviceReportSchema = z.object({
   machine_installation_date: z.string().optional().or(z.literal('')),
   serial_or_frame_no: z.string().min(1, 'Serial/Frame no is required'),
   authorized_person: z.string().min(1, 'Authorized person is required'),
+  authorized_person_phone: z
+    .string()
+    .optional()
+    .refine((val) => !val || isValidPhoneNumber(val), {
+      message: 'Please enter a valid phone number with country code',
+    })
+    .or(z.literal('')),
   previous_visit_engineer: z.string().optional().or(z.literal('')),
   nature_of_complaint: z.string().min(1, 'Nature of complaint is required'),
   problem_observed: z.string().optional().or(z.literal('')),
@@ -258,6 +265,7 @@ export function ServiceReportFormDrawer() {
       machine_installation_date: '',
       serial_or_frame_no: '',
       authorized_person: '',
+      authorized_person_phone: '',
       previous_visit_engineer: '',
       nature_of_complaint: '',
       problem_observed: '',
@@ -340,6 +348,7 @@ export function ServiceReportFormDrawer() {
           machine_installation_date: reportData.machine_installation_date?.split('T')[0] || '',
           serial_or_frame_no: reportData.serial_or_frame_no,
           authorized_person: reportData.authorized_person,
+          authorized_person_phone: reportData.authorized_person_phone || '',
           previous_visit_engineer: reportData.previous_visit_engineer || '',
           nature_of_complaint: reportData.nature_of_complaint,
           problem_observed: reportData.problem_observed || '',
@@ -378,6 +387,7 @@ export function ServiceReportFormDrawer() {
           machine_installation_date: '',
           serial_or_frame_no: '',
           authorized_person: '',
+          authorized_person_phone: '',
           previous_visit_engineer: '',
           nature_of_complaint: '',
           problem_observed: '',
@@ -467,6 +477,10 @@ export function ServiceReportFormDrawer() {
         ac_provided: data.ac_provided === 'YES',
         auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
         no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
+        machine_mfg_date: data.machine_mfg_date || undefined,
+        machine_installation_date: data.machine_installation_date || undefined,
+        authorized_person_phone: data.authorized_person_phone || undefined,
+        visit_time: data.visit_time || undefined,
         engineer_signature: engineerSignatureUrl,
         customer_signature: customerSignatureUrl,
       };
@@ -509,6 +523,7 @@ export function ServiceReportFormDrawer() {
     machine_installation_date: 5,
     serial_or_frame_no: 5,
     authorized_person: 5,
+    authorized_person_phone: 5,
     previous_visit_engineer: 5,
 
     // Section 6
@@ -906,17 +921,39 @@ export function ServiceReportFormDrawer() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Users size={14} className="text-primary/70" />
-                      Previous Visit Engineer
-                    </Label>
-                    <Input
-                      {...register('previous_visit_engineer')}
-                      placeholder="Previous visit engineer name (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                    <FieldError message={errors.previous_visit_engineer?.message} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Users size={14} className="text-primary/70" />
+                        Previous Visit Engineer
+                      </Label>
+                      <Input
+                        {...register('previous_visit_engineer')}
+                        placeholder="Previous visit engineer name (Optional)"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                      <FieldError message={errors.previous_visit_engineer?.message} />
+                    </div>
+
+                    <div className="space-y-2" data-error={errors.authorized_person_phone ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Phone size={14} className="text-primary/70" />
+                        Authorized Person Contact No
+                      </Label>
+                      <Controller
+                        name="authorized_person_phone"
+                        control={control}
+                        render={({ field }) => (
+                          <PhoneInput
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            placeholder="Enter contact number"
+                            className="h-11"
+                          />
+                        )}
+                      />
+                      <FieldError message={errors.authorized_person_phone?.message} />
+                    </div>
                   </div>
                 </div>
               </SectionToggle>

@@ -359,6 +359,7 @@ export function ExpenseFormDrawer() {
         mill_id: data.mill_id || null,
         place: data.place || null,
         others: data.others || null,
+        visit_time: data.visit_time || undefined,
       };
 
       if (isEdit) {
