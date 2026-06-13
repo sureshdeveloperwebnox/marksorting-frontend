@@ -112,6 +112,7 @@ const serviceReportSchema = z.object({
   engineer_signature: z.string().min(1, 'Engineer signature is required'),
   customer_remarks: z.string().max(2000, 'Maximum 2000 characters').optional().or(z.literal('')),
   customer_signature: z.string().min(1, 'Customer signature is required'),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type ServiceReportFormValues = z.infer<typeof serviceReportSchema>;
@@ -286,6 +287,7 @@ export function ServiceReportFormDrawer() {
       engineer_signature: '',
       customer_remarks: '',
       customer_signature: '',
+      status: 'IN_PROGRESS',
     },
   });
 
@@ -369,6 +371,7 @@ export function ServiceReportFormDrawer() {
           engineer_signature: reportData.engineer_signature,
           customer_remarks: reportData.customer_remarks || '',
           customer_signature: reportData.customer_signature,
+          status: reportData.status || 'PENDING',
         });
       } else if (!isEdit) {
         setSelectedCustomerId('');
@@ -408,6 +411,7 @@ export function ServiceReportFormDrawer() {
           engineer_signature: '',
           customer_remarks: '',
           customer_signature: '',
+          status: 'IN_PROGRESS',
         });
       }
     }
@@ -548,6 +552,7 @@ export function ServiceReportFormDrawer() {
     auto_drain_valve_working: 8,
 
     // Section 9
+    status: 9,
     engineer_remarks: 9,
     engineer_signature: 9,
     customer_remarks: 9,
@@ -1181,6 +1186,28 @@ export function ServiceReportFormDrawer() {
               {/* Section 9 - Remarks & Signatures */}
               <SectionToggle section={sections[8]} isOpen={!!openSections[9]} onToggle={toggleSection}>
                 <div className="space-y-6">
+                  <div className="space-y-2" data-error={errors.status ? 'true' : undefined}>
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Tag size={14} className="text-primary/70" />
+                      Work Status
+                    </Label>
+                    <Select
+                      onValueChange={(val) => setValue('status', val || '')}
+                      value={watch('status')}
+                    >
+                      <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectValue placeholder="Select work status" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                        <SelectItem value="PENDING" className="font-bold py-3 text-amber-500">Pending</SelectItem>
+                        <SelectItem value="IN_PROGRESS" className="font-bold py-3 text-blue-500">Work In Progress</SelectItem>
+                        <SelectItem value="COMPLETED" className="font-bold py-3 text-emerald-500">Completed</SelectItem>
+                        <SelectItem value="CANCELLED" className="font-bold py-3 text-rose-500">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FieldError message={errors.status?.message} />
+                  </div>
+
                   <div className="space-y-2" data-error={errors.engineer_remarks ? 'true' : undefined}>
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <Pen size={14} className="text-primary/70" />
