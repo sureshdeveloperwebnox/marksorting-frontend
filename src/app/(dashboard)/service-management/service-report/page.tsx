@@ -502,14 +502,9 @@ export default function ServiceReportPage() {
         items: [
           {
             label: "Engineers",
-            value: viewReportData.technicians?.map((t: any) => t.technician.full_name).join(", ") || "—",
+            value: viewReportData.technicians?.map((t: any) => t.technician?.full_name).filter(Boolean).join(", ") || "—",
             icon: Wrench,
             fullWidth: true,
-          },
-          {
-            label: "Previous Visit Engineer",
-            value: viewReportData.previous_visit_engineer || "—",
-            icon: User,
           },
           {
             label: "Engineer Remarks",
@@ -633,7 +628,7 @@ export default function ServiceReportPage() {
       header: "Engineers",
       cell: ({ row }) => (
         <span className="text-gray-600 dark:text-gray-300 font-semibold text-sm">
-          {row.original.technicians?.map((t: any) => t.technician.full_name).join(", ") || "—"}
+          {row.original.technicians?.map((t: any) => t.technician?.full_name).filter(Boolean).join(", ") || "—"}
         </span>
       ),
     },

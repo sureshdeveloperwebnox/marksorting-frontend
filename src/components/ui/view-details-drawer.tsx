@@ -57,7 +57,7 @@ export function ViewDetailsDrawer({
       <SheetContent
         side="right"
         className={cn(
-          "w-full p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5 shadow-2xl",
+          "w-full p-0 flex flex-col h-screen max-h-screen bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5 shadow-2xl",
           sizeClasses[size]
         )}
       >
@@ -83,7 +83,7 @@ export function ViewDetailsDrawer({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide pb-28 space-y-6">
+        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-6 custom-scrollbar pb-28 space-y-6">
           {isLoading ? (
             <div className="space-y-6">
               {[1, 2].map((group) => (
