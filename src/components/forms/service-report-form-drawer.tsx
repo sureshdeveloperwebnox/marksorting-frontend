@@ -709,11 +709,52 @@ export function ServiceReportFormDrawer() {
     }
 
     // Show a toast with all validation error fields
+    const fieldLabelMap: Record<string, string> = {
+      service_category_id: 'Service Category',
+      technician_ids: 'Service Engineers',
+      mill_id: 'Mill',
+      place: 'Place',
+      mill_whatsapp_number: 'Mill WhatsApp Number',
+      mill_email: 'Mill Email',
+      visit_date: 'Visit Date',
+      visit_time: 'Visit Time',
+      call_registered_date: 'Call Registered Date',
+      machine_model: 'Machine Model',
+      machine_mfg_date: 'Mfg Date',
+      machine_installation_date: 'Installation Date',
+      serial_or_frame_no: 'Serial No / Frame No',
+      authorized_person: 'Authorized Person',
+      authorized_person_phone: 'Authorized Person Contact No',
+      nature_of_complaint: 'Nature of Complaint',
+      problem_observed: 'Problem Observed',
+      action_taken: 'Action Taken',
+      commodity: 'Commodity',
+      contamination: 'Contamination',
+      output_capacity_per_hour: 'Output Capacity/Hour',
+      rejection_ratio: 'Rejection Ratio',
+      purity: 'Purity',
+      no_of_programs_set: 'No of Programs Set',
+      ac_provided: 'AC Status',
+      compressor_details: 'Compressor Details',
+      air_drier_details: 'Air Drier Details',
+      line_filter_condition: 'Line Filter Condition',
+      machine_filter_condition: 'Machine Filter Condition',
+      auto_drain_valve_working: 'Auto Drain Valve Status',
+      status: 'Work Status',
+      engineer_remarks: 'Engineer Remarks',
+      engineer_signature: 'Engineer Signature',
+      customer_remarks: 'Customer Remarks',
+      customer_signature: 'Customer Signature',
+    };
+
     const errorFields = Object.keys(errors)
       .map((key) => {
-        return key
-          .replace(/_/g, ' ')
-          .replace(/\b\w/g, (char) => char.toUpperCase());
+        return (
+          fieldLabelMap[key] ||
+          key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase())
+        );
       });
 
     toast.error('Validation Failed', {

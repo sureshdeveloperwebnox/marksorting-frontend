@@ -404,11 +404,26 @@ export function ExpenseFormDrawer() {
       }));
     }
 
+    const fieldLabelMap: Record<string, string> = {
+      technician_ids: 'Service Engineers',
+      mill_id: 'Mill Name',
+      place: 'Place',
+      others: 'Others',
+      visit_date: 'Date',
+      visit_time: 'Time',
+      expense_category_id: 'Expense Category',
+      amount: 'Amount',
+      expense_images: 'Expense Images',
+    };
+
     const errorFields = Object.keys(errors)
       .map((key) => {
-        return key
-          .replace(/_/g, ' ')
-          .replace(/\b\w/g, (char) => char.toUpperCase());
+        return (
+          fieldLabelMap[key] ||
+          key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase())
+        );
       });
 
     toast.error('Validation Failed', {

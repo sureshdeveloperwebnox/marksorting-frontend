@@ -588,11 +588,54 @@ export function InstallationReportFormDrawer() {
     }
 
     // Show a toast with all validation error fields
+    const fieldLabelMap: Record<string, string> = {
+      technician_ids: 'Service Engineers',
+      mill_id: 'Mill Name',
+      place: 'Place',
+      mill_whatsapp_number: 'Mill WhatsApp Number',
+      mill_email: 'Mill Email',
+      visit_date: 'Date',
+      visit_time: 'Time',
+      call_registered_date: 'Call Registered Date',
+      machine_model: 'Model',
+      serial_or_frame_no: 'Serial / Frame No',
+      authorized_person: 'Authorized Person',
+      authorized_person_phone: 'Authorized Person Contact No',
+      invoice_number: 'Invoice Number',
+      invoice_date: 'Invoice Date',
+      warranty_start_date: 'Warranty Start Date',
+      warranty_end_date: 'Warranty End Date',
+      commodity: 'Commodity',
+      contamination: 'Contamination',
+      output_capacity_per_hour: 'Output capacity / hour',
+      rejection_ratio: 'Rejection Ratio',
+      purity: 'Purity',
+      no_of_programs_set: 'No of Programs Set',
+      ac_provided: 'AC Provided',
+      compressor_details: 'Compressor Details',
+      air_drier_details: 'Air Drier Details',
+      ground_earth_provided: 'Ground Earth Provided',
+      ground_earth_value: 'Ground Earth Value',
+      ground_earth_field: 'Ground Earth Field',
+      no_of_filters_installed: 'No of Filters Installed',
+      oil_filter_condition: 'Oil Filter Condition',
+      line_filter_condition: 'Line Filter Condition',
+      auto_drain_valve_working: 'Auto Drain Valve Working',
+      status: 'Status',
+      engineer_remarks: 'Engineer Remarks',
+      engineer_signature: 'Engineer Signature',
+      customer_remarks: 'Customer Remarks',
+      customer_signature: 'Customer Signature',
+    };
+
     const errorFields = Object.keys(errors)
       .map((key) => {
-        return key
-          .replace(/_/g, ' ')
-          .replace(/\b\w/g, (char) => char.toUpperCase());
+        return (
+          fieldLabelMap[key] ||
+          key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase())
+        );
       });
 
     toast.error('Validation Failed', {
