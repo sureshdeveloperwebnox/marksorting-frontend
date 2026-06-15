@@ -35,6 +35,7 @@ import {
   Tag,
   ChevronDown,
   ChevronRight,
+  PlusCircle,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,12 +43,14 @@ import * as z from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils';
 import { useCreateServiceReport, useUpdateServiceReport, useServiceReport } from '@/services/service-report-service';
 import { useServiceCategories } from '@/services/service-category-service';
-import { useMills } from '@/services/mill-service';
-import { useCustomers } from '@/services/customer-service';
+import { useMills, useCreateMill } from '@/services/mill-service';
+import { useCustomers, useCreateCustomer } from '@/services/customer-service';
+import { useMasterMills, useCreateMasterMill } from '@/services/master-mill-service';
 import useServiceReportStore from '@/store/useServiceReportStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
 import { SignaturePad } from '@/components/ui/signature-pad';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { StateSearchSelect } from '@/components/ui/state-search-select';
 import { useS3Upload } from '@/hooks/use-s3-upload';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import {
@@ -58,11 +61,47 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
+
+/* ── Indian States List ─────────────────────────────────────── */
+const INDIAN_STATES = [
+  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
+  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli',
+  'Daman and Diu', 'Delhi', 'Lakshadweep', 'Puducherry', 'Ladakh', 'Jammu and Kashmir',
+];
+
+/* ── State Matching Helper ──────────────────────────────────── */
+const matchState = (mill: any) => {
+  const address = mill?.address || '';
+  const place = mill?.place || '';
+  const city = mill?.city || '';
+  
+  const searchStr = `${address} ${place} ${city}`.toLowerCase();
+  
+  const matched = INDIAN_STATES.find(s => {
+    const cleanState = s.toLowerCase().replace(/\s+/g, '');
+    const cleanSearch = searchStr.replace(/\s+/g, '');
+    return cleanSearch.includes(cleanState);
+  });
+  
+  return matched || '';
+};
 
 const serviceReportSchema = z.object({
   service_category_id: z.string().min(1, 'Service category is required'),
@@ -292,6 +331,81 @@ export function ServiceReportFormDrawer() {
   });
 
   const selectedMillId = watch('mill_id');
+
+  // Mutations for quick inline registration
+  const { mutateAsync: createCustomer } = useCreateCustomer();
+  const { mutateAsync: createMill } = useCreateMill();
+  const { mutateAsync: createMasterMill } = useCreateMasterMill();
+
+  // Fetch master mills for the selected mill
+  const { data: masterMillsData, isLoading: masterMillsLoading } = useMasterMills(
+    {
+      mill_id: selectedMillId || undefined,
+      skip: 0,
+      take: 100,
+      status: 'ACTIVE',
+    },
+    { enabled: !!selectedMillId }
+  );
+  const masterMills = masterMillsData?.masterMills || [];
+
+  // Dialog State Variables for Customer & Mill
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
+  const [quickCustomerName, setQuickCustomerName] = React.useState('');
+  const [quickMillName, setQuickMillName] = React.useState('');
+  const [quickPhone, setQuickPhone] = React.useState('');
+  const [quickAddress, setQuickAddress] = React.useState('');
+  const [quickPlace, setQuickPlace] = React.useState('');
+  const [quickState, setQuickState] = React.useState('');
+  const [quickRefNo, setQuickRefNo] = React.useState('');
+  const [existingCustomerId, setExistingCustomerId] = React.useState<string | null>(null);
+  const [isQuickRegistering, setIsQuickRegistering] = React.useState(false);
+
+  // Dialog State Variables for Master Mill (Machine Installation)
+  const [isQuickMasterMillOpen, setIsQuickMasterMillOpen] = React.useState(false);
+  const [quickInvoiceNo, setQuickInvoiceNo] = React.useState('');
+  const [quickInvoiceDate, setQuickInvoiceDate] = React.useState('');
+  const [quickMasterMillRefNo, setQuickMasterMillRefNo] = React.useState('');
+  const [quickMcModel, setQuickMcModel] = React.useState('');
+  const [quickFrameNo, setQuickFrameNo] = React.useState('');
+  const [quickInstallationDate, setQuickInstallationDate] = React.useState('');
+  const [quickWarrantyYears, setQuickWarrantyYears] = React.useState(1);
+  const [quickWarrantyMonths, setQuickWarrantyMonths] = React.useState(12);
+  const [quickWarrantyType, setQuickWarrantyType] = React.useState('Non Warranty');
+  const [isQuickMasterMillRegistering, setIsQuickMasterMillRegistering] = React.useState(false);
+
+  // Search Machine by Ref No / Frame No states
+  const [machineSearchQuery, setMachineSearchQuery] = React.useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState('');
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(machineSearchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [machineSearchQuery]);
+
+  // Query master mills matching search term (global search, not mill_id restricted)
+  // NOTE: Always trim the search query to avoid leading/trailing space mismatches in DB
+  const trimmedSearchQuery = debouncedSearchQuery.trim();
+  const { data: searchMasterMillsData, isLoading: searchMasterMillsLoading } = useMasterMills(
+    {
+      search: trimmedSearchQuery || undefined,
+      skip: 0,
+      take: 10,
+    },
+    { enabled: trimmedSearchQuery.length >= 2 }
+  );
+  const searchedMasterMills = searchMasterMillsData?.masterMills || [];
+
+  // Similar existing customers based on quickCustomerName (for duplicate prevention)
+  const similarCustomers = React.useMemo(() => {
+    if (!quickCustomerName || quickCustomerName.trim().length < 2) return [];
+    const search = quickCustomerName.toLowerCase().trim();
+    return customers.filter(
+      (c) => c.name.toLowerCase().includes(search) && c.id !== existingCustomerId
+    ).slice(0, 5);
+  }, [quickCustomerName, customers, existingCustomerId]);
 
   const filteredMills = React.useMemo(() => {
     if (!selectedCustomerId) {
@@ -681,12 +795,125 @@ export function ServiceReportFormDrawer() {
               {/* Section 3 - Customer / Mill Details */}
               <SectionToggle section={sections[2]} isOpen={!!openSections[3]} onToggle={toggleSection}>
                 <div className="space-y-4">
+                  {/* Search Machine by Ref No / Frame No directly */}
+                  <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Cpu size={14} className="text-primary/70" />
+                      Search Machine to Prefill (REF NO / Frame No)
+                    </Label>
+                    <Input
+                      value={machineSearchQuery}
+                      onChange={(e) => setMachineSearchQuery(e.target.value)}
+                      placeholder="Type REF NO or Frame No to search..."
+                      className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    />
+                    
+                    {/* Search Results List */}
+                    {machineSearchQuery.trim().length >= 2 && (
+                      <div className="mt-2 bg-white dark:bg-gray-955 rounded-xl border border-gray-100 dark:border-white/5 divide-y divide-gray-100 dark:divide-white/5 max-h-48 overflow-y-auto shadow-lg z-20 relative">
+                        {searchMasterMillsLoading ? (
+                          <div className="p-3 text-xs text-gray-400 font-bold flex items-center gap-2">
+                            <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                            Searching...
+                          </div>
+                        ) : searchedMasterMills.length > 0 ? (
+                          searchedMasterMills.map((m) => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => {
+                                // Set mill_id and auto-resolve customer
+                                if (m.mill_id) {
+                                  setValue('mill_id', m.mill_id);
+                                  // Use customer_id from API response first, then fallback to local lookup
+                                  const millCustomerId = m.mill?.customer_id;
+                                  if (millCustomerId) {
+                                    setSelectedCustomerId(millCustomerId);
+                                  } else {
+                                    const localMill = mills.find(millItem => millItem.id === m.mill_id);
+                                    if (localMill?.customer_id) {
+                                      setSelectedCustomerId(localMill.customer_id);
+                                    }
+                                  }
+                                }
+                                // Prefill frame/serial no
+                                if (m.frame_no) {
+                                  setValue('serial_or_frame_no', m.frame_no);
+                                }
+                                // Prefill machine model
+                                if (m.mc_model) {
+                                  setValue('machine_model', m.mc_model);
+                                }
+                                // Prefill installation date
+                                if (m.installation_date) {
+                                  setValue('machine_installation_date', m.installation_date.split('T')[0]);
+                                }
+                                // Prefill place: master mill place → mill place fallback
+                                const placeToUse = m.place || m.mill?.place;
+                                if (placeToUse) {
+                                  setValue('place', placeToUse);
+                                }
+                                // Prefill whatsapp: master mill phone → mill phone fallback
+                                const phoneToUse = m.phone_no || m.mill?.phone;
+                                if (phoneToUse) {
+                                  setValue('mill_whatsapp_number', normalizePhoneNumber(phoneToUse));
+                                }
+                                setMachineSearchQuery('');
+                                toast.success('Machine details prefilled! Verify and adjust as needed.');
+                              }}
+                              className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
+                            >
+                              <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
+                                {m.mill?.name || 'Unknown Mill'}
+                              </div>
+                              <div className="text-gray-400 font-medium">
+                                {[
+                                  // Show ref_no from MasterMill first, fallback to Mill.ref_no
+                                  (m.ref_no || m.mill?.ref_no) ? `Ref: ${m.ref_no || m.mill?.ref_no}` : null,
+                                  m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                  m.mc_model ? `Model: ${m.mc_model}` : null,
+                                  (m.place || m.mill?.place) ? `Place: ${m.place || m.mill?.place}` : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' | ')}
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-3 text-xs text-gray-400 font-bold">
+                            No matching machines found
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Customer Dropdown */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Users size={14} className="text-primary/70" />
-                      Customer
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Users size={14} className="text-primary/70" />
+                        Customer
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickCustomerName('');
+                          setQuickMillName('');
+                          setQuickPhone('');
+                          setQuickAddress('');
+                          setQuickPlace('');
+                          setQuickState('');
+                          setQuickRefNo('');
+                          setExistingCustomerId(null);
+                          setIsQuickCreateOpen(true);
+                        }}
+                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <PlusCircle size={12} />
+                        Quick Register
+                      </button>
+                    </div>
                     {customers.length > 0 ? (
                       <Select
                         onValueChange={(val) => {
@@ -724,10 +951,32 @@ export function ServiceReportFormDrawer() {
 
                   {/* Mill Dropdown */}
                   <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Building2 size={14} className="text-primary/70" />
-                      Mill
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Building2 size={14} className="text-primary/70" />
+                        Mill
+                      </Label>
+                      {selectedCustomerId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
+                            setExistingCustomerId(selectedCustomerId);
+                            setQuickMillName('');
+                            setQuickPhone('');
+                            setQuickAddress('');
+                            setQuickPlace('');
+                            setQuickState('');
+                            setQuickRefNo('');
+                            setIsQuickCreateOpen(true);
+                          }}
+                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <PlusCircle size={12} />
+                          Quick Add Mill
+                        </button>
+                      )}
+                    </div>
                     {mills.length > 0 ? (
                       <Select
                         onValueChange={(val) => {
@@ -769,6 +1018,102 @@ export function ServiceReportFormDrawer() {
                     )}
                     <FieldError message={errors.mill_id?.message} />
                   </div>
+
+                  {/* Machine / Installation Record (REF NO / Frame No) Dropdown */}
+                  {selectedMillId && (
+                    <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                          <Cpu size={14} className="text-primary/70" />
+                          Select Machine (REF NO / Frame No)
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickInvoiceNo('');
+                            setQuickInvoiceDate('');
+                            setQuickMasterMillRefNo('');
+                            setQuickMcModel('');
+                            setQuickFrameNo('');
+                            setQuickInstallationDate('');
+                            setQuickWarrantyYears(1);
+                            setQuickWarrantyMonths(12);
+                            setQuickWarrantyType('Non Warranty');
+                            setIsQuickMasterMillOpen(true);
+                          }}
+                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <PlusCircle size={12} />
+                          Add Machine
+                        </button>
+                      </div>
+                      {masterMillsLoading ? (
+                        <Skeleton className="h-11 rounded-xl w-full" />
+                      ) : (
+                        <Select
+                          onValueChange={(val) => {
+                            if (val === 'clear') {
+                              setValue('serial_or_frame_no', '');
+                              setValue('machine_model', '');
+                              setValue('machine_installation_date', '');
+                              return;
+                            }
+                            const m = masterMills.find((rec) => rec.id === val);
+                            if (m) {
+                              // Frame / serial no
+                              if (m.frame_no) setValue('serial_or_frame_no', m.frame_no);
+                              // Machine model
+                              if (m.mc_model) setValue('machine_model', m.mc_model);
+                              // Installation date
+                              if (m.installation_date) {
+                                setValue('machine_installation_date', m.installation_date.split('T')[0]);
+                              }
+                              // Place: master mill place → mill place fallback
+                              const placeToUse = m.place || m.mill?.place;
+                              if (placeToUse) setValue('place', placeToUse);
+                              // Phone: master mill phone → mill phone fallback
+                              const phoneToUse = m.phone_no || m.mill?.phone;
+                              if (phoneToUse) setValue('mill_whatsapp_number', normalizePhoneNumber(phoneToUse));
+                              toast.success('Machine details prefilled! Verify and adjust as needed.');
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                            <SelectValue placeholder="Select a machine record to prefill..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
+                            <SelectItem value="clear" className="font-bold py-3 text-gray-400">
+                              Clear Selection
+                            </SelectItem>
+                            {masterMills.map((m, idx) => {
+                              // Build a human-readable label — never fall through to UUID
+                              const displayRef = m.ref_no || m.mill?.ref_no;
+                              const parts = [
+                                displayRef ? `Ref: ${displayRef}` : null,
+                                m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                m.mc_model ? `Model: ${m.mc_model}` : null,
+                              ].filter(Boolean);
+                              const label =
+                                parts.join(' | ') ||
+                                (m.invoice_no ? `Invoice: ${m.invoice_no}` : null) ||
+                                (m.mill?.name ? `${m.mill.name} — Record ${idx + 1}` : null) ||
+                                `Machine Record ${idx + 1}`;
+                              return (
+                                <SelectItem key={m.id} value={m.id} className="font-bold py-3">
+                                  {label}
+                                </SelectItem>
+                              );
+                            })}
+                            {masterMills.length === 0 && (
+                              <SelectItem value="no_records" disabled className="py-3 text-gray-400 font-bold">
+                                No master mill records found for this mill
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -1290,6 +1635,427 @@ export function ServiceReportFormDrawer() {
             </Button>
           </div>
         </SheetFooter>
+
+        {/* Quick Register Customer & Mill Dialog */}
+        <Dialog open={isQuickCreateOpen} onOpenChange={setIsQuickCreateOpen}>
+          <DialogContent className="sm:max-w-[480px] bg-white dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-white/5">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-black text-gray-800 dark:text-gray-200">
+                {existingCustomerId ? 'Register Mill' : 'Register Customer & Mill'}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400">
+                {existingCustomerId 
+                  ? 'Create a new mill under the current customer.' 
+                  : 'Create a new customer and link a new mill with basic details.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 my-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-hide">
+              {/* Customer Name (disabled if existing) */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Customer Name *
+                </Label>
+                <Input
+                  value={quickCustomerName}
+                  onChange={(e) => setQuickCustomerName(e.target.value)}
+                  disabled={!!existingCustomerId}
+                  placeholder="e.g. Seva Mandir"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+                
+                {/* Duplicate warnings/suggestions */}
+                {!existingCustomerId && similarCustomers.length > 0 && (
+                  <div className="mt-1.5 p-2 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-1">
+                    <p className="text-[10px] text-amber-500 font-bold">Similar existing customers found:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {similarCustomers.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setExistingCustomerId(c.id);
+                            setQuickCustomerName(c.name);
+                          }}
+                          className="text-[10px] bg-primary/10 hover:bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full transition-all cursor-pointer"
+                        >
+                          Use: {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mill Name */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Mill Name *
+                </Label>
+                <Input
+                  value={quickMillName}
+                  onChange={(e) => setQuickMillName(e.target.value)}
+                  placeholder="e.g. Seva Mandir Mill 1"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* Ref No */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Ref No / Code
+                </Label>
+                <Input
+                  value={quickRefNo}
+                  onChange={(e) => setQuickRefNo(e.target.value)}
+                  placeholder="e.g. P-0005"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* Address */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Full Address
+                </Label>
+                <Input
+                  value={quickAddress}
+                  onChange={(e) => setQuickAddress(e.target.value)}
+                  placeholder="e.g. 123 Main Street"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* Place */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Place / City
+                </Label>
+                <Input
+                  value={quickPlace}
+                  onChange={(e) => setQuickPlace(e.target.value)}
+                  placeholder="e.g. Coimbatore"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* State Select */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  State
+                </Label>
+                <StateSearchSelect
+                  value={quickState}
+                  onChange={setQuickState}
+                  placeholder="Select state..."
+                  className="h-10 text-sm font-bold border-none"
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  WhatsApp Phone Number
+                </Label>
+                <PhoneInput
+                  value={quickPhone}
+                  onChange={setQuickPhone}
+                  placeholder="Enter phone number"
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="border-t border-gray-100 dark:border-white/5 pt-3 gap-2 flex-col sm:flex-row">
+              {existingCustomerId && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setExistingCustomerId(null);
+                    setQuickCustomerName('');
+                  }}
+                  className="text-xs font-bold text-rose-500 hover:text-rose-600 cursor-pointer"
+                >
+                  Change Customer
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsQuickCreateOpen(false)}
+                className="rounded-xl h-10 font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isQuickRegistering || !quickMillName.trim() || (!existingCustomerId && !quickCustomerName.trim())}
+                onClick={async () => {
+                  setIsQuickRegistering(true);
+                  try {
+                    let customerId = existingCustomerId;
+
+                    // Create customer if not exists
+                    if (!customerId) {
+                      const exactMatch = customers.find(
+                        (c) => c.name.toLowerCase().trim() === quickCustomerName.toLowerCase().trim()
+                      );
+                      if (exactMatch) {
+                        customerId = exactMatch.id;
+                      } else {
+                        const newCust = await createCustomer({
+                          name: quickCustomerName.trim(),
+                          phone: quickPhone || undefined,
+                          address: quickAddress || undefined,
+                          status: 'ACTIVE',
+                        });
+                        customerId = newCust.id;
+                      }
+                    }
+
+                    // Check if mill already exists under this customer
+                    const existingMills = mills.filter(m => m.customer_id === customerId);
+                    const exactMillMatch = existingMills.find(
+                      (m) => m.name.toLowerCase().trim() === quickMillName.toLowerCase().trim()
+                    );
+
+                    let millId = exactMillMatch?.id;
+
+                    if (!millId) {
+                      const newMill = await createMill({
+                        name: quickMillName.trim(),
+                        ref_no: quickRefNo.trim() || undefined,
+                        customer_id: customerId,
+                        phone: quickPhone || undefined,
+                        address: quickAddress || undefined,
+                        place: quickPlace || undefined,
+                        city: quickPlace || undefined,
+                        status: 'ACTIVE',
+                      });
+                      millId = newMill.id;
+                    } else {
+                      toast.info('Mill already exists, linking to it.');
+                    }
+
+                    // Update form selections
+                    setSelectedCustomerId(customerId || '');
+                    setValue('mill_id', millId || '');
+                    setValue('place', quickPlace || quickAddress || '');
+                    setValue('mill_whatsapp_number', normalizePhoneNumber(quickPhone));
+                    
+                    toast.success('Customer and Mill linked successfully!');
+                    setIsQuickCreateOpen(false);
+                  } catch (err: any) {
+                    toast.error(err.response?.data?.message || 'Failed to register Customer & Mill');
+                  } finally {
+                    setIsQuickRegistering(false);
+                  }
+                }}
+                className="rounded-xl h-10 bg-primary hover:bg-primary/90 text-white font-bold"
+              >
+                {isQuickRegistering ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Register'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Quick Register Machine (Master Mill Record) Dialog */}
+        <Dialog open={isQuickMasterMillOpen} onOpenChange={setIsQuickMasterMillOpen}>
+          <DialogContent className="sm:max-w-[480px] bg-white dark:bg-gray-950 rounded-2xl border border-gray-100 dark:border-white/5">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-black text-gray-800 dark:text-gray-200">
+                Register Machine (Master Mill Record)
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-400">
+                Add a new machine installation/service record for the selected mill: 
+                <strong> {mills.find(m => m.id === selectedMillId)?.name}</strong>
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 my-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-hide">
+              {/* Invoice No */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Invoice No *
+                </Label>
+                <Input
+                  value={quickInvoiceNo}
+                  onChange={(e) => setQuickInvoiceNo(e.target.value)}
+                  placeholder="e.g. INV-0036"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* Invoice Date */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Invoice Date
+                </Label>
+                <DatePicker
+                  value={quickInvoiceDate}
+                  onChange={setQuickInvoiceDate}
+                  placeholder="Select invoice date"
+                />
+              </div>
+
+              {/* Ref No */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Ref No / Code
+                </Label>
+                <Input
+                  value={quickMasterMillRefNo}
+                  onChange={(e) => setQuickMasterMillRefNo(e.target.value)}
+                  placeholder="e.g. P-0005"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* MC Model */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Machine Model
+                </Label>
+                <Input
+                  value={quickMcModel}
+                  onChange={(e) => setQuickMcModel(e.target.value)}
+                  placeholder="e.g. RX-40"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* Frame No */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Frame / W No *
+                </Label>
+                <Input
+                  value={quickFrameNo}
+                  onChange={(e) => setQuickFrameNo(e.target.value)}
+                  placeholder="e.g. Frame 12345"
+                  className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                />
+              </div>
+
+              {/* Installation Date */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                  Installation Date
+                </Label>
+                <DatePicker
+                  value={quickInstallationDate}
+                  onChange={setQuickInstallationDate}
+                  placeholder="Select installation date"
+                />
+              </div>
+
+              {/* Warranty type */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Years</Label>
+                  <Input
+                    type="number"
+                    value={quickWarrantyYears}
+                    onChange={(e) => setQuickWarrantyYears(Number(e.target.value))}
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Months</Label>
+                  <Input
+                    type="number"
+                    value={quickWarrantyMonths}
+                    onChange={(e) => setQuickWarrantyMonths(Number(e.target.value))}
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Warranty</Label>
+                  <Select
+                    value={quickWarrantyType}
+                    onValueChange={(val) => setQuickWarrantyType(val || 'Non Warranty')}
+                  >
+                    <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                      <SelectItem value="Non Warranty" className="font-bold py-2 text-xs">Non Warranty</SelectItem>
+                      <SelectItem value="Under Warranty" className="font-bold py-2 text-xs">Under Warranty</SelectItem>
+                      <SelectItem value="Expired" className="font-bold py-2 text-xs">Expired</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="border-t border-gray-100 dark:border-white/5 pt-3 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsQuickMasterMillOpen(false)}
+                className="rounded-xl h-10 font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isQuickMasterMillRegistering || !quickInvoiceNo.trim() || !quickFrameNo.trim()}
+                onClick={async () => {
+                  setIsQuickMasterMillRegistering(true);
+                  try {
+                    // Duplicate check
+                    const duplicate = masterMills.find(
+                      (m) => m.frame_no?.toLowerCase().trim() === quickFrameNo.toLowerCase().trim()
+                    );
+                    if (duplicate) {
+                      toast.error(`A machine with Frame No "${quickFrameNo}" is already registered.`);
+                      setIsQuickMasterMillRegistering(false);
+                      return;
+                    }
+
+                    const selectedMill = mills.find((m) => m.id === selectedMillId);
+
+                    const newRecord = await createMasterMill({
+                      type: 'Installation',
+                      invoice_no: quickInvoiceNo.trim(),
+                      invoice_date: quickInvoiceDate || undefined,
+                      ref_no: quickMasterMillRefNo.trim() || undefined,
+                      mill_id: selectedMillId,
+                      mc_model: quickMcModel.trim() || undefined,
+                      frame_no: quickFrameNo.trim(),
+                      address: selectedMill?.address || undefined,
+                      place: selectedMill?.place || undefined,
+                      phone_no: selectedMill?.phone || undefined,
+                      warranty_years: quickWarrantyYears,
+                      warranty_months: quickWarrantyMonths,
+                      all_warranty: quickWarrantyType,
+                      installation_date: quickInstallationDate || undefined,
+                      status: 'ACTIVE',
+                    });
+
+                    // Automatically prefill the form
+                    setValue('serial_or_frame_no', newRecord.frame_no);
+                    setValue('machine_model', newRecord.mc_model || '');
+                    if (newRecord.installation_date) {
+                      setValue('machine_installation_date', newRecord.installation_date.split('T')[0]);
+                    }
+                    
+                    toast.success('Machine record created and prefilled successfully!');
+                    setIsQuickMasterMillOpen(false);
+                  } catch (err: any) {
+                    toast.error(err.response?.data?.message || 'Failed to create machine record');
+                  } finally {
+                    setIsQuickMasterMillRegistering(false);
+                  }
+                }}
+                className="rounded-xl h-10 bg-primary hover:bg-primary/90 text-white font-bold"
+              >
+                {isQuickMasterMillRegistering ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Prefill'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </SheetContent>
     </Sheet>
   );

@@ -14,7 +14,7 @@ export interface MasterMill {
   invoice_date?: string;
   ref_no?: string;
   mill_id?: string;
-  mill?: { id: string; name: string };
+  mill?: { id: string; name: string; ref_no?: string; place?: string; phone?: string; customer_id?: string };
   address?: string;
   place?: string;
   state?: string;
@@ -59,7 +59,7 @@ export const useMasterMills = (params: {
   all_warranty?: string;
   mill_id?: string;
   type?: string;
-}) => {
+}, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['master-mills', params],
     queryFn: async () => {
@@ -67,6 +67,7 @@ export const useMasterMills = (params: {
       return data;
     },
     placeholderData: keepPreviousData,
+    ...options,
   });
 };
 
