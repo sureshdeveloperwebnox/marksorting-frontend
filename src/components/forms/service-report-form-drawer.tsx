@@ -270,6 +270,7 @@ export function ServiceReportFormDrawer() {
   const customers = customersData?.customers || [];
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
+  const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
 
   const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true });
   const sheetRef = React.useRef<HTMLDivElement>(null);
@@ -431,10 +432,26 @@ export function ServiceReportFormDrawer() {
     }
   }, [selectedMillId, mills, setValue, watch, selectedCustomerId]);
 
+  // Synchronize selectedMachineId when masterMills or the serial_or_frame_no changes
+  React.useEffect(() => {
+    const frameNo = watch('serial_or_frame_no');
+    if (!frameNo) {
+      setSelectedMachineId('');
+      return;
+    }
+    const match = masterMills.find((m) => m.frame_no === frameNo);
+    if (match) {
+      setSelectedMachineId(match.id);
+    } else {
+      setSelectedMachineId('');
+    }
+  }, [masterMills, watch('serial_or_frame_no')]);
+
   React.useEffect(() => {
     if (!isFormDrawerOpen) {
       initializedFormKeyRef.current = null;
       setSelectedCustomerId('');
+      setSelectedMachineId('');
       return;
     }
 
@@ -489,6 +506,7 @@ export function ServiceReportFormDrawer() {
         });
       } else if (!isEdit) {
         setSelectedCustomerId('');
+        setSelectedMachineId('');
         reset({
           service_category_id: '',
           technician_ids: [],
@@ -858,6 +876,7 @@ export function ServiceReportFormDrawer() {
                                 if (phoneToUse) {
                                   setValue('mill_whatsapp_number', normalizePhoneNumber(phoneToUse));
                                 }
+                                setSelectedMachineId(m.id);
                                 setMachineSearchQuery('');
                                 toast.success('Machine details prefilled! Verify and adjust as needed.');
                               }}
@@ -880,8 +899,27 @@ export function ServiceReportFormDrawer() {
                             </button>
                           ))
                         ) : (
-                          <div className="p-3 text-xs text-gray-400 font-bold">
-                            No matching machines found
+                          <div className="p-3 text-xs text-gray-400 font-bold flex flex-col gap-2">
+                            <span>No matching machines found</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQuickCustomerName('');
+                                setQuickMillName('');
+                                setQuickPhone('');
+                                setQuickAddress('');
+                                setQuickPlace('');
+                                setQuickState('');
+                                setQuickRefNo(machineSearchQuery);
+                                setExistingCustomerId(null);
+                                setIsQuickCreateOpen(true);
+                                setMachineSearchQuery('');
+                              }}
+                              className="w-fit text-left text-primary hover:underline flex items-center gap-1 cursor-pointer font-black border-none bg-transparent p-0"
+                            >
+                              <PlusCircle size={12} />
+                              Quick Register Customer & Mill
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1051,8 +1089,10 @@ export function ServiceReportFormDrawer() {
                         <Skeleton className="h-11 rounded-xl w-full" />
                       ) : (
                         <Select
+                          value={selectedMachineId || ''}
                           onValueChange={(val) => {
                             if (val === 'clear') {
+                              setSelectedMachineId('');
                               setValue('serial_or_frame_no', '');
                               setValue('machine_model', '');
                               setValue('machine_installation_date', '');
@@ -1074,12 +1114,36 @@ export function ServiceReportFormDrawer() {
                               // Phone: master mill phone → mill phone fallback
                               const phoneToUse = m.phone_no || m.mill?.phone;
                               if (phoneToUse) setValue('mill_whatsapp_number', normalizePhoneNumber(phoneToUse));
+                              setSelectedMachineId(m.id);
                               toast.success('Machine details prefilled! Verify and adjust as needed.');
                             }
                           }}
                         >
                           <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                            <SelectValue placeholder="Select a machine record to prefill..." />
+                            {selectedMachineId ? (
+                              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                {(() => {
+                                  const m = masterMills.find((rec) => rec.id === selectedMachineId);
+                                  if (!m) return 'Unknown Machine';
+                                  const displayRef = m.ref_no || m.mill?.ref_no;
+                                  const parts = [
+                                    displayRef ? `Ref: ${displayRef}` : null,
+                                    m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                    m.mc_model ? `Model: ${m.mc_model}` : null,
+                                  ].filter(Boolean);
+                                  return (
+                                    parts.join(' | ') ||
+                                    (m.invoice_no ? `Invoice: ${m.invoice_no}` : null) ||
+                                    (m.mill?.name ? `${m.mill.name} — Record` : null) ||
+                                    'Machine Record'
+                                  );
+                                })()}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                                Select a machine record to prefill...
+                              </span>
+                            )}
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
                             <SelectItem value="clear" className="font-bold py-3 text-gray-400">
@@ -1272,19 +1336,6 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Users size={14} className="text-primary/70" />
-                        Previous Visit Engineer
-                      </Label>
-                      <Input
-                        {...register('previous_visit_engineer')}
-                        placeholder="Previous visit engineer name (Optional)"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                      />
-                      <FieldError message={errors.previous_visit_engineer?.message} />
-                    </div>
-
                     <div className="space-y-2" data-error={errors.authorized_person_phone ? 'true' : undefined}>
                       <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Phone size={14} className="text-primary/70" />
@@ -1748,6 +1799,7 @@ export function ServiceReportFormDrawer() {
                   value={quickState}
                   onChange={setQuickState}
                   placeholder="Select state..."
+                  openDirection="up"
                   className="h-10 text-sm font-bold border-none"
                 />
               </div>
@@ -1838,13 +1890,42 @@ export function ServiceReportFormDrawer() {
                       toast.info('Mill already exists, linking to it.');
                     }
 
+                    // Create Master Mill (Machine Installation Record) if quickRefNo is provided
+                    let createdMasterMillId = '';
+                    if (quickRefNo.trim()) {
+                      try {
+                        const newMasterMill = await createMasterMill({
+                          invoice_no: 'QR-' + quickRefNo.trim(),
+                          ref_no: quickRefNo.trim(),
+                          frame_no: quickRefNo.trim(),
+                          mill_id: millId,
+                          place: quickPlace || undefined,
+                          state: quickState || undefined,
+                          phone_no: quickPhone || undefined,
+                          status: 'ACTIVE',
+                          type: 'Installation',
+                          installation_date: watch('visit_date')
+                            ? new Date(watch('visit_date')).toISOString()
+                            : new Date().toISOString(),
+                        });
+                        createdMasterMillId = newMasterMill.id;
+                      } catch (masterMillErr) {
+                        console.error('Failed to auto-create master mill record:', masterMillErr);
+                      }
+                    }
+
                     // Update form selections
                     setSelectedCustomerId(customerId || '');
                     setValue('mill_id', millId || '');
                     setValue('place', quickPlace || quickAddress || '');
                     setValue('mill_whatsapp_number', normalizePhoneNumber(quickPhone));
+
+                    if (createdMasterMillId) {
+                      setSelectedMachineId(createdMasterMillId);
+                      setValue('serial_or_frame_no', quickRefNo.trim());
+                    }
                     
-                    toast.success('Customer and Mill linked successfully!');
+                    toast.success('Customer, Mill, and Machine linked successfully!');
                     setIsQuickCreateOpen(false);
                   } catch (err: any) {
                     toast.error(err.response?.data?.message || 'Failed to register Customer & Mill');
