@@ -25,6 +25,7 @@ import {
   Hash,
   IndianRupee,
   LucideIcon,
+  PlusCircle,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,11 +45,22 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { useMills } from '@/services/mill-service';
+import { useMills, useCreateMill } from '@/services/mill-service';
+import { useCreateCustomer, useCustomers } from '@/services/customer-service';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { normalizePhoneNumber } from '@/lib/utils';
 import { DatePicker } from '@/components/ui/date-picker';
+import { StateSearchSelect } from '@/components/ui/state-search-select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 /* ── Indian States List ─────────────────────────────────────── */
 const INDIAN_STATES = [
@@ -63,8 +75,28 @@ const INDIAN_STATES = [
 
 const WARRANTY_TYPES = ['Non Warranty', 'Under Warranty', 'Expired'];
 
+/* ── State Matching Helper ──────────────────────────────────── */
+const matchState = (mill: any) => {
+  const address = mill?.address || '';
+  const place = mill?.place || '';
+  const city = mill?.city || '';
+  
+  // Try to search for state in address, place, city
+  const searchStr = `${address} ${place} ${city}`.toLowerCase();
+  
+  // Clean states for matching
+  const matched = INDIAN_STATES.find(s => {
+    const cleanState = s.toLowerCase().replace(/\s+/g, '');
+    const cleanSearch = searchStr.replace(/\s+/g, '');
+    return cleanSearch.includes(cleanState);
+  });
+  
+  return matched || '';
+};
+
 /* ── Zod Schema ─────────────────────────────────────────────── */
 const masterMillSchema = z.object({
+  type: z.string().min(1, 'Record type is required'),
   invoice_no: z.string().min(1, 'Invoice number is required'),
   invoice_date: z.string().optional().or(z.literal('')),
   ref_no: z.string().optional().or(z.literal('')),
@@ -145,7 +177,48 @@ export function MasterMillFormDrawer() {
 
   const mills = millsData?.mills || [];
 
+  // Query customers list to prevent duplicate creation
+  const { data: customersData } = useCustomers({
+    skip: 0,
+    take: 1000,
+    status: 'ACTIVE',
+  });
+  const customers = customersData?.customers || [];
+
+  // Quick Create States
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
+  const [isQuickRegistering, setIsQuickRegistering] = React.useState(false);
+  const [quickCustomerName, setQuickCustomerName] = React.useState('');
+  const [quickMillName, setQuickMillName] = React.useState('');
+  const [isMillNameManuallyEdited, setIsMillNameManuallyEdited] = React.useState(false);
+  const [quickPhone, setQuickPhone] = React.useState('');
+  const [quickAddress, setQuickAddress] = React.useState('');
+  const [quickPlace, setQuickPlace] = React.useState('');
+  const [quickState, setQuickState] = React.useState('');
+  const [quickRefNo, setQuickRefNo] = React.useState('');
+  const [existingCustomerId, setExistingCustomerId] = React.useState<string | null>(null);
+
+  // Similar existing customers based on quickCustomerName
+  const similarCustomers = React.useMemo(() => {
+    if (!quickCustomerName || quickCustomerName.trim().length < 2) return [];
+    const search = quickCustomerName.toLowerCase().trim();
+    return customers.filter(
+      (c) => c.name.toLowerCase().includes(search) && c.id !== existingCustomerId
+    ).slice(0, 5);
+  }, [quickCustomerName, customers, existingCustomerId]);
+
+  // Similar existing mills based on quickMillName
+  const similarMills = React.useMemo(() => {
+    if (!quickMillName || quickMillName.trim().length < 2) return [];
+    const search = quickMillName.toLowerCase().trim();
+    return mills.filter((m) => m.name.toLowerCase().includes(search)).slice(0, 5);
+  }, [quickMillName, mills]);
+
+  const createCustomerMutation = useCreateCustomer();
+  const createMillMutation = useCreateMill();
+
   const defaultValues: MasterMillFormValues = {
+    type: 'Installation',
     invoice_no: '',
     invoice_date: '',
     ref_no: '',
@@ -185,19 +258,177 @@ export function MasterMillFormDrawer() {
   // Auto-fill mill address when mill is selected
   const selectedMillId = watch('mill_id');
   React.useEffect(() => {
-    if (selectedMillId) {
+    if (selectedMillId && !isEdit) {
       const mill = mills.find((m) => m.id === selectedMillId);
-      if (mill?.address && !isEdit) {
+      if (mill) {
         setValue('address', mill.address || '');
+        setValue('place', mill.place || '');
         setValue('phone_no', normalizePhoneNumber(mill.phone) || '');
+        if (mill.ref_no) {
+          setValue('ref_no', mill.ref_no);
+        }
+        const stateVal = matchState(mill);
+        if (stateVal) {
+          setValue('state', stateVal);
+        }
       }
     }
   }, [selectedMillId, mills, setValue, isEdit]);
+
+  // Watch ref_no to auto-prefill and select mill
+  const enteredRefNo = watch('ref_no');
+  React.useEffect(() => {
+    if (enteredRefNo && !isEdit) {
+      const cleanEntered = enteredRefNo.trim().toLowerCase().replace(/[\s\-\/]/g, '');
+      if (cleanEntered) {
+        const foundMill = mills.find((m) => {
+          const cleanRef = (m.ref_no || '').trim().toLowerCase().replace(/[\s\-\/]/g, '');
+          return cleanRef === cleanEntered;
+        });
+
+        if (foundMill && foundMill.id !== selectedMillId) {
+          setValue('mill_id', foundMill.id);
+        }
+      }
+    }
+  }, [enteredRefNo, mills, setValue, isEdit, selectedMillId]);
+
+  // Check if enteredRefNo has any matching mill
+  const hasMatchingMill = React.useMemo(() => {
+    if (!enteredRefNo) return true;
+    const cleanEntered = enteredRefNo.trim().toLowerCase().replace(/[\s\-\/]/g, '');
+    if (!cleanEntered) return true;
+    return mills.some((m) => {
+      const cleanRef = (m.ref_no || '').trim().toLowerCase().replace(/[\s\-\/]/g, '');
+      return cleanRef === cleanEntered;
+    });
+  }, [enteredRefNo, mills]);
+
+  // Dynamic auto-calculation of Warranty Closing Date
+  const watchedInstallationDate = watch('installation_date');
+  const watchedWarrantyYears = watch('warranty_years');
+  const watchedWarrantyMonths = watch('warranty_months');
+
+  React.useEffect(() => {
+    if (watchedInstallationDate) {
+      const date = new Date(watchedInstallationDate);
+      if (!isNaN(date.getTime())) {
+        const years = Number(watchedWarrantyYears) || 0;
+        const months = Number(watchedWarrantyMonths) || 0;
+        date.setFullYear(date.getFullYear() + years);
+        date.setMonth(date.getMonth() + months);
+        const formatted = date.toISOString().split('T')[0];
+        setValue('warranty_closing_date', formatted);
+      }
+    } else {
+      setValue('warranty_closing_date', '');
+    }
+  }, [watchedInstallationDate, watchedWarrantyYears, watchedWarrantyMonths, setValue]);
+
+  // Dynamic auto-calculation of AMC Closing Date
+  const watchedAmcStartingDate = watch('amc_starting_date');
+  const watchedAmcPeriod = watch('amc_period');
+
+  React.useEffect(() => {
+    if (watchedAmcStartingDate && watchedAmcPeriod) {
+      const date = new Date(watchedAmcStartingDate);
+      if (!isNaN(date.getTime())) {
+        const period = Number(watchedAmcPeriod) || 0;
+        date.setMonth(date.getMonth() + period);
+        const formatted = date.toISOString().split('T')[0];
+        setValue('amc_closing_date', formatted);
+      }
+    } else {
+      setValue('amc_closing_date', '');
+    }
+  }, [watchedAmcStartingDate, watchedAmcPeriod, setValue]);
+
+  // Suggestions matching the typed ref_no
+  const suggestedMills = React.useMemo(() => {
+    if (!enteredRefNo || hasMatchingMill) return [];
+    const cleanEntered = enteredRefNo.trim().toLowerCase().replace(/[\s\-\/]/g, '');
+    if (!cleanEntered) return [];
+    return mills.filter((m) => {
+      const cleanRef = (m.ref_no || '').trim().toLowerCase().replace(/[\s\-\/]/g, '');
+      const cleanName = m.name.toLowerCase().replace(/[\s\-\/]/g, '');
+      return cleanRef.includes(cleanEntered) || cleanName.includes(cleanEntered);
+    }).slice(0, 3);
+  }, [enteredRefNo, mills, hasMatchingMill]);
+
+  const handleQuickCreateOpen = () => {
+    setQuickCustomerName('');
+    setQuickMillName('');
+    setExistingCustomerId(null);
+    setIsMillNameManuallyEdited(false);
+    setQuickPhone(watch('phone_no') || '');
+    setQuickAddress(watch('address') || '');
+    setQuickPlace(watch('place') || '');
+    setQuickState(watch('state') || '');
+    setQuickRefNo(watch('ref_no') || '');
+    setIsQuickCreateOpen(true);
+  };
+
+  const handleQuickCreateSubmit = async () => {
+    setIsQuickRegistering(true);
+    try {
+      let customerId = existingCustomerId;
+
+      // 1. Create the customer if not already selected/existing
+      if (!customerId) {
+        // Double check if a customer with the exact name already exists
+        const exactMatch = customers.find(
+          (c) => c.name.toLowerCase().trim() === quickCustomerName.toLowerCase().trim()
+        );
+        if (exactMatch) {
+          customerId = exactMatch.id;
+        } else {
+          const newCustomer = await createCustomerMutation.mutateAsync({
+            name: quickCustomerName,
+            phone: quickPhone || undefined,
+            address: quickAddress || undefined,
+            status: 'ACTIVE',
+          });
+          customerId = newCustomer.id;
+        }
+      }
+
+      // 2. Create the mill linked to the customer
+      const newMill = await createMillMutation.mutateAsync({
+        name: quickMillName,
+        ref_no: quickRefNo || undefined,
+        customer_id: customerId,
+        phone: quickPhone || undefined,
+        address: quickAddress || undefined,
+        place: quickPlace || undefined,
+        city: quickPlace || undefined,
+        status: 'ACTIVE',
+      });
+
+      // 3. Set the form values
+      setValue('mill_id', newMill.id);
+      setValue('ref_no', quickRefNo);
+      setValue('address', newMill.address || '');
+      setValue('place', newMill.place || '');
+      setValue('phone_no', normalizePhoneNumber(newMill.phone) || '');
+      if (quickState) {
+        setValue('state', quickState);
+      }
+
+      toast.success('Customer and Mill registered and linked successfully!');
+      setIsQuickCreateOpen(false);
+    } catch (err: any) {
+      console.error('Failed to quick register:', err);
+      toast.error(err.response?.data?.message || 'Failed to register Customer & Mill');
+    } finally {
+      setIsQuickRegistering(false);
+    }
+  };
 
   React.useEffect(() => {
     if (isFormDrawerOpen) {
       if (isEdit && recordData) {
         reset({
+          type: recordData.type || 'Installation',
           invoice_no: recordData.invoice_no || '',
           invoice_date: recordData.invoice_date
             ? recordData.invoice_date.split('T')[0]
@@ -262,10 +493,11 @@ export function MasterMillFormDrawer() {
   const isSubmitting = isCreating || isUpdating;
 
   return (
-    <Sheet
-      open={isFormDrawerOpen}
-      onOpenChange={(open) => !open && closeFormDrawer()}
-    >
+    <>
+      <Sheet
+        open={isFormDrawerOpen}
+        onOpenChange={(open) => !open && closeFormDrawer()}
+      >
       <SheetContent
         side="right"
         className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5"
@@ -301,6 +533,46 @@ export function MasterMillFormDrawer() {
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-1"
             >
+              {/* ── Record Type Segmented Selector ──────────────────── */}
+              <div className="mb-6 p-4 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-100/50 dark:border-white/5 space-y-2">
+                <FieldLabel>
+                  <FileText size={12} />
+                  Record Type
+                </FieldLabel>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="grid grid-cols-2 gap-2 bg-gray-100 dark:bg-white/10 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('Installation')}
+                        className={cn(
+                          "py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer",
+                          field.value === 'Installation'
+                            ? "bg-white dark:bg-gray-800 text-primary shadow-sm"
+                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        )}
+                      >
+                        Installation
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => field.onChange('Service')}
+                        className={cn(
+                          "py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer",
+                          field.value === 'Service'
+                            ? "bg-white dark:bg-gray-800 text-primary shadow-sm"
+                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        )}
+                      >
+                        Service
+                      </button>
+                    </div>
+                  )}
+                />
+              </div>
+
               {/* ── Invoice Details ─────────────────────────── */}
               <SectionHeader icon={FileText} title="Invoice Details" color="text-blue-500" />
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -347,6 +619,59 @@ export function MasterMillFormDrawer() {
                     placeholder="e.g. P-0005-17-18"
                     className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                   />
+                  
+                  {/* Inline warning and suggestion checklist when Ref No is not found */}
+                  {!hasMatchingMill && enteredRefNo && (
+                    <div className="mt-2.5 p-3.5 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-[16px] space-y-2">
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-amber-500 text-sm mt-0.5">⚠️</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                            Ref No "{enteredRefNo}" is not registered.
+                          </p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mt-0.5">
+                            No active mill matches this reference number. You can quickly register it inline or select a suggestion below.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Suggestions list (checklist of existing matches) */}
+                      {suggestedMills.length > 0 && (
+                        <div className="pt-1.5 border-t border-gray-100 dark:border-white/5">
+                          <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
+                            Suggested existing mills:
+                          </p>
+                          <div className="flex flex-col gap-1">
+                            {suggestedMills.map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => {
+                                  setValue('mill_id', m.id);
+                                  if (m.ref_no) setValue('ref_no', m.ref_no);
+                                }}
+                                className="text-left text-xs text-primary hover:underline font-bold flex items-center gap-1.5 py-0.5 rounded transition-all"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                {m.name} {m.ref_no ? `(${m.ref_no})` : ''}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-2">
+                        <Button
+                          type="button"
+                          onClick={handleQuickCreateOpen}
+                          className="w-full h-10 rounded-xl text-xs font-black uppercase tracking-wider bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20 hover:shadow-lg transition-all flex items-center justify-center gap-1.5 border-none"
+                        >
+                          <PlusCircle size={14} />
+                          Quick Register Customer &amp; Mill
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -391,6 +716,23 @@ export function MasterMillFormDrawer() {
 
                 <div className="space-y-2">
                   <FieldLabel>
+                    <Users size={12} />
+                    Customer Name
+                  </FieldLabel>
+                  <Input
+                    value={
+                      selectedMillId
+                        ? mills.find((m) => m.id === selectedMillId)?.customer?.name || 'Unknown'
+                        : ''
+                    }
+                    disabled
+                    placeholder="Auto-resolved from selected mill"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm text-gray-500 dark:text-gray-400 disabled:opacity-80"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <FieldLabel>
                     <MapPin size={12} />
                     Address
                   </FieldLabel>
@@ -419,19 +761,12 @@ export function MasterMillFormDrawer() {
                       name="state"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                          <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-sm">
-                            <SelectValue placeholder="State..." />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-[240px] overflow-y-auto">
-                            <SelectItem value="" className="font-bold py-2 text-gray-400">None</SelectItem>
-                            {INDIAN_STATES.map((s) => (
-                              <SelectItem key={s} value={s} className="font-bold py-2">
-                                {s}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <StateSearchSelect
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          placeholder="Select State..."
+                          className="h-10 text-sm font-bold border-none"
+                        />
                       )}
                     />
                   </div>
@@ -702,5 +1037,199 @@ export function MasterMillFormDrawer() {
         </SheetFooter>
       </SheetContent>
     </Sheet>
+
+    {/* Quick Register Customer & Mill Dialog */}
+    <Dialog open={isQuickCreateOpen} onOpenChange={setIsQuickCreateOpen}>
+      <DialogContent className="sm:max-w-[425px] rounded-[24px] border-none shadow-2xl p-6 bg-white dark:bg-gray-900 z-[99999]">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+            <Factory className="text-primary" size={20} />
+            Quick Register Customer &amp; Mill
+          </DialogTitle>
+          <DialogDescription className="text-xs text-gray-500 font-bold">
+            Register a new customer and mill to link with this Master Mill record.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 my-4">
+          {/* Ref No */}
+          <div className="space-y-1">
+            <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Reference No</Label>
+            <Input 
+              value={quickRefNo} 
+              onChange={(e) => setQuickRefNo(e.target.value)} 
+              placeholder="e.g. P_8992" 
+              className="h-9 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-xs" 
+            />
+          </div>
+
+          {/* Customer Name */}
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Customer Name *</Label>
+              {existingCustomerId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExistingCustomerId(null);
+                    setQuickCustomerName('');
+                    setQuickMillName('');
+                    setIsMillNameManuallyEdited(false);
+                  }}
+                  className="text-[9px] font-black uppercase text-rose-500 hover:underline tracking-wider"
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
+            <Input 
+              value={quickCustomerName} 
+              onChange={(e) => {
+                setQuickCustomerName(e.target.value);
+                if (!isMillNameManuallyEdited) {
+                  setQuickMillName(e.target.value);
+                }
+              }}
+              disabled={!!existingCustomerId}
+              placeholder="e.g. Seva Mandir" 
+              className={cn(
+                "h-9 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-xs",
+                existingCustomerId && "opacity-75 bg-blue-500/5 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+              )}
+            />
+
+            {/* Match from existing customer checklist */}
+            {!existingCustomerId && similarCustomers.length > 0 && (
+              <div className="mt-1.5 p-2 bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-1">
+                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">
+                  Match from existing customer checklist:
+                </p>
+                <div className="flex flex-col gap-1 max-h-[80px] overflow-y-auto">
+                  {similarCustomers.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        setQuickCustomerName(c.name);
+                        setExistingCustomerId(c.id);
+                      }}
+                      className="text-left text-[11px] font-bold text-gray-700 dark:text-gray-300 hover:text-primary hover:underline flex items-center justify-between py-1 px-1.5 rounded bg-white dark:bg-gray-800/40 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-gray-100 dark:border-white/5"
+                    >
+                      <span>{c.name}</span>
+                      {c.phone && <span className="text-[9px] text-gray-400 font-normal">{c.phone}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mill Name */}
+          <div className="space-y-1">
+            <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Mill Name *</Label>
+            <Input 
+              value={quickMillName} 
+              onChange={(e) => {
+                setQuickMillName(e.target.value);
+                setIsMillNameManuallyEdited(true);
+              }}
+              placeholder="e.g. Seva Mandir Mill" 
+              className="h-9 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-xs" 
+            />
+
+            {/* Match from existing mill checklist */}
+            {similarMills.length > 0 && (
+              <div className="mt-1.5 p-2 bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1">
+                <p className="text-[9px] font-bold text-amber-500 uppercase tracking-widest">
+                  Existing Mills matching name:
+                </p>
+                <div className="flex flex-col gap-1 max-h-[80px] overflow-y-auto">
+                  {similarMills.map((m) => (
+                    <div
+                      key={m.id}
+                      className="text-[10px] font-bold text-gray-500 dark:text-gray-400 py-0.5 px-1.5 flex items-center gap-1.5"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      {m.name} {m.place ? `(${m.place})` : ''}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Phone No */}
+          <div className="space-y-1">
+            <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Contact Phone</Label>
+            <PhoneInput
+              value={quickPhone}
+              onChange={setQuickPhone}
+              placeholder="Enter phone number"
+              className="h-9"
+            />
+          </div>
+
+          {/* Address */}
+          <div className="space-y-1">
+            <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Address</Label>
+            <Input 
+              value={quickAddress} 
+              onChange={(e) => setQuickAddress(e.target.value)}
+              placeholder="Mill street address" 
+              className="h-9 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-xs" 
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Place */}
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Place / Town</Label>
+              <Input 
+                value={quickPlace} 
+                onChange={(e) => setQuickPlace(e.target.value)}
+                placeholder="Place" 
+                className="h-9 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-xs" 
+              />
+            </div>
+            {/* State */}
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">State</Label>
+              <StateSearchSelect
+                value={quickState}
+                onChange={setQuickState}
+                placeholder="Select State..."
+                className="h-9 text-xs font-bold border-none"
+                openDirection="up"
+              />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="flex gap-2 sm:justify-end pt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setIsQuickCreateOpen(false)}
+            className="rounded-lg h-9 text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleQuickCreateSubmit}
+            disabled={isQuickRegistering || !quickCustomerName || !quickMillName}
+            className="rounded-lg h-9 text-xs bg-primary hover:bg-primary/95 text-white font-black shadow-lg shadow-primary/20 gap-1.5"
+          >
+            {isQuickRegistering ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save size={14} />
+            )}
+            Create &amp; Link
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

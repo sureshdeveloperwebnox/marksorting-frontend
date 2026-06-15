@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { DataTable } from "@/components/tables/DataTable";
+import { TableTabs } from "@/components/ui/table-tabs";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   useMasterMills,
@@ -18,11 +19,10 @@ import {
   Trash2,
   Loader2,
   FileText,
-  TrendingUp,
-  Shield,
   ShieldOff,
   ShieldCheck,
   IndianRupee,
+  ClipboardCheck,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -95,8 +95,9 @@ const filterFields: FilterField[] = [
     label: "Warranty Type",
     options: [
       { value: "ALL", label: "All Types", iconColor: "bg-gray-400" },
-      { value: "Non Warranty", label: "Non Warranty", iconColor: "bg-gray-400" },
       { value: "Under Warranty", label: "Under Warranty", iconColor: "bg-emerald-500", animatePulse: true },
+      { value: "Under AMC", label: "Under AMC", iconColor: "bg-amber-500" },
+      { value: "Non Warranty", label: "Non Warranty", iconColor: "bg-gray-400" },
       { value: "Expired", label: "Expired", iconColor: "bg-rose-500" },
     ],
   },
@@ -110,56 +111,7 @@ const filterFields: FilterField[] = [
   },
 ];
 
-/* ─── Stats Card ────────────────────────────────────────────────── */
 
-interface StatsCardProps {
-  title: string;
-  value: number | undefined;
-  icon: React.ReactNode;
-  iconBg: string;
-  gradient: string;
-  trend?: string;
-  loading?: boolean;
-}
-
-function StatsCard({ title, value, icon, iconBg, gradient, trend, loading }: StatsCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className={cn(
-        "relative overflow-hidden rounded-[20px] p-5 border border-gray-100 dark:border-white/5",
-        "bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
-      )}
-    >
-      <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 -translate-y-6 translate-x-6", gradient)} />
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.12em] mb-3">
-            {title}
-          </p>
-          {loading ? (
-            <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
-              {value ?? 0}
-            </p>
-          )}
-          {trend && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500 mt-2">
-              <TrendingUp size={11} />
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 
@@ -187,6 +139,11 @@ export default function MasterMillsPage() {
     const t = setTimeout(() => setSearch(localSearch), 350);
     return () => clearTimeout(t);
   }, [localSearch, setSearch]);
+
+  // Reset pagination on tab change
+  React.useEffect(() => {
+    setPagination({ pageIndex: 0, pageSize: pagination.pageSize });
+  }, [warrantyFilter, setPagination, pagination.pageSize]);
 
   /* ── Data queries ── */
   const { data, isLoading, isFetching, refetch } = useMasterMills({
@@ -454,12 +411,12 @@ export default function MasterMillsPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+        className="grid grid-cols-1 gap-5"
       >
         {/* ════════════════════════════════════════
             LEFT — Main Table (3/4 width)
         ════════════════════════════════════════ */}
-        <div className="xl:col-span-3">
+        <div>
           <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
             {/* Card header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
@@ -489,6 +446,20 @@ export default function MasterMillsPage() {
               />
             </div>
 
+            {/* Reusable Table Tabs */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+              <TableTabs
+                tabs={[
+                  { value: "", label: "All Records", count: stats?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                  { value: "Under Warranty", label: "Under Warranty", count: stats?.underWarranty || 0, color: "emerald", icon: <ShieldCheck size={14} /> },
+                  { value: "Under AMC", label: "Under AMC", count: stats?.underAmc || 0, color: "amber", icon: <IndianRupee size={14} /> },
+                  { value: "Non Warranty", label: "Non Warranty", count: stats?.nonWarranty || 0, color: "gray", icon: <ShieldOff size={14} /> },
+                ]}
+                activeValue={warrantyFilter || ""}
+                onChange={(value) => setWarrantyFilter(value)}
+              />
+            </div>
+
             {/* Table */}
             <div className="p-6 pt-4">
               <DataTable
@@ -511,90 +482,7 @@ export default function MasterMillsPage() {
           </div>
         </div>
 
-        {/* ════════════════════════════════════════
-            RIGHT — Statistics Panel (1/4 width)
-        ════════════════════════════════════════ */}
-        <div className="xl:col-span-1 flex flex-col gap-4">
-          <StatsCard
-            title="Total Records"
-            value={stats?.total}
-            loading={statsLoading}
-            icon={<FileText size={20} className="text-primary" />}
-            iconBg="bg-primary/10 dark:bg-primary/15"
-            gradient="bg-primary"
-            trend="All registered"
-          />
-          <StatsCard
-            title="Under Warranty"
-            value={stats?.underWarranty}
-            loading={statsLoading}
-            icon={<ShieldCheck size={20} className="text-emerald-600 dark:text-emerald-400" />}
-            iconBg="bg-emerald-50 dark:bg-emerald-500/15"
-            gradient="bg-emerald-500"
-            trend="Active warranties"
-          />
-          <StatsCard
-            title="Under AMC"
-            value={stats?.underAmc}
-            loading={statsLoading}
-            icon={<IndianRupee size={20} className="text-amber-600 dark:text-amber-400" />}
-            iconBg="bg-amber-50 dark:bg-amber-500/15"
-            gradient="bg-amber-500"
-            trend="Active contracts"
-          />
-          <StatsCard
-            title="Non Warranty"
-            value={stats?.nonWarranty}
-            loading={statsLoading}
-            icon={<ShieldOff size={20} className="text-gray-500 dark:text-gray-400" />}
-            iconBg="bg-gray-100 dark:bg-white/10"
-            gradient="bg-gray-500"
-            trend="No warranty coverage"
-          />
 
-          {/* Quick Stats card */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
-            className="relative overflow-hidden rounded-[20px] p-5 bg-gradient-to-br from-primary to-orange-500 border border-primary/20 shadow-sm shadow-primary/20"
-          >
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMC0xMnY2aDZ2LTZoLTZ6bS0xMiAxMnY2aDZ2LTZoLTZ6bTAtMTJ2Nmg2di02aC02eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-            <p className="text-xs font-bold text-white/70 uppercase tracking-[0.12em] mb-2 relative">
-              Coverage
-            </p>
-            <div className="space-y-2 relative">
-              {[
-                {
-                  label: "Warranty rate",
-                  value:
-                    stats?.total
-                      ? `${Math.round(((stats.underWarranty || 0) / stats.total) * 100)}%`
-                      : "—",
-                },
-                {
-                  label: "AMC rate",
-                  value:
-                    stats?.total
-                      ? `${Math.round(((stats.underAmc || 0) / stats.total) * 100)}%`
-                      : "—",
-                },
-                {
-                  label: "Non-coverage",
-                  value:
-                    stats?.total
-                      ? `${Math.round(((stats.nonWarranty || 0) / stats.total) * 100)}%`
-                      : "—",
-                },
-              ].map((s) => (
-                <div key={s.label} className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white/70">{s.label}</span>
-                  <span className="text-sm font-black text-white">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
 
         {/* ── Filter Drawer ── */}
         <GenericFilterDrawer
