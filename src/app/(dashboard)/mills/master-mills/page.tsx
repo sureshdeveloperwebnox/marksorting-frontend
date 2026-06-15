@@ -10,6 +10,7 @@ import {
   useDeleteMasterMill,
   useUpdateMasterMill,
   useMasterMillStats,
+  useMasterMill,
 } from "@/services/master-mill-service";
 import { useMasterMillStore } from "@/store/useMasterMillStore";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,13 @@ import {
   ShieldCheck,
   IndianRupee,
   ClipboardCheck,
+  Eye,
+  Calendar,
+  Clock,
+  Building2,
+  MapPin,
+  Phone,
+  Hash,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -46,6 +54,7 @@ import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { MasterMillFormDrawer } from "@/components/forms/master-mill-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
+import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -134,6 +143,216 @@ export default function MasterMillsPage() {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
+  const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+
+  const { data: viewMillData, isLoading: isViewMillLoading } = useMasterMill(selectedViewId);
+
+  /* ── View Sections ── */
+  const viewSections = React.useMemo(() => {
+    if (!viewMillData) return [];
+
+    const years = viewMillData.warranty_years ?? 0;
+    const months = viewMillData.warranty_months ?? 0;
+    const warrantyPeriod = [
+      years > 0 ? `${years} Year${years > 1 ? "s" : ""}` : null,
+      months > 0 ? `${months} Month${months > 1 ? "s" : ""}` : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return [
+      {
+        title: "General & Mill Info",
+        items: [
+          {
+            label: "Record Type",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-black text-[10px] uppercase tracking-[0.1em] px-2 py-0.5 shadow-sm",
+                  viewMillData.type === "Service"
+                    ? "bg-blue-500/5 text-blue-500 border-blue-500/30"
+                    : "bg-primary/5 text-primary border-primary/30"
+                )}
+              >
+                {viewMillData.type || "Installation"}
+              </Badge>
+            ),
+            icon: FileText,
+          },
+          {
+            label: "Invoice No",
+            value: (
+              <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
+                {viewMillData.invoice_no}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
+            label: "Invoice Date",
+            value: formatDateSafe(viewMillData.invoice_date),
+            icon: Calendar,
+          },
+          {
+            label: "Reference No",
+            value: viewMillData.ref_no || "—",
+            icon: FileText,
+          },
+          {
+            label: "Mill Name",
+            value: viewMillData.mill?.name || "—",
+            icon: Building2,
+          },
+          {
+            label: "Phone No",
+            value: viewMillData.phone_no || "—",
+            icon: Phone,
+          },
+          {
+            label: "State",
+            value: viewMillData.state || "—",
+            icon: MapPin,
+          },
+          {
+            label: "Place",
+            value: viewMillData.place || "—",
+            icon: MapPin,
+          },
+          {
+            label: "Address",
+            value: viewMillData.address || "—",
+            icon: MapPin,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "Machine Specification",
+        items: [
+          {
+            label: "Machine Model",
+            value: viewMillData.mc_model || "—",
+            icon: FileText,
+          },
+          {
+            label: "Frame Number",
+            value: viewMillData.frame_no || "—",
+            icon: Hash,
+          },
+        ],
+      },
+      {
+        title: "Warranty Status",
+        items: [
+          {
+            label: "Warranty Type",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-bold text-[10px] uppercase tracking-[0.1em] px-2 py-0.5 shadow-sm",
+                  getWarrantyColors(viewMillData.all_warranty || "Non Warranty")
+                )}
+              >
+                {viewMillData.all_warranty || "Non Warranty"}
+              </Badge>
+            ),
+            icon: ShieldCheck,
+          },
+          {
+            label: "Installation Date",
+            value: formatDateSafe(viewMillData.installation_date),
+            icon: Calendar,
+          },
+          {
+            label: "Warranty Period",
+            value: warrantyPeriod || "—",
+            icon: Clock,
+          },
+          {
+            label: "Warranty Closing Date",
+            value: (
+              <span
+                className={cn(
+                  "font-bold",
+                  isExpired(viewMillData.warranty_closing_date)
+                    ? "text-rose-500 dark:text-rose-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                )}
+              >
+                {formatDateSafe(viewMillData.warranty_closing_date)}
+              </span>
+            ),
+            icon: Calendar,
+          },
+        ],
+      },
+      {
+        title: "AMC Details",
+        items: [
+          {
+            label: "AMC Amount",
+            value: viewMillData.amc_amount != null && viewMillData.amc_amount > 0 ? (
+              <span className="font-bold text-gray-900 dark:text-white">
+                ₹{Number(viewMillData.amc_amount).toLocaleString("en-IN")}
+              </span>
+            ) : "—",
+            icon: IndianRupee,
+          },
+          {
+            label: "AMC Period",
+            value: viewMillData.amc_period ? `${viewMillData.amc_period} Months` : "—",
+            icon: Clock,
+          },
+          {
+            label: "AMC Starting Date",
+            value: formatDateSafe(viewMillData.amc_starting_date),
+            icon: Calendar,
+          },
+          {
+            label: "AMC Closing Date",
+            value: (
+              <span
+                className={cn(
+                  "font-bold",
+                  isExpired(viewMillData.amc_closing_date)
+                    ? "text-rose-500"
+                    : "text-emerald-600 dark:text-emerald-400"
+                )}
+              >
+                {formatDateSafe(viewMillData.amc_closing_date)}
+              </span>
+            ),
+            icon: Calendar,
+          },
+          {
+            label: "AMC Particulars",
+            value: viewMillData.amc_particular || "—",
+            icon: FileText,
+            fullWidth: true,
+          },
+        ],
+      },
+      {
+        title: "System Information",
+        items: [
+          {
+            label: "Created At",
+            value: formatDateSafe(viewMillData.created_at),
+            icon: Calendar,
+          },
+          {
+            label: "Updated At",
+            value: formatDateSafe(viewMillData.updated_at),
+            icon: Calendar,
+          },
+        ],
+      },
+    ];
+  }, [viewMillData]);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -385,6 +604,18 @@ export default function MasterMillsPage() {
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 hover:text-indigo-700 hover:bg-indigo-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            onClick={() => {
+              setSelectedViewId(row.original.id);
+              setIsViewDrawerOpen(true);
+            }}
+            title="View Details"
+          >
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
             onClick={() => openFormDrawer(row.original.id)}
           >
@@ -506,6 +737,29 @@ export default function MasterMillsPage() {
 
         {/* ── Form Drawer ── */}
         <MasterMillFormDrawer />
+
+        {/* ── View Details Drawer ── */}
+        <ViewDetailsDrawer
+          isOpen={isViewDrawerOpen}
+          onClose={() => {
+            setIsViewDrawerOpen(false);
+            setSelectedViewId(null);
+          }}
+          title={
+            viewMillData
+              ? `Master Mill: ${viewMillData.invoice_no}`
+              : "Master Mill Details"
+          }
+          description={
+            viewMillData
+              ? `${viewMillData.mill?.name || viewMillData.mc_model || "—"} · ${formatDateSafe(viewMillData.invoice_date)}`
+              : "Loading master mill details..."
+          }
+          icon={<Building2 size={22} />}
+          isLoading={isViewMillLoading}
+          sections={viewSections}
+          size="lg"
+        />
 
         {/* ── Delete Dialog ── */}
         <Dialog
