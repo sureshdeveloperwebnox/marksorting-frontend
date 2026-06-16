@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
 import { RotateCcw, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +33,8 @@ export interface FilterField {
   id: string;
   label: string;
   placeholder?: string;
-  /** "select" (default) renders a dropdown; "date" renders a DatePicker */
-  type?: "select" | "date";
+  /** "select" (default) renders a dropdown; "date" renders a DatePicker; "date-range" renders a DateRangePicker */
+  type?: "select" | "date" | "date-range";
   options?: FilterOption[];
 }
 
@@ -47,6 +48,20 @@ interface GenericFilterDrawerProps {
   onApply: (values: Record<string, string>) => void;
   onReset: () => void;
 }
+
+const parseDateRangeValue = (strVal?: string): DateRangeValue => {
+  if (!strVal) return { startDate: "", endDate: "", label: "" };
+  try {
+    return JSON.parse(strVal);
+  } catch {
+    const parts = strVal.split(":");
+    return {
+      startDate: parts[0] || "",
+      endDate: parts[1] || "",
+      label: parts[2] || (parts[0] && parts[1] ? "Custom Range" : ""),
+    };
+  }
+};
 
 export function GenericFilterDrawer({
   isOpen,
@@ -66,7 +81,7 @@ export function GenericFilterDrawer({
     if (isOpen) {
       const initial: Record<string, string> = {};
       fields.forEach((field) => {
-        initial[field.id] = activeValues[field.id] || (field.type === "date" ? "" : "ALL");
+        initial[field.id] = activeValues[field.id] || (field.type === "date" || field.type === "date-range" ? "" : "ALL");
       });
       setLocalValues(initial);
     }
@@ -80,7 +95,7 @@ export function GenericFilterDrawer({
   const handleReset = () => {
     const cleared: Record<string, string> = {};
     fields.forEach((field) => {
-      cleared[field.id] = field.type === "date" ? "" : "ALL";
+      cleared[field.id] = field.type === "date" || field.type === "date-range" ? "" : "ALL";
     });
     setLocalValues(cleared);
     onReset();
@@ -119,6 +134,7 @@ export function GenericFilterDrawer({
           {fields.map((field) => {
             const currentValue = localValues[field.id] || "";
             const isDateField = field.type === "date";
+            const isDateRangeField = field.type === "date-range";
 
             return (
               <div key={field.id} className="space-y-3">
@@ -126,7 +142,19 @@ export function GenericFilterDrawer({
                   {field.label}
                 </label>
 
-                {isDateField ? (
+                {isDateRangeField ? (
+                  <DateRangePicker
+                    value={parseDateRangeValue(currentValue)}
+                    onChange={(val) => {
+                      if (!val.startDate && !val.endDate) {
+                        handleValueChange(field.id, "");
+                      } else {
+                        handleValueChange(field.id, JSON.stringify(val));
+                      }
+                    }}
+                    className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300"
+                  />
+                ) : isDateField ? (
                   <DatePicker
                     value={currentValue}
                     onChange={(val) => handleValueChange(field.id, val)}

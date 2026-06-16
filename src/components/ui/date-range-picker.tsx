@@ -19,7 +19,7 @@ import {
   startOfDay,
   endOfDay,
 } from 'date-fns';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -216,6 +216,16 @@ export function DateRangePicker({
     setIsOpen(false);
   };
 
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange({
+      startDate: '',
+      endDate: '',
+      label: '',
+    });
+    setIsOpen(false);
+  };
+
   // Helper to determine if day is inside active range
   const isDayInRange = (day: Date) => {
     if (tempStart && tempEnd) {
@@ -307,7 +317,7 @@ export function DateRangePicker({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "h-10 px-4 rounded-xl flex items-center gap-2.5 text-xs font-bold transition-all outline-hidden border select-none cursor-pointer",
+          "h-10 px-4 rounded-xl flex items-center justify-between gap-2.5 text-xs font-bold transition-all outline-hidden border select-none cursor-pointer",
           "bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5",
           "text-gray-700 dark:text-gray-300 shadow-sm hover:border-primary/50 hover:text-primary",
           isOpen && "ring-2 ring-primary/20 border-primary/50 text-primary bg-primary/5 dark:bg-primary/10",
@@ -315,8 +325,19 @@ export function DateRangePicker({
           className
         )}
       >
-        <CalendarIcon size={14} className="shrink-0" />
-        <span className="truncate">{formattedDisplayRange}</span>
+        <div className="flex items-center gap-2.5 truncate">
+          <CalendarIcon size={14} className="shrink-0 text-gray-400 dark:text-gray-500" />
+          <span className="truncate">{formattedDisplayRange}</span>
+        </div>
+        {value.startDate && value.endDate && !disabled && (
+          <span
+            onClick={handleClear}
+            className="p-1 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 hover:text-rose-500 transition-colors cursor-pointer shrink-0 ml-1.5"
+            title="Clear Selection"
+          >
+            <X size={12} className="text-gray-400 hover:text-rose-500" />
+          </span>
+        )}
       </button>
 
       <AnimatePresence>
@@ -411,6 +432,20 @@ export function DateRangePicker({
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  {(tempStart || tempEnd || value.startDate || value.endDate) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempStart(null);
+                        setTempEnd(null);
+                        onChange({ startDate: "", endDate: "", label: "" });
+                        setIsOpen(false);
+                      }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={handleCancel}

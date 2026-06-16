@@ -155,19 +155,54 @@ export default function ServiceReportPage() {
   });
 
   const { data: totalData, isFetching: isFetchingTotal, refetch: refetchTotal } = useServiceReports({
-    skip: 0, take: 1, status: undefined, serviceCategoryId: undefined,
+    skip: 0,
+    take: 1,
+    status: undefined,
+    serviceCategoryId: categoryFilter || undefined,
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: completedData, isFetching: isFetchingCompleted, refetch: refetchCompleted } = useServiceReports({
-    skip: 0, take: 1, status: "COMPLETED",
+    skip: 0,
+    take: 1,
+    status: "COMPLETED",
+    serviceCategoryId: categoryFilter || undefined,
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: pendingData, isFetching: isFetchingPending, refetch: refetchPending } = useServiceReports({
-    skip: 0, take: 1, status: "PENDING",
+    skip: 0,
+    take: 1,
+    status: "PENDING",
+    serviceCategoryId: categoryFilter || undefined,
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: inProgressData, isFetching: isFetchingInProgress, refetch: refetchInProgress } = useServiceReports({
-    skip: 0, take: 1, status: "IN_PROGRESS",
+    skip: 0,
+    take: 1,
+    status: "IN_PROGRESS",
+    serviceCategoryId: categoryFilter || undefined,
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: cancelledData, isFetching: isFetchingCancelled, refetch: refetchCancelled } = useServiceReports({
-    skip: 0, take: 1, status: "CANCELLED",
+    skip: 0,
+    take: 1,
+    status: "CANCELLED",
+    serviceCategoryId: categoryFilter || undefined,
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
 
   const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress || isFetchingCancelled;
@@ -579,6 +614,12 @@ export default function ServiceReportPage() {
         })),
       ],
     },
+    {
+      id: "dateRange",
+      label: "Select Date",
+      type: "date-range",
+      placeholder: "Select date range...",
+    },
   ];
 
   /* ── Table columns ── */
@@ -833,16 +874,32 @@ export default function ServiceReportPage() {
           status: statusFilter || "ALL",
           category: categoryFilter || "ALL",
           technicianId: technicianFilter || "ALL",
+          dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
         }}
         onApply={(values) => {
           setStatusFilter(values.status === "ALL" ? "" : values.status);
           setCategoryFilter(values.category === "ALL" ? "" : values.category);
           setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
+          if (values.dateRange) {
+            try {
+              const range = JSON.parse(values.dateRange);
+              setDateFrom(range.startDate || "");
+              setDateTo(range.endDate || "");
+            } catch {
+              setDateFrom("");
+              setDateTo("");
+            }
+          } else {
+            setDateFrom("");
+            setDateTo("");
+          }
         }}
         onReset={() => {
           setStatusFilter("");
           setCategoryFilter("");
           setTechnicianFilter("");
+          setDateFrom("");
+          setDateTo("");
           resetFilters();
         }}
       />

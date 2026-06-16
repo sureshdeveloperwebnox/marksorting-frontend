@@ -155,19 +155,49 @@ export default function InstallationReportPage() {
   });
 
   const { data: totalData, isFetching: isFetchingTotal, refetch: refetchTotal } = useInstallationReports({
-    skip: 0, take: 1, status: undefined,
+    skip: 0,
+    take: 1,
+    status: undefined,
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: completedData, isFetching: isFetchingCompleted, refetch: refetchCompleted } = useInstallationReports({
-    skip: 0, take: 1, status: "COMPLETED",
+    skip: 0,
+    take: 1,
+    status: "COMPLETED",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: pendingData, isFetching: isFetchingPending, refetch: refetchPending } = useInstallationReports({
-    skip: 0, take: 1, status: "PENDING",
+    skip: 0,
+    take: 1,
+    status: "PENDING",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: inProgressData, isFetching: isFetchingInProgress, refetch: refetchInProgress } = useInstallationReports({
-    skip: 0, take: 1, status: "IN_PROGRESS",
+    skip: 0,
+    take: 1,
+    status: "IN_PROGRESS",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: cancelledData, isFetching: isFetchingCancelled, refetch: refetchCancelled } = useInstallationReports({
-    skip: 0, take: 1, status: "CANCELLED",
+    skip: 0,
+    take: 1,
+    status: "CANCELLED",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
 
   const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress || isFetchingCancelled;
