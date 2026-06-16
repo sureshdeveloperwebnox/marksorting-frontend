@@ -20,6 +20,7 @@ export interface Expense {
     expense_category_id: string;
     expenseCategory?: { id: string; name: string };
     others?: string;
+    description?: string;
     amount: string; // From Decimal on backend, represented as string or number in frontend
     expense_images: string[];
     status: string;

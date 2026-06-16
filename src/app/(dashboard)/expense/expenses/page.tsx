@@ -265,6 +265,12 @@ export default function ExpensesPage() {
             icon: FileText,
             fullWidth: true,
           },
+          {
+            label: "Description",
+            value: viewExpenseData.description || "—",
+            icon: FileText,
+            fullWidth: true,
+          },
         ],
       },
       {
@@ -405,6 +411,11 @@ export default function ExpensesPage() {
           <span className="text-gray-400 dark:text-gray-500 font-medium text-xs">
             {row.original.place || "—"}
           </span>
+          {row.original.description && (
+            <span className="text-[11px] italic text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[200px]" title={row.original.description}>
+              {row.original.description}
+            </span>
+          )}
         </div>
       ),
     },

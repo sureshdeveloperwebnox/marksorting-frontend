@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   PlusCircle,
   Cpu,
+  FileText,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,6 +71,7 @@ const expenseSchema = z.object({
   mill_id: z.string().optional().or(z.literal('')),
   place: z.string().optional().or(z.literal('')),
   others: z.string().optional().or(z.literal('')),
+  description: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
   visit_time: z.string().optional(),
   expense_category_id: z.string().min(1, 'Expense category is required'),
@@ -182,6 +184,7 @@ export function ExpenseFormDrawer() {
       mill_id: '',
       place: '',
       others: '',
+      description: '',
       visit_date: '',
       visit_time: '',
       expense_category_id: '',
@@ -344,6 +347,7 @@ export function ExpenseFormDrawer() {
           mill_id: expenseData.mill_id || '',
           place: expenseData.place || '',
           others: expenseData.others || '',
+          description: expenseData.description || '',
           visit_date: expenseData.visit_date?.split('T')[0] || '',
           visit_time: expenseData.visit_time || '',
           expense_category_id: expenseData.expense_category_id || '',
@@ -366,6 +370,7 @@ export function ExpenseFormDrawer() {
           mill_id: '',
           place: '',
           others: '',
+          description: '',
           visit_date: '',
           visit_time: '',
           expense_category_id: '',
@@ -455,6 +460,7 @@ export function ExpenseFormDrawer() {
         mill_id: data.mill_id || null,
         place: data.place || null,
         others: data.others || null,
+        description: data.description || null,
         visit_time: data.visit_time || undefined,
       };
 
@@ -477,6 +483,7 @@ export function ExpenseFormDrawer() {
     mill_id: 1,
     place: 2,
     others: 2,
+    description: 4,
     visit_date: 3,
     visit_time: 3,
     expense_category_id: 4,
@@ -1024,6 +1031,21 @@ export function ExpenseFormDrawer() {
                       />
                       <FieldError message={errors.amount?.message} />
                     </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-2" data-error={errors.description ? 'true' : undefined}>
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <FileText size={14} className="text-primary/70" />
+                      Description
+                    </Label>
+                    <textarea
+                      {...register('description')}
+                      placeholder="Enter details about this expense..."
+                      rows={3}
+                      className="w-full p-3 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none resize-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    />
+                    <FieldError message={errors.description?.message} />
                   </div>
 
                   {/* Upload Images */}
