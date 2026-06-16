@@ -871,7 +871,7 @@ export default function InstallationReportPage() {
             try {
               const range = JSON.parse(values.dateRange);
               setDateFrom(range.startDate || "");
-              setDateTo(range.endDate || "");
+              setDateTo(range.endDate || range.startDate || "");
             } catch {
               setDateFrom("");
               setDateTo("");

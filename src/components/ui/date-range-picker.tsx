@@ -202,10 +202,11 @@ export function DateRangePicker({
   };
 
   const handleApply = () => {
-    if (tempStart && tempEnd) {
+    if (tempStart) {
+      const effectiveEnd = tempEnd ?? tempStart;
       onChange({
         startDate: format(tempStart, 'yyyy-MM-dd'),
-        endDate: format(tempEnd, 'yyyy-MM-dd'),
+        endDate: format(effectiveEnd, 'yyyy-MM-dd'),
         label: 'Custom Range',
       });
       setIsOpen(false);
@@ -426,7 +427,7 @@ export function DateRangePicker({
                       Selected {format(tempStart, 'dd MMM')} to {format(tempEnd, 'dd MMM')}
                     </span>
                   ) : tempStart ? (
-                    <span>Choose end date...</span>
+                    <span>Selected {format(tempStart, 'dd MMM')}</span>
                   ) : (
                     <span>Choose start date...</span>
                   )}
@@ -455,11 +456,11 @@ export function DateRangePicker({
                   </button>
                   <button
                     type="button"
-                    disabled={!tempStart || !tempEnd}
+                    disabled={!tempStart}
                     onClick={handleApply}
                     className={cn(
                       "px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md",
-                      tempStart && tempEnd
+                      tempStart
                         ? "bg-primary text-white hover:bg-primary/95 shadow-primary/10"
                         : "bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-600 cursor-not-allowed shadow-none"
                     )}
