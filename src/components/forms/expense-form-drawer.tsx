@@ -34,14 +34,15 @@ import {
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useCreateExpense, useUpdateExpense, useExpense } from '@/services/expense-service';
+import { useCreateExpense, useUpdateExpense, useExpense, useExpenseEligibility } from '@/services/expense-service';
 import { useExpenseCategories } from '@/services/expense-category-service';
 import { useMills, useCreateMill } from '@/services/mill-service';
 import { useCustomers, useCreateCustomer } from '@/services/customer-service';
 import { useMasterMills, useCreateMasterMill } from '@/services/master-mill-service';
 import useExpenseStore from '@/store/useExpenseStore';
+import { useAuthStore } from '@/store/auth-store';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
-import { ExpenseCategoryMultiSelect } from '@/components/ui/expense-category-multi-select';
+// ExpenseCategoryMultiSelect removed — inline per-item dropdowns used instead
 import { useS3Upload } from '@/hooks/use-s3-upload';
 import {
   Sheet,
@@ -67,7 +68,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 
-const expenseSchema = z.object({
+const getExpenseSchema = (isServiceEngineer: boolean) => z.object({
   expense_type: z.enum(['MILL', 'OTHERS']).default('MILL'),
   technician_ids: z.array(z.string()).min(1, 'At least one engineer is required'),
   mill_id: z.string().optional().or(z.literal('')),
@@ -75,6 +76,8 @@ const expenseSchema = z.object({
   others: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
   visit_time: z.string().optional().or(z.literal('')),
+  service_report_id: z.string().optional().or(z.literal('')),
+  installation_report_id: z.string().optional().or(z.literal('')),
   expense_items: z.array(z.object({
     expense_category_id: z.string().min(1, 'Category is required'),
     amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Amount must be positive')),
@@ -83,6 +86,16 @@ const expenseSchema = z.object({
     expense_images: z.array(z.string()).default([]),
   })).min(1, 'At least one category is required'),
 }).superRefine((data, ctx) => {
+  if (isServiceEngineer) {
+    if (!data.service_report_id && !data.installation_report_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['service_report_id'],
+        message: 'You must link this expense to a Service Report or Installation Report',
+      });
+    }
+  }
+
   if (data.expense_type === 'MILL') {
     if (!data.mill_id) {
       ctx.addIssue({
@@ -102,7 +115,7 @@ const expenseSchema = z.object({
   }
 });
 
-type ExpenseFormValues = z.infer<typeof expenseSchema>;
+type ExpenseFormValues = z.infer<ReturnType<typeof getExpenseSchema>>;
 
 interface ExpenseSection {
   id: number;
@@ -189,6 +202,9 @@ export function ExpenseFormDrawer() {
   const customers = React.useMemo(() => customersData?.customers || [], [customersData?.customers]);
   const categories = React.useMemo(() => categoriesData?.expenseCategories || [], [categoriesData?.expenseCategories]);
 
+  const user = useAuthStore((state) => state.user);
+  const isServiceEngineer = user?.role === 'Service Engineer';
+
   const {
     register,
     control,
@@ -198,7 +214,7 @@ export function ExpenseFormDrawer() {
     reset,
     formState: { errors },
   } = useForm<ExpenseFormValues>({
-    resolver: zodResolver(expenseSchema) as any,
+    resolver: zodResolver(getExpenseSchema(isServiceEngineer)) as any,
     defaultValues: {
       expense_type: 'MILL',
       technician_ids: [],
@@ -207,12 +223,43 @@ export function ExpenseFormDrawer() {
       others: '',
       visit_date: '',
       visit_time: '',
+      service_report_id: '',
+      installation_report_id: '',
       expense_items: [],
     },
   });
 
   const selectedMillId = watch('mill_id');
   const expenseType = watch('expense_type') || 'MILL';
+  const selectedTechnicianIds = watch('technician_ids');
+
+  // Primary technician ID to load reports for (either logged-in service engineer, or the first selected technician in list)
+  const primaryTechId = isServiceEngineer ? user?.id : (selectedTechnicianIds && selectedTechnicianIds.length > 0 ? selectedTechnicianIds[0] : undefined);
+
+  // Fetch reports eligibility
+  const { data: eligibilityData, isLoading: eligibilityLoading } = useExpenseEligibility(
+    primaryTechId,
+    selectedId || undefined
+  );
+
+  // Clear stale report linkage when the primary technician changes (admin changing engineer selection)
+  const prevPrimaryTechIdRef = React.useRef<string | undefined>(undefined);
+  React.useEffect(() => {
+    if (!isFormDrawerOpen) return;
+    if (prevPrimaryTechIdRef.current !== undefined && prevPrimaryTechIdRef.current !== primaryTechId) {
+      setValue('service_report_id', '');
+      setValue('installation_report_id', '');
+      setReportTypeRadio(isServiceEngineer ? 'service' : 'none');
+    }
+    prevPrimaryTechIdRef.current = primaryTechId;
+  }, [primaryTechId, isFormDrawerOpen, setValue, isServiceEngineer]);
+
+  const eligibleReports = React.useMemo(() => {
+    return {
+      serviceReports: eligibilityData?.serviceReports || [],
+      installationReports: eligibilityData?.installationReports || [],
+    };
+  }, [eligibilityData]);
 
   const sections = React.useMemo<ExpenseSection[]>(() => [
     { id: 1, title: expenseType === 'MILL' ? 'Engineer & Mill Details' : 'Engineer Details', icon: Users },
@@ -225,7 +272,8 @@ export function ExpenseFormDrawer() {
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
   const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true });
   const [activeUploadIndex, setActiveUploadIndex] = React.useState<number | null>(null);
-  
+  const [reportTypeRadio, setReportTypeRadio] = React.useState<'none' | 'service' | 'installation'>('none');
+
   const sheetRef = React.useRef<HTMLDivElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
   const initializedFormKeyRef = React.useRef<string | null>(null);
@@ -366,14 +414,14 @@ export function ExpenseFormDrawer() {
 
         const itemsToReset = expenseData.expense_items?.length
           ? expenseData.expense_items.map((item: any) => ({
-              expense_category_id: item.expense_category_id,
-              amount: item.amount ? Number(item.amount) : 0,
-              admin_amount: item.admin_amount ? Number(item.admin_amount) : 0,
-              remarks: item.remarks || '',
-              expense_images: item.expense_images || [],
-            }))
+            expense_category_id: item.expense_category_id,
+            amount: item.amount ? Number(item.amount) : 0,
+            admin_amount: item.admin_amount ? Number(item.admin_amount) : 0,
+            remarks: item.remarks || '',
+            expense_images: item.expense_images || [],
+          }))
           : expenseData.expense_category_id
-          ? [
+            ? [
               {
                 expense_category_id: expenseData.expense_category_id,
                 amount: expenseData.amount ? Number(expenseData.amount) : 0,
@@ -382,7 +430,7 @@ export function ExpenseFormDrawer() {
                 expense_images: expenseData.expense_images || [],
               },
             ]
-          : [];
+            : [];
 
         reset({
           expense_type: (expenseData.expense_type as 'MILL' | 'OTHERS') || 'MILL',
@@ -392,8 +440,18 @@ export function ExpenseFormDrawer() {
           others: expenseData.others || '',
           visit_date: expenseData.visit_date?.split('T')[0] || '',
           visit_time: expenseData.visit_time || '',
+          service_report_id: expenseData.service_report_id || '',
+          installation_report_id: expenseData.installation_report_id || '',
           expense_items: itemsToReset,
         });
+
+        if (expenseData.service_report_id) {
+          setReportTypeRadio('service');
+        } else if (expenseData.installation_report_id) {
+          setReportTypeRadio('installation');
+        } else {
+          setReportTypeRadio(isServiceEngineer ? 'service' : 'none');
+        }
       } else if (!isEdit) {
         setSelectedCustomerId('');
         setSelectedMachineId('');
@@ -405,11 +463,14 @@ export function ExpenseFormDrawer() {
           others: '',
           visit_date: '',
           visit_time: '',
+          service_report_id: '',
+          installation_report_id: '',
           expense_items: [],
         });
+        setReportTypeRadio(isServiceEngineer ? 'service' : 'none');
       }
     }
-  }, [isFormDrawerOpen, selectedId, expenseData, reset, isEdit, mills]);
+  }, [isFormDrawerOpen, selectedId, expenseData, reset, isEdit, mills, isServiceEngineer]);
 
   React.useEffect(() => {
     if (!isFormDrawerOpen || !isEdit || !expenseData || selectedCustomerId) return;
@@ -463,6 +524,8 @@ export function ExpenseFormDrawer() {
         place: data.place || null,
         others: data.others || null,
         visit_time: data.visit_time || undefined,
+        service_report_id: data.service_report_id || null,
+        installation_report_id: data.installation_report_id || null,
         expense_items: data.expense_items.map((item) => ({
           ...item,
           amount: Number(item.amount || 0),
@@ -618,6 +681,192 @@ export function ExpenseFormDrawer() {
                     <FieldError message={errors.technician_ids?.message} />
                   </div>
 
+                  {/* Link to Report Dropdown — shown for Service Engineers always, for Admins when an engineer is selected */}
+                  {(isServiceEngineer || (selectedTechnicianIds && selectedTechnicianIds.length > 0)) && (
+                    <div className="space-y-3 p-4 bg-orange-50/50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                      <Label className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-widest flex items-center gap-2">
+                        <FileText size={14} className="text-orange-500" />
+                        Report Association {isServiceEngineer ? '*' : '(Optional)'}
+                      </Label>
+
+                      {/* Admin: show hint when no engineer selected yet */}
+                      {!isServiceEngineer && !primaryTechId ? (
+                        <div className="flex items-center gap-2 text-xs text-orange-400 font-bold p-3 bg-orange-50 dark:bg-orange-950/30 rounded-xl">
+                          <FileText size={12} />
+                          Select an engineer above to load their available reports.
+                        </div>
+                      ) : eligibilityLoading ? (
+                        <div className="flex items-center gap-2 text-xs text-gray-400 font-bold p-3">
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          Fetching available reports...
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {/* Radio Selection Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            {!isServiceEngineer && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReportTypeRadio('none');
+                                  setValue('service_report_id', '');
+                                  setValue('installation_report_id', '');
+                                }}
+                                className={cn(
+                                  "flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all duration-200 select-none cursor-pointer",
+                                  reportTypeRadio === 'none'
+                                    ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400"
+                                    : "border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500"
+                                )}
+                              >
+                                <X size={12} />
+                                Do not link a report
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReportTypeRadio('service');
+                                setValue('service_report_id', '');
+                                setValue('installation_report_id', '');
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all duration-200 select-none cursor-pointer",
+                                reportTypeRadio === 'service'
+                                  ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400"
+                                  : "border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500"
+                              )}
+                            >
+                              <span className="text-sm">📋</span>
+                              Service Report
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                  setReportTypeRadio('installation');
+                                  setValue('service_report_id', '');
+                                  setValue('installation_report_id', '');
+                              }}
+                              className={cn(
+                                "flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all duration-200 select-none cursor-pointer",
+                                reportTypeRadio === 'installation'
+                                  ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400"
+                                  : "border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500"
+                              )}
+                            >
+                              <span className="text-sm">🔧</span>
+                              Installation Report
+                            </button>
+                          </div>
+
+                          {/* Render Select Dropdown depending on Radio selection */}
+                          {reportTypeRadio !== 'none' && (
+                            <Select
+                              value={
+                                reportTypeRadio === 'service'
+                                  ? watch('service_report_id') || ''
+                                  : watch('installation_report_id') || ''
+                              }
+                              onValueChange={(val) => {
+                                if (!val || val === 'no_reports') {
+                                  setValue('service_report_id', '');
+                                  setValue('installation_report_id', '');
+                                  return;
+                                }
+
+                                if (reportTypeRadio === 'service') {
+                                  setValue('service_report_id', val);
+                                  setValue('installation_report_id', '');
+                                  const report = eligibleReports.serviceReports.find((r) => r.id === val);
+                                  if (report) {
+                                    if (report.mill_id) {
+                                      setValue('mill_id', report.mill_id);
+                                      const mill = mills.find((m) => m.id === report.mill_id);
+                                      if (mill?.customer_id) setSelectedCustomerId(mill.customer_id);
+                                    }
+                                    if (report.place) setValue('place', report.place);
+                                    if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
+                                    toast.success('Service report details prefilled!');
+                                  }
+                                } else if (reportTypeRadio === 'installation') {
+                                  setValue('service_report_id', '');
+                                  setValue('installation_report_id', val);
+                                  const report = eligibleReports.installationReports.find((r) => r.id === val);
+                                  if (report) {
+                                    if (report.mill_id) {
+                                      setValue('mill_id', report.mill_id);
+                                      const mill = mills.find((m) => m.id === report.mill_id);
+                                      if (mill?.customer_id) setSelectedCustomerId(mill.customer_id);
+                                    }
+                                    if (report.place) setValue('place', report.place);
+                                    if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
+                                    toast.success('Installation report details prefilled!');
+                                  }
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                                {reportTypeRadio === 'service' && watch('service_report_id') ? (
+                                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                    SR: {eligibleReports.serviceReports.find((r) => r.id === watch('service_report_id'))?.report_number ?? 'Service Report'}
+                                  </span>
+                                ) : reportTypeRadio === 'installation' && watch('installation_report_id') ? (
+                                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                    IR: {eligibleReports.installationReports.find((r) => r.id === watch('installation_report_id'))?.report_number ?? 'Installation Report'}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                                    {reportTypeRadio === 'service'
+                                      ? 'Select an eligible service report...'
+                                      : 'Select an eligible installation report...'}
+                                  </span>
+                                )}
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-64 overflow-y-auto">
+                                {reportTypeRadio === 'service' ? (
+                                  eligibleReports.serviceReports.length > 0 ? (
+                                    eligibleReports.serviceReports.map((r) => (
+                                      <SelectItem key={r.id} value={r.id} className="font-bold py-2.5">
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="text-sm">SR: {r.report_number}</span>
+                                          <span className="text-[11px] font-medium text-gray-400">
+                                            {r.mill_name}{r.visit_date ? ` · ${new Date(r.visit_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="no_reports" disabled className="py-3 text-gray-400 font-bold">
+                                      No unlinked service reports found
+                                    </SelectItem>
+                                  )
+                                ) : (
+                                  eligibleReports.installationReports.length > 0 ? (
+                                    eligibleReports.installationReports.map((r) => (
+                                      <SelectItem key={r.id} value={r.id} className="font-bold py-2.5">
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="text-sm">IR: {r.report_number}</span>
+                                          <span className="text-[11px] font-medium text-gray-400">
+                                            {r.mill_name}{r.visit_date ? ` · ${new Date(r.visit_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="no_reports" disabled className="py-3 text-gray-400 font-bold">
+                                      No unlinked installation reports found
+                                    </SelectItem>
+                                  )
+                                )}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      )}
+                      <FieldError message={errors.service_report_id?.message || errors.installation_report_id?.message} />
+                    </div>
+                  )}
+
                   {expenseType === 'MILL' && (
                     <>
                       {/* Search Machine by Ref No / Frame No directly */}
@@ -632,7 +881,7 @@ export function ExpenseFormDrawer() {
                           placeholder="Type REF NO or Frame No to search..."
                           className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                         />
-                        
+
                         {/* Search Results List */}
                         {machineSearchQuery.trim().length >= 2 && (
                           <div className="mt-2 bg-white dark:bg-gray-950 rounded-xl border border-gray-100 dark:border-white/5 divide-y divide-gray-100 dark:divide-white/5 max-h-48 overflow-y-auto shadow-lg z-20 relative">
@@ -956,19 +1205,21 @@ export function ExpenseFormDrawer() {
               {/* Section 2 - Alternative / Other Details */}
               <SectionToggle section={sections[1]} isOpen={!!openSections[2]} onToggle={toggleSection}>
                 <div className="space-y-4">
-                  {/* Others */}
-                  <div className="space-y-2" data-error={errors.others ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Tag size={14} className="text-primary/70" />
-                      Others
-                    </Label>
-                    <Input
-                      {...register('others')}
-                      placeholder="e.g. Supplier Name or Hotel Description"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    />
-                    <FieldError message={errors.others?.message} />
-                  </div>
+                  {/* Others — only for non-MILL expense types */}
+                  {expenseType === 'OTHERS' && (
+                    <div className="space-y-2" data-error={errors.others ? 'true' : undefined}>
+                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Tag size={14} className="text-primary/70" />
+                        Others
+                      </Label>
+                      <Input
+                        {...register('others')}
+                        placeholder="e.g. Supplier Name or Hotel Description"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      />
+                      <FieldError message={errors.others?.message} />
+                    </div>
+                  )}
 
                   {/* Place */}
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
@@ -1010,70 +1261,148 @@ export function ExpenseFormDrawer() {
 
               {/* Section 4 - Expense Info & Images */}
               <SectionToggle section={sections[3]} isOpen={!!openSections[4]} onToggle={toggleSection}>
-                <div className="space-y-4">
-                  {/* Select Expense Categories Multi-Select */}
-                  <div className="space-y-2" data-error={errors.expense_items ? 'true' : undefined}>
+                <div className="space-y-4" data-error={errors.expense_items ? 'true' : undefined}>
+
+                  {/* Section Header + quick-add button */}
+                  <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <Tag size={14} className="text-primary/70" />
-                      Select Expense Categories *
+                      Expense Categories *
                     </Label>
-                    <Controller
-                      name="expense_items"
-                      control={control}
-                      render={({ field }) => (
-                        <ExpenseCategoryMultiSelect
-                          value={field.value?.map((it) => it.expense_category_id) || []}
-                          onChange={(newIds) => {
-                            const currentItems = field.value || [];
-                            const updatedItems = newIds.map((id) => {
-                              const existing = currentItems.find((item) => item.expense_category_id === id);
-                              if (existing) return existing;
-                              return {
-                                expense_category_id: id,
-                                amount: 0,
-                                admin_amount: 0,
-                                remarks: '',
-                                expense_images: [],
-                              };
-                            });
-                            field.onChange(updatedItems);
-                          }}
-                          placeholder="Select categories..."
-                        />
-                      )}
-                    />
-                    <FieldError message={errors.expense_items?.message} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = watch('expense_items') || [];
+                        setValue('expense_items', [
+                          ...current,
+                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', expense_images: [] },
+                        ], { shouldValidate: false });
+                      }}
+                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <PlusCircle size={12} />
+                      Add Category
+                    </button>
                   </div>
 
-                  {/* Render Fields for each selected category */}
+                  {/* Array-level validation error (e.g. "At least one category is required") */}
+                  {typeof errors.expense_items?.message === 'string' && (
+                    <FieldError message={errors.expense_items.message} />
+                  )}
+
+                  {/* Empty state */}
+                  {(watch('expense_items') || []).length === 0 && (
+                    <div className="flex flex-col items-center justify-center gap-3 py-10 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl text-gray-400">
+                      <Tag size={28} className="opacity-30" />
+                      <p className="text-sm font-semibold">No expense categories added yet</p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setValue('expense_items', [
+                            { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', expense_images: [] },
+                          ], { shouldValidate: false })
+                        }
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer"
+                      >
+                        <PlusCircle size={14} />
+                        Add First Category
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Per-item cards */}
                   <AnimatePresence>
                     {(watch('expense_items') || []).map((item, index) => {
-                      const cat = categories.find((c) => c.id === item.expense_category_id);
+                      const itemErrors = (errors.expense_items as any)?.[index];
+                      // Exclude categories already chosen by other rows
+                      const selectedElsewhere = (watch('expense_items') || [])
+                        .filter((_, i) => i !== index)
+                        .map((it) => it.expense_category_id)
+                        .filter(Boolean);
+                      const availableCategories = categories.filter(
+                        (c) => !selectedElsewhere.includes(c.id)
+                      );
+                      const chosenCat = categories.find((c) => c.id === item.expense_category_id);
+
                       return (
                         <motion.div
-                          key={item.expense_category_id}
+                          key={index}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          className="border border-gray-100 dark:border-white/5 rounded-2xl p-4 space-y-4 bg-gray-50/20 dark:bg-white/[0.01]"
+                          transition={{ duration: 0.18 }}
+                          className="border border-gray-100 dark:border-white/5 rounded-2xl p-4 space-y-4 bg-white dark:bg-gray-950/60 shadow-sm"
                         >
-                          <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-2">
-                            <span className="font-bold text-sm text-primary flex items-center gap-2">
-                              <Tag size={14} />
-                              {cat?.name || 'Category'}
-                            </span>
+                          {/* ── Category dropdown + delete button ── */}
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 space-y-1.5">
+                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-1.5">
+                                <Tag size={12} className="text-primary/70" />
+                                Category *
+                              </Label>
+                              <Select
+                                value={item.expense_category_id || ''}
+                                onValueChange={(val) => {
+                                  const updated = [...(watch('expense_items') || [])];
+                                  updated[index] = { ...updated[index], expense_category_id: val ?? '' };
+                                  setValue('expense_items', updated, { shouldValidate: true });
+                                }}
+                              >
+                                <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                                  {chosenCat ? (
+                                    <span className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-200">
+                                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                                        {chosenCat.name.charAt(0).toUpperCase()}
+                                      </div>
+                                      {chosenCat.name}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                                      {categoriesLoading ? 'Loading…' : 'Select expense category…'}
+                                    </span>
+                                  )}
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-60 overflow-y-auto">
+                                  {categoriesLoading ? (
+                                    <SelectItem value="__loading" disabled className="py-3 text-gray-400 font-bold">
+                                      Loading categories…
+                                    </SelectItem>
+                                  ) : availableCategories.length === 0 ? (
+                                    <SelectItem value="__empty" disabled className="py-3 text-gray-400 font-bold">
+                                      All categories already selected
+                                    </SelectItem>
+                                  ) : (
+                                    availableCategories.map((c) => (
+                                      <SelectItem key={c.id} value={c.id} className="font-bold py-3">
+                                        <span className="flex items-center gap-2">
+                                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] flex-shrink-0">
+                                            {c.name.charAt(0).toUpperCase()}
+                                          </div>
+                                          {c.name}
+                                        </span>
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              <FieldError message={itemErrors?.expense_category_id?.message} />
+                            </div>
+
+                            {/* Delete row */}
                             <button
                               type="button"
+                              title="Remove this category"
                               onClick={() => {
                                 const current = watch('expense_items') || [];
                                 setValue('expense_items', current.filter((_, i) => i !== index), { shouldValidate: true });
                               }}
-                              className="text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
+                              className="mt-7 text-gray-400 hover:text-rose-500 transition-colors cursor-pointer flex-shrink-0"
                             >
                               <X size={16} />
                             </button>
                           </div>
 
+                          {/* ── Amount + Remarks ── */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -1093,6 +1422,7 @@ export function ExpenseFormDrawer() {
                                 placeholder="Enter amount"
                                 className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                               />
+                              <FieldError message={itemErrors?.amount?.message} />
                             </div>
 
                             <div className="space-y-2">
@@ -1107,32 +1437,30 @@ export function ExpenseFormDrawer() {
                                   updated[index].remarks = e.target.value;
                                   setValue('expense_items', updated, { shouldValidate: true });
                                 }}
-                                placeholder="Enter remarks..."
+                                placeholder="Enter remarks…"
                                 rows={1}
                                 className="w-full min-h-[44px] p-3 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none resize-none focus-visible:ring-2 focus-visible:ring-primary/20"
                               />
                             </div>
                           </div>
 
-                          {/* Item Image Upload & Admin Expense Amount Row */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                          {/* ── Receipt Images + Admin Amount ── */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Receipt Images */}
                             <div className="space-y-2">
                               <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                                 <ImageIcon size={14} className="text-primary/70" />
                                 Receipt Images
                               </Label>
-                              
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 {(item.expense_images || []).map((img, imgIdx) => {
-                                  const src = img.startsWith('http') || img.startsWith('data:') ? img : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
+                                  const src =
+                                    img.startsWith('http') || img.startsWith('data:')
+                                      ? img
+                                      : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
                                   return (
                                     <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 dark:border-white/10 group">
-                                      <img
-                                        src={src}
-                                        alt={`Receipt ${imgIdx}`}
-                                        className="w-full h-full object-cover"
-                                      />
+                                      <img src={src} alt={`Receipt ${imgIdx}`} className="w-full h-full object-cover" />
                                       <button
                                         type="button"
                                         onClick={() => handleRemoveItemImage(index, imgIdx)}
@@ -1145,8 +1473,8 @@ export function ExpenseFormDrawer() {
                                 })}
 
                                 <label className={cn(
-                                  "relative aspect-square border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 bg-gray-50/50 dark:bg-white/5 text-gray-500 hover:text-primary cursor-pointer",
-                                  isUploading && activeUploadIndex === index && "pointer-events-none opacity-60"
+                                  'relative aspect-square border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 bg-gray-50/50 dark:bg-white/5 text-gray-500 hover:text-primary cursor-pointer',
+                                  isUploading && activeUploadIndex === index && 'pointer-events-none opacity-60'
                                 )}>
                                   <input
                                     type="file"
@@ -1198,7 +1526,26 @@ export function ExpenseFormDrawer() {
                       );
                     })}
                   </AnimatePresence>
+
+                  {/* "Add Another Category" — only shown when at least one item exists */}
+                  {(watch('expense_items') || []).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = watch('expense_items') || [];
+                        setValue('expense_items', [
+                          ...current,
+                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', expense_images: [] },
+                        ], { shouldValidate: false });
+                      }}
+                      className="w-full flex items-center justify-center gap-2 h-11 border-2 border-dashed border-primary/30 hover:border-primary/60 text-primary hover:bg-primary/5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    >
+                      <PlusCircle size={14} />
+                      Add Another Category
+                    </button>
+                  )}
                 </div>
+
               </SectionToggle>
             </form>
           )}
@@ -1243,8 +1590,8 @@ export function ExpenseFormDrawer() {
                 {existingCustomerId ? 'Register Mill' : 'Register Customer & Mill'}
               </DialogTitle>
               <DialogDescription className="text-xs text-gray-400">
-                {existingCustomerId 
-                  ? 'Create a new mill under the current customer.' 
+                {existingCustomerId
+                  ? 'Create a new mill under the current customer.'
                   : 'Create a new customer and link a new mill with basic details.'}
               </DialogDescription>
             </DialogHeader>
@@ -1262,7 +1609,7 @@ export function ExpenseFormDrawer() {
                   placeholder="e.g. Seva Mandir"
                   className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
                 />
-                
+
                 {/* Duplicate warnings/suggestions */}
                 {!existingCustomerId && similarCustomers.length > 0 && (
                   <div className="mt-1.5 p-2 bg-amber-500/5 border border-amber-500/10 rounded-xl space-y-1">
@@ -1470,7 +1817,7 @@ export function ExpenseFormDrawer() {
                     if (createdMasterMillId) {
                       setSelectedMachineId(createdMasterMillId);
                     }
-                    
+
                     toast.success('Customer, Mill, and Machine linked successfully!');
                     setIsQuickCreateOpen(false);
                   } catch (err: any) {
@@ -1495,7 +1842,7 @@ export function ExpenseFormDrawer() {
                 Register Machine (Master Mill Record)
               </DialogTitle>
               <DialogDescription className="text-xs text-gray-400">
-                Add a new machine installation/service record for the selected mill: 
+                Add a new machine installation/service record for the selected mill:
                 <strong> {mills.find(m => m.id === selectedMillId)?.name}</strong>
               </DialogDescription>
             </DialogHeader>

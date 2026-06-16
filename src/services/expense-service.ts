@@ -39,6 +39,8 @@ export interface Expense {
     status: string;
     created_at: string;
     updated_at: string;
+    service_report_id?: string | null;
+    installation_report_id?: string | null;
     mill?: { id: string; name: string };
     technicians: ExpenseTechnicianEntry[];
     expense_items?: ExpenseItem[];
@@ -101,6 +103,7 @@ export const useCreateExpense = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["expenses"] });
+            queryClient.invalidateQueries({ queryKey: ["expense-eligibility"] });
             toast.success("Expense created successfully");
         },
         onError: (error: any) => {
@@ -122,6 +125,7 @@ export const useUpdateExpense = () => {
         },
         onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["expenses"] });
+            queryClient.invalidateQueries({ queryKey: ["expense-eligibility"] });
             queryClient.invalidateQueries({ queryKey: ["expense", variables.id] });
             if (data?.after) {
                 queryClient.setQueryData(["expense", variables.id, isServiceEngineer], data.after);
@@ -182,6 +186,49 @@ export const useDeleteExpense = () => {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["expenses"] });
+            queryClient.invalidateQueries({ queryKey: ["expense-eligibility"] });
         },
+    });
+};
+
+export interface EligibilityResponse {
+    eligible: boolean;
+    serviceReports: Array<{
+        id: string;
+        report_number: string;
+        mill_id: string;
+        place: string;
+        visit_date: string;
+        mill_name: string;
+    }>;
+    installationReports: Array<{
+        id: string;
+        report_number: string;
+        mill_id: string;
+        place: string;
+        visit_date: string;
+        mill_name: string;
+    }>;
+}
+
+export const useExpenseEligibility = (technicianId?: string, excludeExpenseId?: string) => {
+    const user = useAuthStore((state) => state.user);
+    const isServiceEngineer = user?.role === 'Service Engineer';
+
+    return useQuery({
+        queryKey: ["expense-eligibility", technicianId, excludeExpenseId, isServiceEngineer],
+        queryFn: async () => {
+            const endpoint = isServiceEngineer 
+                ? "/mobile/expenses/eligibility" 
+                : "/expenses/eligibility";
+            
+            const params: any = {};
+            if (technicianId) params.technicianId = technicianId;
+            if (excludeExpenseId) params.excludeExpenseId = excludeExpenseId;
+
+            const { data } = await api.get<EligibilityResponse>(endpoint, { params });
+            return data;
+        },
+        enabled: isServiceEngineer || !!technicianId,
     });
 };
