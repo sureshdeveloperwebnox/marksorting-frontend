@@ -848,7 +848,11 @@ export function MasterMillFormDrawer() {
                       name="all_warranty"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value || 'Non Warranty'}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || 'Non Warranty'}
+                          items={WARRANTY_TYPES.map((w) => ({ value: w, label: w }))}
+                        >
                           <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-sm">
                             <SelectValue />
                           </SelectTrigger>
@@ -993,7 +997,14 @@ export function MasterMillFormDrawer() {
                   name="status"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || 'ACTIVE'}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || 'ACTIVE'}
+                      items={[
+                        { value: 'ACTIVE', label: 'Active' },
+                        { value: 'INACTIVE', label: 'Inactive' }
+                      ]}
+                    >
                       <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-sm">
                         <SelectValue />
                       </SelectTrigger>

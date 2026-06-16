@@ -1516,6 +1516,10 @@ export function InstallationReportFormDrawer() {
                       <Select
                         onValueChange={(val) => setValue('ac_provided', val || '')}
                         value={watch('ac_provided')}
+                        items={[
+                          { value: 'YES', label: 'Yes' },
+                          { value: 'NO', label: 'No' }
+                        ]}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select AC status" />
@@ -1748,6 +1752,10 @@ export function InstallationReportFormDrawer() {
                       <Select
                         onValueChange={(val) => setValue('auto_drain_valve_working', val || '')}
                         value={watch('auto_drain_valve_working')}
+                        items={[
+                          { value: 'YES', label: 'Yes' },
+                          { value: 'NO', label: 'No' }
+                        ]}
                       >
                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           <SelectValue placeholder="Select Status" />
@@ -1774,6 +1782,12 @@ export function InstallationReportFormDrawer() {
                     <Select
                       onValueChange={(val) => setValue('status', val || '')}
                       value={watch('status')}
+                      items={[
+                        { value: 'PENDING', label: 'Pending' },
+                        { value: 'IN_PROGRESS', label: 'Work In Progress' },
+                        { value: 'COMPLETED', label: 'Completed' },
+                        { value: 'CANCELLED', label: 'Cancelled' }
+                      ]}
                     >
                       <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                         <SelectValue placeholder="Select work status" />

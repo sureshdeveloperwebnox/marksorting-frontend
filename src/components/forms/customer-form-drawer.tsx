@@ -216,6 +216,10 @@ export function CustomerFormDrawer() {
                                     <Select
                                         onValueChange={(val) => setValue('status', val ?? 'ACTIVE')}
                                         value={watch('status')}
+                                        items={[
+                                            { value: 'ACTIVE', label: 'Active' },
+                                            { value: 'INACTIVE', label: 'Inactive' }
+                                        ]}
                                     >
                                         <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
                                             <SelectValue />
