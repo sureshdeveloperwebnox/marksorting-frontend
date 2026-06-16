@@ -104,7 +104,7 @@ const matchState = (mill: any) => {
   return matched || '';
 };
 
-const GROUND_EARTH_FIELD_OPTIONS = [
+const RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS = [
   { value: 'PRIMARY', label: 'Primary' },
   { value: 'SECONDARY', label: 'Secondary' },
   { value: 'REJECTION_1', label: 'Rejection 1' },
@@ -112,11 +112,11 @@ const GROUND_EARTH_FIELD_OPTIONS = [
   { value: 'SPLIT', label: 'Split' },
 ] as const;
 
-type GroundEarthFieldValue = (typeof GROUND_EARTH_FIELD_OPTIONS)[number]['value'];
+type RunningChannelCombinationValueOption = (typeof RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS)[number]['value'];
 
-const normalizeGroundEarthField = (value?: string | null | undefined): GroundEarthFieldValue | '' => {
-  return GROUND_EARTH_FIELD_OPTIONS.some((option) => option.value === value)
-    ? (value as GroundEarthFieldValue)
+const normalizeRunningChannelCombinationValue = (value?: string | null | undefined): RunningChannelCombinationValueOption | '' => {
+  return RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.some((option) => option.value === value)
+    ? (value as RunningChannelCombinationValueOption)
     : '';
 };
 
@@ -157,7 +157,7 @@ const installationReportSchema = z.object({
   air_drier_details: z.string().optional().or(z.literal('')),
   ground_earth_provided: z.string().min(1, 'Ground Earth status is required'),
   running_channel_combination: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(1).max(12).optional()),
-  ground_earth_field: z.enum(['PRIMARY', 'SECONDARY', 'REJECTION_1', 'REJECTION_2', 'SPLIT']).optional().or(z.literal('')),
+  running_channel_combination_value: z.enum(['PRIMARY', 'SECONDARY', 'REJECTION_1', 'REJECTION_2', 'SPLIT']).optional().or(z.literal('')),
   no_of_filters_installed: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0).optional()),
   oil_filter_condition: z.string().optional().or(z.literal('')),
   line_filter_condition: z.string().optional().or(z.literal('')),
@@ -328,7 +328,7 @@ export function InstallationReportFormDrawer() {
       air_drier_details: '',
       ground_earth_provided: 'NO',
       running_channel_combination: undefined,
-      ground_earth_field: '',
+      running_channel_combination_value: '',
       no_of_filters_installed: undefined,
       oil_filter_condition: '',
       line_filter_condition: '',
@@ -506,7 +506,7 @@ export function InstallationReportFormDrawer() {
           air_drier_details: reportData.air_drier_details || '',
           ground_earth_provided: reportData.ground_earth_provided ? 'YES' : 'NO',
           running_channel_combination: reportData.running_channel_combination ?? undefined,
-          ground_earth_field: normalizeGroundEarthField(reportData.ground_earth_field),
+          running_channel_combination_value: normalizeRunningChannelCombinationValue(reportData.running_channel_combination_value),
           no_of_filters_installed: reportData.no_of_filters_installed ?? undefined,
           oil_filter_condition: reportData.oil_filter_condition || '',
           line_filter_condition: reportData.line_filter_condition || '',
@@ -548,7 +548,7 @@ export function InstallationReportFormDrawer() {
           air_drier_details: '',
           ground_earth_provided: 'NO',
           running_channel_combination: undefined,
-          ground_earth_field: '',
+          running_channel_combination_value: '',
           no_of_filters_installed: undefined,
           oil_filter_condition: '',
           line_filter_condition: '',
@@ -629,7 +629,7 @@ export function InstallationReportFormDrawer() {
         auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
         no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
         running_channel_combination: data.running_channel_combination ? Number(data.running_channel_combination) : undefined,
-        ground_earth_field: data.ground_earth_field || undefined,
+        running_channel_combination_value: data.running_channel_combination_value || undefined,
         no_of_filters_installed: data.no_of_filters_installed ? Number(data.no_of_filters_installed) : undefined,
         invoice_date: data.invoice_date || undefined,
         warranty_start_date: data.warranty_start_date || undefined,
@@ -687,7 +687,7 @@ export function InstallationReportFormDrawer() {
     air_drier_details: 3,
     ground_earth_provided: 3,
     running_channel_combination: 3,
-    ground_earth_field: 3,
+    running_channel_combination_value: 3,
     no_of_filters_installed: 3,
     oil_filter_condition: 3,
     line_filter_condition: 3,
@@ -747,7 +747,7 @@ export function InstallationReportFormDrawer() {
       air_drier_details: 'Air Drier Details',
       ground_earth_provided: 'Ground Earth Provided',
       running_channel_combination: 'Running Channel Combination',
-      ground_earth_field: 'Ground Earth Field',
+      running_channel_combination_value: 'Running Channel Combination Value',
       no_of_filters_installed: 'No of Filters Installed',
       oil_filter_condition: 'Oil Filter Condition',
       line_filter_condition: 'Line Filter Condition',
@@ -1577,10 +1577,6 @@ export function InstallationReportFormDrawer() {
                               type="button"
                               onClick={() => {
                                 setValue('ground_earth_provided', option, { shouldDirty: true, shouldValidate: true });
-                                if (option === 'NO') {
-                                  setValue('running_channel_combination', undefined, { shouldDirty: true, shouldValidate: true });
-                                  setValue('ground_earth_field', '', { shouldDirty: true, shouldValidate: true });
-                                }
                               }}
                               className={cn(
                                 "flex h-11 items-center gap-3 rounded-xl bg-gray-50/50 px-4 text-left font-medium transition-all dark:bg-white/5",
@@ -1613,15 +1609,12 @@ export function InstallationReportFormDrawer() {
                         Running Channel Combination (1 - 12)
                       </Label>
                       <div
-                        className={cn(
-                          "grid grid-cols-3 gap-3 rounded-xl bg-gray-50/50 p-3 dark:bg-white/5 sm:grid-cols-4",
-                          watch('ground_earth_provided') !== 'YES' && "opacity-50"
-                        )}
+                        className="grid grid-cols-3 gap-3 rounded-xl bg-gray-50/50 p-3 dark:bg-white/5 sm:grid-cols-4"
                       >
                         {Array.from({ length: 12 }).map((_, i) => {
                           const value = i + 1;
                           const selected = watch('running_channel_combination') === value;
-                          const disabled = watch('ground_earth_provided') !== 'YES';
+                          const disabled = false;
 
                           return (
                             <button
@@ -1660,23 +1653,20 @@ export function InstallationReportFormDrawer() {
                         })}
                       </div>
                       <p className="text-[11px] font-medium text-gray-400">
-                        {watch('ground_earth_provided') === 'YES'
-                          ? 'Select one checked value.'
-                          : 'Choose Yes above to enable value selection.'}
+                        Select one checked value.
                       </p>
                       <FieldError message={errors.running_channel_combination?.message} />
                     </div>
 
-                    <div className="space-y-2" data-error={errors.ground_earth_field ? 'true' : undefined}>
+                    <div className="space-y-2" data-error={errors.running_channel_combination_value ? 'true' : undefined}>
                       <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                         <ShieldCheck size={14} className="text-primary/70" />
-                        Ground Field Earth
+                        Running Channel Combination Value
                       </Label>
                       <Select
-                        disabled={watch('ground_earth_provided') !== 'YES'}
-                        onValueChange={(val) => setValue('ground_earth_field', normalizeGroundEarthField(val), { shouldDirty: true, shouldValidate: true })}
-                        value={watch('ground_earth_field') || ''}
-                        items={GROUND_EARTH_FIELD_OPTIONS.map((option) => ({
+                        onValueChange={(val) => setValue('running_channel_combination_value', normalizeRunningChannelCombinationValue(val), { shouldDirty: true, shouldValidate: true })}
+                        value={watch('running_channel_combination_value') || ''}
+                        items={RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.map((option) => ({
                           value: option.value,
                           label: option.label,
                         }))}
@@ -1688,7 +1678,7 @@ export function InstallationReportFormDrawer() {
                           alignItemWithTrigger={false}
                           className="rounded-xl border-gray-100 shadow-xl"
                         >
-                          {GROUND_EARTH_FIELD_OPTIONS.map((option) => (
+                          {RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value} className="font-medium py-3">
                               <div className="flex items-center gap-3">
                                 <span className="h-4 w-4 rounded border-2 border-primary bg-primary/90" />
@@ -1698,7 +1688,7 @@ export function InstallationReportFormDrawer() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FieldError message={errors.ground_earth_field?.message} />
+                      <FieldError message={errors.running_channel_combination_value?.message} />
                     </div>
                   </div>
                   {/* Filters installed */}

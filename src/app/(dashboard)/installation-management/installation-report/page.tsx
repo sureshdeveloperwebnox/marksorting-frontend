@@ -463,9 +463,9 @@ export default function InstallationReportPage() {
             icon: Gauge,
           },
           {
-            label: "Ground Earth Field",
-            value: viewReportData.ground_earth_field
-              ? viewReportData.ground_earth_field.replace(/_/g, " ")
+            label: "Running Channel Combination Value",
+            value: viewReportData.running_channel_combination_value
+              ? viewReportData.running_channel_combination_value.replace(/_/g, " ")
               : "—",
             icon: Settings,
           },
