@@ -273,6 +273,7 @@ export function ActivityLogFilters({
               <Select
                 value={draft.user_id || 'ALL'}
                 onValueChange={(v) => setDraft(d => ({ ...d, user_id: v === 'ALL' || v == null ? undefined : v }) as QueryActivityLogsDto)}
+                items={[{ value: 'ALL', label: 'All Users' }, ...users.map(u => ({ value: u.id, label: u.full_name }))]}
               >
                 <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300">
                   <SelectValue placeholder="All Users" />
@@ -311,6 +312,7 @@ export function ActivityLogFilters({
               <Select
                 value={draft.action || 'ALL'}
                 onValueChange={(v) => setDraft(d => ({ ...d, action: v === 'ALL' || v == null ? undefined : v }))}
+                items={ACTION_OPTIONS}
               >
                 <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300">
                   <SelectValue placeholder="All Actions" />
@@ -348,6 +350,7 @@ export function ActivityLogFilters({
               <Select
                 value={draft.entity_type || 'ALL'}
                 onValueChange={(v) => setDraft(d => ({ ...d, entity_type: v === 'ALL' || v == null ? undefined : v }))}
+                items={ENTITY_OPTIONS}
               >
                 <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300">
                   <SelectValue placeholder="All Modules" />

@@ -427,6 +427,11 @@ function UserForm() {
                   <Select 
                     onValueChange={(val) => setValue('account_status', val ?? 'ACTIVE')} 
                     value={watch('account_status')}
+                    items={[
+                      { value: 'ACTIVE', label: 'Active' },
+                      { value: 'INACTIVE', label: 'Inactive' },
+                      { value: 'LOCKED', label: 'Locked' }
+                    ]}
                   >
                     <SelectTrigger className="h-12 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
                       <SelectValue />

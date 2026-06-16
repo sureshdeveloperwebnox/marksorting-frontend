@@ -230,6 +230,7 @@ export function ActivityLogExportDrawer({
               onValueChange={(v) =>
                 setExportOptions(prev => ({ ...prev, user_id: v === 'ALL' || v == null ? undefined : v }))
               }
+              items={[{ value: 'ALL', label: 'All Users' }, ...users.map(u => ({ value: u.id, label: u.full_name }))]}
             >
               <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl font-bold text-gray-700 dark:text-gray-300 shadow-sm">
                 <SelectValue placeholder="All Users" />
@@ -263,6 +264,7 @@ export function ActivityLogExportDrawer({
               onValueChange={(v) =>
                 setExportOptions(prev => ({ ...prev, action: v === 'ALL' || v == null ? undefined : v }))
               }
+              items={ACTION_OPTIONS}
             >
               <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl font-bold text-gray-700 dark:text-gray-300 shadow-sm">
                 <SelectValue placeholder="All Actions" />
@@ -290,6 +292,7 @@ export function ActivityLogExportDrawer({
               onValueChange={(v) =>
                 setExportOptions(prev => ({ ...prev, entity_type: v === 'ALL' || v == null ? undefined : v }))
               }
+              items={ENTITY_OPTIONS}
             >
               <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl font-bold text-gray-700 dark:text-gray-300 shadow-sm">
                 <SelectValue placeholder="All Modules" />
