@@ -455,10 +455,10 @@ export default function InstallationReportPage() {
             icon: Settings,
           },
           {
-            label: "Ground Earth Value (Ω)",
+            label: "Running Channel Combination",
             value:
-              viewReportData.ground_earth_value !== undefined && viewReportData.ground_earth_value !== null
-                ? `${viewReportData.ground_earth_value} Ω`
+              viewReportData.running_channel_combination !== undefined && viewReportData.running_channel_combination !== null
+                ? String(viewReportData.running_channel_combination)
                 : "—",
             icon: Gauge,
           },
