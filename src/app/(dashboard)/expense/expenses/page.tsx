@@ -65,21 +65,21 @@ import { TableTabs } from "@/components/ui/table-tabs";
 
 const getStatusColors = (status: string) => {
   switch (status?.toUpperCase()) {
-    case "PENDING":     return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
+    case "PENDING": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
     case "IN_PROGRESS": return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500 dark:border-blue-400";
-    case "COMPLETED":   return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
-    case "CANCELLED":   return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
-    default:            return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
+    case "COMPLETED": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
+    case "CANCELLED": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
+    default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
   }
 };
 
 const getStatusDotColors = (status: string) => {
   switch (status?.toUpperCase()) {
-    case "PENDING":     return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+    case "PENDING": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
     case "IN_PROGRESS": return "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]";
-    case "COMPLETED":   return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
-    case "CANCELLED":   return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
-    default:            return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
+    case "COMPLETED": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+    case "CANCELLED": return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
+    default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
   }
 };
 
@@ -134,18 +134,38 @@ export default function ExpensesPage() {
 
   const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useExpenses({
     skip: 0, take: 1, status: undefined,
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: completedData, refetch: refetchCompleted, isFetching: isFetchingCompleted } = useExpenses({
     skip: 0, take: 1, status: "COMPLETED",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: pendingData, refetch: refetchPending, isFetching: isFetchingPending } = useExpenses({
     skip: 0, take: 1, status: "PENDING",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: inProgressData, refetch: refetchInProgress, isFetching: isFetchingInProgress } = useExpenses({
     skip: 0, take: 1, status: "IN_PROGRESS",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
   const { data: cancelledData, refetch: refetchCancelled, isFetching: isFetchingCancelled } = useExpenses({
     skip: 0, take: 1, status: "CANCELLED",
+    technicianId: technicianFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
   });
 
   const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress || isFetchingCancelled;
@@ -187,8 +207,8 @@ export default function ExpensesPage() {
         {/* Claimed Box */}
         <div className={cn(
           "flex-1 p-2 rounded-xl border flex flex-col items-center justify-center",
-          hasAdmin 
-            ? "bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5" 
+          hasAdmin
+            ? "bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5"
             : "bg-primary/5 dark:bg-primary/10 border-primary/10 dark:border-primary/20"
         )}>
           <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
@@ -426,7 +446,7 @@ export default function ExpensesPage() {
                 <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2.5">
                   <span className="text-sm font-black text-gray-800 dark:text-gray-200">{item.expenseCategory?.name}</span>
                 </div>
-                
+
                 {renderBreakdownAmounts(Number(item.amount || 0), Number(item.admin_amount || 0))}
 
                 {item.remarks && (
@@ -506,6 +526,12 @@ export default function ExpensesPage() {
           iconColor: "bg-primary",
         })),
       ],
+    },
+    {
+      id: "dateRange",
+      label: "Select Date",
+      type: "date-range",
+      placeholder: "Select date range...",
     },
   ];
 
@@ -737,157 +763,173 @@ export default function ExpensesPage() {
   /* ── Render ── */
   return (
     <RouteGuard module="expenses" action="view">
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="w-full"
-    >
-      {/* Expense List Card (Full width) */}
-      <div className="w-full">
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
-            <div>
-              <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Expense{" "}
-                <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-                  List
-                </span>
-              </h1>
-              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
-                Manage and track all service engineers expenses
-              </p>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full"
+      >
+        {/* Expense List Card (Full width) */}
+        <div className="w-full">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
+              <div>
+                <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                  Expense{" "}
+                  <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
+                    List
+                  </span>
+                </h1>
+                <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
+                  Manage and track all service engineers expenses
+                </p>
+              </div>
+
+              <PageHeaderControls
+                searchValue={localSearch}
+                onSearchChange={setLocalSearch}
+                searchPlaceholder="Search expenses..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFilterCount}
+                addLabel="New Expense"
+                addIcon={<DollarSign size={15} />}
+                onAddClick={() => openFormDrawer()}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+              />
             </div>
 
-            <PageHeaderControls
-              searchValue={localSearch}
-              onSearchChange={setLocalSearch}
-              searchPlaceholder="Search expenses..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={activeFilterCount}
-              addLabel="New Expense"
-              addIcon={<DollarSign size={15} />}
-              onAddClick={() => openFormDrawer()}
-              onRefresh={handleRefresh}
-              isRefreshing={isRefreshing}
-            />
-          </div>
+            {/* Reusable Table Tabs */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+              <TableTabs
+                tabs={[
+                  { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                  { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
+                  { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
+                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+                ]}
+                activeValue={statusFilter || ""}
+                onChange={(value) => setStatusFilter(value)}
+              />
+            </div>
 
-          {/* Reusable Table Tabs */}
-          <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
-            <TableTabs
-              tabs={[
-                { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
-                { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
-                { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
-              ]}
-              activeValue={statusFilter || ""}
-              onChange={(value) => setStatusFilter(value)}
-            />
-          </div>
-
-          <div className="p-6 pt-4">
-            <DataTable
-              columns={columns}
-              data={data?.expenses || []}
-              loading={isLoading || isFetching}
-              pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
-              totalCount={data?.total || 0}
-              entityName="expenses"
-              pagination={pagination}
-              onPaginationChange={setPagination}
-              onGlobalFilterChange={setSearch}
-              globalFilterValue={search}
-              searchPlaceholder="Search..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={activeFilterCount}
-              hideToolbar
-            />
+            <div className="p-6 pt-4">
+              <DataTable
+                columns={columns}
+                data={data?.expenses || []}
+                loading={isLoading || isFetching}
+                pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
+                totalCount={data?.total || 0}
+                entityName="expenses"
+                pagination={pagination}
+                onPaginationChange={setPagination}
+                onGlobalFilterChange={setSearch}
+                globalFilterValue={search}
+                searchPlaceholder="Search..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFilterCount}
+                hideToolbar
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Filter Drawer */}
-      <GenericFilterDrawer
-        isOpen={isFilterDrawerOpen}
-        onClose={() => setIsFilterDrawerOpen(false)}
-        fields={filterFields}
-        activeValues={{
-          status: statusFilter || "ALL",
-          technicianId: technicianFilter || "ALL",
-        }}
-        onApply={(values) => {
-          setStatusFilter(values.status === "ALL" ? "" : values.status);
-          setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
-        }}
-        onReset={() => {
-          setStatusFilter("");
-          setTechnicianFilter("");
-          resetFilters();
-        }}
-      />
+        {/* Filter Drawer */}
+        <GenericFilterDrawer
+          isOpen={isFilterDrawerOpen}
+          onClose={() => setIsFilterDrawerOpen(false)}
+          fields={filterFields}
+          activeValues={{
+            status: statusFilter || "ALL",
+            technicianId: technicianFilter || "ALL",
+            dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
+          }}
+          onApply={(values) => {
+            setStatusFilter(values.status === "ALL" ? "" : values.status);
+            setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
+            if (values.dateRange) {
+              try {
+                const range = JSON.parse(values.dateRange);
+                setDateFrom(range.startDate || "");
+                setDateTo(range.endDate || range.startDate || "");
+              } catch {
+                setDateFrom("");
+                setDateTo("");
+              }
+            } else {
+              setDateFrom("");
+              setDateTo("");
+            }
+          }}
+          onReset={() => {
+            setStatusFilter("");
+            setTechnicianFilter("");
+            setDateFrom("");
+            setDateTo("");
+            resetFilters();
+          }}
+        />
 
-      {/* Form Drawer */}
-      <ExpenseFormDrawer />
+        {/* Form Drawer */}
+        <ExpenseFormDrawer />
 
-      {/* View Details Drawer */}
-      <ViewDetailsDrawer
-        isOpen={isViewDrawerOpen}
-        onClose={() => {
-          setIsViewDrawerOpen(false);
-          setSelectedViewId(null);
-        }}
-        title={
-          viewExpenseData
-            ? `Expense #${viewExpenseData.expense_number}`
-            : "Expense Details"
-        }
-        description={
-          viewExpenseData
-            ? `${viewExpenseData.mill?.name || viewExpenseData.others || "—"} · ${safeFormatDate(viewExpenseData.visit_date)}`
-            : "Loading expense details..."
-        }
-        icon={<DollarSign size={22} />}
-        isLoading={isViewExpenseLoading}
-        sections={viewSections}
-        size="lg"
-      />
+        {/* View Details Drawer */}
+        <ViewDetailsDrawer
+          isOpen={isViewDrawerOpen}
+          onClose={() => {
+            setIsViewDrawerOpen(false);
+            setSelectedViewId(null);
+          }}
+          title={
+            viewExpenseData
+              ? `Expense #${viewExpenseData.expense_number}`
+              : "Expense Details"
+          }
+          description={
+            viewExpenseData
+              ? `${viewExpenseData.mill?.name || viewExpenseData.others || "—"} · ${safeFormatDate(viewExpenseData.visit_date)}`
+              : "Loading expense details..."
+          }
+          icon={<DollarSign size={22} />}
+          isLoading={isViewExpenseLoading}
+          sections={viewSections}
+          size="lg"
+        />
 
-      {/* Delete Confirm Dialog */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
-          <DialogHeader className="space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
-              <Trash2 size={32} />
-            </div>
-            <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
-              Confirm Deletion
-            </DialogTitle>
-            <DialogDescription className="text-center text-gray-500 font-bold">
-              This action cannot be undone. This will permanently remove the expense record from the system.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:justify-center pt-6">
-            <Button
-              variant="ghost"
-              onClick={() => setDeleteId(null)}
-              className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              disabled={deleteMutation.isPending}
-              className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
-            >
-              {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Expense"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+        {/* Delete Confirm Dialog */}
+        <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
+            <DialogHeader className="space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
+                <Trash2 size={32} />
+              </div>
+              <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
+                Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className="text-center text-gray-500 font-bold">
+                This action cannot be undone. This will permanently remove the expense record from the system.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-3 sm:justify-center pt-6">
+              <Button
+                variant="ghost"
+                onClick={() => setDeleteId(null)}
+                className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending}
+                className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
+              >
+                {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Expense"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </motion.div>
     </RouteGuard>
   );
 }
