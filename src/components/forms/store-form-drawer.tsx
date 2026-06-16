@@ -59,6 +59,20 @@ const storeSchema = z.object({
   invoice_number: z.string().optional().or(z.literal('')),
 });
 
+const mapMachineWarrantyToStore = (allWarranty?: string | null): string => {
+  if (!allWarranty) return 'Non Warranty';
+  const val = allWarranty.trim();
+  if (val === 'Under Warranty') return 'Supplementary';
+  if (val === 'Under AMC') return 'AMC With Spare';
+  if (val === 'Non Warranty') return 'Non Warranty';
+  if (val === 'Expired') return 'Non Warranty';
+  
+  if (['Non Warranty', 'Supplementary', 'AMC With Spare', 'AMC Without Spare'].includes(val)) {
+    return val;
+  }
+  return 'Non Warranty';
+};
+
 type StoreFormValues = z.infer<typeof storeSchema>;
 
 export function StoreFormDrawer() {
@@ -90,7 +104,7 @@ export function StoreFormDrawer() {
       customer_id: '',
       material_ids: [],
       quantity: 1,
-      warranty_status: 'Under Warranty',
+      warranty_status: 'Non Warranty',
       frame_number: '',
       return_status: 'Pending',
       inflow_status: 'Available',
@@ -243,7 +257,7 @@ export function StoreFormDrawer() {
           customer_id: '',
           material_ids: [],
           quantity: 1,
-          warranty_status: 'Under Warranty',
+          warranty_status: 'Non Warranty',
           frame_number: '',
           return_status: 'Pending',
           inflow_status: 'Available',
@@ -408,8 +422,7 @@ export function StoreFormDrawer() {
                                   setValue('frame_number', m.frame_no);
                                 }
                                 if (m.all_warranty) {
-                                  const mappedWarranty = m.all_warranty === 'Under Warranty' ? 'Under Warranty' : 'Expired';
-                                  setValue('warranty_status', mappedWarranty);
+                                  setValue('warranty_status', mapMachineWarrantyToStore(m.all_warranty));
                                 }
                                 setSelectedMachineId(m.id);
                                 setMachineSearchQuery('');
@@ -608,8 +621,7 @@ export function StoreFormDrawer() {
                             if (m) {
                               if (m.frame_no) setValue('frame_number', m.frame_no);
                               if (m.all_warranty) {
-                                const mappedWarranty = m.all_warranty === 'Under Warranty' ? 'Under Warranty' : 'Expired';
-                                setValue('warranty_status', mappedWarranty);
+                                setValue('warranty_status', mapMachineWarrantyToStore(m.all_warranty));
                               }
                               setSelectedMachineId(m.id);
                               toast.success('Machine details prefilled! Verify and adjust as needed.');
@@ -769,8 +781,10 @@ export function StoreFormDrawer() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="Under Warranty" className="font-bold py-3 text-emerald-500">Under Warranty</SelectItem>
-                          <SelectItem value="Expired" className="font-bold py-3 text-rose-500">Expired</SelectItem>
+                          <SelectItem value="Non Warranty" className="font-bold py-3 text-rose-500">Non Warranty</SelectItem>
+                          <SelectItem value="Supplementary" className="font-bold py-3 text-blue-500">Supplementary</SelectItem>
+                          <SelectItem value="AMC With Spare" className="font-bold py-3 text-emerald-500">AMC With Spare</SelectItem>
+                          <SelectItem value="AMC Without Spare" className="font-bold py-3 text-amber-500">AMC Without Spare</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -1154,7 +1168,7 @@ export function StoreFormDrawer() {
                     setValue('customer_id', customerId || '');
                     if (quickRefNo.trim()) {
                       setValue('frame_number', quickRefNo.trim());
-                      setValue('warranty_status', 'Expired');
+                      setValue('warranty_status', 'Non Warranty');
                     }
                     
                     toast.success('Customer, Mill, and Machine linked successfully!');
@@ -1349,8 +1363,7 @@ export function StoreFormDrawer() {
 
                     // Automatically prefill the form
                     setValue('frame_number', newRecord.frame_no || quickFrameNo.trim());
-                    const mappedWarranty = newRecord.all_warranty === 'Under Warranty' ? 'Under Warranty' : 'Expired';
-                    setValue('warranty_status', mappedWarranty);
+                    setValue('warranty_status', mapMachineWarrantyToStore(newRecord.all_warranty));
                     setSelectedMachineId(newRecord.id);
 
                     toast.success('Machine record created and prefilled successfully!');

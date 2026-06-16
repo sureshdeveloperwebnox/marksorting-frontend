@@ -54,8 +54,10 @@ import { TableTabs } from "@/components/ui/table-tabs";
 
 const getWarrantyColors = (status: string) => {
   switch (status) {
-    case "Under Warranty": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20";
-    case "Expired": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20";
+    case "Non Warranty": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20";
+    case "Supplementary": return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500/20";
+    case "AMC With Spare": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20";
+    case "AMC Without Spare": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20";
     default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500/20";
   }
 };
@@ -372,8 +374,10 @@ export default function StoresPage() {
       label: "Warranty Status",
       options: [
         { value: "ALL", label: "All Warranty" },
-        { value: "Under Warranty", label: "Under Warranty", iconColor: "bg-emerald-500" },
-        { value: "Expired", label: "Expired", iconColor: "bg-rose-500" },
+        { value: "Non Warranty", label: "Non Warranty", iconColor: "bg-rose-500" },
+        { value: "Supplementary", label: "Supplementary", iconColor: "bg-blue-500" },
+        { value: "AMC With Spare", label: "AMC With Spare", iconColor: "bg-emerald-500" },
+        { value: "AMC Without Spare", label: "AMC Without Spare", iconColor: "bg-amber-500" },
       ],
     },
     {
