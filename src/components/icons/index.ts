@@ -28,6 +28,7 @@ export { UserListIcon } from './user-list-icon';
 export { RoleManagementIcon } from './role-management-icon';
 export { MillsListIcon } from './mills-list-icon';
 export { CustomersIcon } from './customers-icon';
+export { MasterMillsIcon } from './master-mills-icon';
 
 // Re-export Lucide icons for convenience
 export {

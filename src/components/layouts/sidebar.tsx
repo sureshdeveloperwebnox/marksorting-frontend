@@ -8,7 +8,6 @@ import {
   Tag,
   Receipt,
   Building2,
-  FileText,
 } from 'lucide-react';
 import {
   DashboardIcon,
@@ -34,6 +33,7 @@ import {
   NotificationsIcon,
   ActivityLogsIcon,
   LogoutIcon,
+  MasterMillsIcon,
   type IconComponent,
 } from '@/components/icons';
 import { useAuth } from '@/features/auth/hooks/use-auth';
@@ -109,7 +109,7 @@ const items: SidebarItem[] = [
       {
         label: 'Master Mills',
         href: '/mills/master-mills',
-        icon: FileText,
+        icon: MasterMillsIcon,
         module: 'mills',
         action: 'view',
       },

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { MasterMillsIcon } from '@/components/icons';
 
 const roleSchema = z.object({
   name: z.string().min(2, 'Role name must be at least 2 characters'),
@@ -36,7 +37,7 @@ const MODULE_CONFIG: Record<string, { label: string; icon: React.ElementType; de
   roles: { label: 'Role Management', icon: UserCog, description: 'Manage roles and permissions', order: 3 },
   customers: { label: 'Customer Management', icon: Building2, description: 'Manage customer records', order: 4 },
   mills: { label: 'Mill Management', icon: Building2, description: 'Manage mill information', order: 5 },
-  master_mills: { label: 'Master Mills', icon: FileText, description: 'Manage master mill records', order: 5.5 },
+  master_mills: { label: 'Master Mills', icon: MasterMillsIcon, description: 'Manage master mill records', order: 5.5 },
   service_categories: { label: 'Service Categories', icon: Briefcase, description: 'Manage service categories', order: 6 },
   service_reports: { label: 'Service Reports', icon: FileBarChart, description: 'Manage service reports', order: 7 },
   installation_reports: { label: 'Installation Reports', icon: Wrench, description: 'Manage installation reports', order: 8 },

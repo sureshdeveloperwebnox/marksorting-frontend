@@ -13,7 +13,6 @@ import {
   ArrowRight,
   Sidebar as SidebarIcon,
   LayoutGrid,
-  FileText,
 } from 'lucide-react';
 import {
   DashboardIcon,
@@ -39,6 +38,7 @@ import {
   UsersIcon,
   UserListIcon,
   RoleManagementIcon,
+  MasterMillsIcon,
 } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -124,7 +124,7 @@ const navItems: NavItem[] = [
       {
         label: 'Master Mills',
         href: '/mills/master-mills',
-        icon: FileText,
+        icon: MasterMillsIcon,
         module: 'mills',
         action: 'view',
       },
