@@ -12,9 +12,6 @@ import {
   Trash2,
   Loader2,
   Factory,
-  TrendingUp,
-  CheckCircle2,
-  XCircle,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -72,56 +69,6 @@ const millFilterFields: FilterField[] = [
   },
 ];
 
-/* ─── Stats Card ────────────────────────────────────────────────── */
-
-interface StatsCardProps {
-  title: string;
-  value: number | undefined;
-  icon: React.ReactNode;
-  iconBg: string;
-  gradient: string;
-  trend?: string;
-  loading?: boolean;
-}
-
-function StatsCard({ title, value, icon, iconBg, gradient, trend, loading }: StatsCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className={cn(
-        "relative overflow-hidden rounded-[20px] p-5 border border-gray-100 dark:border-white/5",
-        "bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
-      )}
-    >
-      <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 -translate-y-6 translate-x-6", gradient)} />
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.12em] mb-3">
-            {title}
-          </p>
-          {loading ? (
-            <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
-          ) : (
-            <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
-              {value ?? 0}
-            </p>
-          )}
-          {trend && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500 mt-2">
-              <TrendingUp size={11} />
-              {trend}
-            </p>
-          )}
-        </div>
-        <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 
@@ -159,11 +106,12 @@ export default function MillsPage() {
   const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useMills({ skip: 0, take: 1 });
   const { data: activeData, refetch: refetchActive, isFetching: isFetchingActive } = useMills({ skip: 0, take: 1, status: "ACTIVE" });
   const { data: inactiveData, refetch: refetchInactive, isFetching: isFetchingInactive } = useMills({ skip: 0, take: 1, status: "INACTIVE" });
+  const { data: closedData, refetch: refetchClosed, isFetching: isFetchingClosed } = useMills({ skip: 0, take: 1, status: "CLOSED" });
 
-  const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive;
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive || isFetchingClosed;
 
   const handleRefresh = async () => {
-    await Promise.all([refetch(), refetchTotal(), refetchActive(), refetchInactive()]);
+    await Promise.all([refetch(), refetchTotal(), refetchActive(), refetchInactive(), refetchClosed()]);
   };
 
   const deleteMillMutation = useDeleteMill();
@@ -335,13 +283,9 @@ export default function MillsPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+      className="w-full"
     >
-      {/* ════════════════════════════════════════
-          LEFT — Mill List Card  (3/4 width)
-      ════════════════════════════════════════ */}
-      <div className="xl:col-span-3">
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
           {/* Card header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
@@ -370,6 +314,43 @@ export default function MillsPage() {
             />
           </div>
 
+          {/* Status Tabs */}
+          <div className="px-6 pt-4 pb-0 border-b border-gray-100 dark:border-white/5 bg-gray-50/10 dark:bg-white/[0.01]">
+            <div className="flex gap-2 pb-3 overflow-x-auto scrollbar-none">
+              {[
+                { value: "", label: "All Mills", count: totalData?.total, color: "text-primary bg-primary/10 border-primary/20", dotColor: "bg-primary" },
+                { value: "ACTIVE", label: "Active", count: activeData?.total, color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20", dotColor: "bg-emerald-500" },
+                { value: "INACTIVE", label: "Inactive", count: inactiveData?.total, color: "text-amber-500 bg-amber-500/10 border-amber-500/20", dotColor: "bg-amber-500" },
+                { value: "CLOSED", label: "Closed", count: closedData?.total, color: "text-rose-500 bg-rose-500/10 border-rose-500/20", dotColor: "bg-rose-500" },
+              ].map((tab) => {
+                const isActive = statusFilter === tab.value;
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setStatusFilter(tab.value)}
+                    className={cn(
+                      "relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 border",
+                      isActive
+                        ? `${tab.color} shadow-sm scale-105`
+                        : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 border-transparent"
+                    )}
+                  >
+                    <span className={cn("w-1.5 h-1.5 rounded-full", tab.dotColor, isActive ? "animate-pulse" : "")} />
+                    <span>{tab.label}</span>
+                    <span className={cn(
+                      "px-1.5 py-0.5 rounded-md text-[10px] font-black leading-none",
+                      isActive
+                        ? "bg-current/15"
+                        : "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400"
+                    )}>
+                      {tab.count ?? 0}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Table */}
           <div className="p-6 pt-4">
             <DataTable
@@ -390,72 +371,6 @@ export default function MillsPage() {
             />
           </div>
         </div>
-      </div>
-
-      {/* ════════════════════════════════════════
-          RIGHT — Statistics Panel  (1/4 width)
-      ════════════════════════════════════════ */}
-      <div className="xl:col-span-1 flex flex-col gap-4">
-        <StatsCard
-          title="Total Mills"
-          value={totalData?.total}
-          loading={!totalData}
-          icon={<Factory size={20} className="text-primary" />}
-          iconBg="bg-primary/10 dark:bg-primary/15"
-          gradient="bg-primary"
-          trend="All registered mills"
-        />
-        <StatsCard
-          title="Active Mills"
-          value={activeData?.total}
-          loading={!activeData}
-          icon={<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400" />}
-          iconBg="bg-emerald-50 dark:bg-emerald-500/15"
-          gradient="bg-emerald-500"
-          trend="Currently operational"
-        />
-        <StatsCard
-          title="Inactive Mills"
-          value={inactiveData?.total}
-          loading={!inactiveData}
-          icon={<XCircle size={20} className="text-amber-600 dark:text-amber-400" />}
-          iconBg="bg-amber-50 dark:bg-amber-500/15"
-          gradient="bg-amber-500"
-          trend="Paused / awaiting"
-        />
-
-        {/* Quick info card */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-[20px] p-5 bg-gradient-to-br from-primary to-orange-500 border border-primary/20 shadow-sm shadow-primary/20"
-        >
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMC0xMnY2aDZ2LTZoLTZ6bS0xMiAxMnY2aDZ2LTZoLTZ6bTAtMTJ2Nmg2di02aC02eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-          <p className="text-xs font-bold text-white/70 uppercase tracking-[0.12em] mb-2 relative">Quick Stats</p>
-          <div className="space-y-1.5 relative">
-            {[
-              {
-                label: "Active rate",
-                value: totalData?.total
-                  ? `${Math.round(((activeData?.total || 0) / totalData.total) * 100)}%`
-                  : "—",
-              },
-              {
-                label: "Inactive rate",
-                value: totalData?.total
-                  ? `${Math.round(((inactiveData?.total || 0) / totalData.total) * 100)}%`
-                  : "—",
-              },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">{s.label}</span>
-                <span className="text-sm font-black text-white">{s.value}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
 
       {/* ── Filter Drawer ── */}
       <GenericFilterDrawer
