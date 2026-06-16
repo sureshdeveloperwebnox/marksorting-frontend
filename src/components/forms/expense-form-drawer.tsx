@@ -41,6 +41,7 @@ import { useCustomers, useCreateCustomer } from '@/services/customer-service';
 import { useMasterMills, useCreateMasterMill } from '@/services/master-mill-service';
 import useExpenseStore from '@/store/useExpenseStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
+import { ExpenseCategoryMultiSelect } from '@/components/ui/expense-category-multi-select';
 import { useS3Upload } from '@/hooks/use-s3-upload';
 import {
   Sheet,
@@ -71,12 +72,15 @@ const expenseSchema = z.object({
   mill_id: z.string().optional().or(z.literal('')),
   place: z.string().optional().or(z.literal('')),
   others: z.string().optional().or(z.literal('')),
-  description: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
   visit_time: z.string().optional(),
-  expense_category_id: z.string().min(1, 'Expense category is required'),
-  amount: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0, 'Amount must be positive').optional()),
-  expense_images: z.array(z.string()).default([]),
+  expense_items: z.array(z.object({
+    expense_category_id: z.string().min(1, 'Category is required'),
+    amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Amount must be positive')),
+    admin_amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Admin amount must be positive')),
+    remarks: z.string().optional().or(z.literal('')),
+    expense_images: z.array(z.string()).default([]),
+  })).min(1, 'At least one category is required'),
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
@@ -184,12 +188,9 @@ export function ExpenseFormDrawer() {
       mill_id: '',
       place: '',
       others: '',
-      description: '',
       visit_date: '',
       visit_time: '',
-      expense_category_id: '',
-      amount: undefined,
-      expense_images: [],
+      expense_items: [],
     },
   });
 
@@ -198,9 +199,8 @@ export function ExpenseFormDrawer() {
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
   const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true });
-  const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
+  const [activeUploadIndex, setActiveUploadIndex] = React.useState<number | null>(null);
   
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const sheetRef = React.useRef<HTMLDivElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
   const initializedFormKeyRef = React.useRef<string | null>(null);
@@ -283,7 +283,6 @@ export function ExpenseFormDrawer() {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const uploadedImages = watch('expense_images') || [];
 
   const filteredMills = React.useMemo(() => {
     if (!selectedCustomerId) {
@@ -321,9 +320,6 @@ export function ExpenseFormDrawer() {
       initializedFormKeyRef.current = null;
       setSelectedCustomerId('');
       setSelectedMachineId('');
-      if (imagePreviews.length > 0) {
-        setImagePreviews([]);
-      }
       return;
     }
 
@@ -342,40 +338,47 @@ export function ExpenseFormDrawer() {
           setSelectedCustomerId(newCustId);
         }
         setSelectedMachineId('');
+
+        const itemsToReset = expenseData.expense_items?.length
+          ? expenseData.expense_items.map((item: any) => ({
+              expense_category_id: item.expense_category_id,
+              amount: item.amount ? Number(item.amount) : 0,
+              admin_amount: item.admin_amount ? Number(item.admin_amount) : 0,
+              remarks: item.remarks || '',
+              expense_images: item.expense_images || [],
+            }))
+          : expenseData.expense_category_id
+          ? [
+              {
+                expense_category_id: expenseData.expense_category_id,
+                amount: expenseData.amount ? Number(expenseData.amount) : 0,
+                admin_amount: expenseData.admin_amount ? Number(expenseData.admin_amount) : 0,
+                remarks: expenseData.remarks || '',
+                expense_images: expenseData.expense_images || [],
+              },
+            ]
+          : [];
+
         reset({
           technician_ids: expenseData.technicians?.map((t: any) => t.technician.id) || [],
           mill_id: expenseData.mill_id || '',
           place: expenseData.place || '',
           others: expenseData.others || '',
-          description: expenseData.description || '',
           visit_date: expenseData.visit_date?.split('T')[0] || '',
           visit_time: expenseData.visit_time || '',
-          expense_category_id: expenseData.expense_category_id || '',
-          amount: expenseData.amount ? Number(expenseData.amount) : undefined,
-          expense_images: expenseData.expense_images || [],
+          expense_items: itemsToReset,
         });
-        // Previews from existing images
-        const newPreviews = expenseData.expense_images?.map((img: string) =>
-          img.startsWith('http') ? img : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`
-        ) || [];
-        setImagePreviews(newPreviews);
       } else if (!isEdit) {
         setSelectedCustomerId('');
         setSelectedMachineId('');
-        if (imagePreviews.length > 0) {
-          setImagePreviews([]);
-        }
         reset({
           technician_ids: [],
           mill_id: '',
           place: '',
           others: '',
-          description: '',
           visit_date: '',
           visit_time: '',
-          expense_category_id: '',
-          amount: undefined,
-          expense_images: [],
+          expense_items: [],
         });
       }
     }
@@ -389,79 +392,54 @@ export function ExpenseFormDrawer() {
     }
   }, [isFormDrawerOpen, isEdit, expenseData, mills, selectedCustomerId]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleItemImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const fileArray = Array.from(files);
-
-    // Create local previews immediately for all files
-    const previewPromises = fileArray.map((file) => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const preview = reader.result as string;
-          setImagePreviews((prev) => [...prev, preview]);
-          resolve(preview);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    const previews = await Promise.all(previewPromises);
 
     // Upload files to S3 in parallel
     const uploadResults = await Promise.all(
       fileArray.map((file) => uploadFile(file))
     );
 
-    // Process results and update form values
-    const successfulKeys: string[] = [];
-    const failedIndices: number[] = [];
+    const successfulKeys = uploadResults.filter(Boolean).map(result => result!.key);
 
-    uploadResults.forEach((result, index) => {
-      if (result) {
-        successfulKeys.push(result.key);
-      } else {
-        failedIndices.push(index);
-      }
-    });
-
-    // Add successful uploads to form
     if (successfulKeys.length > 0) {
-      const currentImages = watch('expense_images') || [];
-      setValue('expense_images', [...currentImages, ...successfulKeys]);
-    }
-
-    // Remove failed upload previews
-    if (failedIndices.length > 0) {
-      setImagePreviews((prev) =>
-        prev.filter((_, i) => !failedIndices.includes(i))
-      );
+      const currentItems = watch('expense_items') || [];
+      const updated = [...currentItems];
+      updated[index].expense_images = [
+        ...(updated[index].expense_images || []),
+        ...successfulKeys,
+      ];
+      setValue('expense_items', updated, { shouldValidate: true });
     }
 
     // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    const currentImages = watch('expense_images') || [];
-    setValue('expense_images', currentImages.filter((_, i) => i !== index));
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveItemImage = (itemIndex: number, imageIndex: number) => {
+    const currentItems = watch('expense_items') || [];
+    const updated = [...currentItems];
+    updated[itemIndex].expense_images = updated[itemIndex].expense_images.filter((_, idx) => idx !== imageIndex);
+    setValue('expense_items', updated, { shouldValidate: true });
   };
 
   const onSubmit: SubmitHandler<ExpenseFormValues> = async (data) => {
     try {
       const payload = {
         ...data,
-        amount: data.amount ? Number(data.amount) : 0,
         mill_id: data.mill_id || null,
         place: data.place || null,
         others: data.others || null,
-        description: data.description || null,
         visit_time: data.visit_time || undefined,
+        expense_items: data.expense_items.map((item) => ({
+          ...item,
+          amount: Number(item.amount || 0),
+        })),
       };
 
       if (isEdit) {
@@ -483,12 +461,9 @@ export function ExpenseFormDrawer() {
     mill_id: 1,
     place: 2,
     others: 2,
-    description: 4,
     visit_date: 3,
     visit_time: 3,
-    expense_category_id: 4,
-    amount: 4,
-    expense_images: 4,
+    expense_items: 4,
   };
 
   const scrollToFirstError = (errors: any) => {
@@ -514,9 +489,7 @@ export function ExpenseFormDrawer() {
       others: 'Others',
       visit_date: 'Date',
       visit_time: 'Time',
-      expense_category_id: 'Expense Category',
-      amount: 'Amount',
-      expense_images: 'Expense Images',
+      expense_items: 'Expense Categories & Details',
     };
 
     const errorFields = Object.keys(errors)
@@ -981,130 +954,193 @@ export function ExpenseFormDrawer() {
               {/* Section 4 - Expense Info & Images */}
               <SectionToggle section={sections[3]} isOpen={!!openSections[4]} onToggle={toggleSection}>
                 <div className="space-y-4">
-                  {/* Expense Type & Amount */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2" data-error={errors.expense_category_id ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Tag size={14} className="text-primary/70" />
-                        Select Expense Category *
-                      </Label>
-                      {categoriesLoading ? (
-                        <Skeleton className="h-11 rounded-xl w-full" />
-                      ) : (
-                        <Select
-                          onValueChange={(val) => setValue('expense_category_id', val || '')}
-                          value={watch('expense_category_id') || ''}
-                          items={categories.map((c) => ({ value: c.id, label: c.name }))}
-                        >
-                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                            {watch('expense_category_id') ? (
-                              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                {categories.find((c) => c.id === watch('expense_category_id'))?.name ?? 'Unknown Category'}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select category</span>
-                            )}
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id} className="font-bold py-3">
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                  {/* Select Expense Categories Multi-Select */}
+                  <div className="space-y-2" data-error={errors.expense_items ? 'true' : undefined}>
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Tag size={14} className="text-primary/70" />
+                      Select Expense Categories *
+                    </Label>
+                    <Controller
+                      name="expense_items"
+                      control={control}
+                      render={({ field }) => (
+                        <ExpenseCategoryMultiSelect
+                          value={field.value?.map((it) => it.expense_category_id) || []}
+                          onChange={(newIds) => {
+                            const currentItems = field.value || [];
+                            const updatedItems = newIds.map((id) => {
+                              const existing = currentItems.find((item) => item.expense_category_id === id);
+                              if (existing) return existing;
+                              return {
+                                expense_category_id: id,
+                                amount: 0,
+                                admin_amount: 0,
+                                remarks: '',
+                                expense_images: [],
+                              };
+                            });
+                            field.onChange(updatedItems);
+                          }}
+                          placeholder="Select categories..."
+                        />
                       )}
-                      <FieldError message={errors.expense_category_id?.message} />
-                    </div>
-
-                    <div className="space-y-2" data-error={errors.amount ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <DollarSign size={14} className="text-primary/70" />
-                        Amount (₹)
-                      </Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...register('amount')}
-                        placeholder="Enter amount"
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                      />
-                      <FieldError message={errors.amount?.message} />
-                    </div>
+                    />
+                    <FieldError message={errors.expense_items?.message} />
                   </div>
 
-                  {/* Description */}
-                  <div className="space-y-2" data-error={errors.description ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <FileText size={14} className="text-primary/70" />
-                      Description
-                    </Label>
-                    <textarea
-                      {...register('description')}
-                      placeholder="Enter details about this expense..."
-                      rows={3}
-                      className="w-full p-3 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none resize-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                    />
-                    <FieldError message={errors.description?.message} />
-                  </div>
-
-                  {/* Upload Images */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <ImageIcon size={14} className="text-primary/70" />
-                      Expense Images (Upload Images)
-                    </Label>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                    />
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {/* Existing Uploaded Images previews */}
-                      {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 dark:border-white/10 group">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index}`}
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(index)}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ))}
-
-                      {/* Upload Trigger button */}
-                      <button
-                        type="button"
-                        onClick={() => !isUploading && fileInputRef.current?.click()}
-                        className={cn(
-                          "relative aspect-square border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 bg-gray-50/50 dark:bg-white/5 text-gray-500 hover:text-primary",
-                          isUploading && "pointer-events-none opacity-60"
-                        )}
-                      >
-                        {isUploading ? (
-                          <div className="flex flex-col items-center gap-1.5">
-                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                            <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{uploadProgress}%</span>
+                  {/* Render Fields for each selected category */}
+                  <AnimatePresence>
+                    {(watch('expense_items') || []).map((item, index) => {
+                      const cat = categories.find((c) => c.id === item.expense_category_id);
+                      return (
+                        <motion.div
+                          key={item.expense_category_id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="border border-gray-100 dark:border-white/5 rounded-2xl p-4 space-y-4 bg-gray-50/20 dark:bg-white/[0.01]"
+                        >
+                          <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-2">
+                            <span className="font-bold text-sm text-primary flex items-center gap-2">
+                              <Tag size={14} />
+                              {cat?.name || 'Category'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = watch('expense_items') || [];
+                                setValue('expense_items', current.filter((_, i) => i !== index), { shouldValidate: true });
+                              }}
+                              className="text-gray-400 hover:text-rose-500 transition-colors cursor-pointer"
+                            >
+                              <X size={16} />
+                            </button>
                           </div>
-                        ) : (
-                          <>
-                            <UploadCloud size={20} />
-                            <span className="text-[10px] font-bold">Add Image</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                <DollarSign size={14} className="text-primary/70" />
+                                Amount (₹) *
+                              </Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={item.amount || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                  const updated = [...(watch('expense_items') || [])];
+                                  updated[index].amount = val;
+                                  setValue('expense_items', updated, { shouldValidate: true });
+                                }}
+                                placeholder="Enter amount"
+                                className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                <FileText size={14} className="text-primary/70" />
+                                Remarks
+                              </Label>
+                              <textarea
+                                value={item.remarks || ''}
+                                onChange={(e) => {
+                                  const updated = [...(watch('expense_items') || [])];
+                                  updated[index].remarks = e.target.value;
+                                  setValue('expense_items', updated, { shouldValidate: true });
+                                }}
+                                placeholder="Enter remarks..."
+                                rows={1}
+                                className="w-full min-h-[44px] p-3 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none resize-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Item Image Upload & Admin Expense Amount Row */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                            {/* Receipt Images */}
+                            <div className="space-y-2">
+                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                <ImageIcon size={14} className="text-primary/70" />
+                                Receipt Images
+                              </Label>
+                              
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {(item.expense_images || []).map((img, imgIdx) => {
+                                  const src = img.startsWith('http') || img.startsWith('data:') ? img : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
+                                  return (
+                                    <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 dark:border-white/10 group">
+                                      <img
+                                        src={src}
+                                        alt={`Receipt ${imgIdx}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveItemImage(index, imgIdx)}
+                                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+
+                                <label className={cn(
+                                  "relative aspect-square border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 bg-gray-50/50 dark:bg-white/5 text-gray-500 hover:text-primary cursor-pointer",
+                                  isUploading && activeUploadIndex === index && "pointer-events-none opacity-60"
+                                )}>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      setActiveUploadIndex(index);
+                                      handleItemImageUpload(index, e);
+                                    }}
+                                  />
+                                  {isUploading && activeUploadIndex === index ? (
+                                    <div className="flex flex-col items-center gap-1.5">
+                                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                      <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300">{uploadProgress}%</span>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <UploadCloud size={20} />
+                                      <span className="text-[10px] font-bold">Add Receipt</span>
+                                    </>
+                                  )}
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Admin Expense Amount */}
+                            <div className="space-y-2">
+                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                <DollarSign size={14} className="text-primary/70" />
+                                Admin Expense Amount (₹)
+                              </Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={item.admin_amount || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                  const updated = [...(watch('expense_items') || [])];
+                                  updated[index].admin_amount = val;
+                                  setValue('expense_items', updated, { shouldValidate: true });
+                                }}
+                                placeholder="Enter admin expense amount"
+                                className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                              />
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
                 </div>
               </SectionToggle>
             </form>

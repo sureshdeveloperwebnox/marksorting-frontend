@@ -10,6 +10,17 @@ export interface ExpenseTechnicianEntry {
     };
 }
 
+export interface ExpenseItem {
+    id: string;
+    expense_id: string;
+    expense_category_id: string;
+    amount: string;
+    admin_amount?: string;
+    remarks?: string;
+    expense_images: string[];
+    expenseCategory?: { id: string; name: string };
+}
+
 export interface Expense {
     id: string;
     expense_number: string;
@@ -17,17 +28,19 @@ export interface Expense {
     place?: string;
     visit_date: string;
     visit_time: string;
-    expense_category_id: string;
+    expense_category_id?: string;
     expenseCategory?: { id: string; name: string };
     others?: string;
-    description?: string;
+    remarks?: string;
     amount: string; // From Decimal on backend, represented as string or number in frontend
+    admin_amount?: string;
     expense_images: string[];
     status: string;
     created_at: string;
     updated_at: string;
     mill?: { id: string; name: string };
     technicians: ExpenseTechnicianEntry[];
+    expense_items?: ExpenseItem[];
 }
 
 export interface ExpensesResponse {

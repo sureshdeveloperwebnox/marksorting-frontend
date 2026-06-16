@@ -179,6 +179,49 @@ export default function ExpensesPage() {
     }
   };
 
+  const renderBreakdownAmounts = (amount: number, adminAmount: number) => {
+    const hasAdmin = adminAmount > 0;
+    return (
+      <div className="flex items-center gap-3 mt-2">
+        {/* Claimed Box */}
+        <div className={cn(
+          "flex-1 p-2 rounded-xl border flex flex-col items-center justify-center",
+          hasAdmin 
+            ? "bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5" 
+            : "bg-primary/5 dark:bg-primary/10 border-primary/10 dark:border-primary/20"
+        )}>
+          <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            Claimed Expense Amount
+          </span>
+          <span className={cn(
+            "text-sm font-bold mt-0.5",
+            hasAdmin ? "text-gray-400 dark:text-gray-600 line-through font-bold" : "text-primary dark:text-orange-400 font-extrabold"
+          )}>
+            ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+
+        {hasAdmin && (
+          <>
+            <div className="text-gray-300 dark:text-gray-700 flex items-center justify-center font-bold text-sm">
+              →
+            </div>
+
+            {/* Approved Box */}
+            <div className="flex-1 p-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 flex flex-col items-center justify-center">
+              <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Approved Expense Amount
+              </span>
+              <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                ₹{adminAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   /* ── View Sections ── */
   const viewSections = React.useMemo(() => {
     if (!viewExpenseData) return [];
@@ -213,7 +256,15 @@ export default function ExpensesPage() {
           },
           {
             label: "Category",
-            value: (
+            value: viewExpenseData.expense_items?.length ? (
+              <div className="flex flex-wrap gap-1">
+                {viewExpenseData.expense_items.map((item: any) => (
+                  <Badge key={item.id} variant="outline" className="font-bold text-[10px] capitalize py-0.5 px-1.5 bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 text-gray-600 dark:text-gray-400">
+                    {item.expenseCategory?.name?.toLowerCase().replace(/_/g, " ") || "—"}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
               <Badge variant="outline" className="font-bold text-xs capitalize py-0.5 px-2 bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 text-gray-600 dark:text-gray-400">
                 {viewExpenseData.expenseCategory?.name?.toLowerCase().replace(/_/g, " ") || "—"}
               </Badge>
@@ -223,12 +274,33 @@ export default function ExpensesPage() {
           {
             label: "Amount",
             value: (
-              <span className="font-bold text-gray-900 dark:text-white">
-                ₹{Number(viewExpenseData.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-              </span>
+              <div className="flex flex-col gap-1 mt-0.5">
+                <span className={cn("font-bold text-sm text-gray-900 dark:text-white", Number(viewExpenseData.admin_amount || 0) > 0 && "line-through text-gray-400 dark:text-gray-500 font-semibold")}>
+                  ₹{Number(viewExpenseData.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+                {Number(viewExpenseData.admin_amount || 0) > 0 && (
+                  <span className="text-[9px] uppercase font-extrabold tracking-wider bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-gray-400 dark:text-gray-500 w-fit select-none">
+                    Claimed
+                  </span>
+                )}
+              </div>
             ),
             icon: DollarSign,
           },
+          ...(Number(viewExpenseData.admin_amount || 0) > 0 ? [{
+            label: "Admin Expense Amount",
+            value: (
+              <div className="flex flex-col gap-1 mt-0.5">
+                <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                  ₹{Number(viewExpenseData.admin_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+                <span className="text-[9px] uppercase font-extrabold tracking-wider bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-600 dark:text-emerald-400 w-fit select-none border border-emerald-500/20">
+                  Approved
+                </span>
+              </div>
+            ),
+            icon: DollarSign,
+          }] : []),
         ],
       },
       {
@@ -266,8 +338,8 @@ export default function ExpensesPage() {
             fullWidth: true,
           },
           {
-            label: "Description",
-            value: viewExpenseData.description || "—",
+            label: "Remarks",
+            value: viewExpenseData.remarks || "—",
             icon: FileText,
             fullWidth: true,
           },
@@ -326,6 +398,52 @@ export default function ExpensesPage() {
           },
         ],
       },
+      ...(viewExpenseData.expense_items?.length ? [
+        {
+          title: "Expense Breakdown",
+          items: viewExpenseData.expense_items.map((item: any) => ({
+            label: item.expenseCategory?.name || "Category",
+            value: (
+              <div className="w-full bg-gray-50/30 dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 p-4 rounded-2xl">
+                <div className="flex justify-between items-center border-b border-gray-100 dark:border-white/5 pb-2.5">
+                  <span className="text-sm font-black text-gray-800 dark:text-gray-200">{item.expenseCategory?.name}</span>
+                </div>
+                
+                {renderBreakdownAmounts(Number(item.amount || 0), Number(item.admin_amount || 0))}
+
+                {item.remarks && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic mt-3 bg-gray-50/50 dark:bg-white/5 p-2.5 rounded-xl border border-gray-100 dark:border-white/5">
+                    <strong>Remarks: </strong>{item.remarks}
+                  </p>
+                )}
+                {item.expense_images?.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                    {item.expense_images.map((img: string, idx: number) => {
+                      const src = img.startsWith("http") || img.startsWith("data:") ? img : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
+                      return (
+                        <a
+                          key={idx}
+                          href={src}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative block aspect-square max-h-16 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden cursor-pointer"
+                        >
+                          <img
+                            src={src}
+                            alt={`Receipt ${idx + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ),
+            fullWidth: true,
+          })),
+        }
+      ] : []),
       {
         title: "System Information",
         items: [
@@ -411,11 +529,15 @@ export default function ExpensesPage() {
           <span className="text-gray-400 dark:text-gray-500 font-medium text-xs">
             {row.original.place || "—"}
           </span>
-          {row.original.description && (
-            <span className="text-[11px] italic text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[200px]" title={row.original.description}>
-              {row.original.description}
+          {row.original.expense_items?.length ? (
+            <span className="text-[11px] italic text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[200px]" title={row.original.expense_items.map(it => `${it.expenseCategory?.name}: ${it.remarks || ''}`).join(' | ')}>
+              {row.original.expense_items.map(it => it.remarks).filter(Boolean).join(' | ') || row.original.remarks || ""}
             </span>
-          )}
+          ) : row.original.remarks ? (
+            <span className="text-[11px] italic text-gray-500 dark:text-gray-400 line-clamp-1 max-w-[200px]" title={row.original.remarks}>
+              {row.original.remarks}
+            </span>
+          ) : null}
         </div>
       ),
     },
@@ -429,22 +551,55 @@ export default function ExpensesPage() {
       ),
     },
     {
-      accessorKey: "expenseCategory.name",
+      id: "category",
       header: "Category",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="font-bold text-xs capitalize py-0.5 px-2 bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 text-gray-600 dark:text-gray-400">
-          {row.original.expenseCategory?.name?.toLowerCase().replace(/_/g, " ") || "—"}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const items = row.original.expense_items || [];
+        if (items.length > 0) {
+          return (
+            <div className="flex flex-wrap gap-1 max-w-[180px]">
+              {items.map((item) => (
+                <Badge key={item.id} variant="outline" className="font-bold text-[10px] capitalize py-0.5 px-1.5 bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 text-gray-600 dark:text-gray-400">
+                  {item.expenseCategory?.name?.toLowerCase().replace(/_/g, " ") || "—"}
+                </Badge>
+              ))}
+            </div>
+          );
+        }
+        return (
+          <Badge variant="outline" className="font-bold text-xs capitalize py-0.5 px-2 bg-gray-50/50 dark:bg-white/5 border-gray-100 dark:border-white/5 text-gray-600 dark:text-gray-400">
+            {row.original.expenseCategory?.name?.toLowerCase().replace(/_/g, " ") || "—"}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "amount",
       header: "Amount",
-      cell: ({ row }) => (
-        <span className="font-bold text-sm text-gray-900 dark:text-white">
-          ₹{Number(row.original.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const amt = Number(row.original.amount || 0);
+        const adminAmt = Number(row.original.admin_amount || 0);
+        const hasAdminAmt = adminAmt > 0;
+
+        return (
+          <div className="flex flex-col gap-0.5">
+            {hasAdminAmt ? (
+              <>
+                <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                  ₹{adminAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold line-through">
+                  Claimed: ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+              </>
+            ) : (
+              <span className="font-bold text-sm text-gray-900 dark:text-white">
+                ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "visit_date",
