@@ -24,6 +24,7 @@ export interface ExpenseItem {
 export interface Expense {
     id: string;
     expense_number: string;
+    expense_type: string;
     mill_id?: string;
     place?: string;
     visit_date: string;

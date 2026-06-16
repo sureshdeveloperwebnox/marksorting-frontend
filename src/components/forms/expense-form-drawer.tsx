@@ -68,12 +68,13 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { TimePicker } from '@/components/ui/time-picker';
 
 const expenseSchema = z.object({
+  expense_type: z.enum(['MILL', 'OTHERS']).default('MILL'),
   technician_ids: z.array(z.string()).min(1, 'At least one engineer is required'),
   mill_id: z.string().optional().or(z.literal('')),
   place: z.string().optional().or(z.literal('')),
   others: z.string().optional().or(z.literal('')),
   visit_date: z.string().min(1, 'Date is required'),
-  visit_time: z.string().optional(),
+  visit_time: z.string().optional().or(z.literal('')),
   expense_items: z.array(z.object({
     expense_category_id: z.string().min(1, 'Category is required'),
     amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Amount must be positive')),
@@ -81,18 +82,33 @@ const expenseSchema = z.object({
     remarks: z.string().optional().or(z.literal('')),
     expense_images: z.array(z.string()).default([]),
   })).min(1, 'At least one category is required'),
+}).superRefine((data, ctx) => {
+  if (data.expense_type === 'MILL') {
+    if (!data.mill_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['mill_id'],
+        message: 'Mill Name is required for Mill Expenses',
+      });
+    }
+  } else if (data.expense_type === 'OTHERS') {
+    if (!data.place || !data.place.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['place'],
+        message: 'Place is required for other expenses',
+      });
+    }
+  }
 });
 
 type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
-const sections = [
-  { id: 1, title: 'Engineer & Mill Details', icon: Users },
-  { id: 2, title: 'Alternative / Other Details', icon: MapPin },
-  { id: 3, title: 'Date & Time', icon: CalendarDays },
-  { id: 4, title: 'Expense Info & Images', icon: DollarSign },
-];
-
-type ExpenseSection = (typeof sections)[number];
+interface ExpenseSection {
+  id: number;
+  title: string;
+  icon: React.ComponentType<any>;
+}
 
 function SectionToggle({
   section,
@@ -184,6 +200,7 @@ export function ExpenseFormDrawer() {
   } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema) as any,
     defaultValues: {
+      expense_type: 'MILL',
       technician_ids: [],
       mill_id: '',
       place: '',
@@ -195,6 +212,14 @@ export function ExpenseFormDrawer() {
   });
 
   const selectedMillId = watch('mill_id');
+  const expenseType = watch('expense_type') || 'MILL';
+
+  const sections = React.useMemo<ExpenseSection[]>(() => [
+    { id: 1, title: expenseType === 'MILL' ? 'Engineer & Mill Details' : 'Engineer Details', icon: Users },
+    { id: 2, title: expenseType === 'MILL' ? 'Alternative / Other Details' : 'Place & Other Details', icon: MapPin },
+    { id: 3, title: 'Date & Time', icon: CalendarDays },
+    { id: 4, title: 'Expense Info & Images', icon: DollarSign },
+  ], [expenseType]);
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
@@ -360,6 +385,7 @@ export function ExpenseFormDrawer() {
           : [];
 
         reset({
+          expense_type: (expenseData.expense_type as 'MILL' | 'OTHERS') || 'MILL',
           technician_ids: expenseData.technicians?.map((t: any) => t.technician.id) || [],
           mill_id: expenseData.mill_id || '',
           place: expenseData.place || '',
@@ -372,6 +398,7 @@ export function ExpenseFormDrawer() {
         setSelectedCustomerId('');
         setSelectedMachineId('');
         reset({
+          expense_type: 'MILL',
           technician_ids: [],
           mill_id: '',
           place: '',
@@ -432,7 +459,7 @@ export function ExpenseFormDrawer() {
     try {
       const payload = {
         ...data,
-        mill_id: data.mill_id || null,
+        mill_id: data.expense_type === 'MILL' ? (data.mill_id || null) : null,
         place: data.place || null,
         others: data.others || null,
         visit_time: data.visit_time || undefined,
@@ -542,6 +569,32 @@ export function ExpenseFormDrawer() {
             </div>
           ) : (
             <form id="expense-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
+              {/* Expense Type Select Card */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 space-y-3">
+                <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Tag size={14} className="text-primary/70" />
+                  Expense Type *
+                </Label>
+                <Controller
+                  name="expense_type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectValue placeholder="Select Expense Type" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                        <SelectItem value="MILL" className="font-bold py-3">Mill / Machine Expense</SelectItem>
+                        <SelectItem value="OTHERS" className="font-bold py-3">Others (Travel, Hotel, Food, etc.)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
               {/* Section 1 - Engineer & Mill Details */}
               <SectionToggle section={sections[0]} isOpen={!!openSections[1]} onToggle={toggleSection}>
                 <div className="space-y-4">
@@ -565,333 +618,337 @@ export function ExpenseFormDrawer() {
                     <FieldError message={errors.technician_ids?.message} />
                   </div>
 
-                  {/* Search Machine by Ref No / Frame No directly */}
-                  <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Cpu size={14} className="text-primary/70" />
-                      Search Machine to Prefill (REF NO / Frame No)
-                    </Label>
-                    <Input
-                      value={machineSearchQuery}
-                      onChange={(e) => setMachineSearchQuery(e.target.value)}
-                      placeholder="Type REF NO or Frame No to search..."
-                      className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
-                    />
-                    
-                    {/* Search Results List */}
-                    {machineSearchQuery.trim().length >= 2 && (
-                      <div className="mt-2 bg-white dark:bg-gray-950 rounded-xl border border-gray-100 dark:border-white/5 divide-y divide-gray-100 dark:divide-white/5 max-h-48 overflow-y-auto shadow-lg z-20 relative">
-                        {searchMasterMillsLoading ? (
-                          <div className="p-3 text-xs text-gray-400 font-bold flex items-center gap-2">
-                            <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                            Searching...
-                          </div>
-                        ) : searchedMasterMills.length > 0 ? (
-                          searchedMasterMills.map((m) => (
-                            <button
-                              key={m.id}
-                              type="button"
-                              onClick={() => {
-                                // Set mill_id and auto-resolve customer
-                                if (m.mill_id) {
-                                  setValue('mill_id', m.mill_id);
-                                  // Use customer_id from API response first, then fallback to local lookup
-                                  const millCustomerId = m.mill?.customer_id;
-                                  if (millCustomerId) {
-                                    setSelectedCustomerId(millCustomerId);
-                                  } else {
-                                    const localMill = mills.find(millItem => millItem.id === m.mill_id);
-                                    if (localMill?.customer_id) {
-                                      setSelectedCustomerId(localMill.customer_id);
+                  {expenseType === 'MILL' && (
+                    <>
+                      {/* Search Machine by Ref No / Frame No directly */}
+                      <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                        <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                          <Cpu size={14} className="text-primary/70" />
+                          Search Machine to Prefill (REF NO / Frame No)
+                        </Label>
+                        <Input
+                          value={machineSearchQuery}
+                          onChange={(e) => setMachineSearchQuery(e.target.value)}
+                          placeholder="Type REF NO or Frame No to search..."
+                          className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                        />
+                        
+                        {/* Search Results List */}
+                        {machineSearchQuery.trim().length >= 2 && (
+                          <div className="mt-2 bg-white dark:bg-gray-950 rounded-xl border border-gray-100 dark:border-white/5 divide-y divide-gray-100 dark:divide-white/5 max-h-48 overflow-y-auto shadow-lg z-20 relative">
+                            {searchMasterMillsLoading ? (
+                              <div className="p-3 text-xs text-gray-400 font-bold flex items-center gap-2">
+                                <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                                Searching...
+                              </div>
+                            ) : searchedMasterMills.length > 0 ? (
+                              searchedMasterMills.map((m) => (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => {
+                                    // Set mill_id and auto-resolve customer
+                                    if (m.mill_id) {
+                                      setValue('mill_id', m.mill_id);
+                                      // Use customer_id from API response first, then fallback to local lookup
+                                      const millCustomerId = m.mill?.customer_id;
+                                      if (millCustomerId) {
+                                        setSelectedCustomerId(millCustomerId);
+                                      } else {
+                                        const localMill = mills.find(millItem => millItem.id === m.mill_id);
+                                        if (localMill?.customer_id) {
+                                          setSelectedCustomerId(localMill.customer_id);
+                                        }
+                                      }
                                     }
-                                  }
-                                }
-                                // Prefill place: master mill place → mill place fallback
-                                const placeToUse = m.place || m.mill?.place;
-                                if (placeToUse) {
-                                  setValue('place', placeToUse);
-                                }
-                                setSelectedMachineId(m.id);
-                                setMachineSearchQuery('');
-                                toast.success('Machine details prefilled! Verify and adjust as needed.');
-                              }}
-                              className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
-                            >
-                              <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
-                                {m.mill?.name || 'Unknown Mill'}
+                                    // Prefill place: master mill place → mill place fallback
+                                    const placeToUse = m.place || m.mill?.place;
+                                    if (placeToUse) {
+                                      setValue('place', placeToUse);
+                                    }
+                                    setSelectedMachineId(m.id);
+                                    setMachineSearchQuery('');
+                                    toast.success('Machine details prefilled! Verify and adjust as needed.');
+                                  }}
+                                  className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
+                                >
+                                  <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
+                                    {m.mill?.name || 'Unknown Mill'}
+                                  </div>
+                                  <div className="text-gray-400 font-medium">
+                                    {[
+                                      // Show ref_no from MasterMill first, fallback to Mill.ref_no
+                                      (m.ref_no || m.mill?.ref_no) ? `Ref: ${m.ref_no || m.mill?.ref_no}` : null,
+                                      m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                      m.mc_model ? `Model: ${m.mc_model}` : null,
+                                      (m.place || m.mill?.place) ? `Place: ${m.place || m.mill?.place}` : null,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' | ')}
+                                  </div>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="p-3 text-xs text-gray-400 font-bold flex flex-col gap-2">
+                                <span>No matching machines found</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setQuickCustomerName('');
+                                    setQuickMillName('');
+                                    setQuickPhone('');
+                                    setQuickAddress('');
+                                    setQuickPlace('');
+                                    setQuickState('');
+                                    setQuickRefNo(machineSearchQuery);
+                                    setExistingCustomerId(null);
+                                    setIsQuickCreateOpen(true);
+                                    setMachineSearchQuery('');
+                                  }}
+                                  className="w-fit text-left text-primary hover:underline flex items-center gap-1 cursor-pointer font-black border-none bg-transparent p-0"
+                                >
+                                  <PlusCircle size={12} />
+                                  Quick Register Customer & Mill
+                                </button>
                               </div>
-                              <div className="text-gray-400 font-medium">
-                                {[
-                                  // Show ref_no from MasterMill first, fallback to Mill.ref_no
-                                  (m.ref_no || m.mill?.ref_no) ? `Ref: ${m.ref_no || m.mill?.ref_no}` : null,
-                                  m.frame_no ? `Frame: ${m.frame_no}` : null,
-                                  m.mc_model ? `Model: ${m.mc_model}` : null,
-                                  (m.place || m.mill?.place) ? `Place: ${m.place || m.mill?.place}` : null,
-                                ]
-                                  .filter(Boolean)
-                                  .join(' | ')}
-                              </div>
-                            </button>
-                          ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Customer Dropdown */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                            <Users size={14} className="text-primary/70" />
+                            Customer (Optional)
+                          </Label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickCustomerName('');
+                              setQuickMillName('');
+                              setQuickPhone('');
+                              setQuickAddress('');
+                              setQuickPlace('');
+                              setQuickState('');
+                              setQuickRefNo('');
+                              setExistingCustomerId(null);
+                              setIsQuickCreateOpen(true);
+                            }}
+                            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <PlusCircle size={12} />
+                            Quick Register
+                          </button>
+                        </div>
+                        {customers.length > 0 ? (
+                          <Select
+                            onValueChange={(val) => {
+                              setSelectedCustomerId(val === 'all_clear' ? '' : val || '');
+                              setValue('mill_id', '');
+                              setValue('place', '');
+                            }}
+                            value={selectedCustomerId || ''}
+                            items={customers.map((c) => ({ value: c.id, label: c.name }))}
+                          >
+                            <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                              {selectedCustomerId ? (
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                  {customers.find((c) => c.id === selectedCustomerId)?.name ?? 'Unknown Customer'}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select customer</span>
+                              )}
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
+                              <SelectItem value="all_clear" className="font-bold py-3 text-gray-400">Clear Customer Filter</SelectItem>
+                              {customers.map((cust) => (
+                                <SelectItem key={cust.id} value={cust.id} className="font-bold py-3">
+                                  {cust.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         ) : (
-                          <div className="p-3 text-xs text-gray-400 font-bold flex flex-col gap-2">
-                            <span>No matching machines found</span>
+                          <Skeleton className="h-11 rounded-xl w-full" />
+                        )}
+                      </div>
+
+                      {/* Mill Name */}
+                      <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                            <Building2 size={14} className="text-primary/70" />
+                            Select Mill (Optional)
+                          </Label>
+                          {selectedCustomerId && (
                             <button
                               type="button"
                               onClick={() => {
-                                setQuickCustomerName('');
+                                setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
+                                setExistingCustomerId(selectedCustomerId);
                                 setQuickMillName('');
                                 setQuickPhone('');
                                 setQuickAddress('');
                                 setQuickPlace('');
                                 setQuickState('');
-                                setQuickRefNo(machineSearchQuery);
-                                setExistingCustomerId(null);
+                                setQuickRefNo('');
                                 setIsQuickCreateOpen(true);
-                                setMachineSearchQuery('');
                               }}
-                              className="w-fit text-left text-primary hover:underline flex items-center gap-1 cursor-pointer font-black border-none bg-transparent p-0"
+                              className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
                             >
                               <PlusCircle size={12} />
-                              Quick Register Customer & Mill
+                              Quick Add Mill
+                            </button>
+                          )}
+                        </div>
+                        {mills.length > 0 ? (
+                          <Select
+                            onValueChange={(val) => {
+                              setValue('mill_id', val || '');
+                              setValue('place', '');
+                            }}
+                            value={watch('mill_id') || ''}
+                            items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
+                          >
+                            <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                              {watch('mill_id') ? (
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                  {mills.find((m) => m.id === watch('mill_id'))?.name ?? 'Unknown Mill'}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                                  {selectedCustomerId ? 'Select mill' : 'Select a customer first (Optional)'}
+                                </span>
+                              )}
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
+                              {filteredMills.length > 0 ? (
+                                filteredMills.map((mill) => (
+                                  <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
+                                    {mill.name}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
+                                  {selectedCustomerId ? "No mills found for this customer" : "Please select a customer first"}
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Skeleton className="h-11 rounded-xl w-full" />
+                        )}
+                        <FieldError message={errors.mill_id?.message} />
+                      </div>
+
+                      {/* Machine / Installation Record Dropdown */}
+                      {selectedMillId && (
+                        <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                              <Cpu size={14} className="text-primary/70" />
+                              Select Machine (REF NO / Frame No)
+                            </Label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQuickInvoiceNo('');
+                                setQuickInvoiceDate('');
+                                setQuickMasterMillRefNo('');
+                                setQuickMcModel('');
+                                setQuickFrameNo('');
+                                setQuickInstallationDate('');
+                                setQuickWarrantyYears(1);
+                                setQuickWarrantyMonths(12);
+                                setQuickWarrantyType('Non Warranty');
+                                setIsQuickMasterMillOpen(true);
+                              }}
+                              className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <PlusCircle size={12} />
+                              Add Machine
                             </button>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Customer Dropdown */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Users size={14} className="text-primary/70" />
-                        Customer (Optional)
-                      </Label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuickCustomerName('');
-                          setQuickMillName('');
-                          setQuickPhone('');
-                          setQuickAddress('');
-                          setQuickPlace('');
-                          setQuickState('');
-                          setQuickRefNo('');
-                          setExistingCustomerId(null);
-                          setIsQuickCreateOpen(true);
-                        }}
-                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <PlusCircle size={12} />
-                        Quick Register
-                      </button>
-                    </div>
-                    {customers.length > 0 ? (
-                      <Select
-                        onValueChange={(val) => {
-                          setSelectedCustomerId(val === 'all_clear' ? '' : val || '');
-                          setValue('mill_id', '');
-                          setValue('place', '');
-                        }}
-                        value={selectedCustomerId || ''}
-                        items={customers.map((c) => ({ value: c.id, label: c.name }))}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          {selectedCustomerId ? (
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {customers.find((c) => c.id === selectedCustomerId)?.name ?? 'Unknown Customer'}
-                            </span>
+                          {masterMillsLoading ? (
+                            <Skeleton className="h-11 rounded-xl w-full" />
                           ) : (
-                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select customer</span>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
-                          <SelectItem value="all_clear" className="font-bold py-3 text-gray-400">Clear Customer Filter</SelectItem>
-                          {customers.map((cust) => (
-                            <SelectItem key={cust.id} value={cust.id} className="font-bold py-3">
-                              {cust.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Skeleton className="h-11 rounded-xl w-full" />
-                    )}
-                  </div>
-
-                  {/* Mill Name */}
-                  <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Building2 size={14} className="text-primary/70" />
-                        Select Mill (Optional)
-                      </Label>
-                      {selectedCustomerId && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
-                            setExistingCustomerId(selectedCustomerId);
-                            setQuickMillName('');
-                            setQuickPhone('');
-                            setQuickAddress('');
-                            setQuickPlace('');
-                            setQuickState('');
-                            setQuickRefNo('');
-                            setIsQuickCreateOpen(true);
-                          }}
-                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <PlusCircle size={12} />
-                          Quick Add Mill
-                        </button>
-                      )}
-                    </div>
-                    {mills.length > 0 ? (
-                      <Select
-                        onValueChange={(val) => {
-                          setValue('mill_id', val || '');
-                          setValue('place', '');
-                        }}
-                        value={watch('mill_id') || ''}
-                        items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          {watch('mill_id') ? (
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {mills.find((m) => m.id === watch('mill_id'))?.name ?? 'Unknown Mill'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                              {selectedCustomerId ? 'Select mill' : 'Select a customer first (Optional)'}
-                            </span>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                          {filteredMills.length > 0 ? (
-                            filteredMills.map((mill) => (
-                              <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
-                                {mill.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
-                              {selectedCustomerId ? "No mills found for this customer" : "Please select a customer first"}
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Skeleton className="h-11 rounded-xl w-full" />
-                    )}
-                    <FieldError message={errors.mill_id?.message} />
-                  </div>
-
-                  {/* Machine / Installation Record Dropdown */}
-                  {selectedMillId && (
-                    <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                          <Cpu size={14} className="text-primary/70" />
-                          Select Machine (REF NO / Frame No)
-                        </Label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setQuickInvoiceNo('');
-                            setQuickInvoiceDate('');
-                            setQuickMasterMillRefNo('');
-                            setQuickMcModel('');
-                            setQuickFrameNo('');
-                            setQuickInstallationDate('');
-                            setQuickWarrantyYears(1);
-                            setQuickWarrantyMonths(12);
-                            setQuickWarrantyType('Non Warranty');
-                            setIsQuickMasterMillOpen(true);
-                          }}
-                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <PlusCircle size={12} />
-                          Add Machine
-                        </button>
-                      </div>
-                      {masterMillsLoading ? (
-                        <Skeleton className="h-11 rounded-xl w-full" />
-                      ) : (
-                        <Select
-                          value={selectedMachineId || ''}
-                          onValueChange={(val) => {
-                            if (val === 'clear') {
-                              setSelectedMachineId('');
-                              return;
-                            }
-                            const m = masterMills.find((rec) => rec.id === val);
-                            if (m) {
-                              const placeToUse = m.place || m.mill?.place;
-                              if (placeToUse) setValue('place', placeToUse);
-                              setSelectedMachineId(m.id);
-                              toast.success('Machine details prefilled! Verify and adjust as needed.');
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                            {selectedMachineId ? (
-                              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                {(() => {
-                                  const m = masterMills.find((rec) => rec.id === selectedMachineId);
-                                  if (!m) return 'Unknown Machine';
+                            <Select
+                              value={selectedMachineId || ''}
+                              onValueChange={(val) => {
+                                if (val === 'clear') {
+                                  setSelectedMachineId('');
+                                  return;
+                                }
+                                const m = masterMills.find((rec) => rec.id === val);
+                                if (m) {
+                                  const placeToUse = m.place || m.mill?.place;
+                                  if (placeToUse) setValue('place', placeToUse);
+                                  setSelectedMachineId(m.id);
+                                  toast.success('Machine details prefilled! Verify and adjust as needed.');
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                                {selectedMachineId ? (
+                                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                    {(() => {
+                                      const m = masterMills.find((rec) => rec.id === selectedMachineId);
+                                      if (!m) return 'Unknown Machine';
+                                      const displayRef = m.ref_no || m.mill?.ref_no;
+                                      const parts = [
+                                        displayRef ? `Ref: ${displayRef}` : null,
+                                        m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                        m.mc_model ? `Model: ${m.mc_model}` : null,
+                                      ].filter(Boolean);
+                                      return (
+                                        parts.join(' | ') ||
+                                        (m.invoice_no ? `Invoice: ${m.invoice_no}` : null) ||
+                                        (m.mill?.name ? `${m.mill.name} — Record` : null) ||
+                                        'Machine Record'
+                                      );
+                                    })()}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                                    Select a machine record to prefill...
+                                  </span>
+                                )}
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
+                                <SelectItem value="clear" className="font-bold py-3 text-gray-400">
+                                  Clear Selection
+                                </SelectItem>
+                                {masterMills.map((m, idx) => {
                                   const displayRef = m.ref_no || m.mill?.ref_no;
                                   const parts = [
                                     displayRef ? `Ref: ${displayRef}` : null,
                                     m.frame_no ? `Frame: ${m.frame_no}` : null,
                                     m.mc_model ? `Model: ${m.mc_model}` : null,
                                   ].filter(Boolean);
-                                  return (
+                                  const label =
                                     parts.join(' | ') ||
                                     (m.invoice_no ? `Invoice: ${m.invoice_no}` : null) ||
-                                    (m.mill?.name ? `${m.mill.name} — Record` : null) ||
-                                    'Machine Record'
+                                    (m.mill?.name ? `${m.mill.name} — Record ${idx + 1}` : null) ||
+                                    `Machine Record ${idx + 1}`;
+                                  return (
+                                    <SelectItem key={m.id} value={m.id} className="font-bold py-3">
+                                      {label}
+                                    </SelectItem>
                                   );
-                                })()}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                                Select a machine record to prefill...
-                              </span>
-                            )}
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                            <SelectItem value="clear" className="font-bold py-3 text-gray-400">
-                              Clear Selection
-                            </SelectItem>
-                            {masterMills.map((m, idx) => {
-                              const displayRef = m.ref_no || m.mill?.ref_no;
-                              const parts = [
-                                displayRef ? `Ref: ${displayRef}` : null,
-                                m.frame_no ? `Frame: ${m.frame_no}` : null,
-                                m.mc_model ? `Model: ${m.mc_model}` : null,
-                              ].filter(Boolean);
-                              const label =
-                                parts.join(' | ') ||
-                                (m.invoice_no ? `Invoice: ${m.invoice_no}` : null) ||
-                                (m.mill?.name ? `${m.mill.name} — Record ${idx + 1}` : null) ||
-                                `Machine Record ${idx + 1}`;
-                              return (
-                                <SelectItem key={m.id} value={m.id} className="font-bold py-3">
-                                  {label}
-                                </SelectItem>
-                              );
-                            })}
-                            {masterMills.length === 0 && (
-                              <SelectItem value="no_records" disabled className="py-3 text-gray-400 font-bold">
-                                No master mill records found for this mill
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
+                                })}
+                                {masterMills.length === 0 && (
+                                  <SelectItem value="no_records" disabled className="py-3 text-gray-400 font-bold">
+                                    No master mill records found for this mill
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               </SectionToggle>
@@ -917,7 +974,7 @@ export function ExpenseFormDrawer() {
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
-                      Place
+                      Place {expenseType === 'OTHERS' && '*'}
                     </Label>
                     <Input
                       {...register('place')}
@@ -929,25 +986,46 @@ export function ExpenseFormDrawer() {
                 </div>
               </SectionToggle>
 
-              {/* Section 3 - Date */}
-              <SectionToggle section={{ ...sections[2], title: 'Date' }} isOpen={!!openSections[3]} onToggle={toggleSection}>
-                <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <CalendarDays size={14} className="text-primary/70" />
-                    Date *
-                  </Label>
-                  <Controller
-                    name="visit_date"
-                    control={control}
-                    render={({ field }) => (
-                      <DatePicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select date"
-                      />
-                    )}
-                  />
-                  <FieldError message={errors.visit_date?.message} />
+              {/* Section 3 - Date & Time */}
+              <SectionToggle section={sections[2]} isOpen={!!openSections[3]} onToggle={toggleSection}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <CalendarDays size={14} className="text-primary/70" />
+                      Date *
+                    </Label>
+                    <Controller
+                      name="visit_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select date"
+                        />
+                      )}
+                    />
+                    <FieldError message={errors.visit_date?.message} />
+                  </div>
+
+                  <div className="space-y-2" data-error={errors.visit_time ? 'true' : undefined}>
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Clock size={14} className="text-primary/70" />
+                      Time
+                    </Label>
+                    <Controller
+                      name="visit_time"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select time"
+                        />
+                      )}
+                    />
+                    <FieldError message={errors.visit_time?.message} />
+                  </div>
                 </div>
               </SectionToggle>
 

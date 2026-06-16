@@ -34,6 +34,7 @@ import {
   Image as ImageIcon,
   Download,
   XCircle,
+  Tag,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -253,6 +254,23 @@ export default function ExpensesPage() {
               </Badge>
             ),
             icon: Activity,
+          },
+          {
+            label: "Expense Type",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  viewExpenseData.expense_type === "OTHERS"
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                    : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                )}
+              >
+                {viewExpenseData.expense_type === "OTHERS" ? "Others" : "Mill Expense"}
+              </Badge>
+            ),
+            icon: Tag,
           },
           {
             label: "Category",
@@ -504,9 +522,19 @@ export default function ExpensesPage() {
               {row.original.expenseCategory?.name?.charAt(0) || "E"}
             </div>
           </div>
-          <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight">
-            {row.original.expense_number}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight">
+              {row.original.expense_number}
+            </span>
+            <span className={cn(
+              "text-[9px] font-bold w-fit px-1.5 py-0.5 rounded-sm uppercase tracking-wider select-none",
+              row.original.expense_type === "OTHERS"
+                ? "text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/10"
+                : "text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/10"
+            )}>
+              {row.original.expense_type === "OTHERS" ? "Others" : "Mill"}
+            </span>
+          </div>
         </div>
       ),
     },
