@@ -59,11 +59,11 @@ import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
 const INDIAN_STATES = [
-  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat",
-  "Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh",
-  "Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan",
-  "Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
-  "Andaman and Nicobar Islands","Chandigarh","Delhi","Ladakh","Jammu and Kashmir","Puducherry",
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+  "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+  "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan",
+  "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh", "Delhi", "Ladakh", "Jammu and Kashmir", "Puducherry",
 ];
 
 const getWarrantyColors = (type: string) => {
@@ -118,6 +118,12 @@ const filterFields: FilterField[] = [
       ...INDIAN_STATES.map((s) => ({ value: s, label: s, iconColor: "bg-primary" })),
     ],
   },
+  {
+    id: "dateRange",
+    label: "Installation Date",
+    type: "date-range",
+    placeholder: "Select date range...",
+  },
 ];
 
 
@@ -135,6 +141,10 @@ export default function MasterMillsPage() {
     setStateFilter,
     warrantyFilter,
     setWarrantyFilter,
+    dateFrom,
+    dateTo,
+    setDateFrom,
+    setDateTo,
     resetFilters,
     deleteId,
     setDeleteId,
@@ -371,6 +381,8 @@ export default function MasterMillsPage() {
     search,
     all_warranty: warrantyFilter || undefined,
     state: stateFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
   });
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useMasterMillStats();
@@ -397,7 +409,7 @@ export default function MasterMillsPage() {
   };
 
   /* ── Active filters count ── */
-  const activeFiltersCount = [warrantyFilter, stateFilter].filter(Boolean).length;
+  const activeFiltersCount = [warrantyFilter, stateFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Columns ─────────────────────────────────────────────────── */
   const columns: ColumnDef<MasterMill>[] = [
@@ -723,14 +735,30 @@ export default function MasterMillsPage() {
           activeValues={{
             all_warranty: warrantyFilter || "ALL",
             state: stateFilter || "ALL",
+            dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
           }}
           onApply={(values) => {
             setWarrantyFilter(values.all_warranty === "ALL" ? "" : values.all_warranty);
             setStateFilter(values.state === "ALL" ? "" : values.state);
+            if (values.dateRange) {
+              try {
+                const range = JSON.parse(values.dateRange);
+                setDateFrom(range.startDate || "");
+                setDateTo(range.endDate || range.startDate || "");
+              } catch {
+                setDateFrom("");
+                setDateTo("");
+              }
+            } else {
+              setDateFrom("");
+              setDateTo("");
+            }
           }}
           onReset={() => {
             setWarrantyFilter("");
             setStateFilter("");
+            setDateFrom("");
+            setDateTo("");
             resetFilters();
           }}
         />

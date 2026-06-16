@@ -6,11 +6,15 @@ interface MasterMillState {
   statusFilter: string;
   stateFilter: string;
   warrantyFilter: string;
+  dateFrom: string;
+  dateTo: string;
   setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
   setSearch: (search: string) => void;
   setStatusFilter: (status: string) => void;
   setStateFilter: (state: string) => void;
   setWarrantyFilter: (warranty: string) => void;
+  setDateFrom: (dateFrom: string) => void;
+  setDateTo: (dateTo: string) => void;
   resetFilters: () => void;
   // UI State
   deleteId: string | null;
@@ -27,6 +31,8 @@ export const useMasterMillStore = create<MasterMillState>((set) => ({
   statusFilter: '',
   stateFilter: '',
   warrantyFilter: '',
+  dateFrom: '',
+  dateTo: '',
   setPagination: (pagination) => set({ pagination }),
   setSearch: (search) =>
     set((state) => ({
@@ -48,8 +54,18 @@ export const useMasterMillStore = create<MasterMillState>((set) => ({
       warrantyFilter: warranty,
       pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
     })),
+  setDateFrom: (dateFrom) =>
+    set((state) => ({
+      dateFrom,
+      pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+    })),
+  setDateTo: (dateTo) =>
+    set((state) => ({
+      dateTo,
+      pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+    })),
   resetFilters: () =>
-    set({ pagination: { pageIndex: 0, pageSize: 15 }, search: '', statusFilter: '', stateFilter: '', warrantyFilter: '' }),
+    set({ pagination: { pageIndex: 0, pageSize: 15 }, search: '', statusFilter: '', stateFilter: '', warrantyFilter: '', dateFrom: '', dateTo: '' }),
   deleteId: null,
   setDeleteId: (id) => set({ deleteId: id }),
   isFormDrawerOpen: false,

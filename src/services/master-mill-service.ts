@@ -59,6 +59,8 @@ export const useMasterMills = (params: {
   all_warranty?: string;
   mill_id?: string;
   type?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['master-mills', params],
