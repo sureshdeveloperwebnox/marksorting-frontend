@@ -10,24 +10,14 @@ import {
     useUpdateCustomer,
 } from "@/services/customer-service";
 import { useCustomerStore } from "@/store/useCustomerStore";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     Edit,
     Trash2,
     Loader2,
     User,
-    Users,
-    UserCheck,
-    TrendingUp,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Dialog,
     DialogContent,
@@ -43,27 +33,14 @@ import { cn, formatPhoneNumber } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { CustomerFormDrawer } from "@/components/forms/customer-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
+import { TableStatus, StatusOption } from "@/components/ui/table-status";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
-const getStatusColors = (status: string) => {
-    switch (status?.toUpperCase()) {
-        case "ACTIVE":
-            return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
-        case "INACTIVE":
-            return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
-        default:
-            return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
-    }
-};
-
-const getStatusDotColors = (status: string) => {
-    switch (status?.toUpperCase()) {
-        case "ACTIVE": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
-        case "INACTIVE": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
-        default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
-    }
-};
+const customerStatusOptions: StatusOption[] = [
+    { value: "ACTIVE", label: "Active", color: "emerald" },
+    { value: "INACTIVE", label: "Inactive", color: "amber" },
+];
 
 const customerFilterFields: FilterField[] = [
     {
@@ -76,57 +53,6 @@ const customerFilterFields: FilterField[] = [
         ],
     },
 ];
-
-/* ─── Stats Card ────────────────────────────────────────────────── */
-
-interface StatsCardProps {
-    title: string;
-    value: number | undefined;
-    icon: React.ReactNode;
-    iconBg: string;
-    gradient: string;
-    trend?: string;
-    loading?: boolean;
-}
-
-function StatsCard({ title, value, icon, iconBg, gradient, trend, loading }: StatsCardProps) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className={cn(
-                "relative overflow-hidden rounded-[20px] p-5 border border-gray-100 dark:border-white/5",
-                "bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
-            )}
-        >
-            <div className={cn("absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 -translate-y-6 translate-x-6", gradient)} />
-            <div className="relative flex items-start justify-between">
-                <div>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.12em] mb-3">
-                        {title}
-                    </p>
-                    {loading ? (
-                        <div className="h-9 w-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />
-                    ) : (
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
-                            {value ?? 0}
-                        </p>
-                    )}
-                    {trend && (
-                        <p className="flex items-center gap-1 text-xs font-semibold text-emerald-500 mt-2">
-                            <TrendingUp size={11} />
-                            {trend}
-                        </p>
-                    )}
-                </div>
-                <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
-                    {icon}
-                </div>
-            </div>
-        </motion.div>
-    );
-}
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 
@@ -160,19 +86,10 @@ export default function CustomersPage() {
         status: statusFilter || undefined,
     });
 
-    const { data: totalData, isFetching: isFetchingTotal, refetch: refetchTotal } = useCustomers({ skip: 0, take: 1 });
-    const { data: activeData, isFetching: isFetchingActive, refetch: refetchActive } = useCustomers({ skip: 0, take: 1, status: "ACTIVE" });
-    const { data: inactiveData, isFetching: isFetchingInactive, refetch: refetchInactive } = useCustomers({ skip: 0, take: 1, status: "INACTIVE" });
-
-    const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive;
+    const isRefreshing = isFetching;
 
     const handleRefresh = async () => {
-        await Promise.all([
-            refetch(),
-            refetchTotal(),
-            refetchActive(),
-            refetchInactive(),
-        ]);
+        await refetch();
     };
 
     const deleteCustomerMutation = useDeleteCustomer();
@@ -239,47 +156,13 @@ export default function CustomersPage() {
                 const status = row.original.status;
                 const customerId = row.original.id;
                 return (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger
-                            render={
-                                <button className="flex items-center gap-2 cursor-pointer outline-none select-none group/status hover:scale-105 active:scale-95 transition-all duration-300">
-                                    <div className={cn("w-2 h-2 rounded-full animate-pulse", getStatusDotColors(status))} />
-                                    <Badge
-                                        variant="outline"
-                                        className={cn(
-                                            "rounded-md font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 shadow-sm transition-all duration-300 cursor-pointer group-hover/status:border-primary/50",
-                                            getStatusColors(status)
-                                        )}
-                                    >
-                                        {status}
-                                    </Badge>
-                                </button>
-                            }
-                        />
-                        <DropdownMenuContent align="start" className="w-36 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 z-[9999]">
-                            <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">
-                                Set Status
-                            </div>
-                            {[
-                                { value: "ACTIVE", label: "Active", color: "emerald" },
-                                { value: "INACTIVE", label: "Inactive", color: "amber" },
-                            ].map((s) => (
-                                <DropdownMenuItem
-                                    key={s.value}
-                                    className={cn(
-                                        "rounded-lg font-semibold text-xs my-0.5 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
-                                        status === s.value
-                                            ? `text-${s.color}-500 bg-${s.color}-500/5`
-                                            : "text-gray-700 dark:text-gray-300"
-                                    )}
-                                    onClick={() => updateCustomerMutation.mutate({ id: customerId, status: s.value })}
-                                >
-                                    <span className={`w-1.5 h-1.5 rounded-full bg-${s.color}-500`} />
-                                    {s.label.toUpperCase()}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <TableStatus
+                        value={status}
+                        options={customerStatusOptions}
+                        onStatusChange={(newStatus) =>
+                            updateCustomerMutation.mutate({ id: customerId, status: newStatus })
+                        }
+                    />
                 );
             },
         },
@@ -326,10 +209,10 @@ export default function CustomersPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="grid grid-cols-1 xl:grid-cols-4 gap-5"
+            className="w-full"
         >
-            {/* LEFT — Customer List Card (3/4) */}
-            <div className="xl:col-span-3">
+            {/* Customer List Card (Full Width) */}
+            <div className="w-full">
                 <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
                     {/* Card header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
@@ -379,69 +262,6 @@ export default function CustomersPage() {
                         />
                     </div>
                 </div>
-            </div>
-
-            {/* RIGHT — Stats Panel (1/4) */}
-            <div className="xl:col-span-1 flex flex-col gap-4">
-                <StatsCard
-                    title="Total Customers"
-                    value={totalData?.total}
-                    loading={!totalData}
-                    icon={<Users size={20} className="text-primary" />}
-                    iconBg="bg-primary/10 dark:bg-primary/15"
-                    gradient="bg-primary"
-                    trend="All registered customers"
-                />
-                <StatsCard
-                    title="Active Customers"
-                    value={activeData?.total}
-                    loading={!activeData}
-                    icon={<UserCheck size={20} className="text-emerald-600 dark:text-emerald-400" />}
-                    iconBg="bg-emerald-50 dark:bg-emerald-500/15"
-                    gradient="bg-emerald-500"
-                    trend="Currently active"
-                />
-                <StatsCard
-                    title="Inactive Customers"
-                    value={inactiveData?.total}
-                    loading={!inactiveData}
-                    icon={<User size={20} className="text-amber-600 dark:text-amber-400" />}
-                    iconBg="bg-amber-50 dark:bg-amber-500/15"
-                    gradient="bg-amber-500"
-                    trend="Paused / awaiting"
-                />
-
-                {/* Quick Stats gradient card */}
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
-                    className="relative overflow-hidden rounded-[20px] p-5 bg-gradient-to-br from-primary to-orange-500 border border-primary/20 shadow-sm shadow-primary/20"
-                >
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMC0xMnY2aDZ2LTZoLTZ6bS0xMiAxMnY2aDZ2LTZoLTZ6bTAtMTJ2Nmg2di02aC02eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-                    <p className="text-xs font-bold text-white/70 uppercase tracking-[0.12em] mb-2 relative">Quick Stats</p>
-                    <div className="space-y-1.5 relative">
-                        {[
-                            {
-                                label: "Active rate",
-                                value: totalData?.total
-                                    ? `${Math.round(((activeData?.total || 0) / totalData.total) * 100)}%`
-                                    : "—",
-                            },
-                            {
-                                label: "Inactive rate",
-                                value: totalData?.total
-                                    ? `${Math.round(((inactiveData?.total || 0) / totalData.total) * 100)}%`
-                                    : "—",
-                            },
-                        ].map((s) => (
-                            <div key={s.label} className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-white/70">{s.label}</span>
-                                <span className="text-sm font-black text-white">{s.value}</span>
-                            </div>
-                        ))}
-                    </div>
-                </motion.div>
             </div>
 
             {/* Filter Drawer */}
