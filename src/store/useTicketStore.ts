@@ -5,10 +5,14 @@ interface TicketState {
     search: string;
     statusFilter: string;
     priorityFilter: string;
+    dateFrom: string;
+    dateTo: string;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
     setStatusFilter: (statusFilter: string) => void;
     setPriorityFilter: (priorityFilter: string) => void;
+    setDateFrom: (dateFrom: string) => void;
+    setDateTo: (dateTo: string) => void;
     resetFilters: () => void;
     // UI State
     deleteId: string | null;
@@ -33,6 +37,8 @@ const useTicketStore = create<TicketState>((set) => ({
     search: "",
     statusFilter: "",
     priorityFilter: "",
+    dateFrom: "",
+    dateTo: "",
     setPagination: (pagination) => set({ pagination }),
     setSearch: (search) =>
         set((state) => ({
@@ -49,11 +55,23 @@ const useTicketStore = create<TicketState>((set) => ({
             priorityFilter,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setDateFrom: (dateFrom) =>
+        set((state) => ({
+            dateFrom,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setDateTo: (dateTo) =>
+        set((state) => ({
+            dateTo,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
     resetFilters: () =>
         set((state) => ({
             search: "",
             statusFilter: "",
             priorityFilter: "",
+            dateFrom: "",
+            dateTo: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
     deleteId: null,

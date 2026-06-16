@@ -50,6 +50,8 @@ export const useTickets = (params: {
     search?: string;
     status?: string;
     priority?: string;
+    dateFrom?: string;
+    dateTo?: string;
 }) => {
     return useQuery({
         queryKey: ["tickets", params],
