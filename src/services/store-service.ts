@@ -95,6 +95,8 @@ export const useStores = (params: {
   warranty_status?: string;
   return_status?: string;
   inflow_status?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) => {
   return useQuery({
     queryKey: ["stores", params],

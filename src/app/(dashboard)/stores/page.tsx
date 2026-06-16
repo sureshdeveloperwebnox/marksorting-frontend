@@ -124,6 +124,10 @@ export default function StoresPage() {
     setReturnFilter,
     inflowFilter,
     setInflowFilter,
+    dateFrom,
+    dateTo,
+    setDateFrom,
+    setDateTo,
     resetFilters,
     deleteId,
     setDeleteId,
@@ -154,12 +158,25 @@ export default function StoresPage() {
     warranty_status: warrantyFilter || undefined,
     return_status: returnFilter || undefined,
     inflow_status: inflowFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
   });
 
-  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useStores({ skip: 0, take: 1 });
-  const { data: availableData, refetch: refetchAvailable, isFetching: isFetchingAvailable } = useStores({ skip: 0, take: 1, inflow_status: "Available" });
-  const { data: pendingReturnData, refetch: refetchPending, isFetching: isFetchingPending } = useStores({ skip: 0, take: 1, return_status: "Pending" });
-  const { data: damagedData, refetch: refetchDamaged, isFetching: isFetchingDamaged } = useStores({ skip: 0, take: 1, inflow_status: "Damaged" });
+  // Shared filters applied to tab counts so they reflect the current filter context
+  const sharedCountFilters = {
+    search,
+    service_engineer_id: serviceEngineerFilter || undefined,
+    customer_id: customerFilter || undefined,
+    material_id: materialFilter || undefined,
+    warranty_status: warrantyFilter || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+  };
+
+  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useStores({ skip: 0, take: 1, ...sharedCountFilters });
+  const { data: availableData, refetch: refetchAvailable, isFetching: isFetchingAvailable } = useStores({ skip: 0, take: 1, ...sharedCountFilters, inflow_status: "Available" });
+  const { data: pendingReturnData, refetch: refetchPending, isFetching: isFetchingPending } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Pending" });
+  const { data: damagedData, refetch: refetchDamaged, isFetching: isFetchingDamaged } = useStores({ skip: 0, take: 1, ...sharedCountFilters, inflow_status: "Damaged" });
 
   const isRefreshing = isFetching || isFetchingTotal || isFetchingAvailable || isFetchingPending || isFetchingDamaged;
 
@@ -402,6 +419,12 @@ export default function StoresPage() {
         { value: "Damaged", label: "Damaged", iconColor: "bg-rose-500" },
       ],
     },
+    {
+      id: "dateRange",
+      label: "Select Date",
+      type: "date-range",
+      placeholder: "Select date range...",
+    },
   ], [techniciansData, customersData]);
 
   const activeFiltersCount = [
@@ -410,7 +433,9 @@ export default function StoresPage() {
     materialFilter,
     warrantyFilter,
     returnFilter,
-    inflowFilter
+    inflowFilter,
+    dateFrom,
+    dateTo,
   ].filter(Boolean).length;
 
   /* ── Table columns ── */
@@ -619,6 +644,19 @@ export default function StoresPage() {
     setWarrantyFilter(values.warranty_status === "ALL" ? "" : values.warranty_status || "");
     setReturnFilter(values.return_status === "ALL" ? "" : values.return_status || "");
     setInflowFilter(values.inflow_status === "ALL" ? "" : values.inflow_status || "");
+    if (values.dateRange) {
+      try {
+        const range = JSON.parse(values.dateRange);
+        setDateFrom(range.startDate || "");
+        setDateTo(range.endDate || range.startDate || "");
+      } catch {
+        setDateFrom("");
+        setDateTo("");
+      }
+    } else {
+      setDateFrom("");
+      setDateTo("");
+    }
   };
 
   const filterActiveValues = {
@@ -627,177 +665,180 @@ export default function StoresPage() {
     warranty_status: warrantyFilter || "ALL",
     return_status: returnFilter || "ALL",
     inflow_status: inflowFilter || "ALL",
+    dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
   };
 
   /* ── Render ── */
   return (
     <RouteGuard module="stores" action="view">
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="w-full"
-    >
-      {/* Store List Card (Full width) */}
-      <div className="w-full">
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
-          {/* Card header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
-            <div>
-              <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Store Management
-                <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-                  {/* Inventory */}
-                </span>
-              </h1>
-              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
-                Track inflows, outflows, and returnable items
-              </p>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full"
+      >
+        {/* Store List Card (Full width) */}
+        <div className="w-full">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
+            {/* Card header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
+              <div>
+                <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                  Store Management
+                  <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
+                    {/* Inventory */}
+                  </span>
+                </h1>
+                <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
+                  Track inflows, outflows, and returnable items
+                </p>
+              </div>
+
+              <PageHeaderControls
+                searchValue={localSearch}
+                onSearchChange={setLocalSearch}
+                searchPlaceholder="Search store records..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFiltersCount}
+                addLabel="Add Record"
+                addIcon={<StoreIcon size={15} />}
+                onAddClick={() => openFormDrawer()}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+              />
             </div>
 
-            <PageHeaderControls
-              searchValue={localSearch}
-              onSearchChange={setLocalSearch}
-              searchPlaceholder="Search store records..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={activeFiltersCount}
-              addLabel="Add Record"
-              addIcon={<StoreIcon size={15} />}
-              onAddClick={() => openFormDrawer()}
-              onRefresh={handleRefresh}
-              isRefreshing={isRefreshing}
-            />
-          </div>
-
-          {/* Reusable Table Tabs */}
-          <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
-            <TableTabs
-              tabs={[
-                { value: "ALL", label: "All", count: totalData?.total || 0, color: "primary", icon: <Package size={14} /> },
-                { value: "AVAILABLE", label: "Available", count: availableData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                { value: "PENDING_RETURNS", label: "Pending Returns", count: pendingReturnData?.total || 0, color: "amber", icon: <Clock size={14} /> },
-                { value: "DAMAGED", label: "Damaged Stock", count: damagedData?.total || 0, color: "rose", icon: <AlertTriangle size={14} /> },
-              ]}
-              activeValue={
-                inflowFilter === "Available" && !returnFilter
-                  ? "AVAILABLE"
-                  : returnFilter === "Pending" && !inflowFilter
-                  ? "PENDING_RETURNS"
-                  : inflowFilter === "Damaged" && !returnFilter
-                  ? "DAMAGED"
-                  : inflowFilter === "" && returnFilter === ""
-                  ? "ALL"
-                  : ""
-              }
-              onChange={(value) => {
-                if (value === "ALL") {
-                  setInflowFilter("");
-                  setReturnFilter("");
-                } else if (value === "AVAILABLE") {
-                  setInflowFilter("Available");
-                  setReturnFilter("");
-                } else if (value === "PENDING_RETURNS") {
-                  setInflowFilter("");
-                  setReturnFilter("Pending");
-                } else if (value === "DAMAGED") {
-                  setInflowFilter("Damaged");
-                  setReturnFilter("");
+            {/* Reusable Table Tabs */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+              <TableTabs
+                tabs={[
+                  { value: "ALL", label: "All", count: totalData?.total || 0, color: "primary", icon: <Package size={14} /> },
+                  { value: "AVAILABLE", label: "Available", count: availableData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "PENDING_RETURNS", label: "Pending Returns", count: pendingReturnData?.total || 0, color: "amber", icon: <Clock size={14} /> },
+                  { value: "DAMAGED", label: "Damaged Stock", count: damagedData?.total || 0, color: "rose", icon: <AlertTriangle size={14} /> },
+                ]}
+                activeValue={
+                  inflowFilter === "Available" && !returnFilter
+                    ? "AVAILABLE"
+                    : returnFilter === "Pending" && !inflowFilter
+                      ? "PENDING_RETURNS"
+                      : inflowFilter === "Damaged" && !returnFilter
+                        ? "DAMAGED"
+                        : inflowFilter === "" && returnFilter === ""
+                          ? "ALL"
+                          : ""
                 }
-              }}
-            />
-          </div>
+                onChange={(value) => {
+                  if (value === "ALL") {
+                    setInflowFilter("");
+                    setReturnFilter("");
+                  } else if (value === "AVAILABLE") {
+                    setInflowFilter("Available");
+                    setReturnFilter("");
+                  } else if (value === "PENDING_RETURNS") {
+                    setInflowFilter("");
+                    setReturnFilter("Pending");
+                  } else if (value === "DAMAGED") {
+                    setInflowFilter("Damaged");
+                    setReturnFilter("");
+                  }
+                }}
+              />
+            </div>
 
-          {/* Table */}
-          <div className="p-6 pt-4">
-            <DataTable
-              columns={columns}
-              data={data?.stores || []}
-              loading={isLoading || isFetching}
-              pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
-              totalCount={data?.total || 0}
-              entityName="store records"
-              pagination={pagination}
-              onPaginationChange={setPagination}
-              onGlobalFilterChange={setSearch}
-              globalFilterValue={search}
-              searchPlaceholder="Search store records..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={activeFiltersCount}
-              hideToolbar
-            />
+            {/* Table */}
+            <div className="p-6 pt-4">
+              <DataTable
+                columns={columns}
+                data={data?.stores || []}
+                loading={isLoading || isFetching}
+                pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
+                totalCount={data?.total || 0}
+                entityName="store records"
+                pagination={pagination}
+                onPaginationChange={setPagination}
+                onGlobalFilterChange={setSearch}
+                globalFilterValue={search}
+                searchPlaceholder="Search store records..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFiltersCount}
+                hideToolbar
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Filter Drawer ── */}
-      <GenericFilterDrawer
-        isOpen={isFilterDrawerOpen}
-        onClose={() => setIsFilterDrawerOpen(false)}
-        fields={storeFilterFields}
-        activeValues={filterActiveValues}
-        onApply={handleFilterApply}
-        onReset={() => {
-          setServiceEngineerFilter("");
-          setCustomerFilter("");
-          setWarrantyFilter("");
-          setReturnFilter("");
-          setInflowFilter("");
-          resetFilters();
-        }}
-      />
+        {/* ── Filter Drawer ── */}
+        <GenericFilterDrawer
+          isOpen={isFilterDrawerOpen}
+          onClose={() => setIsFilterDrawerOpen(false)}
+          fields={storeFilterFields}
+          activeValues={filterActiveValues}
+          onApply={handleFilterApply}
+          onReset={() => {
+            setServiceEngineerFilter("");
+            setCustomerFilter("");
+            setWarrantyFilter("");
+            setReturnFilter("");
+            setInflowFilter("");
+            setDateFrom("");
+            setDateTo("");
+            resetFilters();
+          }}
+        />
 
-      {/* ── Store Form Drawer ── */}
-      <StoreFormDrawer />
+        {/* ── Store Form Drawer ── */}
+        <StoreFormDrawer />
 
-      {/* ── View Details Drawer ── */}
-      <ViewDetailsDrawer
-        isOpen={isViewDrawerOpen}
-        onClose={closeViewDrawer}
-        title="Store Record Details"
-        description="Detailed view of the registered stores inventory record."
-        icon={<StoreIcon size={24} />}
-        isLoading={isViewStoreLoading}
-        sections={viewSections}
-        size="xl"
-      />
+        {/* ── View Details Drawer ── */}
+        <ViewDetailsDrawer
+          isOpen={isViewDrawerOpen}
+          onClose={closeViewDrawer}
+          title="Store Record Details"
+          description="Detailed view of the registered stores inventory record."
+          icon={<StoreIcon size={24} />}
+          isLoading={isViewStoreLoading}
+          sections={viewSections}
+          size="xl"
+        />
 
-      {/* ── Delete Confirm Dialog ── */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
-          <DialogHeader className="space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
-              <Trash2 size={32} />
-            </div>
-            <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
-              Confirm Deletion
-            </DialogTitle>
-            <DialogDescription className="text-center text-gray-500 font-bold">
-              This action cannot be undone. This will permanently remove the store record from the database.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:justify-center pt-6">
-            <Button
-              variant="ghost"
-              onClick={() => setDeleteId(null)}
-              className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              disabled={deleteStoreMutation.isPending}
-              className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
-            >
-              {deleteStoreMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Delete Record"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+        {/* ── Delete Confirm Dialog ── */}
+        <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
+            <DialogHeader className="space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
+                <Trash2 size={32} />
+              </div>
+              <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
+                Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className="text-center text-gray-500 font-bold">
+                This action cannot be undone. This will permanently remove the store record from the database.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-3 sm:justify-center pt-6">
+              <Button
+                variant="ghost"
+                onClick={() => setDeleteId(null)}
+                className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                disabled={deleteStoreMutation.isPending}
+                className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
+              >
+                {deleteStoreMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Delete Record"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </motion.div>
     </RouteGuard>
   );
 }
