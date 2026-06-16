@@ -606,6 +606,12 @@ export default function InstallationReportPage() {
         })),
       ],
     },
+    {
+      id: "dateRange",
+      label: "Select Date",
+      type: "date-range",
+      placeholder: "Select date range...",
+    },
   ];
 
   /* ── Table columns ── */
@@ -856,14 +862,30 @@ export default function InstallationReportPage() {
         activeValues={{
           status: statusFilter || "ALL",
           technicianId: technicianFilter || "ALL",
+          dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
         }}
         onApply={(values) => {
           setStatusFilter(values.status === "ALL" ? "" : values.status);
           setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
+          if (values.dateRange) {
+            try {
+              const range = JSON.parse(values.dateRange);
+              setDateFrom(range.startDate || "");
+              setDateTo(range.endDate || "");
+            } catch {
+              setDateFrom("");
+              setDateTo("");
+            }
+          } else {
+            setDateFrom("");
+            setDateTo("");
+          }
         }}
         onReset={() => {
           setStatusFilter("");
           setTechnicianFilter("");
+          setDateFrom("");
+          setDateTo("");
           resetFilters();
         }}
       />
