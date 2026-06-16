@@ -217,7 +217,7 @@ export function ExpenseFormDrawer() {
   const sections = React.useMemo<ExpenseSection[]>(() => [
     { id: 1, title: expenseType === 'MILL' ? 'Engineer & Mill Details' : 'Engineer Details', icon: Users },
     { id: 2, title: expenseType === 'MILL' ? 'Alternative / Other Details' : 'Place & Other Details', icon: MapPin },
-    { id: 3, title: 'Date & Time', icon: CalendarDays },
+    { id: 3, title: 'Date', icon: CalendarDays },
     { id: 4, title: 'Expense Info & Images', icon: DollarSign },
   ], [expenseType]);
 
@@ -986,46 +986,25 @@ export function ExpenseFormDrawer() {
                 </div>
               </SectionToggle>
 
-              {/* Section 3 - Date & Time */}
+              {/* Section 3 - Date */}
               <SectionToggle section={sections[2]} isOpen={!!openSections[3]} onToggle={toggleSection}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <CalendarDays size={14} className="text-primary/70" />
-                      Date *
-                    </Label>
-                    <Controller
-                      name="visit_date"
-                      control={control}
-                      render={({ field }) => (
-                        <DatePicker
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select date"
-                        />
-                      )}
-                    />
-                    <FieldError message={errors.visit_date?.message} />
-                  </div>
-
-                  <div className="space-y-2" data-error={errors.visit_time ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Clock size={14} className="text-primary/70" />
-                      Time
-                    </Label>
-                    <Controller
-                      name="visit_time"
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Select time"
-                        />
-                      )}
-                    />
-                    <FieldError message={errors.visit_time?.message} />
-                  </div>
+                <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
+                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <CalendarDays size={14} className="text-primary/70" />
+                    Date *
+                  </Label>
+                  <Controller
+                    name="visit_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select date"
+                      />
+                    )}
+                  />
+                  <FieldError message={errors.visit_date?.message} />
                 </div>
               </SectionToggle>
 
