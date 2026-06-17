@@ -46,7 +46,10 @@ import {
   ShieldCheck,
   Gauge,
   Wind,
+  Upload,
 } from "lucide-react";
+import { BulkUploadDialog } from "@/components/modals/BulkUploadDialog";
+import type { InstallationReportColumnConfig } from "@/types/bulk-upload";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,31 +79,31 @@ import { TableTabs } from "@/components/ui/table-tabs";
 
 const getStatusColors = (status: string) => {
   switch (status?.toUpperCase()) {
-    case "PENDING":     return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
+    case "PENDING": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
     case "IN_PROGRESS": return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500 dark:border-blue-400";
-    case "COMPLETED":   return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
-    case "CANCELLED":   return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
-    default:            return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
+    case "COMPLETED": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
+    case "CANCELLED": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
+    default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
   }
 };
 
 const getStatusDotColors = (status: string) => {
   switch (status?.toUpperCase()) {
-    case "PENDING":     return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+    case "PENDING": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
     case "IN_PROGRESS": return "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]";
-    case "COMPLETED":   return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
-    case "CANCELLED":   return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
-    default:            return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
+    case "COMPLETED": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+    case "CANCELLED": return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
+    default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
   }
 };
 
 const getStatusLabel = (status: string) => {
   switch (status?.toUpperCase()) {
-    case "PENDING":     return "Pending";
+    case "PENDING": return "Pending";
     case "IN_PROGRESS": return "Work In Progress";
-    case "COMPLETED":   return "Completed";
-    case "CANCELLED":   return "Cancelled";
-    default:            return status || "—";
+    case "COMPLETED": return "Completed";
+    case "CANCELLED": return "Cancelled";
+    default: return status || "—";
   }
 };
 
@@ -133,6 +136,46 @@ export default function InstallationReportPage() {
   const [downloadingPdfId, setDownloadingPdfId] = React.useState<string | null>(null);
   const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
   const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = React.useState(false);
+
+  // All 35 installation report preview columns
+  const irColumnConfig: InstallationReportColumnConfig[] = [
+    { key: "mill_name", header: "Mill Name" },
+    { key: "place", header: "Place" },
+    { key: "technician_names", header: "Technicians" },
+    { key: "visit_date", header: "Visit Date" },
+    { key: "visit_time", header: "Visit Time" },
+    { key: "call_registered_date", header: "Call Reg. Date" },
+    { key: "mill_whatsapp_number", header: "WhatsApp No" },
+    { key: "mill_email", header: "Mill Email" },
+    { key: "machine_model", header: "Machine Model" },
+    { key: "serial_or_frame_no", header: "Serial / Frame No" },
+    { key: "authorized_person", header: "Auth. Person" },
+    { key: "authorized_person_phone", header: "Auth. Phone" },
+    { key: "invoice_number", header: "Invoice No" },
+    { key: "invoice_date", header: "Invoice Date" },
+    { key: "warranty_start_date", header: "Warranty Start" },
+    { key: "warranty_end_date", header: "Warranty End" },
+    { key: "commodity", header: "Commodity" },
+    { key: "contamination", header: "Contamination" },
+    { key: "output_capacity_per_hour", header: "Output/Hr" },
+    { key: "rejection_ratio", header: "Rejection Ratio" },
+    { key: "purity", header: "Purity" },
+    { key: "no_of_programs_set", header: "Programs Set" },
+    { key: "ac_provided", header: "AC Provided" },
+    { key: "compressor_details", header: "Compressor" },
+    { key: "air_drier_details", header: "Air Drier" },
+    { key: "ground_earth_provided", header: "Ground Earth" },
+    { key: "running_channel_combination", header: "Channel Combo" },
+    { key: "running_channel_combination_value", header: "Channel Value" },
+    { key: "no_of_filters_installed", header: "Filters Installed" },
+    { key: "oil_filter_condition", header: "Oil Filter" },
+    { key: "line_filter_condition", header: "Line Filter" },
+    { key: "auto_drain_valve_working", header: "Auto Drain Valve" },
+    { key: "engineer_remarks", header: "Eng. Remarks" },
+    { key: "customer_remarks", header: "Cust. Remarks" },
+    { key: "status", header: "Status" },
+  ];
 
   const { data: viewReportData, isLoading: isViewReportLoading } = useInstallationReport(selectedViewId);
 
@@ -464,7 +507,7 @@ export default function InstallationReportPage() {
             label: "No of Programs Set",
             value:
               viewReportData.no_of_programs_set !== undefined &&
-              viewReportData.no_of_programs_set !== null
+                viewReportData.no_of_programs_set !== null
                 ? String(viewReportData.no_of_programs_set)
                 : "—",
             icon: Hash,
@@ -508,7 +551,7 @@ export default function InstallationReportPage() {
             label: "No of Filters Installed",
             value:
               viewReportData.no_of_filters_installed !== undefined &&
-              viewReportData.no_of_filters_installed !== null
+                viewReportData.no_of_filters_installed !== null
                 ? String(viewReportData.no_of_filters_installed)
                 : "—",
             icon: Hash,
@@ -782,173 +825,200 @@ export default function InstallationReportPage() {
   /* ── Render ── */
   return (
     <RouteGuard module="installation_reports" action="view">
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="w-full"
-    >
-      {/* Report List Card (Full width) */}
-      <div className="w-full">
-        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
-            <div>
-              <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Installation{" "}
-                <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-                  List
-                </span>
-              </h1>
-              <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
-                Manage all installations and setup statuses
-              </p>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full"
+      >
+        {/* Report List Card (Full width) */}
+        <div className="w-full">
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
+              <div>
+                <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                  Installation{" "}
+                  <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
+                    List
+                  </span>
+                </h1>
+                <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-0.5">
+                  Manage all installations and setup statuses
+                </p>
+              </div>
+
+              <PageHeaderControls
+                searchValue={localSearch}
+                onSearchChange={setLocalSearch}
+                searchPlaceholder="Search installations..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFilterCount}
+                addLabel="New Installation"
+                addIcon={<FileText size={15} />}
+                onAddClick={() => openFormDrawer()}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+                renderExtraControls={() => (
+                  <button
+                    type="button"
+                    onClick={() => setBulkUploadOpen(true)}
+                    className={cn(
+                      "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
+                      "bg-transparent border border-gray-200 dark:border-white/10",
+                      "text-gray-600 dark:text-gray-400",
+                      "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                    )}
+                  >
+                    <Upload size={14} />
+                    Upload Excel
+                  </button>
+                )}
+              />
             </div>
 
-            <PageHeaderControls
-              searchValue={localSearch}
-              onSearchChange={setLocalSearch}
-              searchPlaceholder="Search installations..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={activeFilterCount}
-              addLabel="New Installation"
-              addIcon={<FileText size={15} />}
-              onAddClick={() => openFormDrawer()}
-              onRefresh={handleRefresh}
-              isRefreshing={isRefreshing}
-            />
-          </div>
+            {/* Reusable Table Tabs */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+              <TableTabs
+                tabs={[
+                  { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                  { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
+                  { value: "IN_PROGRESS", label: "Work In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
+                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+                ]}
+                activeValue={statusFilter || ""}
+                onChange={(value) => setStatusFilter(value)}
+              />
+            </div>
 
-          {/* Reusable Table Tabs */}
-          <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
-            <TableTabs
-              tabs={[
-                { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
-                { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                { value: "IN_PROGRESS", label: "Work In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
-                { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
-              ]}
-              activeValue={statusFilter || ""}
-              onChange={(value) => setStatusFilter(value)}
-            />
-          </div>
-
-          <div className="p-6 pt-4">
-            <DataTable
-              columns={columns}
-              data={data?.installationReports || []}
-              loading={isLoading || isFetching}
-              pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
-              totalCount={data?.total || 0}
-              entityName="installation reports"
-              pagination={pagination}
-              onPaginationChange={setPagination}
-              onGlobalFilterChange={setSearch}
-              globalFilterValue={search}
-              searchPlaceholder="Search..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={activeFilterCount}
-              hideToolbar
-            />
+            <div className="p-6 pt-4">
+              <DataTable
+                columns={columns}
+                data={data?.installationReports || []}
+                loading={isLoading || isFetching}
+                pageCount={Math.ceil((data?.total || 0) / pagination.pageSize)}
+                totalCount={data?.total || 0}
+                entityName="installation reports"
+                pagination={pagination}
+                onPaginationChange={setPagination}
+                onGlobalFilterChange={setSearch}
+                globalFilterValue={search}
+                searchPlaceholder="Search..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFilterCount}
+                hideToolbar
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Filter Drawer */}
-      <GenericFilterDrawer
-        isOpen={isFilterDrawerOpen}
-        onClose={() => setIsFilterDrawerOpen(false)}
-        fields={filterFields}
-        activeValues={{
-          status: statusFilter || "ALL",
-          technicianId: technicianFilter || "ALL",
-          dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
-        }}
-        onApply={(values) => {
-          setStatusFilter(values.status === "ALL" ? "" : values.status);
-          setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
-          if (values.dateRange) {
-            try {
-              const range = JSON.parse(values.dateRange);
-              setDateFrom(range.startDate || "");
-              setDateTo(range.endDate || range.startDate || "");
-            } catch {
+        {/* Filter Drawer */}
+        <GenericFilterDrawer
+          isOpen={isFilterDrawerOpen}
+          onClose={() => setIsFilterDrawerOpen(false)}
+          fields={filterFields}
+          activeValues={{
+            status: statusFilter || "ALL",
+            technicianId: technicianFilter || "ALL",
+            dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
+          }}
+          onApply={(values) => {
+            setStatusFilter(values.status === "ALL" ? "" : values.status);
+            setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
+            if (values.dateRange) {
+              try {
+                const range = JSON.parse(values.dateRange);
+                setDateFrom(range.startDate || "");
+                setDateTo(range.endDate || range.startDate || "");
+              } catch {
+                setDateFrom("");
+                setDateTo("");
+              }
+            } else {
               setDateFrom("");
               setDateTo("");
             }
-          } else {
+          }}
+          onReset={() => {
+            setStatusFilter("");
+            setTechnicianFilter("");
             setDateFrom("");
             setDateTo("");
+            resetFilters();
+          }}
+        />
+
+        {/* Form Drawer */}
+        <InstallationReportFormDrawer />
+
+        {/* View Details Drawer */}
+        <ViewDetailsDrawer
+          isOpen={isViewDrawerOpen}
+          onClose={() => {
+            setIsViewDrawerOpen(false);
+            setSelectedViewId(null);
+          }}
+          title={
+            viewReportData
+              ? `Installation #${viewReportData.report_number}`
+              : "Installation Details"
           }
-        }}
-        onReset={() => {
-          setStatusFilter("");
-          setTechnicianFilter("");
-          setDateFrom("");
-          setDateTo("");
-          resetFilters();
-        }}
-      />
+          description={
+            viewReportData
+              ? `${viewReportData.mill?.name || "—"} · ${safeFormatDate(viewReportData.visit_date)}`
+              : "Loading installation report..."
+          }
+          icon={<ClipboardCheck size={22} />}
+          isLoading={isViewReportLoading}
+          sections={viewSections}
+          size="2xl"
+        />
 
-      {/* Form Drawer */}
-      <InstallationReportFormDrawer />
+        {/* Delete Confirm Dialog */}
+        <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
+            <DialogHeader className="space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
+                <Trash2 size={32} />
+              </div>
+              <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
+                Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className="text-center text-gray-500 font-bold">
+                This action cannot be undone. This will permanently remove the installation report from the system.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-3 sm:justify-center pt-6">
+              <Button
+                variant="ghost"
+                onClick={() => setDeleteId(null)}
+                className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending}
+                className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
+              >
+                {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Report"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* View Details Drawer */}
-      <ViewDetailsDrawer
-        isOpen={isViewDrawerOpen}
-        onClose={() => {
-          setIsViewDrawerOpen(false);
-          setSelectedViewId(null);
-        }}
-        title={
-          viewReportData
-            ? `Installation #${viewReportData.report_number}`
-            : "Installation Details"
-        }
-        description={
-          viewReportData
-            ? `${viewReportData.mill?.name || "—"} · ${safeFormatDate(viewReportData.visit_date)}`
-            : "Loading installation report..."
-        }
-        icon={<ClipboardCheck size={22} />}
-        isLoading={isViewReportLoading}
-        sections={viewSections}
-        size="2xl"
-      />
-
-      {/* Delete Confirm Dialog */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
-          <DialogHeader className="space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
-              <Trash2 size={32} />
-            </div>
-            <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
-              Confirm Deletion
-            </DialogTitle>
-            <DialogDescription className="text-center text-gray-500 font-bold">
-              This action cannot be undone. This will permanently remove the installation report from the system.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:justify-center pt-6">
-            <Button
-              variant="ghost"
-              onClick={() => setDeleteId(null)}
-              className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              disabled={deleteMutation.isPending}
-              className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
-            >
-              {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Report"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+        {/* ── Bulk Upload Dialog ── */}
+        <BulkUploadDialog
+          open={bulkUploadOpen}
+          onOpenChange={setBulkUploadOpen}
+          onSuccess={() => { refetch(); refetchTotal(); }}
+          previewEndpoint="/installation-reports/bulk-upload/preview"
+          importEndpoint="/installation-reports/bulk-upload/import"
+          statusEndpoint="/installation-reports/bulk-upload/status"
+          templateEndpoint="/installation-reports/bulk-upload/template"
+          columnConfig={irColumnConfig as any}
+        />
+      </motion.div>
     </RouteGuard>
   );
 }

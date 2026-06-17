@@ -169,3 +169,55 @@ export function useServiceReportConfirmImport() {
 
 export { SR_ENDPOINTS };
 
+// ─── Installation Report convenience hooks (endpoint-bound) ──────────────────
+
+const IR_ENDPOINTS = {
+    preview: '/installation-reports/bulk-upload/preview',
+    import: '/installation-reports/bulk-upload/import',
+    status: '/installation-reports/bulk-upload/status',
+    template: '/installation-reports/bulk-upload/template',
+} as const;
+
+/**
+ * Convenience hook: upload an installation report Excel file and receive a typed preview.
+ */
+export function useInstallationReportUploadPreview() {
+    // Re-use the generic hook — response shape is structurally compatible
+    return useUploadPreviewGeneric<import('@/types/bulk-upload').InstallationReportPreviewResponse>(
+        IR_ENDPOINTS.preview,
+    );
+}
+
+/**
+ * Convenience hook: confirm an installation report bulk import.
+ */
+export function useInstallationReportConfirmImport() {
+    return useConfirmImport(IR_ENDPOINTS.import);
+}
+
+/**
+ * Step 3: poll installation report import status.
+ */
+export function useInstallationReportImportStatus(
+    importId: string | null,
+    enabled: boolean,
+) {
+    return useQuery<import('@/types/bulk-upload').InstallationReportImportStatus>({
+        queryKey: ['ir-import-status', importId],
+        queryFn: async () => {
+            const { data } = await api.get(
+                `${IR_ENDPOINTS.status}/${importId}`,
+            );
+            return data;
+        },
+        enabled: enabled && !!importId,
+        refetchInterval: (query) => {
+            const data = query.state.data;
+            if (data?.state === 'completed' || data?.state === 'failed') return false;
+            return 1000;
+        },
+    });
+}
+
+export { IR_ENDPOINTS };
+
