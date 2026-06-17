@@ -6,6 +6,9 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useMills, Mill, useDeleteMill, useUpdateMill } from "@/services/mill-service";
 import { useMillStore } from "@/store/useMillStore";
 import { useCustomers } from "@/services/customer-service";
+import { useRouter } from "next/navigation";
+import useServiceReportStore from "@/store/useServiceReportStore";
+import useInstallationReportStore from "@/store/useInstallationReportStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +24,10 @@ import {
   Hash,
   Calendar,
   Users,
+  Wrench,
+  HardHat,
 } from "lucide-react";
-import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
+import { ViewDetailsDrawer, ViewDrawerAction } from "@/components/ui/view-details-drawer";
 import { useMill } from "@/services/mill-service";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -104,6 +109,10 @@ export default function MillsPage() {
 
   const { data: viewMillData, isLoading: isViewMillLoading } = useMill(selectedViewId);
 
+  const router = useRouter();
+  const setServiceMillFilter = useServiceReportStore((s) => s.setMillFilter);
+  const setInstallationMillFilter = useInstallationReportStore((s) => s.setMillFilter);
+
   // Load all customers for the filter dropdown
   const { data: customersData } = useCustomers({ skip: 0, take: 500 });
   const customers = customersData?.customers || [];
@@ -167,6 +176,44 @@ export default function MillsPage() {
   ];
 
   const activeFilterCount = [statusFilter, customerFilter].filter(Boolean).length;
+
+  /* ── Quick-nav actions shown in the Mill Details drawer footer ── */
+  const millDrawerActions: ViewDrawerAction[] = React.useMemo(() => {
+    if (!viewMillData) return [];
+    const millId = viewMillData.id;
+    const millName = viewMillData.name;
+    return [
+      {
+        label: "View Services",
+        icon: <Wrench className="w-4 h-4" />,
+        variant: "outline" as const,
+        className: "border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20",
+        onClick: () => {
+          // Pre-apply the mill filter on the service report store then navigate
+          setServiceMillFilter(millId);
+          setIsViewDrawerOpen(false);
+          setSelectedViewId(null);
+          router.push(
+            `/service-management/service-report?millId=${millId}&millName=${encodeURIComponent(millName)}`,
+          );
+        },
+      },
+      {
+        label: "View Installations",
+        icon: <HardHat className="w-4 h-4" />,
+        variant: "outline" as const,
+        className: "border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20",
+        onClick: () => {
+          setInstallationMillFilter(millId);
+          setIsViewDrawerOpen(false);
+          setSelectedViewId(null);
+          router.push(
+            `/installation-management/installation-report?millId=${millId}&millName=${encodeURIComponent(millName)}`,
+          );
+        },
+      },
+    ];
+  }, [viewMillData, router, setServiceMillFilter, setInstallationMillFilter]);
 
   /* ── View sections ── */
   const viewSections = React.useMemo(() => {
@@ -591,6 +638,7 @@ export default function MillsPage() {
           isLoading={isViewMillLoading}
           sections={viewSections}
           size="lg"
+          actions={millDrawerActions}
         />
 
         {/* ── Delete Confirm Dialog ── */}

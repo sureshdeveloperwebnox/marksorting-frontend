@@ -24,6 +24,14 @@ export interface ViewDetailSection {
   items: ViewDetailItem[];
 }
 
+export interface ViewDrawerAction {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  variant?: "default" | "outline" | "ghost";
+  className?: string;
+}
+
 interface ViewDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,6 +41,8 @@ interface ViewDetailsDrawerProps {
   isLoading?: boolean;
   sections: ViewDetailSection[];
   size?: "md" | "lg" | "xl" | "2xl";
+  /** Optional quick-action buttons rendered above the Close button in the footer */
+  actions?: ViewDrawerAction[];
 }
 
 const sizeClasses = {
@@ -51,6 +61,7 @@ export function ViewDetailsDrawer({
   isLoading = false,
   sections,
   size = "lg",
+  actions,
 }: ViewDetailsDrawerProps) {
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -136,7 +147,26 @@ export function ViewDetailsDrawer({
 
         {/* Footer */}
         <SheetFooter className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5">
-          <div className="w-full">
+          <div className="w-full flex flex-col gap-2">
+            {/* Quick-action buttons */}
+            {actions && actions.length > 0 && (
+              <div className="flex gap-2">
+                {actions.map((action, idx) => (
+                  <Button
+                    key={idx}
+                    variant={action.variant ?? "outline"}
+                    onClick={action.onClick}
+                    className={cn(
+                      "flex-1 rounded-xl h-10 font-bold text-sm gap-2 transition-all",
+                      action.className
+                    )}
+                  >
+                    {action.icon}
+                    {action.label}
+                  </Button>
+                ))}
+              </div>
+            )}
             <Button
               variant="ghost"
               onClick={onClose}

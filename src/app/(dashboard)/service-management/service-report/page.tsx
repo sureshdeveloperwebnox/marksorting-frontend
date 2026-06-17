@@ -73,6 +73,7 @@ import { useServiceCategories } from "@/services/service-category-service";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 import { useCustomers } from "@/services/customer-service";
 import { useMills } from "@/services/mill-service";
+import { useSearchParams } from "next/navigation";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import { TableTabs, TableTab } from "@/components/ui/table-tabs";
 
@@ -199,6 +200,15 @@ export default function ServiceReportPage() {
     customer_id: drawerCustomerId || undefined,
   });
   const mills = millsData?.mills || [];
+
+  // Apply millId from URL query param (set when navigating from the Mill Details drawer)
+  const searchParams = useSearchParams();
+  React.useEffect(() => {
+    const millId = searchParams.get("millId");
+    if (millId) {
+      setMillFilter(millId);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);

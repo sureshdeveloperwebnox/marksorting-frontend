@@ -76,6 +76,7 @@ import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import { TableTabs } from "@/components/ui/table-tabs";
 import { useCustomers } from "@/services/customer-service";
 import { useMills } from "@/services/mill-service";
+import { useSearchParams } from "next/navigation";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -201,6 +202,15 @@ export default function InstallationReportPage() {
 
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
   const technicians = techniciansData?.technicians || [];
+
+  // Apply millId from URL query param (set when navigating from the Mill Details drawer)
+  const searchParams = useSearchParams();
+  React.useEffect(() => {
+    const millId = searchParams.get("millId");
+    if (millId) {
+      setMillFilter(millId);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
