@@ -53,6 +53,9 @@ export interface PageHeaderControlsProps {
     /** Whether the data is currently refreshing/refetching */
     isRefreshing?: boolean;
 
+    /** Optional extra controls rendered between the Refresh button and the Search input */
+    renderExtraControls?: () => React.ReactNode;
+
     className?: string;
 }
 
@@ -67,6 +70,7 @@ export function PageHeaderControls({
     onAddClick,
     onRefresh,
     isRefreshing = false,
+    renderExtraControls,
     className,
 }: PageHeaderControlsProps) {
     return (
@@ -89,6 +93,9 @@ export function PageHeaderControls({
                     <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin text-primary")} />
                 </Button>
             )}
+
+            {/* ── Extra controls (slot between Refresh and Search) ── */}
+            {renderExtraControls && renderExtraControls()}
 
             {/* ── Search ── */}
             <div className="relative">

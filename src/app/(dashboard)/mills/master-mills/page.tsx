@@ -31,7 +31,10 @@ import {
   MapPin,
   Phone,
   Hash,
+  Upload,
 } from "lucide-react";
+import { BulkUploadDialog } from "@/components/modals/BulkUploadDialog";
+import type { ColumnConfig } from "@/types/bulk-upload";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
@@ -155,6 +158,28 @@ export default function MasterMillsPage() {
   const [localSearch, setLocalSearch] = React.useState(search);
   const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
   const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+
+  const columnConfig: ColumnConfig[] = [
+    { key: "invoice_no", header: "Invoice No" },
+    { key: "invoice_date", header: "Invoice Date" },
+    { key: "ref_no", header: "Ref No" },
+    { key: "frame_no", header: "Frame No" },
+    { key: "mc_model", header: "MC Model" },
+    { key: "mill_name", header: "Mill Name" },
+    { key: "customer_name", header: "Customer Name" },
+    { key: "place", header: "Place" },
+    { key: "state", header: "State" },
+    { key: "phone_no", header: "Phone No" },
+    { key: "address", header: "Address" },
+    { key: "installation_date", header: "Installation Date" },
+    { key: "warranty_years", header: "Warranty Yrs" },
+    { key: "warranty_months", header: "Warranty Mths" },
+    { key: "amc_starting_date", header: "AMC Start Date" },
+    { key: "amc_period", header: "AMC Period (Mths)" },
+    { key: "amc_amount", header: "AMC Amount" },
+    { key: "amc_particulars", header: "AMC Particulars" },
+  ];
 
   const { data: viewMillData, isLoading: isViewMillLoading } = useMasterMill(selectedViewId);
 
@@ -742,6 +767,21 @@ export default function MasterMillsPage() {
                 onAddClick={() => openFormDrawer()}
                 onRefresh={handleRefresh}
                 isRefreshing={isRefreshing}
+                renderExtraControls={() => (
+                  <button
+                    type="button"
+                    onClick={() => setDialogOpen(true)}
+                    className={cn(
+                      "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
+                      "bg-transparent border border-gray-200 dark:border-white/10",
+                      "text-gray-600 dark:text-gray-400",
+                      "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10"
+                    )}
+                  >
+                    <Upload size={14} />
+                    Upload Excel
+                  </button>
+                )}
               />
             </div>
 
@@ -821,6 +861,21 @@ export default function MasterMillsPage() {
 
         {/* ── Form Drawer ── */}
         <MasterMillFormDrawer />
+
+        {/* ── Bulk Upload Dialog ── */}
+        <BulkUploadDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onSuccess={() => {
+            refetch();
+            refetchStats();
+          }}
+          previewEndpoint="/master-mills/bulk-upload/preview"
+          importEndpoint="/master-mills/bulk-upload/import"
+          statusEndpoint="/master-mills/bulk-upload/status"
+          templateEndpoint="/master-mills/bulk-upload/template"
+          columnConfig={columnConfig}
+        />
 
         {/* ── View Details Drawer ── */}
         <ViewDetailsDrawer
