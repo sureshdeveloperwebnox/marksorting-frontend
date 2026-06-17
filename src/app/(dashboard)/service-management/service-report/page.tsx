@@ -71,6 +71,8 @@ import { ServiceReportFormDrawer } from "@/components/forms/service-report-form-
 import { RouteGuard } from "@/components/guards/route-guard";
 import { useServiceCategories } from "@/services/service-category-service";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
+import { useCustomers } from "@/services/customer-service";
+import { useMills } from "@/services/mill-service";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import { TableTabs, TableTab } from "@/components/ui/table-tabs";
 
@@ -120,11 +122,15 @@ export default function ServiceReportPage() {
     statusFilter,
     categoryFilter,
     technicianFilter,
+    customerFilter,
+    millFilter,
     dateFrom,
     dateTo,
     setStatusFilter,
     setCategoryFilter,
     setTechnicianFilter,
+    setCustomerFilter,
+    setMillFilter,
     setDateFrom,
     setDateTo,
     resetFilters,
@@ -139,6 +145,8 @@ export default function ServiceReportPage() {
   const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
   const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = React.useState(false);
+  // Tracks the customer selection INSIDE the filter drawer (before Apply) so mills list reacts immediately
+  const [drawerCustomerId, setDrawerCustomerId] = React.useState<string>("");
 
   // All 34 service report preview columns — shown in the bulk upload preview table
   const srColumnConfig: ServiceReportColumnConfig[] = [
@@ -180,6 +188,18 @@ export default function ServiceReportPage() {
 
   const { data: viewReportData, isLoading: isViewReportLoading } = useServiceReport(selectedViewId);
 
+  // Load customers and mills for filter dropdowns
+  const { data: customersData } = useCustomers({ skip: 0, take: 500 });
+  const customers = customersData?.customers || [];
+
+  const { data: millsData } = useMills({
+    skip: 0,
+    take: 500,
+    // Use drawerCustomerId so mills update immediately when user picks a customer inside the drawer
+    customer_id: drawerCustomerId || undefined,
+  });
+  const mills = millsData?.mills || [];
+
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
     return () => clearTimeout(t);
@@ -192,6 +212,8 @@ export default function ServiceReportPage() {
     status: statusFilter || undefined,
     serviceCategoryId: categoryFilter || undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -202,6 +224,8 @@ export default function ServiceReportPage() {
     status: undefined,
     serviceCategoryId: categoryFilter || undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -212,6 +236,8 @@ export default function ServiceReportPage() {
     status: "COMPLETED",
     serviceCategoryId: categoryFilter || undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -222,6 +248,8 @@ export default function ServiceReportPage() {
     status: "PENDING",
     serviceCategoryId: categoryFilter || undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -232,6 +260,8 @@ export default function ServiceReportPage() {
     status: "IN_PROGRESS",
     serviceCategoryId: categoryFilter || undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -242,6 +272,8 @@ export default function ServiceReportPage() {
     status: "CANCELLED",
     serviceCategoryId: categoryFilter || undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -617,7 +649,7 @@ export default function ServiceReportPage() {
     ];
   }, [viewReportData]);
 
-  const activeFilterCount = [statusFilter, categoryFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
+  const activeFilterCount = [statusFilter, categoryFilter, technicianFilter, customerFilter, millFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Filter fields ── */
   const filterFields: FilterField[] = [
@@ -653,6 +685,38 @@ export default function ServiceReportPage() {
           value: t.id,
           label: t.full_name,
           iconColor: "bg-primary",
+        })),
+      ],
+    },
+    {
+      id: "customerId",
+      label: "Customer",
+      options: [
+        { value: "ALL", label: "All Customers", iconColor: "bg-gray-400 dark:bg-gray-500" },
+        ...customers.map((c) => ({
+          value: c.id,
+          label: c.name,
+          iconColor: "bg-indigo-500",
+        })),
+      ],
+    },
+    {
+      id: "millId",
+      label: "Mill",
+      dependsOnField: "customerId",
+      disabledHint: "select a customer first",
+      options: [
+        {
+          value: "ALL",
+          label: drawerCustomerId
+            ? `All Mills (${mills.length} found)`
+            : "All Mills",
+          iconColor: "bg-gray-400 dark:bg-gray-500",
+        },
+        ...mills.map((m) => ({
+          value: m.id,
+          label: m.name,
+          iconColor: "bg-orange-500",
         })),
       ],
     },
@@ -925,18 +989,37 @@ export default function ServiceReportPage() {
         {/* ── Filter Drawer ── */}
         <GenericFilterDrawer
           isOpen={isFilterDrawerOpen}
-          onClose={() => setIsFilterDrawerOpen(false)}
+          onClose={() => {
+            setIsFilterDrawerOpen(false);
+            // On close without apply, reset drawer customer to match the applied filter
+            setDrawerCustomerId(customerFilter || "");
+          }}
           fields={filterFields}
           activeValues={{
             status: statusFilter || "ALL",
             category: categoryFilter || "ALL",
             technicianId: technicianFilter || "ALL",
+            customerId: customerFilter || "ALL",
+            millId: millFilter || "ALL",
             dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
+          }}
+          onLocalChange={(fieldId, value) => {
+            // When customer changes inside the drawer, immediately fetch that customer's mills
+            // and reset the mill selection
+            if (fieldId === "customerId") {
+              setDrawerCustomerId(value === "ALL" ? "" : value);
+              return { millId: "ALL" };
+            }
+            return {};
           }}
           onApply={(values) => {
             setStatusFilter(values.status === "ALL" ? "" : values.status);
             setCategoryFilter(values.category === "ALL" ? "" : values.category);
             setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
+            setCustomerFilter(values.customerId === "ALL" ? "" : values.customerId);
+            setMillFilter(values.millId === "ALL" ? "" : values.millId);
+            // Keep drawerCustomerId in sync with applied value
+            setDrawerCustomerId(values.customerId === "ALL" ? "" : values.customerId);
             if (values.dateRange) {
               try {
                 const range = JSON.parse(values.dateRange);
@@ -955,6 +1038,9 @@ export default function ServiceReportPage() {
             setStatusFilter("");
             setCategoryFilter("");
             setTechnicianFilter("");
+            setCustomerFilter("");
+            setMillFilter("");
+            setDrawerCustomerId("");
             setDateFrom("");
             setDateTo("");
             resetFilters();

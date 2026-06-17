@@ -9,6 +9,8 @@ interface ServiceReportState {
     statusFilter: string;
     categoryFilter: string;
     technicianFilter: string;
+    customerFilter: string;
+    millFilter: string;
     dateFrom: string;
     dateTo: string;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
@@ -16,6 +18,8 @@ interface ServiceReportState {
     setStatusFilter: (statusFilter: string) => void;
     setCategoryFilter: (categoryFilter: string) => void;
     setTechnicianFilter: (technicianFilter: string) => void;
+    setCustomerFilter: (customerFilter: string) => void;
+    setMillFilter: (millFilter: string) => void;
     setDateFrom: (dateFrom: string) => void;
     setDateTo: (dateTo: string) => void;
     resetFilters: () => void;
@@ -37,6 +41,8 @@ const useServiceReportStore = create<ServiceReportState>((set) => ({
     statusFilter: "",
     categoryFilter: "",
     technicianFilter: "",
+    customerFilter: "",
+    millFilter: "",
     dateFrom: "",
     dateTo: "",
     setPagination: (pagination) => set({ pagination }),
@@ -60,6 +66,18 @@ const useServiceReportStore = create<ServiceReportState>((set) => ({
             technicianFilter,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setCustomerFilter: (customerFilter) =>
+        set((state) => ({
+            customerFilter,
+            // Reset mill filter when customer changes
+            millFilter: "",
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setMillFilter: (millFilter) =>
+        set((state) => ({
+            millFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
     setDateFrom: (dateFrom) =>
         set((state) => ({
             dateFrom,
@@ -76,6 +94,8 @@ const useServiceReportStore = create<ServiceReportState>((set) => ({
             statusFilter: "",
             categoryFilter: "",
             technicianFilter: "",
+            customerFilter: "",
+            millFilter: "",
             dateFrom: "",
             dateTo: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },

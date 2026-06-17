@@ -7,9 +7,11 @@ interface MillState {
   };
   search: string;
   statusFilter: string;
+  customerFilter: string;
   setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
   setSearch: (search: string) => void;
   setStatusFilter: (status: string) => void;
+  setCustomerFilter: (customerId: string) => void;
   resetFilters: () => void;
   // UI State
   deleteId: string | null;
@@ -27,14 +29,17 @@ export const useMillStore = create<MillState>((set) => ({
   },
   search: "",
   statusFilter: "",
+  customerFilter: "",
   setPagination: (pagination) => set({ pagination }),
   setSearch: (search) => set((state) => ({ search, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
   setStatusFilter: (status) => set((state) => ({ statusFilter: status, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
+  setCustomerFilter: (customerId) => set((state) => ({ customerFilter: customerId, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } })),
   resetFilters: () =>
     set({
       pagination: { pageIndex: 0, pageSize: 10 },
       search: "",
       statusFilter: "",
+      customerFilter: "",
     }),
   deleteId: null,
   setDeleteId: (id) => set({ deleteId: id }),

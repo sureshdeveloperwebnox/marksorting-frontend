@@ -36,6 +36,12 @@ export interface FilterField {
   /** "select" (default) renders a dropdown; "date" renders a DatePicker; "date-range" renders a DateRangePicker */
   type?: "select" | "date" | "date-range";
   options?: FilterOption[];
+  /** When true, the field is rendered but interaction is disabled */
+  disabled?: boolean;
+  /** Optional hint shown below the label when disabled */
+  disabledHint?: string;
+  /** When set, this field is automatically disabled when the referenced field's value is "ALL" or empty */
+  dependsOnField?: string;
 }
 
 interface GenericFilterDrawerProps {
@@ -47,6 +53,8 @@ interface GenericFilterDrawerProps {
   activeValues: Record<string, string>;
   onApply: (values: Record<string, string>) => void;
   onReset: () => void;
+  /** Called when a field value changes inside the drawer (before Apply). Use to reset dependent fields. */
+  onLocalChange?: (fieldId: string, value: string, currentLocalValues: Record<string, string>) => Partial<Record<string, string>>;
 }
 
 const parseDateRangeValue = (strVal?: string): DateRangeValue => {
@@ -72,6 +80,7 @@ export function GenericFilterDrawer({
   activeValues,
   onApply,
   onReset,
+  onLocalChange,
 }: GenericFilterDrawerProps) {
   // Local state to store temporary selection states
   const [localValues, setLocalValues] = React.useState<Record<string, string>>({});
@@ -103,10 +112,14 @@ export function GenericFilterDrawer({
   };
 
   const handleValueChange = (fieldId: string, value: string) => {
-    setLocalValues((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
+    setLocalValues((prev) => {
+      const next = { ...prev, [fieldId]: value };
+      if (onLocalChange) {
+        const overrides = onLocalChange(fieldId, value, next);
+        return { ...next, ...overrides };
+      }
+      return next;
+    });
   };
 
   return (
@@ -135,17 +148,28 @@ export function GenericFilterDrawer({
             const currentValue = localValues[field.id] || "";
             const isDateField = field.type === "date";
             const isDateRangeField = field.type === "date-range";
+            const isDisabled = field.disabled === true ||
+              // Dynamic: if field has a dependsOnField, check localValues
+              (field.dependsOnField ? (localValues[field.dependsOnField] === "ALL" || !localValues[field.dependsOnField]) : false);
 
             return (
-              <div key={field.id} className="space-y-3">
-                <label className="text-xs font-bold uppercase tracking-widest text-primary/70 dark:text-primary/60 block">
-                  {field.label}
-                </label>
+              <div key={field.id} className={cn("space-y-3", isDisabled && "opacity-50")}>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-primary/70 dark:text-primary/60 block">
+                    {field.label}
+                  </label>
+                  {isDisabled && field.disabledHint && (
+                    <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 italic">
+                      — {field.disabledHint}
+                    </span>
+                  )}
+                </div>
 
                 {isDateRangeField ? (
                   <DateRangePicker
                     value={parseDateRangeValue(currentValue)}
                     onChange={(val) => {
+                      if (isDisabled) return;
                       if (!val.startDate && !val.endDate) {
                         handleValueChange(field.id, "");
                       } else {
@@ -157,19 +181,27 @@ export function GenericFilterDrawer({
                 ) : isDateField ? (
                   <DatePicker
                     value={currentValue}
-                    onChange={(val) => handleValueChange(field.id, val)}
+                    onChange={(val) => { if (!isDisabled) handleValueChange(field.id, val); }}
                     placeholder={field.placeholder || "Select date..."}
                   />
                 ) : (
                   <Select
                     value={currentValue || "ALL"}
-                    onValueChange={(val) => handleValueChange(field.id, val ?? "ALL")}
+                    onValueChange={(val) => { if (!isDisabled) handleValueChange(field.id, val ?? "ALL"); }}
                     items={field.options?.map((option) => ({
                       value: option.value,
                       label: option.label,
                     }))}
+                    disabled={isDisabled}
                   >
-                    <SelectTrigger className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm cursor-pointer hover:border-gray-200 dark:hover:border-white/10 text-gray-700 dark:text-gray-300">
+                    <SelectTrigger
+                      className={cn(
+                        "w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm text-gray-700 dark:text-gray-300",
+                        isDisabled
+                          ? "cursor-not-allowed bg-gray-100/60 dark:bg-white/[0.02]"
+                          : "cursor-pointer hover:border-gray-200 dark:hover:border-white/10"
+                      )}
+                    >
                       <SelectValue placeholder={field.placeholder || "Select option..."} />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border border-gray-100 dark:border-white/5 shadow-2xl p-1 bg-white dark:bg-gray-900 z-50 min-w-[var(--radix-select-trigger-width)]">

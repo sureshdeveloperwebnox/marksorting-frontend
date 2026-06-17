@@ -5,6 +5,7 @@ import { DataTable } from "@/components/tables/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMills, Mill, useDeleteMill, useUpdateMill } from "@/services/mill-service";
 import { useMillStore } from "@/store/useMillStore";
+import { useCustomers } from "@/services/customer-service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +13,17 @@ import {
   Trash2,
   Loader2,
   Factory,
+  Eye,
+  Building2,
+  Phone,
+  Mail,
+  MapPin,
+  Hash,
+  Calendar,
+  Users,
 } from "lucide-react";
+import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
+import { useMill } from "@/services/mill-service";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
@@ -56,18 +67,16 @@ const getStatusDotColors = (status: string) => {
   }
 };
 
-const millFilterFields: FilterField[] = [
-  {
-    id: "status",
-    label: "Mill Status",
-    options: [
-      { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
-      { value: "ACTIVE", label: "Active Only", iconColor: "bg-emerald-500", animatePulse: true },
-      { value: "INACTIVE", label: "Inactive Only", iconColor: "bg-amber-500", animatePulse: true },
-      { value: "CLOSED", label: "Closed Only", iconColor: "bg-rose-500", animatePulse: true },
-    ],
-  },
-];
+const millStatusFilterField: FilterField = {
+  id: "status",
+  label: "Mill Status",
+  options: [
+    { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+    { value: "ACTIVE", label: "Active Only", iconColor: "bg-emerald-500", animatePulse: true },
+    { value: "INACTIVE", label: "Inactive Only", iconColor: "bg-amber-500", animatePulse: true },
+    { value: "CLOSED", label: "Closed Only", iconColor: "bg-rose-500", animatePulse: true },
+  ],
+};
 
 
 /* ─── Page ──────────────────────────────────────────────────────── */
@@ -80,6 +89,8 @@ export default function MillsPage() {
     setSearch,
     statusFilter,
     setStatusFilter,
+    customerFilter,
+    setCustomerFilter,
     resetFilters,
     deleteId,
     setDeleteId,
@@ -88,6 +99,14 @@ export default function MillsPage() {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
+  const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
+  const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
+
+  const { data: viewMillData, isLoading: isViewMillLoading } = useMill(selectedViewId);
+
+  // Load all customers for the filter dropdown
+  const { data: customersData } = useCustomers({ skip: 0, take: 500 });
+  const customers = customersData?.customers || [];
 
   // Debounce search
   React.useEffect(() => {
@@ -101,6 +120,7 @@ export default function MillsPage() {
     take: pagination.pageSize,
     search,
     status: statusFilter || undefined,
+    customer_id: customerFilter || undefined,
   });
 
   const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useMills({ skip: 0, take: 1 });
@@ -128,6 +148,157 @@ export default function MillsPage() {
       setDeleteId(null);
     }
   };
+
+  /* ── Dynamic filter fields (includes customer list) ── */
+  const millFilterFields: FilterField[] = [
+    millStatusFilterField,
+    {
+      id: "customer",
+      label: "Customer",
+      options: [
+        { value: "ALL", label: "All Customers", iconColor: "bg-gray-400 dark:bg-gray-500" },
+        ...customers.map((c) => ({
+          value: c.id,
+          label: c.name,
+          iconColor: "bg-primary",
+        })),
+      ],
+    },
+  ];
+
+  const activeFilterCount = [statusFilter, customerFilter].filter(Boolean).length;
+
+  /* ── View sections ── */
+  const viewSections = React.useMemo(() => {
+    if (!viewMillData) return [];
+    const m = viewMillData;
+
+    const statusColor = (s: string) => {
+      switch (s?.toUpperCase()) {
+        case 'ACTIVE': return 'text-emerald-600 dark:text-emerald-400';
+        case 'INACTIVE': return 'text-amber-500 dark:text-amber-400';
+        case 'CLOSED': return 'text-rose-500 dark:text-rose-400';
+        default: return 'text-gray-500';
+      }
+    };
+
+    return [
+      {
+        title: 'Mill Information',
+        items: [
+          {
+            label: 'Mill Name',
+            value: (
+              <span className="font-bold text-gray-900 dark:text-white">
+                {m.name}
+              </span>
+            ),
+            icon: Building2,
+          },
+          {
+            label: 'Ref No',
+            value: m.ref_no ? (
+              <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                {m.ref_no}
+              </span>
+            ) : null,
+            icon: Hash,
+          },
+          {
+            label: 'Status',
+            value: (
+              <span className={`font-black text-xs uppercase tracking-widest ${statusColor(m.status)}`}>
+                {m.status}
+              </span>
+            ),
+            icon: Building2,
+          },
+          {
+            label: 'Customer',
+            value: m.customer?.name || null,
+            icon: Users,
+          },
+        ],
+      },
+      {
+        title: 'Contact Details',
+        items: [
+          {
+            label: 'Email',
+            value: m.email ? (
+              <a href={`mailto:${m.email}`} className="text-primary font-bold hover:underline">
+                {m.email}
+              </a>
+            ) : null,
+            icon: Mail,
+          },
+          {
+            label: 'Primary Phone',
+            value: m.phone ? (
+              <a href={`tel:${m.phone}`} className="text-primary font-bold hover:underline">
+                {m.phone}
+              </a>
+            ) : null,
+            icon: Phone,
+          },
+          {
+            label: 'Phone 2',
+            value: m.phone_2 ? (
+              <a href={`tel:${m.phone_2}`} className="text-primary font-bold hover:underline">
+                {m.phone_2}
+              </a>
+            ) : null,
+            icon: Phone,
+          },
+          {
+            label: 'Phone 3',
+            value: m.phone_3 ? (
+              <a href={`tel:${m.phone_3}`} className="text-primary font-bold hover:underline">
+                {m.phone_3}
+              </a>
+            ) : null,
+            icon: Phone,
+          },
+        ],
+      },
+      {
+        title: 'Location',
+        items: [
+          {
+            label: 'Address',
+            value: m.address || null,
+            icon: MapPin,
+            fullWidth: true,
+          },
+          {
+            label: 'Place',
+            value: m.place || null,
+            icon: MapPin,
+          },
+          {
+            label: 'City',
+            value: m.city || null,
+            icon: MapPin,
+          },
+        ],
+      },
+      {
+        title: 'System Info',
+        items: [
+          {
+            label: 'Created',
+            value: format(new Date(m.created_at), 'dd MMM yyyy, hh:mm a'),
+            icon: Calendar,
+          },
+          {
+            label: 'Last Updated',
+            value: format(new Date(m.updated_at), 'dd MMM yyyy, hh:mm a'),
+            icon: Calendar,
+          },
+        ],
+      },
+    ];
+  }, [viewMillData]);
 
   /* ── Table columns ── */
   const columns: ColumnDef<Mill>[] = [
@@ -257,6 +428,18 @@ export default function MillsPage() {
           <Button
             variant="ghost"
             size="icon"
+            className="h-9 w-9 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 hover:text-indigo-700 hover:bg-indigo-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            onClick={() => {
+              setSelectedViewId(row.original.id);
+              setIsViewDrawerOpen(true);
+            }}
+            title="View Details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
             onClick={() => openFormDrawer(row.original.id)}
           >
@@ -279,13 +462,13 @@ export default function MillsPage() {
   /* ── Render ── */
   return (
     <RouteGuard>
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="w-full"
-    >
-      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full"
+      >
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden">
           {/* Card header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div>
@@ -305,7 +488,7 @@ export default function MillsPage() {
               onSearchChange={setLocalSearch}
               searchPlaceholder="Search mills..."
               onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={statusFilter ? 1 : 0}
+              activeFiltersCount={activeFilterCount}
               addLabel="Add New Mill"
               addIcon={<Factory size={15} />}
               onAddClick={() => openFormDrawer()}
@@ -372,56 +555,81 @@ export default function MillsPage() {
           </div>
         </div>
 
-      {/* ── Filter Drawer ── */}
-      <GenericFilterDrawer
-        isOpen={isFilterDrawerOpen}
-        onClose={() => setIsFilterDrawerOpen(false)}
-        fields={millFilterFields}
-        activeValues={{ status: statusFilter || "ALL" }}
-        onApply={(values) => setStatusFilter(values.status === "ALL" ? "" : values.status)}
-        onReset={() => { setStatusFilter(""); resetFilters(); }}
-      />
+        {/* ── Filter Drawer ── */}
+        <GenericFilterDrawer
+          isOpen={isFilterDrawerOpen}
+          onClose={() => setIsFilterDrawerOpen(false)}
+          fields={millFilterFields}
+          activeValues={{
+            status: statusFilter || "ALL",
+            customer: customerFilter || "ALL",
+          }}
+          onApply={(values) => {
+            setStatusFilter(values.status === "ALL" ? "" : values.status);
+            setCustomerFilter(values.customer === "ALL" ? "" : values.customer);
+          }}
+          onReset={() => {
+            setStatusFilter("");
+            setCustomerFilter("");
+            resetFilters();
+          }}
+        />
 
-      {/* ── Mill Form Drawer ── */}
-      <MillFormDrawer />
+        {/* ── Mill Form Drawer ── */}
+        <MillFormDrawer />
 
-      {/* ── Delete Confirm Dialog ── */}
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
-          <DialogHeader className="space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
-              <Trash2 size={32} />
-            </div>
-            <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
-              Confirm Deletion
-            </DialogTitle>
-            <DialogDescription className="text-center text-gray-500 font-bold">
-              This action cannot be undone. This will permanently remove the mill from the system.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:justify-center pt-6">
-            <Button
-              variant="ghost"
-              onClick={() => setDeleteId(null)}
-              className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDelete}
-              disabled={deleteMillMutation.isPending}
-              className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
-            >
-              {deleteMillMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Delete Mill"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+        {/* ── View Details Drawer ── */}
+        <ViewDetailsDrawer
+          isOpen={isViewDrawerOpen}
+          onClose={() => {
+            setIsViewDrawerOpen(false);
+            setSelectedViewId(null);
+          }}
+          title="Mill Details"
+          description="Complete information for this mill and its contacts."
+          icon={<Building2 size={22} />}
+          isLoading={isViewMillLoading}
+          sections={viewSections}
+          size="lg"
+        />
+
+        {/* ── Delete Confirm Dialog ── */}
+        <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
+            <DialogHeader className="space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
+                <Trash2 size={32} />
+              </div>
+              <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
+                Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className="text-center text-gray-500 font-bold">
+                This action cannot be undone. This will permanently remove the mill from the system.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-3 sm:justify-center pt-6">
+              <Button
+                variant="ghost"
+                onClick={() => setDeleteId(null)}
+                className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                disabled={deleteMillMutation.isPending}
+                className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
+              >
+                {deleteMillMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Delete Mill"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </motion.div>
     </RouteGuard>
   );
 }
