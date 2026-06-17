@@ -426,17 +426,23 @@ export default function MasterMillsPage() {
       accessorKey: "invoice_no",
       header: "Invoice No",
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 min-w-[120px]">
-          <span className="font-black text-sm text-gray-900 dark:text-white tracking-tight">
+        <div className="flex flex-col gap-1 min-w-[160px]">
+          <span className="font-medium text-sm text-primary dark:text-orange-400 tracking-tight leading-tight">
             {row.original.invoice_no}
           </span>
           {row.original.ref_no && (
-            <span className="text-[10px] text-gray-400 font-semibold">
-              Ref: {row.original.ref_no}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
+                <Hash className="w-2.5 h-2.5 text-indigo-400 flex-shrink-0" />
+                <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 leading-none">
+                  {row.original.ref_no}
+                </span>
+              </span>
+            </div>
           )}
           {row.original.invoice_date && (
-            <span className="text-[10px] text-gray-400 font-medium">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/50 text-[10px] font-bold text-gray-600 dark:text-gray-400 w-fit">
+              <Calendar className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
               {formatDateSafe(row.original.invoice_date)}
             </span>
           )}
@@ -468,20 +474,25 @@ export default function MasterMillsPage() {
       accessorKey: "mc_model",
       header: "MC Model",
       cell: ({ row }) => (
-        <div className="min-w-[120px]">
-          <p className="font-bold text-sm text-gray-700 dark:text-gray-300">
+        <div className="flex flex-col gap-1 min-w-[140px]">
+          <p className="font-bold text-sm text-gray-700 dark:text-gray-300 leading-tight">
             {row.original.mc_model || "—"}
           </p>
           {row.original.frame_no && (
-            <p className="text-[10px] text-gray-400 mt-0.5 font-semibold">
-              Frame: {row.original.frame_no}
-            </p>
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50">
+                <Hash className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />
+                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 leading-none">
+                  {row.original.frame_no}
+                </span>
+              </span>
+            </div>
           )}
         </div>
       ),
     },
     {
-      id: "warranty_period",
+      id: "warranty_combined",
       header: "Warranty",
       cell: ({ row }) => {
         const years = row.original.warranty_years ?? 0;
@@ -492,82 +503,127 @@ export default function MasterMillsPage() {
         ]
           .filter(Boolean)
           .join(" ");
-        return (
-          <div className="min-w-[90px]">
-            <p className="font-black text-sm text-gray-700 dark:text-gray-300">
-              {period || "—"}
-            </p>
-            <p className="text-[10px] text-gray-400 mt-0.5">
-              Inst: {formatDateSafe(row.original.installation_date)}
-            </p>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "warranty_closing_date",
-      header: "W. Closing",
-      cell: ({ row }) => {
-        const expired = isExpired(row.original.warranty_closing_date);
-        return (
-          <span
-            className={cn(
-              "text-sm font-bold",
-              expired
-                ? "text-rose-500 dark:text-rose-400"
-                : "text-emerald-600 dark:text-emerald-400"
-            )}
-          >
-            {formatDateSafe(row.original.warranty_closing_date)}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: "all_warranty",
-      header: "Warranty Type",
-      cell: ({ row }) => {
+
         const type = row.original.all_warranty || "Non Warranty";
         const millId = row.original.id;
+        const expired = isExpired(row.original.warranty_closing_date);
+        const closingDate = formatDateSafe(row.original.warranty_closing_date);
+        const instDate = formatDateSafe(row.original.installation_date);
+
+        const typeConfig = {
+          "Under Warranty": {
+            bg: "bg-emerald-50 dark:bg-emerald-950/40",
+            border: "border-emerald-200 dark:border-emerald-800/50",
+            text: "text-emerald-700 dark:text-emerald-400",
+            dot: "bg-emerald-500",
+            pulse: true,
+          },
+          "Under AMC": {
+            bg: "bg-amber-50 dark:bg-amber-950/40",
+            border: "border-amber-200 dark:border-amber-800/50",
+            text: "text-amber-700 dark:text-amber-400",
+            dot: "bg-amber-500",
+            pulse: false,
+          },
+          "Expired": {
+            bg: "bg-rose-50 dark:bg-rose-950/40",
+            border: "border-rose-200 dark:border-rose-800/50",
+            text: "text-rose-600 dark:text-rose-400",
+            dot: "bg-rose-500",
+            pulse: false,
+          },
+          "Non Warranty": {
+            bg: "bg-gray-100 dark:bg-gray-800/40",
+            border: "border-gray-200 dark:border-gray-700/50",
+            text: "text-gray-500 dark:text-gray-400",
+            dot: "bg-gray-400",
+            pulse: false,
+          },
+        };
+        const cfg = typeConfig[type as keyof typeof typeConfig] ?? typeConfig["Non Warranty"];
+
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <button className="flex items-center gap-1.5 cursor-pointer outline-none select-none group/status hover:scale-105 active:scale-95 transition-all duration-300">
-                  <div className={cn("w-1.5 h-1.5 rounded-full", getWarrantyDot(type))} />
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "rounded-md font-bold text-[10px] uppercase tracking-[0.1em] px-2 py-0.5 cursor-pointer",
-                      getWarrantyColors(type)
-                    )}
-                  >
+          <div className="flex flex-col gap-1.5 min-w-[160px]">
+
+            {/* ── Warranty Type badge — clickable dropdown ── */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button className={cn(
+                    "inline-flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-lg border font-bold text-xs cursor-pointer outline-none select-none",
+                    "hover:opacity-80 active:scale-95 transition-all duration-200",
+                    cfg.bg, cfg.border, cfg.text
+                  )}>
+                    <span className={cn(
+                      "w-2 h-2 rounded-full flex-shrink-0",
+                      cfg.dot,
+                      cfg.pulse && "animate-pulse"
+                    )} />
                     {type}
-                  </Badge>
-                </button>
-              }
-            />
-            <DropdownMenuContent align="start" className="w-40 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 z-[9999]">
-              <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1">
-                Set Warranty
-              </div>
-              {["Non Warranty", "Under Warranty", "Expired"].map((w) => (
-                <DropdownMenuItem
-                  key={w}
-                  className={cn(
-                    "rounded-lg font-semibold text-xs my-0.5 cursor-pointer flex items-center gap-2 py-2 px-2.5",
-                    type === w ? "text-primary bg-primary/5" : "text-gray-700 dark:text-gray-300"
-                  )}
-                  onClick={() =>
-                    updateMutation.mutate({ id: millId, all_warranty: w })
-                  }
-                >
-                  <span className={cn("w-1.5 h-1.5 rounded-full", getWarrantyDot(w))} />
-                  {w}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    <svg className="w-3 h-3 opacity-50 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                }
+              />
+              <DropdownMenuContent align="start" className="w-44 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 z-[9999]">
+                <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-white/5 pb-1.5 mb-1">
+                  Change Status
+                </div>
+                {(["Under Warranty", "Under AMC", "Non Warranty", "Expired"] as const).map((w) => {
+                  const wCfg = typeConfig[w];
+                  return (
+                    <DropdownMenuItem
+                      key={w}
+                      className={cn(
+                        "rounded-lg font-semibold text-xs my-0.5 cursor-pointer flex items-center gap-2 py-2 px-2.5",
+                        type === w
+                          ? cn("font-black", wCfg.text, wCfg.bg)
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+                      )}
+                      onClick={() => updateMutation.mutate({ id: millId, all_warranty: w })}
+                    >
+                      <span className={cn("w-2 h-2 rounded-full flex-shrink-0", wCfg.dot)} />
+                      {w}
+                      {type === w && (
+                        <svg className="w-3 h-3 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8.414 15l-4.121-4.121a1 1 0 011.414-1.414L8.414 12.172l6.879-6.879a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* ── Period + Installation date ── */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {period && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-900/50 text-[10px] font-bold text-violet-700 dark:text-violet-400">
+                  {period}
+                </span>
+              )}
+              {row.original.installation_date && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/50 text-[10px] font-bold text-sky-700 dark:text-sky-400">
+                  <Calendar className="w-2.5 h-2.5 flex-shrink-0" />
+                  {instDate}
+                </span>
+              )}
+            </div>
+
+            {/* ── Closing date ── */}
+            {row.original.warranty_closing_date && (
+              <span className={cn(
+                "inline-flex w-fit items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border",
+                expired
+                  ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400"
+                  : "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400"
+              )}>
+                <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", expired ? "bg-rose-500" : "bg-emerald-500")} />
+                {expired ? "Exp:" : "Till:"} {closingDate}
+              </span>
+            )}
+          </div>
         );
       },
     },
