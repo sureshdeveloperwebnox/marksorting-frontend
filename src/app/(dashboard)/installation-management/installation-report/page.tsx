@@ -74,6 +74,8 @@ import { RouteGuard } from "@/components/guards/route-guard";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import { TableTabs } from "@/components/ui/table-tabs";
+import { useCustomers } from "@/services/customer-service";
+import { useMills } from "@/services/mill-service";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -119,10 +121,14 @@ export default function InstallationReportPage() {
     setSearch,
     statusFilter,
     technicianFilter,
+    customerFilter,
+    millFilter,
     dateFrom,
     dateTo,
     setStatusFilter,
     setTechnicianFilter,
+    setCustomerFilter,
+    setMillFilter,
     setDateFrom,
     setDateTo,
     resetFilters,
@@ -137,6 +143,20 @@ export default function InstallationReportPage() {
   const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
   const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = React.useState(false);
+  // Tracks the customer selected INSIDE the filter drawer (before Apply) for reactive mill list
+  const [drawerCustomerId, setDrawerCustomerId] = React.useState<string>("");
+
+  // Load all customers for filter dropdown
+  const { data: customersData } = useCustomers({ skip: 0, take: 500 });
+  const customers = customersData?.customers || [];
+
+  // Load mills — filtered by drawerCustomerId so the list reacts immediately in the drawer
+  const { data: irMillsData } = useMills({
+    skip: 0,
+    take: 500,
+    customer_id: drawerCustomerId || undefined,
+  });
+  const irMills = irMillsData?.mills || [];
 
   // All 35 installation report preview columns
   const irColumnConfig: InstallationReportColumnConfig[] = [
@@ -193,6 +213,8 @@ export default function InstallationReportPage() {
     search,
     status: statusFilter || undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -202,6 +224,8 @@ export default function InstallationReportPage() {
     take: 1,
     status: undefined,
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -211,6 +235,8 @@ export default function InstallationReportPage() {
     take: 1,
     status: "COMPLETED",
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -220,6 +246,8 @@ export default function InstallationReportPage() {
     take: 1,
     status: "PENDING",
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -229,6 +257,8 @@ export default function InstallationReportPage() {
     take: 1,
     status: "IN_PROGRESS",
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -238,6 +268,8 @@ export default function InstallationReportPage() {
     take: 1,
     status: "CANCELLED",
     technicianId: technicianFilter || undefined,
+    customerId: customerFilter || undefined,
+    millId: millFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -622,7 +654,7 @@ export default function InstallationReportPage() {
     ];
   }, [viewReportData]);
 
-  const activeFilterCount = [statusFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
+  const activeFilterCount = [statusFilter, technicianFilter, customerFilter, millFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Filter fields ── */
   const filterFields: FilterField[] = [
@@ -646,6 +678,38 @@ export default function InstallationReportPage() {
           value: t.id,
           label: t.full_name,
           iconColor: "bg-primary",
+        })),
+      ],
+    },
+    {
+      id: "customerId",
+      label: "Customer",
+      options: [
+        { value: "ALL", label: "All Customers", iconColor: "bg-gray-400 dark:bg-gray-500" },
+        ...customers.map((c) => ({
+          value: c.id,
+          label: c.name,
+          iconColor: "bg-indigo-500",
+        })),
+      ],
+    },
+    {
+      id: "millId",
+      label: "Mill",
+      dependsOnField: "customerId",
+      disabledHint: "select a customer first",
+      options: [
+        {
+          value: "ALL",
+          label: drawerCustomerId
+            ? `All Mills (${irMills.length} found)`
+            : "All Mills",
+          iconColor: "bg-gray-400 dark:bg-gray-500",
+        },
+        ...irMills.map((m) => ({
+          value: m.id,
+          label: m.name,
+          iconColor: "bg-orange-500",
         })),
       ],
     },
@@ -851,7 +915,10 @@ export default function InstallationReportPage() {
                 searchValue={localSearch}
                 onSearchChange={setLocalSearch}
                 searchPlaceholder="Search installations..."
-                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                onFilterClick={() => {
+                  setDrawerCustomerId(customerFilter || "");
+                  setIsFilterDrawerOpen(true);
+                }}
                 activeFiltersCount={activeFilterCount}
                 addLabel="New Installation"
                 addIcon={<FileText size={15} />}
@@ -915,16 +982,31 @@ export default function InstallationReportPage() {
         {/* Filter Drawer */}
         <GenericFilterDrawer
           isOpen={isFilterDrawerOpen}
-          onClose={() => setIsFilterDrawerOpen(false)}
+          onClose={() => {
+            setIsFilterDrawerOpen(false);
+            setDrawerCustomerId(customerFilter || "");
+          }}
           fields={filterFields}
           activeValues={{
             status: statusFilter || "ALL",
             technicianId: technicianFilter || "ALL",
+            customerId: customerFilter || "ALL",
+            millId: millFilter || "ALL",
             dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
+          }}
+          onLocalChange={(fieldId, value) => {
+            if (fieldId === "customerId") {
+              setDrawerCustomerId(value === "ALL" ? "" : value);
+              return { millId: "ALL" };
+            }
+            return {};
           }}
           onApply={(values) => {
             setStatusFilter(values.status === "ALL" ? "" : values.status);
             setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
+            setCustomerFilter(values.customerId === "ALL" ? "" : values.customerId);
+            setMillFilter(values.millId === "ALL" ? "" : values.millId);
+            setDrawerCustomerId(values.customerId === "ALL" ? "" : values.customerId);
             if (values.dateRange) {
               try {
                 const range = JSON.parse(values.dateRange);
@@ -942,6 +1024,9 @@ export default function InstallationReportPage() {
           onReset={() => {
             setStatusFilter("");
             setTechnicianFilter("");
+            setCustomerFilter("");
+            setMillFilter("");
+            setDrawerCustomerId("");
             setDateFrom("");
             setDateTo("");
             resetFilters();

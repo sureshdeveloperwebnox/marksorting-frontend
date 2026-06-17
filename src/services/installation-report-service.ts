@@ -65,6 +65,8 @@ export const useInstallationReports = (params: {
     search?: string;
     status?: string;
     technicianId?: string;
+    customerId?: string;
+    millId?: string;
     dateFrom?: string;
     dateTo?: string;
 }) => {

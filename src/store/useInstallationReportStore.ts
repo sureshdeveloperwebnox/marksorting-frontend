@@ -8,12 +8,16 @@ interface InstallationReportState {
     search: string;
     statusFilter: string;
     technicianFilter: string;
+    customerFilter: string;
+    millFilter: string;
     dateFrom: string;
     dateTo: string;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
     setStatusFilter: (statusFilter: string) => void;
     setTechnicianFilter: (technicianFilter: string) => void;
+    setCustomerFilter: (customerFilter: string) => void;
+    setMillFilter: (millFilter: string) => void;
     setDateFrom: (dateFrom: string) => void;
     setDateTo: (dateTo: string) => void;
     resetFilters: () => void;
@@ -34,6 +38,8 @@ const useInstallationReportStore = create<InstallationReportState>((set) => ({
     search: "",
     statusFilter: "",
     technicianFilter: "",
+    customerFilter: "",
+    millFilter: "",
     dateFrom: "",
     dateTo: "",
     setPagination: (pagination) => set({ pagination }),
@@ -52,6 +58,17 @@ const useInstallationReportStore = create<InstallationReportState>((set) => ({
             technicianFilter,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setCustomerFilter: (customerFilter) =>
+        set((state) => ({
+            customerFilter,
+            millFilter: "",            // reset mill when customer changes
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setMillFilter: (millFilter) =>
+        set((state) => ({
+            millFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
     setDateFrom: (dateFrom) =>
         set((state) => ({
             dateFrom,
@@ -67,6 +84,8 @@ const useInstallationReportStore = create<InstallationReportState>((set) => ({
             search: "",
             statusFilter: "",
             technicianFilter: "",
+            customerFilter: "",
+            millFilter: "",
             dateFrom: "",
             dateTo: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
