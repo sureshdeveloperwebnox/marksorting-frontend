@@ -85,16 +85,40 @@ export function GenericFilterDrawer({
   // Local state to store temporary selection states
   const [localValues, setLocalValues] = React.useState<Record<string, string>>({});
 
-  // Sync state whenever the drawer opens or active values change
+  // Sync state only when the drawer OPENS (not on every fields/activeValues change)
+  const wasOpen = React.useRef(false);
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpen.current) {
+      // Drawer just opened — initialize local values from activeValues
       const initial: Record<string, string> = {};
       fields.forEach((field) => {
         initial[field.id] = activeValues[field.id] || (field.type === "date" || field.type === "date-range" ? "" : "ALL");
       });
       setLocalValues(initial);
     }
-  }, [isOpen, activeValues, fields]);
+    if (!isOpen) {
+      wasOpen.current = false;
+    } else {
+      wasOpen.current = true;
+    }
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When new fields arrive (e.g. after async load) while drawer is open,
+  // fill in any missing keys WITHOUT overwriting existing user selections
+  React.useEffect(() => {
+    if (!isOpen) return;
+    setLocalValues((prev) => {
+      const merged = { ...prev };
+      let changed = false;
+      fields.forEach((field) => {
+        if (!(field.id in merged)) {
+          merged[field.id] = activeValues[field.id] || (field.type === "date" || field.type === "date-range" ? "" : "ALL");
+          changed = true;
+        }
+      });
+      return changed ? merged : prev;
+    });
+  }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApply = () => {
     onApply(localValues);
