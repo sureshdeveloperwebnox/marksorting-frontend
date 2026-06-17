@@ -116,7 +116,13 @@ export function GenericFilterDrawer({
       const next = { ...prev, [fieldId]: value };
       if (onLocalChange) {
         const overrides = onLocalChange(fieldId, value, next);
-        return { ...next, ...overrides };
+        const cleanOverrides: Record<string, string> = {};
+        for (const [key, val] of Object.entries(overrides)) {
+          if (typeof val === "string") {
+            cleanOverrides[key] = val;
+          }
+        }
+        return { ...next, ...cleanOverrides };
       }
       return next;
     });
