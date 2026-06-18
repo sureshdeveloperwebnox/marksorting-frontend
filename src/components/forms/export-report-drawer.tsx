@@ -21,6 +21,7 @@ import {
   TableProperties
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ExportReportDrawerProps {
   isOpen: boolean;
@@ -54,6 +55,14 @@ export function ExportReportDrawer({
   }, [isOpen, initialDateFrom, initialDateTo]);
 
   const handleExport = async () => {
+    if (!dateFrom || !dateTo) {
+      toast.error("Please select both From Date and To Date to export reports");
+      return;
+    }
+    if (new Date(dateFrom) > new Date(dateTo)) {
+      toast.error("From Date cannot be after To Date");
+      return;
+    }
     setIsExporting(true);
     try {
       await onExport(format, dateFrom, dateTo);
