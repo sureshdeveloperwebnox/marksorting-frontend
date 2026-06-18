@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 interface ReportsState {
-    activeTab: "services" | "installations" | "expenses";
+    activeTab: "services" | "installations" | "expenses" | "master-mills";
     pagination: {
         pageIndex: number;
         pageSize: number;
@@ -13,7 +13,7 @@ interface ReportsState {
     dateTo: string;
     millFilter: string;
     technicianFilter: string;
-    setActiveTab: (tab: "services" | "installations" | "expenses") => void;
+    setActiveTab: (tab: "services" | "installations" | "expenses" | "master-mills") => void;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
     setStatusFilter: (status: string) => void;

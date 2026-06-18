@@ -7,10 +7,12 @@ import {
     useReportsServices,
     useReportsInstallations,
     useReportsExpenses,
+    useReportsMasterMills,
     downloadReportFile,
     ReportsServiceReport,
     ReportsInstallationReport,
     ReportsExpenseReport,
+    ReportsMasterMill,
 } from "@/services/reports-service";
 import useReportsStore from "@/store/useReportsStore";
 import { useServiceCategories } from "@/services/service-category-service";
@@ -39,6 +41,9 @@ import {
     Clock,
     AlertTriangle,
     RefreshCw,
+    Building,
+    ShieldAlert,
+    ShieldCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -200,6 +205,16 @@ export default function ReportsPage() {
         technicianId: technicianFilter || undefined,
     });
 
+    const masterMillsQuery = useReportsMasterMills({
+        skip: pagination.pageIndex * pagination.pageSize,
+        take: pagination.pageSize,
+        search: search || undefined,
+        status: statusFilter || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        millId: millFilter || undefined,
+    });
+
     // Fetch categories + lookup data for filter drawer
     const { data: serviceCategoriesData } = useServiceCategories({ skip: 0, take: 100 });
     const { data: expenseCategoriesData } = useExpenseCategories({ skip: 0, take: 100 });
@@ -215,13 +230,19 @@ export default function ReportsPage() {
             id: "status",
             label: "Status",
             placeholder: "All Statuses",
-            options: [
-                { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
-                { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
-                { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
-                { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500" },
-                { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500" },
-            ],
+            options: activeTab === "master-mills"
+                ? [
+                    { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+                    { value: "ACTIVE", label: "Active", iconColor: "bg-emerald-500" },
+                    { value: "INACTIVE", label: "Inactive", iconColor: "bg-gray-400" },
+                  ]
+                : [
+                    { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+                    { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
+                    { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
+                    { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500" },
+                    { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500" },
+                  ],
         };
 
         const millField: FilterField = {
@@ -280,6 +301,7 @@ export default function ReportsPage() {
 
         if (activeTab === "services") return [statusField, serviceCategoryField, millField, techField, dateFromField, dateToField];
         if (activeTab === "installations") return [statusField, millField, techField, dateFromField, dateToField];
+        if (activeTab === "master-mills") return [statusField, millField, dateFromField, dateToField];
         return [statusField, expenseCategoryField, millField, techField, dateFromField, dateToField];
     }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData]);
 
@@ -515,13 +537,118 @@ export default function ReportsPage() {
         },
     ];
 
+    // 4. Master Mill Columns
+    const masterMillColumns: ColumnDef<ReportsMasterMill>[] = [
+        {
+            accessorKey: "ref_no",
+            header: "Ref / Frame No",
+            cell: ({ row }) => (
+                <div className="flex flex-col font-mono text-xs">
+                    <span className="font-semibold text-gray-900 dark:text-white">{row.original.ref_no || "—"}</span>
+                    <span className="text-gray-400">{row.original.frame_no || "—"}</span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "mill.name",
+            header: "Mill Name",
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">{row.original.mill?.name || "—"}</span>
+                    <span className="text-xs text-gray-400">{row.original.place || "—"}</span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "place",
+            header: "Place / State",
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">{row.original.place || "—"}</span>
+                    <span className="text-xs text-gray-400">{row.original.state || "—"}</span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "mc_model",
+            header: "Machine Model",
+            cell: ({ row }) => (
+                <span className="text-gray-700 dark:text-gray-300 font-medium">{row.original.mc_model || "—"}</span>
+            ),
+        },
+        {
+            accessorKey: "installation_date",
+            header: "Installation Date",
+            cell: ({ row }) => (
+                <span className="text-gray-500 dark:text-gray-400">
+                    {row.original.installation_date ? format(new Date(row.original.installation_date), "dd-MM-yyyy") : "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "all_warranty",
+            header: "Warranty / AMC",
+            cell: ({ row }) => {
+                const now = new Date();
+                const isUnderWarranty = row.original.warranty_closing_date && new Date(row.original.warranty_closing_date) >= now && row.original.all_warranty !== "Non Warranty";
+                const isUnderAmc = row.original.amc_closing_date && new Date(row.original.amc_closing_date) >= now && row.original.amc_starting_date !== null;
+
+                if (isUnderWarranty) {
+                    return (
+                        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
+                            <ShieldCheck size={14} />
+                            Warranty ({row.original.all_warranty})
+                        </div>
+                    );
+                }
+                if (isUnderAmc) {
+                    return (
+                        <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-semibold text-xs">
+                            <CheckCircle2 size={14} />
+                            AMC ({row.original.amc_period}m)
+                        </div>
+                    );
+                }
+                return (
+                    <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs">
+                        <ShieldAlert size={14} />
+                        Non Warranty
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => {
+                const status = row.original.status;
+                const colors = status === "ACTIVE"
+                    ? "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-400/20"
+                    : "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500/20 dark:border-gray-400/20";
+                const dot = status === "ACTIVE"
+                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                    : "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
+                return (
+                    <div className="flex items-center gap-2 select-none">
+                        <div className={cn("w-1.5 h-1.5 rounded-full", dot)} />
+                        <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", colors)}>
+                            {status}
+                        </Badge>
+                    </div>
+                );
+            },
+        },
+    ];
+
     // Determine current query loading state & response values
     const currentQuery =
         activeTab === "services"
             ? servicesQuery
             : activeTab === "installations"
             ? installationsQuery
-            : expensesQuery;
+            : activeTab === "expenses"
+            ? expensesQuery
+            : masterMillsQuery;
 
     const reportsData = currentQuery.data?.reports || [];
     const reportsTotal = currentQuery.data?.total || 0;
@@ -554,6 +681,7 @@ export default function ReportsPage() {
                         { id: "services", label: "Service List", icon: Wrench },
                         { id: "installations", label: "Installation List", icon: Factory },
                         { id: "expenses", label: "Expenses", icon: Receipt },
+                        { id: "master-mills", label: "Master Mills", icon: Building },
                     ].map((tab) => {
                         const Icon = tab.icon;
                         const isTabActive = activeTab === tab.id;
@@ -589,7 +717,7 @@ export default function ReportsPage() {
                     <>
                         <StatsCard
                             title="Total Transactions"
-                            value={reportsMetrics?.totalCount}
+                            value={(reportsMetrics as any)?.totalCount}
                             loading={isReportsLoading}
                             icon={<Receipt size={18} className="text-primary" />}
                             iconBg="bg-primary/10"
@@ -614,7 +742,7 @@ export default function ReportsPage() {
                         />
                         <StatsCard
                             title="Approved/Completed"
-                            value={reportsMetrics?.completedCount}
+                            value={(reportsMetrics as any)?.completedCount}
                             loading={isReportsLoading}
                             icon={<CheckCircle2 size={18} className="text-emerald-500" />}
                             iconBg="bg-emerald-500/10"
@@ -625,7 +753,7 @@ export default function ReportsPage() {
                             title="Pending Review"
                             value={
                                 reportsMetrics
-                                    ? (reportsMetrics.pendingCount || 0) + (reportsMetrics.inProgressCount || 0)
+                                    ? ((reportsMetrics as any).pendingCount || 0) + ((reportsMetrics as any).inProgressCount || 0)
                                     : 0
                             }
                             loading={isReportsLoading}
@@ -635,11 +763,50 @@ export default function ReportsPage() {
                             description="Awaiting processing"
                         />
                     </>
+                ) : activeTab === "master-mills" ? (
+                    <>
+                        <StatsCard
+                            title="Total Machines"
+                            value={(reportsMetrics as any)?.totalCount}
+                            loading={isReportsLoading}
+                            icon={<Building size={18} className="text-primary" />}
+                            iconBg="bg-primary/10"
+                            gradient="bg-primary"
+                            description="Total machine register entries"
+                        />
+                        <StatsCard
+                            title="Under Warranty"
+                            value={(reportsMetrics as any)?.underWarrantyCount}
+                            loading={isReportsLoading}
+                            icon={<ShieldCheck size={18} className="text-emerald-500" />}
+                            iconBg="bg-emerald-500/10"
+                            gradient="bg-emerald-500"
+                            description="Active warranty machines"
+                        />
+                        <StatsCard
+                            title="Under AMC"
+                            value={(reportsMetrics as any)?.underAmcCount}
+                            loading={isReportsLoading}
+                            icon={<CheckCircle2 size={18} className="text-blue-500" />}
+                            iconBg="bg-blue-500/10"
+                            gradient="bg-blue-500"
+                            description="Active AMC contracts"
+                        />
+                        <StatsCard
+                            title="Non Warranty"
+                            value={(reportsMetrics as any)?.nonWarrantyCount}
+                            loading={isReportsLoading}
+                            icon={<ShieldAlert size={18} className="text-amber-500" />}
+                            iconBg="bg-amber-500/10"
+                            gradient="bg-amber-500"
+                            description="Out of warranty/AMC"
+                        />
+                    </>
                 ) : (
                     <>
                         <StatsCard
                             title="Total Reports"
-                            value={reportsMetrics?.totalCount}
+                            value={(reportsMetrics as any)?.totalCount}
                             loading={isReportsLoading}
                             icon={<FileText size={18} className="text-primary" />}
                             iconBg="bg-primary/10"
@@ -648,7 +815,7 @@ export default function ReportsPage() {
                         />
                         <StatsCard
                             title="Completed"
-                            value={reportsMetrics?.completedCount}
+                            value={(reportsMetrics as any)?.completedCount}
                             loading={isReportsLoading}
                             icon={<CheckCircle2 size={18} className="text-emerald-500" />}
                             iconBg="bg-emerald-500/10"
@@ -657,7 +824,7 @@ export default function ReportsPage() {
                         />
                         <StatsCard
                             title="In Progress"
-                            value={reportsMetrics?.inProgressCount}
+                            value={(reportsMetrics as any)?.inProgressCount}
                             loading={isReportsLoading}
                             icon={<Clock size={18} className="text-blue-500" />}
                             iconBg="bg-blue-500/10"
@@ -666,7 +833,7 @@ export default function ReportsPage() {
                         />
                         <StatsCard
                             title="Pending"
-                            value={reportsMetrics?.pendingCount}
+                            value={(reportsMetrics as any)?.pendingCount}
                             loading={isReportsLoading}
                             icon={<AlertTriangle size={18} className="text-amber-500" />}
                             iconBg="bg-amber-500/10"
@@ -779,7 +946,9 @@ export default function ReportsPage() {
                                 ? (serviceColumns as any)
                                 : activeTab === "installations"
                                 ? (installationColumns as any)
-                                : (expenseColumns as any)
+                                : activeTab === "expenses"
+                                ? (expenseColumns as any)
+                                : (masterMillColumns as any)
                         }
                         data={reportsData as any}
                         loading={isReportsLoading || isRefreshing}
@@ -790,7 +959,9 @@ export default function ReportsPage() {
                                 ? "service reports"
                                 : activeTab === "installations"
                                 ? "installations"
-                                : "expenses"
+                                : activeTab === "expenses"
+                                ? "expenses"
+                                : "master mills"
                         }
                         pagination={pagination}
                         onPaginationChange={setPagination}

@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 interface ExportReportDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  activeTab: "services" | "installations" | "expenses";
+  activeTab: "services" | "installations" | "expenses" | "master-mills";
   initialDateFrom?: string;
   initialDateTo?: string;
   onExport: (format: "pdf" | "csv" | "excel", dateFrom: string, dateTo: string) => Promise<void>;
@@ -124,7 +124,7 @@ export function ExportReportDrawer({
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 flex items-center justify-between">
             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Active Dataset</span>
             <span className="text-xs font-black text-primary uppercase bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-              {activeTab === "services" ? "Service List" : activeTab === "installations" ? "Installation List" : "Expenses"}
+              {activeTab === "services" ? "Service List" : activeTab === "installations" ? "Installation List" : activeTab === "expenses" ? "Expenses" : "Master Mills"}
             </span>
           </div>
 

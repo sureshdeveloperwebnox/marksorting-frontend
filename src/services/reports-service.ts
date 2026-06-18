@@ -45,6 +45,33 @@ export interface ReportsExpenseReport {
     technicians: ReportTechnicianEntry[];
 }
 
+export interface ReportsMasterMill {
+    id: string;
+    invoice_no: string;
+    invoice_date?: string;
+    ref_no?: string;
+    mill_id?: string;
+    address?: string;
+    place?: string;
+    state?: string;
+    phone_no?: string;
+    mc_model?: string;
+    frame_no?: string;
+    warranty_years?: number;
+    warranty_months?: number;
+    installation_date?: string;
+    warranty_closing_date?: string;
+    all_warranty?: string;
+    amc_starting_date?: string;
+    amc_period?: number;
+    amc_particular?: string;
+    amc_closing_date?: string;
+    amc_amount?: string;
+    status: string;
+    type: string;
+    mill?: { id: string; name: string };
+}
+
 export interface ServicesReportResponse {
     reports: ReportsServiceReport[];
     total: number;
@@ -76,6 +103,17 @@ export interface ExpensesReportResponse {
         pendingCount: number;
         inProgressCount: number;
         completedCount: number;
+    };
+}
+
+export interface MasterMillsReportResponse {
+    reports: ReportsMasterMill[];
+    total: number;
+    metrics: {
+        totalCount: number;
+        underWarrantyCount: number;
+        underAmcCount: number;
+        nonWarrantyCount: number;
     };
 }
 
@@ -141,8 +179,27 @@ export const useReportsExpenses = (params: {
     });
 };
 
+export const useReportsMasterMills = (params: {
+    skip: number;
+    take: number;
+    search?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    millId?: string;
+}) => {
+    return useQuery({
+        queryKey: ["reports", "master-mills", params],
+        queryFn: async () => {
+            const { data } = await api.get<MasterMillsReportResponse>("/reports/master-mills", { params });
+            return data;
+        },
+        placeholderData: keepPreviousData,
+    });
+};
+
 export const downloadReportFile = async (
-    tab: "services" | "installations" | "expenses",
+    tab: "services" | "installations" | "expenses" | "master-mills",
     format: "pdf" | "csv" | "excel",
     params: Record<string, any>
 ) => {
