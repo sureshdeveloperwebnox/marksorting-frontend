@@ -26,7 +26,7 @@ interface MasterMillState {
 }
 
 export const useMasterMillStore = create<MasterMillState>((set) => ({
-  pagination: { pageIndex: 0, pageSize: 15 },
+  pagination: { pageIndex: 0, pageSize: 10 },
   search: '',
   statusFilter: '',
   stateFilter: '',
@@ -65,7 +65,7 @@ export const useMasterMillStore = create<MasterMillState>((set) => ({
       pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
     })),
   resetFilters: () =>
-    set({ pagination: { pageIndex: 0, pageSize: 15 }, search: '', statusFilter: '', stateFilter: '', warrantyFilter: '', dateFrom: '', dateTo: '' }),
+    set({ pagination: { pageIndex: 0, pageSize: 10 }, search: '', statusFilter: '', stateFilter: '', warrantyFilter: '', dateFrom: '', dateTo: '' }),
   deleteId: null,
   setDeleteId: (id) => set({ deleteId: id }),
   isFormDrawerOpen: false,
