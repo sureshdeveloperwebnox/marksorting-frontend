@@ -74,7 +74,16 @@ const getExpenseSchema = (isServiceEngineer: boolean) => z.object({
   mill_id: z.string().optional().or(z.literal('')),
   place: z.string().optional().or(z.literal('')),
   others: z.string().optional().or(z.literal('')),
-  visit_date: z.string().min(1, 'Date is required'),
+  visit_date: z.string()
+    .min(1, 'Date is required')
+    .refine((val) => {
+      if (!val) return true;
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      return new Date(val) <= today;
+    }, {
+      message: 'Expense date cannot be in the future',
+    }),
   visit_time: z.string().optional().or(z.literal('')),
   service_report_id: z.string().optional().or(z.literal('')),
   installation_report_id: z.string().optional().or(z.literal('')),
