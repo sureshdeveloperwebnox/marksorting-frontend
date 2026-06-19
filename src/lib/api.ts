@@ -28,15 +28,18 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    // NEVER try to refresh tokens for logout, login, register, forgot-password, or reset-password
-    if (
-      originalRequest.url?.includes('/auth/logout') ||
-      originalRequest.url?.includes('/auth/login') ||
-      originalRequest.url?.includes('/auth/register') ||
-      originalRequest.url?.includes('/auth/forgot-password') ||
-      originalRequest.url?.includes('/auth/reset-password')
-    ) {
+
+    // NEVER try to refresh tokens for these auth endpoints (would cause infinite loops or invalid state)
+    const skipRefreshUrls = [
+      '/auth/logout',
+      '/auth/login',
+      '/auth/register',
+      '/auth/refresh',       // ← critical: prevents infinite refresh loop
+      '/auth/forgot-password',
+      '/auth/reset-password',
+    ];
+
+    if (skipRefreshUrls.some((url) => originalRequest.url?.includes(url))) {
       return Promise.reject(error);
     }
 
@@ -44,23 +47,29 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         await getRefreshTokenPromise();
+        // Retry the original request with refreshed cookies
         return api(originalRequest);
       } catch (refreshError) {
+        // Refresh failed — session is truly expired, log user out
         if (typeof window !== 'undefined') {
-          // Asynchronously clear cookies on the backend
-          axios.post(`${api.defaults.baseURL}/auth/logout`, {}, { withCredentials: true }).catch(() => {});
-          
-          // Clear user profile/state in Zustand
+          // Asynchronously tell the backend to clear cookies
+          axios
+            .post(`${api.defaults.baseURL}/auth/logout`, {}, { withCredentials: true })
+            .catch(() => {});
+
+          // Clear client-side auth state
           useAuthStore.getState().logout();
-          
+
           // Redirect to login page with session expired indicator
           window.location.href = '/login?expired=true';
         }
         return Promise.reject(refreshError);
       }
     }
+
     return Promise.reject(error);
   }
 );
 
 export default api;
+
