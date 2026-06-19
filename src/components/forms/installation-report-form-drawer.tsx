@@ -165,7 +165,7 @@ const installationReportSchema = z.object({
   engineer_remarks: z.string().min(1, 'Engineer remarks is required').max(2000, 'Maximum 2000 characters'),
   engineer_signature: z.string().min(1, 'Engineer signature is required'),
   customer_remarks: z.string().max(2000, 'Maximum 2000 characters').optional().or(z.literal('')),
-  customer_signature: z.string().min(1, 'Customer signature is required'),
+  customer_signature: z.string().optional().or(z.literal('')),
   status: z.string().min(1, 'Status is required'),
 });
 
