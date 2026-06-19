@@ -169,24 +169,26 @@ export function DataTable<TData, TValue>({
             />
           </div>
           <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
-            <Button
-              variant="outline"
-              onClick={onFilterClick}
-              className={cn(
-                "h-12 px-6 flex-1 lg:flex-initial border-2 rounded-[16px] gap-2 font-bold transition-all shadow-sm relative overflow-visible cursor-pointer justify-center hover:scale-105 active:scale-95",
-                activeFiltersCount > 0
-                  ? "border-primary bg-primary text-white hover:bg-primary/95 hover:border-primary/95"
-                  : "border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45"
-              )}
-            >
-              <Filter className="h-4 w-4" />
-              Filter
-              {activeFiltersCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-primary shadow-md animate-in zoom-in duration-300">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </Button>
+            {onFilterClick && (
+              <Button
+                variant="outline"
+                onClick={onFilterClick}
+                className={cn(
+                  "h-12 px-6 flex-1 lg:flex-initial border-2 rounded-[16px] gap-2 font-bold transition-all shadow-sm relative overflow-visible cursor-pointer justify-center hover:scale-105 active:scale-95",
+                  activeFiltersCount > 0
+                    ? "border-primary bg-primary text-white hover:bg-primary/95 hover:border-primary/95"
+                    : "border-primary/20 text-primary bg-transparent hover:bg-primary/5 hover:border-primary/45"
+                )}
+              >
+                <Filter className="h-4 w-4" />
+                Filter
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-primary shadow-md animate-in zoom-in duration-300">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={

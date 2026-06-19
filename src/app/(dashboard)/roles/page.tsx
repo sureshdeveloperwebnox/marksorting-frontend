@@ -32,7 +32,7 @@ import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer"
 import { RoleFormDrawer } from "@/components/forms/role-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 
-const roleFilterFields: FilterField[] = [];
+
 
 interface StatsCardProps {
   title: string;
@@ -96,7 +96,6 @@ export default function RolesPage() {
     openFormDrawer,
   } = useRoleStore();
 
-  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
 
   React.useEffect(() => {
@@ -231,8 +230,6 @@ export default function RolesPage() {
               searchValue={localSearch}
               onSearchChange={setLocalSearch}
               searchPlaceholder="Search roles..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={0}
               addLabel="Add New Role"
               addIcon={<Shield size={15} />}
               onAddClick={() => openFormDrawer()}
@@ -255,8 +252,6 @@ export default function RolesPage() {
               onGlobalFilterChange={setSearch}
               globalFilterValue={search}
               searchPlaceholder="Search..."
-              onFilterClick={() => setIsFilterDrawerOpen(true)}
-              activeFiltersCount={0}
               hideToolbar
             />
           </div>
@@ -295,15 +290,7 @@ export default function RolesPage() {
         </motion.div>
       </div>
 
-      {/* Filter Drawer */}
-      <GenericFilterDrawer
-        isOpen={isFilterDrawerOpen}
-        onClose={() => setIsFilterDrawerOpen(false)}
-        fields={roleFilterFields}
-        activeValues={{}}
-        onApply={() => { }}
-        onReset={() => { resetFilters(); }}
-      />
+
 
       {/* Role Form Drawer */}
       <RoleFormDrawer />

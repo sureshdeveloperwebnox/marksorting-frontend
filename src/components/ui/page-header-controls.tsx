@@ -37,7 +37,7 @@ export interface PageHeaderControlsProps {
     searchPlaceholder?: string;
 
     /** Opens the filter drawer */
-    onFilterClick: () => void;
+    onFilterClick?: () => void;
     /** Number of active filters — shows a badge when > 0 */
     activeFiltersCount?: number;
 
@@ -119,28 +119,28 @@ export function PageHeaderControls({
             </div>
 
             {/* ── Filter ── */}
-            <Button
-                variant="outline"
-                onClick={onFilterClick}
-                className={cn(
-                    "relative gap-2 h-10 px-4 rounded-xl text-sm font-semibold transition-all duration-200",
-                    "bg-transparent border-gray-200 dark:border-white/10",
-                    "text-gray-600 dark:text-gray-400",
-                    "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
-                    activeFiltersCount > 0 &&
-                    "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
-                )}
-            >
-                <Filter size={14} />
-                Filter
-                {activeFiltersCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center shadow-sm">
-                        {activeFiltersCount}
-                    </span>
-                )}
-            </Button>
-
-            {/* ── Primary action (outline style) ── */}
+            {onFilterClick && (
+                <Button
+                    variant="outline"
+                    onClick={onFilterClick}
+                    className={cn(
+                        "relative gap-2 h-10 px-4 rounded-xl text-sm font-semibold transition-all duration-200",
+                        "bg-transparent border-gray-200 dark:border-white/10",
+                        "text-gray-600 dark:text-gray-400",
+                        "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                        activeFiltersCount > 0 &&
+                        "border-primary/50 text-primary bg-primary/5 dark:bg-primary/10"
+                    )}
+                >
+                    <Filter size={14} />
+                    Filter
+                    {activeFiltersCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary text-white rounded-full text-[10px] font-black flex items-center justify-center shadow-sm">
+                            {activeFiltersCount}
+                        </span>
+                    )}
+                </Button>
+            )}
             <Button
                 onClick={onAddClick}
                 className={cn(
