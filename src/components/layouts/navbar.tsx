@@ -263,12 +263,17 @@ function DropdownNavItem({
   item,
   pathname,
   onPrefetch,
+  isOpen,
+  onOpen,
+  onClose,
 }: {
   item: NavItem & { subItems: NavSubItem[] };
   pathname: string;
   onPrefetch: (href: string) => void;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   /**
@@ -290,37 +295,33 @@ function DropdownNavItem({
   // Is any sub-item active?
   const isGroupActive = item.subItems.some((s) => isSubItemActive(s));
 
-  // Auto-open when a child is active
-  useEffect(() => {
-    if (isGroupActive) setOpen(true);
-  }, [isGroupActive]);
-
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+        onClose();
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [onClose]);
 
   return (
     <div
       ref={ref}
       className="relative"
       onMouseEnter={() => {
-        setOpen(true);
+        onOpen();
         item.subItems.forEach((subItem) => onPrefetch(subItem.href));
       }}
-      onMouseLeave={() => {
-        if (!isGroupActive) setOpen(false);
-      }}
+      onMouseLeave={onClose}
     >
       <button
-        onClick={() => setOpen((v) => !v)}
-        onFocus={() => setOpen(true)}
+        onClick={() => {
+          if (isOpen) onClose();
+          else onOpen();
+        }}
+        onFocus={onOpen}
         className={cn(
           'relative flex items-center gap-1 px-1.5 min-[1360px]:px-2 min-[1600px]:px-2.5 py-2 text-[11px] min-[1360px]:text-xs min-[1600px]:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
@@ -333,7 +334,7 @@ function DropdownNavItem({
           size={11}
           className={cn(
             'transition-transform duration-200 ml-0.5 hidden min-[1360px]:block',
-            open && 'rotate-180'
+            isOpen && 'rotate-180'
           )}
         />
         {/* Active pill background */}
@@ -352,7 +353,7 @@ function DropdownNavItem({
       </button>
 
       <AnimatePresence>
-        {open && (
+        {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: 6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -369,7 +370,7 @@ function DropdownNavItem({
                   prefetch
                   onPointerEnter={() => onPrefetch(sub.href)}
                   onFocus={() => onPrefetch(sub.href)}
-                  onClick={() => setOpen(false)}
+                  onClick={onClose}
                   className={cn(
                     'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap',
                     subActive
@@ -413,6 +414,8 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
+  // Track hovered dropdown label to control visibility and prevent overlapping dropdowns
+  const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null);
   // Mobile sheet accordion state
   const [mobileOpenGroups, setMobileOpenGroups] = useState<Record<string, boolean>>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -569,51 +572,84 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
         )}
 
         {/* ── Desktop Nav ── */}
-        <nav className={cn("hidden min-[1360px]:flex items-center gap-0.5 min-[1600px]:gap-1 flex-1 min-w-0", isSidebarLayout && "min-[1360px]:hidden")}>
-          {getFilteredNavItems().map((item) => {
-            // Dropdown item
-            if (item.subItems) {
-              return (
-                <DropdownNavItem
-                  key={item.label}
-                  item={item as NavItem & { subItems: NavSubItem[] }}
-                  pathname={pathname}
-                  onPrefetch={prefetchRoute}
-                />
-              );
-            }
+        <nav
+          className={cn("hidden min-[1360px]:flex items-center gap-0.5 min-[1600px]:gap-1 flex-1 min-w-0", isSidebarLayout && "min-[1360px]:hidden")}
+          onMouseLeave={() => setHoveredDropdown(null)}
+        >
+          {(() => {
+            const filteredNavItems = getFilteredNavItems();
+            // Find which dropdown is active based on current pathname
+            const activeGroupLabel = filteredNavItems.find(
+              (item) =>
+                item.subItems?.some((sub) => {
+                  if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
+                  const betterMatch = item.subItems!.some(
+                    (other) =>
+                      other.href !== sub.href &&
+                      (pathname === other.href || pathname.startsWith(`${other.href}/`)) &&
+                      other.href.length > sub.href.length
+                  );
+                  return !betterMatch;
+                })
+            )?.label || null;
 
-            // Flat link
-            const active = isActive(item.href!);
-            return (
-              <Link
-                key={item.href}
-                href={item.href!}
-                prefetch
-                onPointerEnter={() => prefetchRoute(item.href!)}
-                onFocus={() => prefetchRoute(item.href!)}
-                className={cn(
-                  'relative flex items-center gap-1 px-1.5 min-[1360px]:px-2 min-[1600px]:px-2.5 py-2 text-[11px] min-[1360px]:text-xs min-[1600px]:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
-                  active
-                    ? 'text-primary'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
-                )}
-              >
-                {item.label}
-                {active && (
-                  <motion.span
-                    layoutId="navbar-active-pill"
-                    className="absolute inset-0 bg-primary/8 dark:bg-primary/15 rounded-lg"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            return filteredNavItems.map((item) => {
+              // Dropdown item
+              if (item.subItems) {
+                const isOpen = hoveredDropdown
+                  ? hoveredDropdown === item.label
+                  : activeGroupLabel === item.label;
+                return (
+                  <DropdownNavItem
+                    key={item.label}
+                    item={item as NavItem & { subItems: NavSubItem[] }}
+                    pathname={pathname}
+                    onPrefetch={prefetchRoute}
+                    isOpen={isOpen}
+                    onOpen={() => setHoveredDropdown(item.label)}
+                    onClose={() => setHoveredDropdown(null)}
                   />
-                )}
-                <span className={cn(
-                  'absolute bottom-0 left-1 min-[1360px]:left-2 min-[1600px]:left-3 right-1 min-[1360px]:right-2 min-[1600px]:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
-                  active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
-                )} />
-              </Link>
-            );
-          })}
+                );
+              }
+
+              // Flat link
+              const active = isActive(item.href!);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href!}
+                  prefetch
+                  onPointerEnter={() => {
+                    setHoveredDropdown('none'); // Close any open dropdowns when hovering a flat link
+                    prefetchRoute(item.href!);
+                  }}
+                  onFocus={() => {
+                    setHoveredDropdown('none');
+                    prefetchRoute(item.href!);
+                  }}
+                  className={cn(
+                    'relative flex items-center gap-1 px-1.5 min-[1360px]:px-2 min-[1600px]:px-2.5 py-2 text-[11px] min-[1360px]:text-xs min-[1600px]:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
+                    active
+                      ? 'text-primary'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+                  )}
+                >
+                  {item.label}
+                  {active && (
+                    <motion.span
+                      layoutId="navbar-active-pill"
+                      className="absolute inset-0 bg-primary/8 dark:bg-primary/15 rounded-lg"
+                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    />
+                  )}
+                  <span className={cn(
+                    'absolute bottom-0 left-1 min-[1360px]:left-2 min-[1600px]:left-3 right-1 min-[1360px]:right-2 min-[1600px]:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
+                    active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
+                  )} />
+                </Link>
+              );
+            });
+          })()}
         </nav>
 
         {/* ── Right Section ── */}
