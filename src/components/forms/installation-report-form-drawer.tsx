@@ -571,13 +571,76 @@ export function InstallationReportFormDrawer() {
     }
   }, [isFormDrawerOpen, isEdit, reportData, mills, selectedCustomerId]);
 
+  const getInitialVal = (key: keyof InstallationReportFormValues) => {
+    if (!reportData) return undefined;
+    switch (key) {
+      case 'technician_ids': return reportData.technicians?.map((t: any) => t.technician.id) || [];
+      case 'mill_id': return reportData.mill_id;
+      case 'place': return reportData.place;
+      case 'mill_whatsapp_number': return reportData.mill_whatsapp_number;
+      case 'mill_email': return reportData.mill_email || '';
+      case 'visit_date': return reportData.visit_date?.split('T')[0] || '';
+      case 'visit_time': return reportData.visit_time || '';
+      case 'call_registered_date': return reportData.call_registered_date?.split('T')[0] || '';
+      case 'machine_model': return reportData.machine_model;
+      case 'serial_or_frame_no': return reportData.serial_or_frame_no;
+      case 'authorized_person': return reportData.authorized_person;
+      case 'authorized_person_phone': return reportData.authorized_person_phone || '';
+      case 'invoice_number': return reportData.invoice_number || '';
+      case 'invoice_date': return reportData.invoice_date?.split('T')[0] || '';
+      case 'warranty_start_date': return reportData.warranty_start_date?.split('T')[0] || '';
+      case 'warranty_end_date': return reportData.warranty_end_date?.split('T')[0] || '';
+      case 'commodity': return reportData.commodity || '';
+      case 'contamination': return reportData.contamination || '';
+      case 'output_capacity_per_hour': return reportData.output_capacity_per_hour || '';
+      case 'rejection_ratio': return reportData.rejection_ratio || '';
+      case 'purity': return reportData.purity || '';
+      case 'no_of_programs_set': return reportData.no_of_programs_set ?? undefined;
+      case 'ac_provided': return reportData.ac_provided ? 'YES' : 'NO';
+      case 'compressor_details': return reportData.compressor_details || '';
+      case 'air_drier_details': return reportData.air_drier_details || '';
+      case 'ground_earth_provided': return reportData.ground_earth_provided ? 'YES' : 'NO';
+      case 'running_channel_combination': return reportData.running_channel_combination ?? undefined;
+      case 'running_channel_combination_value': return normalizeRunningChannelCombinationValue(reportData.running_channel_combination_value);
+      case 'no_of_filters_installed': return reportData.no_of_filters_installed ?? undefined;
+      case 'oil_filter_condition': return reportData.oil_filter_condition || '';
+      case 'line_filter_condition': return reportData.line_filter_condition || '';
+      case 'auto_drain_valve_working': return reportData.auto_drain_valve_working ? 'YES' : 'NO';
+      case 'engineer_remarks': return reportData.engineer_remarks;
+      case 'engineer_signature': return reportData.engineer_signature;
+      case 'customer_remarks': return reportData.customer_remarks || '';
+      case 'customer_signature': return reportData.customer_signature;
+      case 'status': return reportData.status || 'PENDING';
+      default: return undefined;
+    }
+  };
+
+  const hasFieldChanged = (key: keyof InstallationReportFormValues, data: InstallationReportFormValues) => {
+    if (!isEdit || !reportData) return true;
+    
+    const initialVal = getInitialVal(key);
+    const currentVal = data[key];
+
+    if (key === 'technician_ids') {
+      const initialIds = (initialVal as string[]) || [];
+      const currentIds = (currentVal as string[]) || [];
+      if (initialIds.length !== currentIds.length) return true;
+      return !initialIds.every(id => currentIds.includes(id));
+    }
+
+    return initialVal !== currentVal;
+  };
+
   const onSubmit: SubmitHandler<InstallationReportFormValues> = async (data) => {
     try {
       let engineerSignatureUrl = data.engineer_signature;
       let customerSignatureUrl = data.customer_signature;
 
-      // Upload engineer signature if it's base64 data (new drawing)
-      if (data.engineer_signature && data.engineer_signature.startsWith('data:')) {
+      const engineerSigChanged = !isEdit || hasFieldChanged('engineer_signature', data);
+      const customerSigChanged = !isEdit || hasFieldChanged('customer_signature', data);
+
+      // Upload engineer signature if it's base64 data (new drawing) AND changed
+      if (engineerSigChanged && data.engineer_signature && data.engineer_signature.startsWith('data:')) {
         if (isValidBase64Image(data.engineer_signature)) {
           try {
             const file = base64ToFile(data.engineer_signature, `eng-sig-${Date.now()}.png`);
@@ -599,8 +662,8 @@ export function InstallationReportFormDrawer() {
         }
       }
 
-      // Upload customer signature if it's base64 data (new drawing)
-      if (data.customer_signature && data.customer_signature.startsWith('data:')) {
+      // Upload customer signature if it's base64 data (new drawing) AND changed
+      if (customerSigChanged && data.customer_signature && data.customer_signature.startsWith('data:')) {
         if (isValidBase64Image(data.customer_signature)) {
           try {
             const file = base64ToFile(data.customer_signature, `cust-sig-${Date.now()}.png`);
@@ -622,27 +685,80 @@ export function InstallationReportFormDrawer() {
         }
       }
 
-      const payload = {
-        ...data,
-        ac_provided: data.ac_provided === 'YES',
-        ground_earth_provided: data.ground_earth_provided === 'YES',
-        auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
-        no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
-        running_channel_combination: data.running_channel_combination ? Number(data.running_channel_combination) : undefined,
-        running_channel_combination_value: data.running_channel_combination_value || undefined,
-        no_of_filters_installed: data.no_of_filters_installed ? Number(data.no_of_filters_installed) : undefined,
-        invoice_date: data.invoice_date || undefined,
-        warranty_start_date: data.warranty_start_date || undefined,
-        warranty_end_date: data.warranty_end_date || undefined,
-        authorized_person_phone: data.authorized_person_phone || undefined,
-        visit_time: data.visit_time || undefined,
-        engineer_signature: engineerSignatureUrl,
-        customer_signature: customerSignatureUrl,
-      };
+      let payload: any = {};
 
       if (isEdit) {
+        // Construct partial payload with only changed fields
+        const allKeys = Object.keys(data) as Array<keyof InstallationReportFormValues>;
+        allKeys.forEach((key) => {
+          if (hasFieldChanged(key, data)) {
+            const val = data[key];
+            if (key === 'ac_provided') {
+              payload.ac_provided = val === 'YES';
+            } else if (key === 'ground_earth_provided') {
+              payload.ground_earth_provided = val === 'YES';
+            } else if (key === 'auto_drain_valve_working') {
+              payload.auto_drain_valve_working = val === 'YES';
+            } else if (key === 'no_of_programs_set') {
+              payload.no_of_programs_set = val ? Number(val) : null;
+            } else if (key === 'running_channel_combination') {
+              payload.running_channel_combination = val ? Number(val) : null;
+            } else if (key === 'no_of_filters_installed') {
+              payload.no_of_filters_installed = val ? Number(val) : null;
+            } else if (key === 'engineer_signature') {
+              payload.engineer_signature = engineerSignatureUrl;
+            } else if (key === 'customer_signature') {
+              payload.customer_signature = customerSignatureUrl;
+            } else if (
+              key === 'invoice_date' ||
+              key === 'warranty_start_date' ||
+              key === 'warranty_end_date' ||
+              key === 'authorized_person_phone' ||
+              key === 'visit_time' ||
+              key === 'running_channel_combination_value'
+            ) {
+              payload[key] = val || null;
+            } else {
+              payload[key] = val;
+            }
+          }
+        });
+
+        // Special case: if we updated a signature (uploaded a new image), make sure the URL is in the payload
+        if (engineerSigChanged && data.engineer_signature && data.engineer_signature.startsWith('data:')) {
+          payload.engineer_signature = engineerSignatureUrl;
+        }
+        if (customerSigChanged && data.customer_signature && data.customer_signature.startsWith('data:')) {
+          payload.customer_signature = customerSignatureUrl;
+        }
+
+        // If nothing changed, we can directly close the drawer and show a success toast
+        if (Object.keys(payload).length === 0) {
+          toast.success('No changes to update');
+          closeFormDrawer();
+          return;
+        }
+
         await updateReport({ id: selectedId, ...payload });
       } else {
+        // Create mode: send everything normalized
+        payload = {
+          ...data,
+          ac_provided: data.ac_provided === 'YES',
+          ground_earth_provided: data.ground_earth_provided === 'YES',
+          auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
+          no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
+          running_channel_combination: data.running_channel_combination ? Number(data.running_channel_combination) : undefined,
+          running_channel_combination_value: data.running_channel_combination_value || undefined,
+          no_of_filters_installed: data.no_of_filters_installed ? Number(data.no_of_filters_installed) : undefined,
+          invoice_date: data.invoice_date || undefined,
+          warranty_start_date: data.warranty_start_date || undefined,
+          warranty_end_date: data.warranty_end_date || undefined,
+          authorized_person_phone: data.authorized_person_phone || undefined,
+          visit_time: data.visit_time || undefined,
+          engineer_signature: engineerSignatureUrl,
+          customer_signature: customerSignatureUrl,
+        };
         await createReport(payload);
       }
       closeFormDrawer();

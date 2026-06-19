@@ -557,13 +557,75 @@ export function ServiceReportFormDrawer() {
     }
   }, [isFormDrawerOpen, isEdit, reportData, mills, selectedCustomerId]);
 
+  const getInitialVal = (key: keyof ServiceReportFormValues) => {
+    if (!reportData) return undefined;
+    switch (key) {
+      case 'service_category_id': return reportData.service_category_id;
+      case 'technician_ids': return reportData.technicians?.map((t: any) => t.technician.id) || [];
+      case 'mill_id': return reportData.mill_id;
+      case 'place': return reportData.place;
+      case 'mill_whatsapp_number': return reportData.mill_whatsapp_number;
+      case 'mill_email': return reportData.mill_email || '';
+      case 'visit_date': return reportData.visit_date?.split('T')[0] || '';
+      case 'visit_time': return reportData.visit_time || '';
+      case 'call_registered_date': return reportData.call_registered_date?.split('T')[0] || '';
+      case 'machine_model': return reportData.machine_model;
+      case 'machine_mfg_date': return reportData.machine_mfg_date?.split('T')[0] || '';
+      case 'machine_installation_date': return reportData.machine_installation_date?.split('T')[0] || '';
+      case 'serial_or_frame_no': return reportData.serial_or_frame_no;
+      case 'authorized_person': return reportData.authorized_person;
+      case 'authorized_person_phone': return reportData.authorized_person_phone || '';
+      case 'previous_visit_engineer': return reportData.previous_visit_engineer || '';
+      case 'nature_of_complaint': return reportData.nature_of_complaint;
+      case 'problem_observed': return reportData.problem_observed || '';
+      case 'action_taken': return reportData.action_taken;
+      case 'commodity': return reportData.commodity || '';
+      case 'contamination': return reportData.contamination || '';
+      case 'output_capacity_per_hour': return reportData.output_capacity_per_hour || '';
+      case 'rejection_ratio': return reportData.rejection_ratio || '';
+      case 'purity': return reportData.purity || '';
+      case 'no_of_programs_set': return reportData.no_of_programs_set ?? undefined;
+      case 'ac_provided': return reportData.ac_provided ? 'YES' : 'NO';
+      case 'compressor_details': return reportData.compressor_details || '';
+      case 'air_drier_details': return reportData.air_drier_details || '';
+      case 'line_filter_condition': return reportData.line_filter_condition || '';
+      case 'machine_filter_condition': return reportData.machine_filter_condition || '';
+      case 'auto_drain_valve_working': return reportData.auto_drain_valve_working ? 'YES' : 'NO';
+      case 'engineer_remarks': return reportData.engineer_remarks;
+      case 'engineer_signature': return reportData.engineer_signature;
+      case 'customer_remarks': return reportData.customer_remarks || '';
+      case 'customer_signature': return reportData.customer_signature;
+      case 'status': return reportData.status || 'PENDING';
+      default: return undefined;
+    }
+  };
+
+  const hasFieldChanged = (key: keyof ServiceReportFormValues, data: ServiceReportFormValues) => {
+    if (!isEdit || !reportData) return true;
+    
+    const initialVal = getInitialVal(key);
+    const currentVal = data[key];
+
+    if (key === 'technician_ids') {
+      const initialIds = (initialVal as string[]) || [];
+      const currentIds = (currentVal as string[]) || [];
+      if (initialIds.length !== currentIds.length) return true;
+      return !initialIds.every(id => currentIds.includes(id));
+    }
+
+    return initialVal !== currentVal;
+  };
+
   const onSubmit = async (data: ServiceReportFormValues) => {
     try {
       let engineerSignatureUrl = data.engineer_signature;
       let customerSignatureUrl = data.customer_signature;
 
-      // Upload engineer signature if it's base64 data (new drawing)
-      if (data.engineer_signature && data.engineer_signature.startsWith('data:')) {
+      const engineerSigChanged = !isEdit || hasFieldChanged('engineer_signature', data);
+      const customerSigChanged = !isEdit || hasFieldChanged('customer_signature', data);
+
+      // Upload engineer signature if it's base64 data (new drawing) AND changed
+      if (engineerSigChanged && data.engineer_signature && data.engineer_signature.startsWith('data:')) {
         if (isValidBase64Image(data.engineer_signature)) {
           try {
             const file = base64ToFile(data.engineer_signature, `eng-sig-${Date.now()}.png`);
@@ -585,8 +647,8 @@ export function ServiceReportFormDrawer() {
         }
       }
 
-      // Upload customer signature if it's base64 data (new drawing)
-      if (data.customer_signature && data.customer_signature.startsWith('data:')) {
+      // Upload customer signature if it's base64 data (new drawing) AND changed
+      if (customerSigChanged && data.customer_signature && data.customer_signature.startsWith('data:')) {
         if (isValidBase64Image(data.customer_signature)) {
           try {
             const file = base64ToFile(data.customer_signature, `cust-sig-${Date.now()}.png`);
@@ -608,22 +670,67 @@ export function ServiceReportFormDrawer() {
         }
       }
 
-      const payload = {
-        ...data,
-        ac_provided: data.ac_provided === 'YES',
-        auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
-        no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
-        machine_mfg_date: data.machine_mfg_date || undefined,
-        machine_installation_date: data.machine_installation_date || undefined,
-        authorized_person_phone: data.authorized_person_phone || undefined,
-        visit_time: data.visit_time || undefined,
-        engineer_signature: engineerSignatureUrl,
-        customer_signature: customerSignatureUrl,
-      };
+      let payload: any = {};
 
       if (isEdit) {
+        // Construct partial payload with only changed fields
+        const allKeys = Object.keys(data) as Array<keyof ServiceReportFormValues>;
+        allKeys.forEach((key) => {
+          if (hasFieldChanged(key, data)) {
+            const val = data[key];
+            if (key === 'ac_provided') {
+              payload.ac_provided = val === 'YES';
+            } else if (key === 'auto_drain_valve_working') {
+              payload.auto_drain_valve_working = val === 'YES';
+            } else if (key === 'no_of_programs_set') {
+              payload.no_of_programs_set = val ? Number(val) : null;
+            } else if (key === 'engineer_signature') {
+              payload.engineer_signature = engineerSignatureUrl;
+            } else if (key === 'customer_signature') {
+              payload.customer_signature = customerSignatureUrl;
+            } else if (
+              key === 'machine_mfg_date' ||
+              key === 'machine_installation_date' ||
+              key === 'authorized_person_phone' ||
+              key === 'visit_time'
+            ) {
+              payload[key] = val || null;
+            } else {
+              payload[key] = val;
+            }
+          }
+        });
+
+        // Special case: if we updated a signature (uploaded a new image), make sure the URL is in the payload
+        if (engineerSigChanged && data.engineer_signature && data.engineer_signature.startsWith('data:')) {
+          payload.engineer_signature = engineerSignatureUrl;
+        }
+        if (customerSigChanged && data.customer_signature && data.customer_signature.startsWith('data:')) {
+          payload.customer_signature = customerSignatureUrl;
+        }
+
+        // If nothing changed, we can directly close the drawer and show a success toast
+        if (Object.keys(payload).length === 0) {
+          toast.success('No changes to update');
+          closeFormDrawer();
+          return;
+        }
+
         await updateReport({ id: selectedId, ...payload });
       } else {
+        // Create mode: send everything normalized
+        payload = {
+          ...data,
+          ac_provided: data.ac_provided === 'YES',
+          auto_drain_valve_working: data.auto_drain_valve_working === 'YES',
+          no_of_programs_set: data.no_of_programs_set ? Number(data.no_of_programs_set) : undefined,
+          machine_mfg_date: data.machine_mfg_date || undefined,
+          machine_installation_date: data.machine_installation_date || undefined,
+          authorized_person_phone: data.authorized_person_phone || undefined,
+          visit_time: data.visit_time || undefined,
+          engineer_signature: engineerSignatureUrl,
+          customer_signature: customerSignatureUrl,
+        };
         await createReport(payload);
       }
       closeFormDrawer();
