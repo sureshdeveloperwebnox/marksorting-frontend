@@ -107,13 +107,6 @@ const items: SidebarItem[] = [
         action: 'view',
       },
       {
-        label: 'Master Mills',
-        href: '/mills/master-mills',
-        icon: MasterMillsIcon,
-        module: 'mills',
-        action: 'view',
-      },
-      {
         label: 'Customers',
         href: '/mills/customers',
         icon: CustomersIcon,
@@ -121,6 +114,13 @@ const items: SidebarItem[] = [
         action: 'view',
       },
     ],
+  },
+  {
+    label: 'Master Mills',
+    icon: MasterMillsIcon,
+    href: '/mills/master-mills',
+    module: 'master_mills',
+    action: 'view',
   },
   {
     label: 'Services',
