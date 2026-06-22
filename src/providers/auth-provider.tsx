@@ -20,6 +20,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname();
   const setAuth = useAuthStore((state) => state.setAuth);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const expiresAt = useAuthStore((state) => state.expiresAt);
   const lastCheckedAt = useRef(0);
   const inFlightCheck = useRef<Promise<void> | null>(null);
 
@@ -66,37 +67,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   // ── Proactive token refresh and auto-logout timer ─────────────────────────
-  // Inspects companion cookies dynamically to check when they expire.
-  // Logs user out immediately if refresh token is expired or deleted.
-  // Proactively refreshes if access token has less than 2 minutes left.
+  // Inspects in-memory expiresAt timestamp dynamically to check when access token expires.
+  // Logs user out immediately if session has expired or refresh fails.
   useEffect(() => {
     if (!isAuthenticated) return;
 
     const checkTokenExpiryAndRefresh = async () => {
       const now = Date.now();
 
-      // 1. Check refresh token expiration
-      const refreshTokenExpires = Cookies.get('refresh_token_expires');
-      if (refreshTokenExpires) {
-        const refreshExpiryTime = parseInt(refreshTokenExpires, 10);
-        if (isNaN(refreshExpiryTime) || now >= refreshExpiryTime) {
-          console.warn('[AuthProvider] Refresh token expired. Logging out.');
-          handleLogoutRedirect();
+      if (expiresAt) {
+        // If the access token has already expired (or expires in the next 10 seconds), refresh immediately
+        if (now >= expiresAt) {
+          console.warn('[AuthProvider] Access token expired. Triggering refresh.');
+          await triggerTokenRefresh();
           return;
         }
-      } else {
-        // If authenticated but no refresh token expiry cookie exists, session is invalid
-        console.warn('[AuthProvider] Refresh token expiry cookie missing. Logging out.');
-        handleLogoutRedirect();
-        return;
-      }
 
-      // 2. Check access token expiration
-      const accessTokenExpires = Cookies.get('access_token_expires');
-      if (accessTokenExpires) {
-        const accessExpiryTime = parseInt(accessTokenExpires, 10);
         // If the access token is expiring in less than 2 minutes (120 seconds), refresh it
-        if (!isNaN(accessExpiryTime) && accessExpiryTime - now < 120 * 1000) {
+        if (expiresAt - now < 120 * 1000) {
           console.info('[AuthProvider] Access token expiring soon. Triggering proactive refresh.');
           await triggerTokenRefresh();
         }
@@ -108,7 +96,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const res = await axios.get(`${baseURL}/auth/refresh`, { withCredentials: true });
         if (res.data?.user) {
-          setAuth(res.data.user);
+          // Parse expiration time from the new access token
+          let expiresAtTimestamp: number | null = null;
+          if (res.data.access_token) {
+            try {
+              const base64Url = res.data.access_token.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const payload = JSON.parse(window.atob(base64));
+              if (payload.exp) {
+                expiresAtTimestamp = payload.exp * 1000;
+              }
+            } catch (e) {
+              console.error('Failed to parse rotated token exp:', e);
+            }
+          }
+          setAuth(res.data.user, expiresAtTimestamp);
         }
       } catch (error) {
         console.error('[AuthProvider] Proactive refresh failed:', error);
@@ -118,16 +120,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     const handleLogoutRedirect = () => {
-      // Clear cookies manually to avoid any mismatch
-      Cookies.remove('access_token_expires');
-      Cookies.remove('refresh_token_expires');
-      
+      // Clear client state first
+      useAuthStore.getState().logout();
+
       // Asynchronously tell backend to clear cookies
       const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
       axios.post(`${baseURL}/auth/logout`, {}, { withCredentials: true }).catch(() => {});
-
-      // Clear client state
-      useAuthStore.getState().logout();
 
       // Redirect to login page
       window.location.href = '/login?expired=true';
@@ -139,7 +137,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Check periodically every 10 seconds
     const interval = setInterval(checkTokenExpiryAndRefresh, 10 * 1000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, setAuth]);
+  }, [isAuthenticated, expiresAt, setAuth]);
 
   return <>{children}</>;
 }

@@ -6,6 +6,22 @@ import { useAuthStore } from '@/store/auth-store';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
+function decodeJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
 export function useAuth() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -16,8 +32,10 @@ export function useAuth() {
       return response.data;
     },
     onSuccess: (data) => {
-      const { user } = data;
-      setAuth(user);
+      const { user, access_token } = data;
+      const decoded = decodeJwt(access_token);
+      const expiresAt = decoded?.exp ? decoded.exp * 1000 : null;
+      setAuth(user, expiresAt);
       toast.success('Account created! Welcome to Marksorting.');
       router.push('/dashboard');
     },
@@ -32,8 +50,10 @@ export function useAuth() {
       return response.data;
     },
     onSuccess: (data) => {
-      const { user } = data;
-      setAuth(user);
+      const { user, access_token } = data;
+      const decoded = decodeJwt(access_token);
+      const expiresAt = decoded?.exp ? decoded.exp * 1000 : null;
+      setAuth(user, expiresAt);
       toast.success('Welcome back!');
       router.push('/dashboard');
     },
@@ -67,7 +87,7 @@ export function useAuth() {
     try {
       const response = await api.get('/auth/profile');
       if (response.data) {
-        setAuth(response.data);
+        setAuth(response.data, response.data.expires_at);
       }
     } catch (error) {
       // Not logged in or session expired
