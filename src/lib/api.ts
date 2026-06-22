@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
+import Cookies from 'js-cookie';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || '/api/v1',
@@ -52,6 +53,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed — session is truly expired, log user out
         if (typeof window !== 'undefined') {
+          // Remove client-side non-httpOnly cookies
+          Cookies.remove('access_token_expires');
+          Cookies.remove('refresh_token_expires');
+
           // Asynchronously tell the backend to clear cookies
           axios
             .post(`${api.defaults.baseURL}/auth/logout`, {}, { withCredentials: true })
