@@ -103,6 +103,15 @@ function isExpired(dateStr?: string): boolean {
 
 const filterFields: FilterField[] = [
   {
+    id: "type",
+    label: "Record Type",
+    options: [
+      { value: "ALL", label: "All Records", iconColor: "bg-gray-400" },
+      { value: "Installation", label: "Installation Only", iconColor: "bg-orange-500" },
+      { value: "Service", label: "Service Only", iconColor: "bg-blue-500" },
+    ],
+  },
+  {
     id: "all_warranty",
     label: "Warranty Type",
     options: [
@@ -144,6 +153,8 @@ export default function MasterMillsPage() {
     setStateFilter,
     warrantyFilter,
     setWarrantyFilter,
+    typeFilter,
+    setTypeFilter,
     dateFrom,
     dateTo,
     setDateFrom,
@@ -406,6 +417,7 @@ export default function MasterMillsPage() {
     search,
     all_warranty: warrantyFilter || undefined,
     state: stateFilter || undefined,
+    type: typeFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -434,7 +446,7 @@ export default function MasterMillsPage() {
   };
 
   /* ── Active filters count ── */
-  const activeFiltersCount = [warrantyFilter, stateFilter, dateFrom, dateTo].filter(Boolean).length;
+  const activeFiltersCount = [warrantyFilter, stateFilter, typeFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Columns ─────────────────────────────────────────────────── */
   const columns: ColumnDef<MasterMill>[] = [
@@ -473,6 +485,26 @@ export default function MasterMillsPage() {
           )}
         </div>
       ),
+    },
+    {
+      accessorKey: "type",
+      header: "Record Type",
+      cell: ({ row }) => {
+        const type = row.original.type || "Installation";
+        return (
+          <Badge
+            variant="outline"
+            className={cn(
+              "rounded-lg font-bold text-[10px] uppercase tracking-[0.1em] px-2 py-0.5 shadow-sm border select-none w-fit",
+              type === "Service"
+                ? "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-400"
+                : "bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800/50 text-orange-700 dark:text-orange-400"
+            )}
+          >
+            {type}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "mill",
@@ -831,11 +863,13 @@ export default function MasterMillsPage() {
           activeValues={{
             all_warranty: warrantyFilter || "ALL",
             state: stateFilter || "ALL",
+            type: typeFilter || "ALL",
             dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
           }}
           onApply={(values) => {
             setWarrantyFilter(values.all_warranty === "ALL" ? "" : values.all_warranty);
             setStateFilter(values.state === "ALL" ? "" : values.state);
+            setTypeFilter(values.type === "ALL" ? "" : values.type);
             if (values.dateRange) {
               try {
                 const range = JSON.parse(values.dateRange);
@@ -853,6 +887,7 @@ export default function MasterMillsPage() {
           onReset={() => {
             setWarrantyFilter("");
             setStateFilter("");
+            setTypeFilter("");
             setDateFrom("");
             setDateTo("");
             resetFilters();
