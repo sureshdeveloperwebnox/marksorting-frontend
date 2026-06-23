@@ -14,7 +14,20 @@ export interface MasterMill {
   invoice_date?: string;
   ref_no?: string;
   mill_id?: string;
-  mill?: { id: string; name: string; ref_no?: string; place?: string; phone?: string; customer_id?: string };
+  mill?: {
+    id: string;
+    name: string;
+    ref_no?: string;
+    place?: string;
+    phone?: string;
+    customer_id?: string;
+    customer?: {
+      id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+    };
+  };
   address?: string;
   place?: string;
   state?: string;

@@ -233,6 +233,27 @@ const items: SidebarItem[] = [
   },
 ];
 
+const sidebarHrefs = Array.from(
+  new Set(
+    items.flatMap((item) => [
+      item.href,
+      ...(item.subItems?.map((subItem) => subItem.href) ?? []),
+    ]).filter(Boolean) as string[]
+  )
+);
+
+const isHrefActive = (href: string, pathname: string) => {
+  if (pathname === href) return true;
+  if (pathname.startsWith(`${href}/`)) {
+    const hasBetterMatch = sidebarHrefs.some((otherHref) => {
+      if (otherHref === href) return false;
+      return (pathname === otherHref || pathname.startsWith(`${otherHref}/`)) && otherHref.length > href.length;
+    });
+    return !hasBetterMatch;
+  }
+  return false;
+};
+
 export function Sidebar() {
   const pathname = usePathname();
   const { logout, isLoggingOut } = useAuth();
@@ -292,13 +313,7 @@ export function Sidebar() {
   useEffect(() => {
     getFilteredNavItems().forEach((item) => {
       if (item.subItems) {
-        const hasActiveSub = item.subItems.some((sub) => {
-          if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
-          const betterMatch = item.subItems!.some(
-            (o) => o.href !== sub.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > sub.href.length
-          );
-          return !betterMatch;
-        });
+        const hasActiveSub = item.subItems.some((sub) => isHrefActive(sub.href, pathname));
         if (hasActiveSub) {
           setOpenMenus((prev) => ({ ...prev, [item.label]: true }));
         }
@@ -336,15 +351,9 @@ export function Sidebar() {
             const hasSubItems = !!item.subItems;
 
             // Check if any sub-item is active (best match wins)
-            const isSubActive = hasSubItems && item.subItems!.some((sub) => {
-              if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
-              const betterMatch = item.subItems!.some(
-                (o) => o.href !== sub.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > sub.href.length
-              );
-              return !betterMatch;
-            });
+            const isSubActive = hasSubItems && item.subItems!.some((sub) => isHrefActive(sub.href, pathname));
 
-            const isMainActive = !hasSubItems && item.href && (pathname === item.href || pathname.startsWith(`${item.href}/`));
+            const isMainActive = !hasSubItems && item.href && isHrefActive(item.href, pathname);
             const isMenuOpen = openMenus[item.label];
 
             if (hasSubItems) {
@@ -430,13 +439,7 @@ export function Sidebar() {
                     <div className="absolute left-9 top-0 bottom-4 w-[1.5px] bg-white/10 rounded-full" />
 
                     {item.subItems!.map((subItem) => {
-                      const isSubItemActive = (() => {
-                        if (pathname !== subItem.href && !pathname.startsWith(`${subItem.href}/`)) return false;
-                        const betterMatch = item.subItems!.some(
-                          (o) => o.href !== subItem.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > subItem.href.length
-                        );
-                        return !betterMatch;
-                      })();
+                      const isSubItemActive = isHrefActive(subItem.href, pathname);
                       return (
                         <Link
                           key={subItem.href}

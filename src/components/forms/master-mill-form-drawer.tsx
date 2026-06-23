@@ -52,6 +52,7 @@ import { isValidPhoneNumber } from 'react-phone-number-input';
 import { normalizePhoneNumber } from '@/lib/utils';
 import { DatePicker } from '@/components/ui/date-picker';
 import { StateSearchSelect } from '@/components/ui/state-search-select';
+import { MillSearchSelect } from '@/components/ui/mill-search-select';
 import {
   Dialog,
   DialogContent,
@@ -687,29 +688,11 @@ export function MasterMillFormDrawer() {
                     name="mill_id"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
+                      <MillSearchSelect
                         value={field.value || ''}
-                        items={mills.map((m) => ({ value: m.id, label: m.name }))}
-                      >
-                        <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-sm">
-                          {field.value ? (
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {mills.find((m) => m.id === field.value)?.name ?? 'Unknown'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-sm font-medium">Select mill...</span>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-[240px] overflow-y-auto">
-                          <SelectItem value="" className="font-bold py-2.5 text-gray-400">None / Clear</SelectItem>
-                          {mills.map((m) => (
-                            <SelectItem key={m.id} value={m.id} className="font-bold py-2.5">
-                              {m.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        placeholder="Select mill..."
+                      />
                     )}
                   />
                 </div>

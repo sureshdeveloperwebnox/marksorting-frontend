@@ -287,16 +287,16 @@ export function TicketFormDrawer() {
                                 </select>
                             </div>
 
-                            {/* Search Machine by Ref No / Frame No directly */}
+                            {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
                             <div className="space-y-1.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                                 <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                                     <Cpu size={14} className="text-primary/70" />
-                                    Search Machine to Prefill (REF NO / Frame No)
+                                    Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                                 </Label>
                                 <Input
                                     value={machineSearchQuery}
                                     onChange={(e) => setMachineSearchQuery(e.target.value)}
-                                    placeholder="Type REF NO or Frame No to search..."
+                                    placeholder="Type REF NO, Frame No, Customer or Mill to search..."
                                     className="h-11 bg-white dark:bg-gray-905 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                                 />
                                 
@@ -334,7 +334,7 @@ export function TicketFormDrawer() {
                                                     className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
                                                 >
                                                     <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
-                                                        {m.mill?.name || 'Unknown Mill'}
+                                                        {m.mill?.customer?.name ? `${m.mill.customer.name} — ` : ''}{m.mill?.name || 'Unknown Mill'}
                                                     </div>
                                                     <div className="text-gray-400 font-medium">
                                                         {[

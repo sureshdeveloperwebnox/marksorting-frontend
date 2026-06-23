@@ -257,6 +257,18 @@ const navPrefetchHrefs = Array.from(
   )
 );
 
+const isHrefActive = (href: string, pathname: string) => {
+  if (pathname === href) return true;
+  if (pathname.startsWith(`${href}/`)) {
+    const hasBetterMatch = navPrefetchHrefs.some((otherHref) => {
+      if (otherHref === href) return false;
+      return (pathname === otherHref || pathname.startsWith(`${otherHref}/`)) && otherHref.length > href.length;
+    });
+    return !hasBetterMatch;
+  }
+  return false;
+};
+
 /* ─── Dropdown Nav Item (desktop) ───────────────────────────── */
 
 function DropdownNavItem({
@@ -281,15 +293,7 @@ function DropdownNavItem({
    * for the current pathname. This prevents /mills matching /mills/customers.
    */
   const isSubItemActive = (sub: NavSubItem): boolean => {
-    if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
-    // Check no sibling is a longer/more-specific match
-    const betterMatch = item.subItems.some(
-      (other) =>
-        other.href !== sub.href &&
-        (pathname === other.href || pathname.startsWith(`${other.href}/`)) &&
-        other.href.length > sub.href.length
-    );
-    return !betterMatch;
+    return isHrefActive(sub.href, pathname);
   };
 
   // Is any sub-item active?
@@ -507,13 +511,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
     const expanded: Record<string, boolean> = {};
     navItems.forEach((item) => {
       if (item.subItems) {
-        const hasActiveSub = item.subItems.some((s) => {
-          if (pathname !== s.href && !pathname.startsWith(`${s.href}/`)) return false;
-          const betterMatch = item.subItems!.some(
-            (o) => o.href !== s.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > s.href.length
-          );
-          return !betterMatch;
-        });
+        const hasActiveSub = item.subItems.some((s) => isHrefActive(s.href, pathname));
         if (hasActiveSub) expanded[item.label] = true;
       }
     });
@@ -534,8 +532,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = (href: string) => isHrefActive(href, pathname);
 
   const userInitials = user?.full_name
     ? user.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -581,16 +578,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
             // Find which dropdown is active based on current pathname
             const activeGroupLabel = filteredNavItems.find(
               (item) =>
-                item.subItems?.some((sub) => {
-                  if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
-                  const betterMatch = item.subItems!.some(
-                    (other) =>
-                      other.href !== sub.href &&
-                      (pathname === other.href || pathname.startsWith(`${other.href}/`)) &&
-                      other.href.length > sub.href.length
-                  );
-                  return !betterMatch;
-                })
+                item.subItems?.some((sub) => isHrefActive(sub.href, pathname))
             )?.label || null;
 
             return filteredNavItems.map((item) => {
@@ -933,13 +921,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
               <nav className="flex flex-col gap-1 pt-5 flex-1 overflow-y-auto scrollbar-none">
                 {getFilteredNavItems().map((item) => {
                   if (item.subItems) {
-                    const isGroupActive = item.subItems.some((s) => {
-                      if (pathname !== s.href && !pathname.startsWith(`${s.href}/`)) return false;
-                      const betterMatch = item.subItems!.some(
-                        (o) => o.href !== s.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > s.href.length
-                      );
-                      return !betterMatch;
-                    });
+                    const isGroupActive = item.subItems.some((s) => isHrefActive(s.href, pathname));
                     const isOpen = mobileOpenGroups[item.label];
                     return (
                       <div key={item.label}>
@@ -977,13 +959,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
                               className="overflow-hidden pl-4"
                             >
                               {item.subItems.map((sub) => {
-                                const subActive = (() => {
-                                  if (pathname !== sub.href && !pathname.startsWith(`${sub.href}/`)) return false;
-                                  const betterMatch = item.subItems!.some(
-                                    (o) => o.href !== sub.href && (pathname === o.href || pathname.startsWith(`${o.href}/`)) && o.href.length > sub.href.length
-                                  );
-                                  return !betterMatch;
-                                })();
+                                const subActive = isHrefActive(sub.href, pathname);
                                 return (
                                   <Link
                                     key={sub.href}
