@@ -159,7 +159,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 /* ── Main Form Drawer ───────────────────────────────────────── */
 export function MasterMillFormDrawer() {
-  const { isFormDrawerOpen, closeFormDrawer, selectedMasterMillId } =
+  const { isFormDrawerOpen, closeFormDrawer, selectedMasterMillId, resetFilters } =
     useMasterMillStore();
   const isEdit = !!selectedMasterMillId;
 
@@ -483,6 +483,7 @@ export function MasterMillFormDrawer() {
         await updateMasterMill({ id: selectedMasterMillId, ...payload });
       } else {
         await createMasterMill(payload);
+        resetFilters();
       }
       closeFormDrawer();
     } catch (_error) {
