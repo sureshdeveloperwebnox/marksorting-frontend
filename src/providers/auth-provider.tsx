@@ -3,7 +3,7 @@
 import { useEffect, ReactNode, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import axios from 'axios';
-import api from '@/lib/api';
+import api, { refreshTokens } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import Cookies from 'js-cookie';
 
@@ -40,11 +40,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       .get('/auth/profile')
       .then((response) => {
         if (response.data) {
-          setAuth(response.data);
+          setAuth(response.data, response.data.expires_at);
         }
       })
-      .catch(() => {
-        useAuthStore.getState().logout();
+      .catch((error) => {
+        console.error('[AuthProvider] Profile check failed:', error);
+        // Only log out if it is an explicit 401 Unauthorized
+        if (error.response?.status === 401) {
+          useAuthStore.getState().logout();
+        }
       })
       .finally(() => {
         lastCheckedAt.current = Date.now();
@@ -92,30 +96,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     const triggerTokenRefresh = async () => {
-      const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
       try {
-        const res = await axios.get(`${baseURL}/auth/refresh`, { withCredentials: true });
-        if (res.data?.user) {
-          // Parse expiration time from the new access token
-          let expiresAtTimestamp: number | null = null;
-          if (res.data.access_token) {
-            try {
-              const base64Url = res.data.access_token.split('.')[1];
-              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-              const payload = JSON.parse(window.atob(base64));
-              if (payload.exp) {
-                expiresAtTimestamp = payload.exp * 1000;
-              }
-            } catch (e) {
-              console.error('Failed to parse rotated token exp:', e);
-            }
-          }
-          setAuth(res.data.user, expiresAtTimestamp);
-        }
-      } catch (error) {
+        await refreshTokens();
+      } catch (error: any) {
         console.error('[AuthProvider] Proactive refresh failed:', error);
-        // Refresh failed (invalid/revoked refresh token), log out immediately
-        handleLogoutRedirect();
+        const status = error.response?.status;
+        // Only redirect to login if it's a definitive authentication error (400, 401, 403)
+        if (status === 400 || status === 401 || status === 403) {
+          handleLogoutRedirect();
+        }
       }
     };
 

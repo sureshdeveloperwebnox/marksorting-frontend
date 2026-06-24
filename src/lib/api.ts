@@ -12,11 +12,48 @@ const api = axios.create({
 
 let refreshPromise: Promise<any> | null = null;
 
-const getRefreshTokenPromise = () => {
+export const refreshTokens = () => {
   if (!refreshPromise) {
-    refreshPromise = axios
-      .get(`${api.defaults.baseURL}/auth/refresh`, {
-        withCredentials: true,
+    refreshPromise = api
+      .get('/auth/refresh')
+      .then((res) => {
+        if (res.data?.user) {
+          let expiresAtTimestamp: number | null = null;
+          if (res.data.access_token) {
+            try {
+              const base64Url = res.data.access_token.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const payload = JSON.parse(window.atob(base64));
+              if (payload.exp) {
+                expiresAtTimestamp = payload.exp * 1000;
+              }
+            } catch (e) {
+              console.error('Failed to parse rotated token exp:', e);
+            }
+          }
+          useAuthStore.getState().setAuth(res.data.user, expiresAtTimestamp);
+        }
+        return res;
+      })
+      .catch((error) => {
+        // Clear state & redirect only on actual client/auth failures (400, 401, 403)
+        const status = error.response?.status;
+        if (status === 400 || status === 401 || status === 403) {
+          if (typeof window !== 'undefined') {
+            Cookies.remove('access_token_expires');
+            Cookies.remove('refresh_token_expires');
+
+            // Asynchronously tell the backend to clear cookies
+            axios
+              .post(`${api.defaults.baseURL}/auth/logout`, {}, { withCredentials: true })
+              .catch(() => {});
+
+            useAuthStore.getState().logout();
+
+            window.location.href = '/login?expired=true';
+          }
+        }
+        return Promise.reject(error);
       })
       .finally(() => {
         refreshPromise = null;
@@ -47,27 +84,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        await getRefreshTokenPromise();
+        await refreshTokens();
         // Retry the original request with refreshed cookies
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed — session is truly expired, log user out
-        if (typeof window !== 'undefined') {
-          // Remove client-side non-httpOnly cookies
-          Cookies.remove('access_token_expires');
-          Cookies.remove('refresh_token_expires');
-
-          // Asynchronously tell the backend to clear cookies
-          axios
-            .post(`${api.defaults.baseURL}/auth/logout`, {}, { withCredentials: true })
-            .catch(() => {});
-
-          // Clear client-side auth state
-          useAuthStore.getState().logout();
-
-          // Redirect to login page with session expired indicator
-          window.location.href = '/login?expired=true';
-        }
         return Promise.reject(refreshError);
       }
     }
