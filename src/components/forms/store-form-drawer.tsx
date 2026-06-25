@@ -15,7 +15,7 @@ import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert,
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useCreateStore, useUpdateStore, useStore, useCreateMaterial } from '@/services/store-service';
+import { useCreateStore, useUpdateStore, useStore, useCreateMaterial, useMaterials } from '@/services/store-service';
 import { useTechnicians } from '@/services/technician-service';
 import { useCustomers, useCreateCustomer } from '@/services/customer-service';
 import { useMills, useCreateMill } from '@/services/mill-service';
@@ -49,6 +49,12 @@ const storeSchema = z.object({
   service_engineer_id: z.string().min(1, 'Service Engineer is required'),
   customer_id: z.string().min(1, 'Customer is required'),
   material_ids: z.array(z.string()).min(1, 'At least one material must be selected'),
+  material_quantities: z.array(
+    z.object({
+      material_id: z.string(),
+      quantity: z.number().min(1, 'Quantity must be at least 1'),
+    })
+  ).optional(),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   warranty_status: z.string().min(1, 'Warranty status is required'),
   frame_number: z.string().min(1, 'Frame number is required'),
@@ -84,6 +90,8 @@ export function StoreFormDrawer() {
   const { mutateAsync: createStore, isPending: isCreating } = useCreateStore();
   const { mutateAsync: updateStore, isPending: isUpdating } = useUpdateStore();
   const { mutateAsync: createMaterial, isPending: isCreatingMaterial } = useCreateMaterial();
+  const { data: materialsData } = useMaterials({ skip: 0, take: 500 });
+  const allMaterials = materialsData?.materials || [];
 
   const [newMaterialName, setNewMaterialName] = React.useState('');
 
@@ -239,6 +247,10 @@ export function StoreFormDrawer() {
           service_engineer_id: storeData.service_engineer_id,
           customer_id: storeData.customer_id,
           material_ids: storeData.materials.map((m) => m.material.id),
+          material_quantities: storeData.materials.map((m) => ({
+            material_id: m.material.id,
+            quantity: m.quantity || 1,
+          })),
           quantity: storeData.quantity,
           warranty_status: storeData.warranty_status,
           frame_number: storeData.frame_number,
@@ -256,6 +268,7 @@ export function StoreFormDrawer() {
           service_engineer_id: '',
           customer_id: '',
           material_ids: [],
+          material_quantities: [],
           quantity: 1,
           warranty_status: 'Non Warranty',
           frame_number: '',
@@ -271,6 +284,36 @@ export function StoreFormDrawer() {
       }
     }
   }, [isFormDrawerOpen, storeData, reset, isEdit]);
+
+  const materialIdsWatch = watch('material_ids') || [];
+  const materialQuantitiesWatch = watch('material_quantities') || [];
+
+  React.useEffect(() => {
+    if (!isFormDrawerOpen) return;
+    const currentQuantities = watch('material_quantities') || [];
+    // Filter out any that are no longer in materialIdsWatch
+    const filtered = currentQuantities.filter(q => materialIdsWatch.includes(q.material_id));
+    // Add any new materialIdsWatch that are not yet in material_quantities
+    const newItems = materialIdsWatch
+      .filter(id => !filtered.some(q => q.material_id === id))
+      .map(id => ({ material_id: id, quantity: 1 }));
+    
+    const nextQuantities = [...filtered, ...newItems];
+    
+    // Only update if there's an actual difference to avoid infinite loop
+    if (JSON.stringify(currentQuantities) !== JSON.stringify(nextQuantities)) {
+      setValue('material_quantities', nextQuantities, { shouldDirty: true });
+    }
+  }, [materialIdsWatch, setValue, watch, isFormDrawerOpen]);
+
+  // Automatically update the main quantity field as sum of material quantities
+  const totalQuantity = React.useMemo(() => {
+    return materialQuantitiesWatch.reduce((sum, q) => sum + q.quantity, 0);
+  }, [materialQuantitiesWatch]);
+
+  React.useEffect(() => {
+    setValue('quantity', totalQuantity > 0 ? totalQuantity : 1, { shouldValidate: true });
+  }, [totalQuantity, setValue]);
 
   const handleCreateAndSelectMaterial = async () => {
     if (!newMaterialName.trim()) {
@@ -686,8 +729,7 @@ export function StoreFormDrawer() {
                       )}
                     </div>
                   )}
-
-                {/* Material Selection */}
+                                {/* Material Selection */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Package size={14} className="text-primary/70" />
@@ -704,6 +746,45 @@ export function StoreFormDrawer() {
                     )}
                   />
                   {errors.material_ids && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.material_ids.message}</p>}
+
+                  {/* Dynamic quantities input for each selected material */}
+                  {materialQuantitiesWatch.length > 0 && (
+                    <div className="space-y-2.5 mt-3 p-3 bg-gray-50/30 dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-2xl">
+                      <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                        Configure Material Quantities
+                      </Label>
+                      {materialQuantitiesWatch.map((item, index) => {
+                        const mat = allMaterials.find((m) => m.id === item.material_id);
+                        const matName = mat ? mat.name : 'Loading Material...';
+                        return (
+                          <div
+                            key={item.material_id}
+                            className="flex items-center justify-between gap-4 p-2.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-white/5 shadow-sm"
+                          >
+                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate max-w-[180px]">
+                              {matName}
+                            </span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qty:</span>
+                              <Input
+                                type="number"
+                                min="1"
+                                className="w-16 h-8 bg-gray-50 dark:bg-white/5 border-none rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 font-bold text-right text-xs"
+                                value={item.quantity}
+                                onChange={(e) => {
+                                  const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                  const nextQuantities = materialQuantitiesWatch.map((q, idx) =>
+                                    idx === index ? { ...q, quantity: val } : q
+                                  );
+                                  setValue('material_quantities', nextQuantities, { shouldDirty: true });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Premium inline material creation section */}
                   <div className="pt-2 pb-1">
@@ -751,14 +832,15 @@ export function StoreFormDrawer() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Hash size={14} className="text-primary/70" />
-                    Quantity
+                    Total Quantity (Auto-Calculated)
                   </Label>
                   <Input
                     type="number"
-                    min="1"
-                    placeholder="Enter quantity"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    {...register('quantity', { valueAsNumber: true })}
+                    readOnly
+                    disabled
+                    placeholder="Total quantity"
+                    className="h-11 bg-gray-100/50 dark:bg-white/5 border-none rounded-xl font-bold cursor-not-allowed opacity-75"
+                    value={totalQuantity}
                   />
                   {errors.quantity && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.quantity.message}</p>}
                 </div>

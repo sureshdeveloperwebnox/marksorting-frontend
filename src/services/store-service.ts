@@ -12,6 +12,7 @@ export interface Material {
 }
 
 export interface StoreMaterialRelation {
+  quantity: number;
   material: {
     id: string;
     name: string;
@@ -127,6 +128,7 @@ export const useCreateStore = () => {
       service_engineer_id: string;
       customer_id: string;
       material_ids: string[];
+      material_quantities?: { material_id: string; quantity: number }[];
       quantity: number;
       warranty_status: string;
       frame_number: string;
@@ -157,6 +159,7 @@ export const useUpdateStore = () => {
       service_engineer_id?: string;
       customer_id?: string;
       material_ids?: string[];
+      material_quantities?: { material_id: string; quantity: number }[];
       quantity?: number;
       warranty_status?: string;
       frame_number?: string;

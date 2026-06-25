@@ -238,7 +238,7 @@ export default function StoresPage() {
                     variant="outline"
                     className="text-[10px] font-bold py-0.5 px-2 bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300 rounded-md"
                   >
-                    {m.material.name}
+                    {m.material.name} (x{m.quantity || 1})
                   </Badge>
                 ))}
                 {!viewStoreData.materials?.length && "—"}
@@ -465,7 +465,7 @@ export default function StoresPage() {
         <div className="flex flex-wrap gap-1 max-w-[200px]">
           {row.original.materials.map((m) => (
             <Badge key={m.material.id} variant="outline" className="text-[10px] font-bold py-0.5 px-1.5 bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5">
-              {m.material.name}
+              {m.material.name} (x{m.quantity || 1})
             </Badge>
           ))}
         </div>
