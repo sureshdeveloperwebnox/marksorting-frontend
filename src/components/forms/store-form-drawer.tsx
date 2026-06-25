@@ -881,7 +881,7 @@ export function StoreFormDrawer() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Users size={14} className="text-primary/70" />
-                    Return Shipment Provider (Optional)
+                    Shipment Provider (Optional)
                   </Label>
                   <Input
                     placeholder="e.g. DHL, FedEx"
@@ -895,7 +895,7 @@ export function StoreFormDrawer() {
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Hash size={14} className="text-primary/70" />
-                    Return Invoice/Receipt Number (Optional)
+                    Shipment Number (Optional)
                   </Label>
                   <Input
                     placeholder="e.g. INV-10024"
