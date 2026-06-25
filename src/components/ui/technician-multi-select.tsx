@@ -23,12 +23,14 @@ export function TechnicianMultiSelect({
     const containerRef = React.useRef<HTMLDivElement>(null);
     const searchRef = React.useRef<HTMLInputElement>(null);
 
-    const { data, isLoading } = useTechnicians({ skip: 0, take: 500, status: 'AVAILABLE' });
+    const { data, isLoading } = useTechnicians({ skip: 0, take: 500 });
     const technicians = data?.technicians || [];
 
     const filtered = technicians.filter((t) =>
-        t.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        (t.email || '').toLowerCase().includes(search.toLowerCase())
+        t.status !== 'INACTIVE' && (
+            t.full_name.toLowerCase().includes(search.toLowerCase()) ||
+            (t.email || '').toLowerCase().includes(search.toLowerCase())
+        )
     );
 
     console.log('TechnicianMultiSelect:', {
