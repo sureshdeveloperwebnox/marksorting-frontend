@@ -39,6 +39,7 @@ export interface ReportsExpenseReport {
     others?: string;
     visit_date: string;
     amount: string;
+    admin_amount?: string;
     status: string;
     mill?: { id: string; name: string };
     expenseCategory: { id: string; name: string };

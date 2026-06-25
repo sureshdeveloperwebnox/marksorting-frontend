@@ -505,11 +505,29 @@ export default function ReportsPage() {
         {
             accessorKey: "amount",
             header: "Amount",
-            cell: ({ row }) => (
-                <span className="font-bold text-gray-900 dark:text-white">
-                    ₹{Number(row.original.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => {
+                const amt = Number(row.original.amount || 0);
+                const adminAmt = Number(row.original.admin_amount || 0);
+                const hasAdminAmt = adminAmt > 0;
+                return (
+                    <div className="flex flex-col gap-0.5">
+                        {hasAdminAmt ? (
+                            <>
+                                <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                                    ₹{adminAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                </span>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold line-through">
+                                    Claimed: ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="font-bold text-sm text-gray-900 dark:text-white">
+                                ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </span>
+                        )}
+                    </div>
+                );
+            },
         },
         {
             id: "technicians",
