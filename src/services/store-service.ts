@@ -39,6 +39,7 @@ export interface Store {
   barcode?: string;
   provider_name?: string;
   invoice_number?: string;
+  remarks?: string;
   created_at: string;
   updated_at: string;
   materials: StoreMaterialRelation[];

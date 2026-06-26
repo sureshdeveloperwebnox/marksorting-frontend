@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/Textarea';
 import {
   Select,
   SelectContent,
@@ -63,6 +64,7 @@ const storeSchema = z.object({
   barcode: z.string().optional().or(z.literal('')),
   provider_name: z.string().optional().or(z.literal('')),
   invoice_number: z.string().optional().or(z.literal('')),
+  remarks: z.string().optional().or(z.literal('')),
 });
 
 const mapMachineWarrantyToStore = (allWarranty?: string | null): string => {
@@ -119,6 +121,7 @@ export function StoreFormDrawer() {
       barcode: '',
       provider_name: '',
       invoice_number: '',
+      remarks: '',
     }
   });
 
@@ -259,6 +262,7 @@ export function StoreFormDrawer() {
           barcode: storeData.barcode || '',
           provider_name: storeData.provider_name || '',
           invoice_number: storeData.invoice_number || '',
+          remarks: storeData.remarks || '',
         });
         setSelectedCustomerId(storeData.customer_id);
         setSelectedMillId('');
@@ -277,6 +281,7 @@ export function StoreFormDrawer() {
           barcode: '',
           provider_name: '',
           invoice_number: '',
+          remarks: '',
         });
         setSelectedCustomerId('');
         setSelectedMillId('');
@@ -336,6 +341,7 @@ export function StoreFormDrawer() {
       barcode: data.barcode || undefined,
       provider_name: data.provider_name || undefined,
       invoice_number: data.invoice_number || undefined,
+      remarks: data.remarks || undefined,
     };
     try {
       if (isEdit) {
@@ -985,6 +991,19 @@ export function StoreFormDrawer() {
                     {...register('invoice_number')}
                   />
                   {errors.invoice_number && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.invoice_number.message}</p>}
+                </div>
+
+                {/* Remarks */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    Remarks (Optional)
+                  </Label>
+                  <Textarea
+                    placeholder="Enter remarks..."
+                    className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-xs"
+                    {...register('remarks')}
+                  />
+                  {errors.remarks && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.remarks.message}</p>}
                 </div>
 
               </div>

@@ -24,6 +24,7 @@ import {
   Package,
   ShieldAlert,
   Barcode,
+  Info,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -245,6 +246,12 @@ export default function StoresPage() {
               </div>
             ),
             icon: Package,
+            fullWidth: true,
+          },
+          {
+            label: "Remarks",
+            value: viewStoreData.remarks || "—",
+            icon: Info,
             fullWidth: true,
           },
         ],
@@ -498,6 +505,15 @@ export default function StoresPage() {
       cell: ({ row }) => (
         <span className="text-gray-600 dark:text-gray-400 font-mono text-xs font-bold">
           {row.original.frame_number}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "remarks",
+      header: "Remarks",
+      cell: ({ row }) => (
+        <span className="text-gray-600 dark:text-gray-400 font-medium text-xs truncate max-w-[150px] block" title={row.original.remarks || ''}>
+          {row.original.remarks || "—"}
         </span>
       ),
     },
