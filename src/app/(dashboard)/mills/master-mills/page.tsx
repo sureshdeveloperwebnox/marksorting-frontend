@@ -173,6 +173,7 @@ export default function MasterMillsPage() {
 
   const columnConfig: ColumnConfig[] = [
     { key: "invoice_no", header: "Invoice No" },
+    { key: "type", header: "Record Type" },
     { key: "invoice_date", header: "Invoice Date" },
     { key: "ref_no", header: "Ref No" },
     { key: "frame_no", header: "Frame No" },

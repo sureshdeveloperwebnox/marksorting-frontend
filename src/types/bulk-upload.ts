@@ -1,6 +1,7 @@
 export interface PreviewRow {
     // Raw cell values — all strings from the spreadsheet
     invoice_no: string;
+    type: string;
     invoice_date: string;
     ref_no: string;
     frame_no: string;
