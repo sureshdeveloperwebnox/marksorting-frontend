@@ -17,6 +17,7 @@ interface TableTabsProps {
   activeValue: string;
   onChange: (value: string) => void;
   className?: string;
+  layoutId?: string;
 }
 
 const colorStyles = {
@@ -52,7 +53,7 @@ const colorStyles = {
   },
 };
 
-export function TableTabs({ tabs, activeValue, onChange, className }: TableTabsProps) {
+export function TableTabs({ tabs, activeValue, onChange, className, layoutId = "active-table-tab" }: TableTabsProps) {
   return (
     <div
       className={cn(
@@ -104,7 +105,7 @@ export function TableTabs({ tabs, activeValue, onChange, className }: TableTabsP
             {/* Smooth Pill Background Slide animation using LayoutID */}
             {isActive && (
               <motion.div
-                layoutId="active-table-tab"
+                layoutId={layoutId}
                 className="absolute inset-0 bg-transparent rounded-xl pointer-events-none z-[-1]"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />

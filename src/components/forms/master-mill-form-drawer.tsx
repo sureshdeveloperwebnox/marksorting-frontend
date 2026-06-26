@@ -483,7 +483,6 @@ export function MasterMillFormDrawer() {
         await updateMasterMill({ id: selectedMasterMillId, ...payload });
       } else {
         await createMasterMill(payload);
-        resetFilters();
       }
       closeFormDrawer();
     } catch (_error) {

@@ -32,6 +32,7 @@ import {
   Phone,
   Hash,
   Upload,
+  Wrench,
 } from "lucide-react";
 import { BulkUploadDialog } from "@/components/modals/BulkUploadDialog";
 import type { ColumnConfig } from "@/types/bulk-upload";
@@ -409,7 +410,7 @@ export default function MasterMillsPage() {
   // Reset pagination on tab change
   React.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize });
-  }, [warrantyFilter, setPagination, pagination.pageSize]);
+  }, [warrantyFilter, typeFilter, setPagination, pagination.pageSize]);
 
   /* ── Data queries ── */
   const { data, isLoading, isFetching, refetch } = useMasterMills({
@@ -478,12 +479,17 @@ export default function MasterMillsPage() {
               </span>
             </div>
           )}
-          {row.original.invoice_date && (
+          {row.original.invoice_date ? (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/50 text-[10px] font-bold text-gray-600 dark:text-gray-400 w-fit">
               <Calendar className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
               {formatDateSafe(row.original.invoice_date)}
             </span>
-          )}
+          ) : row.original.created_at ? (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/50 text-[10px] font-bold text-sky-600 dark:text-sky-400 w-fit">
+              <Clock className="w-2.5 h-2.5 flex-shrink-0 text-sky-400" />
+              {formatDateSafe(row.original.created_at)}
+            </span>
+          ) : null}
         </div>
       ),
     },
@@ -818,11 +824,29 @@ export default function MasterMillsPage() {
               />
             </div>
 
-            {/* Reusable Table Tabs */}
+            {/* Record Type Tabs */}
+            <div className="px-6 pt-3 pb-2 border-b border-gray-100 dark:border-white/5 bg-gray-50/30 dark:bg-black/[0.04]">
+              <TableTabs
+                layoutId="type-tab"
+                tabs={[
+                  { value: "", label: "All Types", count: stats?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                  { value: "Installation", label: "Installation", count: stats?.installationCount || 0, color: "primary", icon: <FileText size={14} /> },
+                  { value: "Service", label: "Service", count: stats?.serviceCount || 0, color: "blue", icon: <Wrench size={14} /> },
+                ]}
+                activeValue={typeFilter || ""}
+                onChange={(value) => {
+                  setTypeFilter(value);
+                  setWarrantyFilter("");
+                }}
+              />
+            </div>
+
+            {/* Warranty Status Tabs */}
             <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
               <TableTabs
+                layoutId="warranty-tab"
                 tabs={[
-                  { value: "", label: "All Records", count: stats?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                  { value: "", label: "All Warranty", count: data?.total ?? stats?.total ?? 0, color: "primary", icon: <ClipboardCheck size={14} /> },
                   { value: "Under Warranty", label: "Under Warranty", count: stats?.underWarranty || 0, color: "emerald", icon: <ShieldCheck size={14} /> },
                   { value: "Under AMC", label: "Under AMC", count: stats?.underAmc || 0, color: "amber", icon: <IndianRupee size={14} /> },
                   { value: "Non Warranty", label: "Non Warranty", count: stats?.nonWarranty || 0, color: "gray", icon: <ShieldOff size={14} /> },
