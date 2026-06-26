@@ -86,6 +86,13 @@ const navItems: NavItem[] = [
     module: 'dashboard',
     action: 'view',
   },
+   {
+    label: 'Masters',
+    icon: MasterMillsIcon,
+    href: '/mills/master-mills',
+    module: 'master_mills',
+    action: 'view',
+  },
   {
     label: 'Users',
     icon: UsersIcon,
@@ -129,13 +136,6 @@ const navItems: NavItem[] = [
         action: 'view',
       },
     ],
-  },
-  {
-    label: 'Master Mills',
-    icon: MasterMillsIcon,
-    href: '/mills/master-mills',
-    module: 'master_mills',
-    action: 'view',
   },
   {
     label: 'Services',
