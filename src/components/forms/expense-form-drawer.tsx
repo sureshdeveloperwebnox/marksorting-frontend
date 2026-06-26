@@ -92,6 +92,7 @@ const getExpenseSchema = (isServiceEngineer: boolean) => z.object({
     amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Amount must be positive')),
     admin_amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Admin amount must be positive')),
     remarks: z.string().optional().or(z.literal('')),
+    admin_remarks: z.string().optional().or(z.literal('')),
     expense_images: z.array(z.string()).default([]),
   })).min(1, 'At least one category is required'),
 }).superRefine((data, ctx) => {
@@ -427,6 +428,7 @@ export function ExpenseFormDrawer() {
             amount: item.amount ? Number(item.amount) : 0,
             admin_amount: item.admin_amount ? Number(item.admin_amount) : 0,
             remarks: item.remarks || '',
+            admin_remarks: item.admin_remarks || '',
             expense_images: item.expense_images || [],
           }))
           : expenseData.expense_category_id
@@ -436,6 +438,7 @@ export function ExpenseFormDrawer() {
                 amount: expenseData.amount ? Number(expenseData.amount) : 0,
                 admin_amount: expenseData.admin_amount ? Number(expenseData.admin_amount) : 0,
                 remarks: expenseData.remarks || '',
+                admin_remarks: '',
                 expense_images: expenseData.expense_images || [],
               },
             ]
@@ -1284,7 +1287,7 @@ export function ExpenseFormDrawer() {
                         const current = watch('expense_items') || [];
                         setValue('expense_items', [
                           ...current,
-                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', expense_images: [] },
+                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', admin_remarks: '', expense_images: [] },
                         ], { shouldValidate: false });
                       }}
                       className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
@@ -1308,7 +1311,7 @@ export function ExpenseFormDrawer() {
                         type="button"
                         onClick={() =>
                           setValue('expense_items', [
-                            { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', expense_images: [] },
+                            { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', admin_remarks: '', expense_images: [] },
                           ], { shouldValidate: false })
                         }
                         className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer"
@@ -1510,25 +1513,49 @@ export function ExpenseFormDrawer() {
                               </div>
                             </div>
 
-                            {/* Admin Expense Amount */}
-                            <div className="space-y-2">
-                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                                <DollarSign size={14} className="text-primary/70" />
-                                Admin Expense Amount (₹)
-                              </Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={item.admin_amount || ''}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                  const updated = [...(watch('expense_items') || [])];
-                                  updated[index].admin_amount = val;
-                                  setValue('expense_items', updated, { shouldValidate: true });
-                                }}
-                                placeholder="Enter admin expense amount"
-                                className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
-                              />
+                            {/* Admin Adjustment Fields */}
+                            <div className="space-y-4">
+                              {/* Admin Expense Amount */}
+                              <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                  <DollarSign size={14} className="text-primary/70" />
+                                  Admin Expense Amount (₹)
+                                </Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.admin_amount || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                    const updated = [...(watch('expense_items') || [])];
+                                    updated[index].admin_amount = val;
+                                    setValue('expense_items', updated, { shouldValidate: true });
+                                  }}
+                                  placeholder="Enter admin expense amount"
+                                  className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                                  disabled={isServiceEngineer}
+                                />
+                              </div>
+
+                              {/* Admin Remarks */}
+                              <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                  <FileText size={14} className="text-primary/70" />
+                                  Admin Remarks
+                                </Label>
+                                <textarea
+                                  value={item.admin_remarks || ''}
+                                  onChange={(e) => {
+                                    const updated = [...(watch('expense_items') || [])];
+                                    updated[index].admin_remarks = e.target.value;
+                                    setValue('expense_items', updated, { shouldValidate: true });
+                                  }}
+                                  placeholder={isServiceEngineer ? "No admin remarks" : "Enter admin remarks…"}
+                                  rows={1}
+                                  className="w-full min-h-[44px] p-3 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none resize-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-50"
+                                  disabled={isServiceEngineer}
+                                />
+                              </div>
                             </div>
                           </div>
                         </motion.div>
@@ -1544,7 +1571,7 @@ export function ExpenseFormDrawer() {
                         const current = watch('expense_items') || [];
                         setValue('expense_items', [
                           ...current,
-                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', expense_images: [] },
+                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', admin_remarks: '', expense_images: [] },
                         ], { shouldValidate: false });
                       }}
                       className="w-full flex items-center justify-center gap-2 h-11 border-2 border-dashed border-primary/30 hover:border-primary/60 text-primary hover:bg-primary/5 rounded-xl text-xs font-bold transition-all cursor-pointer"

@@ -454,6 +454,11 @@ export default function ExpensesPage() {
                     <strong>Remarks: </strong>{item.remarks}
                   </p>
                 )}
+                {item.admin_remarks && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 italic mt-2.5 bg-emerald-500/5 p-2.5 rounded-xl border border-emerald-500/10">
+                    <strong>Admin Remarks: </strong>{item.admin_remarks}
+                  </p>
+                )}
                 {item.expense_images?.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
                     {item.expense_images.map((img: string, idx: number) => {
