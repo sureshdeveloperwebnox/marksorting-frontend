@@ -327,7 +327,7 @@ export function ServiceReportFormDrawer() {
       engineer_signature: '',
       customer_remarks: '',
       customer_signature: '',
-      status: 'IN_PROGRESS',
+      status: 'PENDING',
     },
   });
 
@@ -543,7 +543,7 @@ export function ServiceReportFormDrawer() {
           engineer_signature: '',
           customer_remarks: '',
           customer_signature: '',
-          status: 'IN_PROGRESS',
+          status: 'PENDING',
         });
       }
     }
@@ -1748,7 +1748,6 @@ export function ServiceReportFormDrawer() {
                       value={watch('status')}
                       items={[
                         { value: 'PENDING', label: 'Pending' },
-                        { value: 'IN_PROGRESS', label: 'Work In Progress' },
                         { value: 'COMPLETED', label: 'Completed' },
                         { value: 'CANCELLED', label: 'Cancelled' }
                       ]}
@@ -1758,7 +1757,6 @@ export function ServiceReportFormDrawer() {
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                         <SelectItem value="PENDING" className="font-bold py-3 text-amber-500">Pending</SelectItem>
-                        <SelectItem value="IN_PROGRESS" className="font-bold py-3 text-blue-500">Work In Progress</SelectItem>
                         <SelectItem value="COMPLETED" className="font-bold py-3 text-emerald-500">Completed</SelectItem>
                         <SelectItem value="CANCELLED" className="font-bold py-3 text-rose-500">Cancelled</SelectItem>
                       </SelectContent>

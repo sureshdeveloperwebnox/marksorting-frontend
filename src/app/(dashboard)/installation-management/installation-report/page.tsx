@@ -262,17 +262,7 @@ export default function InstallationReportPage() {
     dateTo: dateTo || undefined,
     search: search || undefined,
   });
-  const { data: inProgressData, isFetching: isFetchingInProgress, refetch: refetchInProgress } = useInstallationReports({
-    skip: 0,
-    take: 1,
-    status: "IN_PROGRESS",
-    technicianId: technicianFilter || undefined,
-    customerId: customerFilter || undefined,
-    millId: millFilter || undefined,
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
-    search: search || undefined,
-  });
+
   const { data: cancelledData, isFetching: isFetchingCancelled, refetch: refetchCancelled } = useInstallationReports({
     skip: 0,
     take: 1,
@@ -285,7 +275,7 @@ export default function InstallationReportPage() {
     search: search || undefined,
   });
 
-  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingInProgress || isFetchingCancelled;
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingCancelled;
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -293,7 +283,6 @@ export default function InstallationReportPage() {
       refetchTotal(),
       refetchCompleted(),
       refetchPending(),
-      refetchInProgress(),
       refetchCancelled(),
     ]);
   };
@@ -674,7 +663,6 @@ export default function InstallationReportPage() {
       options: [
         { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
         { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
-        { value: "IN_PROGRESS", label: "Work In Progress", iconColor: "bg-blue-500", animatePulse: true },
         { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500", animatePulse: true },
         { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500", animatePulse: true },
       ],
@@ -813,7 +801,6 @@ export default function InstallationReportPage() {
               <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">Set Status</div>
               {[
                 { value: "PENDING", label: "Pending", color: "amber" },
-                { value: "IN_PROGRESS", label: "Work In Progress", color: "blue" },
                 { value: "COMPLETED", label: "Completed", color: "emerald" },
                 { value: "CANCELLED", label: "Cancelled", color: "rose" },
               ].map((s) => (
@@ -959,7 +946,6 @@ export default function InstallationReportPage() {
                 tabs={[
                   { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
                   { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                  { value: "IN_PROGRESS", label: "Work In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
                   { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
                   { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
                 ]}
