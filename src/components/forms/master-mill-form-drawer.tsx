@@ -116,6 +116,7 @@ const masterMillSchema = z.object({
   warranty_years: z.coerce.number().min(0).optional(),
   warranty_months: z.coerce.number().min(0).optional(),
   installation_date: z.string().optional().or(z.literal('')),
+  warranty_start_date: z.string().optional().or(z.literal('')),
   warranty_closing_date: z.string().optional().or(z.literal('')),
   all_warranty: z.string().optional().or(z.literal('')),
   amc_starting_date: z.string().optional().or(z.literal('')),
@@ -233,6 +234,7 @@ export function MasterMillFormDrawer() {
     warranty_years: 1,
     warranty_months: 12,
     installation_date: '',
+    warranty_start_date: '',
     warranty_closing_date: '',
     all_warranty: 'Non Warranty',
     amc_starting_date: '',
@@ -307,12 +309,14 @@ export function MasterMillFormDrawer() {
 
   // Dynamic auto-calculation of Warranty Closing Date
   const watchedInstallationDate = watch('installation_date');
+  const watchedWarrantyStartDate = watch('warranty_start_date');
   const watchedWarrantyYears = watch('warranty_years');
   const watchedWarrantyMonths = watch('warranty_months');
 
   React.useEffect(() => {
-    if (watchedInstallationDate) {
-      const date = new Date(watchedInstallationDate);
+    const baseDate = watchedWarrantyStartDate || watchedInstallationDate;
+    if (baseDate) {
+      const date = new Date(baseDate);
       if (!isNaN(date.getTime())) {
         const years = Number(watchedWarrantyYears) || 0;
         const months = Number(watchedWarrantyMonths) || 0;
@@ -324,7 +328,7 @@ export function MasterMillFormDrawer() {
     } else {
       setValue('warranty_closing_date', '');
     }
-  }, [watchedInstallationDate, watchedWarrantyYears, watchedWarrantyMonths, setValue]);
+  }, [watchedInstallationDate, watchedWarrantyStartDate, watchedWarrantyYears, watchedWarrantyMonths, setValue]);
 
   // Dynamic auto-calculation of AMC Closing Date
   const watchedAmcStartingDate = watch('amc_starting_date');
@@ -447,6 +451,9 @@ export function MasterMillFormDrawer() {
           installation_date: recordData.installation_date
             ? recordData.installation_date.split('T')[0]
             : '',
+          warranty_start_date: recordData.warranty_start_date
+            ? recordData.warranty_start_date.split('T')[0]
+            : '',
           warranty_closing_date: recordData.warranty_closing_date
             ? recordData.warranty_closing_date.split('T')[0]
             : '',
@@ -474,6 +481,7 @@ export function MasterMillFormDrawer() {
       mill_id: data.mill_id || undefined,
       invoice_date: data.invoice_date || undefined,
       installation_date: data.installation_date || undefined,
+      warranty_start_date: data.warranty_start_date || undefined,
       warranty_closing_date: data.warranty_closing_date || undefined,
       amc_starting_date: data.amc_starting_date || undefined,
       amc_closing_date: data.amc_closing_date || undefined,
@@ -852,7 +860,7 @@ export function MasterMillFormDrawer() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <FieldLabel>
                       <Calendar size={12} />
@@ -865,7 +873,24 @@ export function MasterMillFormDrawer() {
                         <DatePicker
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Select installation date"
+                          placeholder="Select date"
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <FieldLabel>
+                      <Calendar size={12} />
+                      Warranty Start
+                    </FieldLabel>
+                    <Controller
+                      name="warranty_start_date"
+                      control={control}
+                      render={({ field }) => (
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select date"
                         />
                       )}
                     />
@@ -887,7 +912,7 @@ export function MasterMillFormDrawer() {
                       )}
                     />
                     <p className="text-[10px] text-gray-400 ml-1">
-                      Auto-calculated if left blank
+                      Auto-calculated
                     </p>
                   </div>
                 </div>

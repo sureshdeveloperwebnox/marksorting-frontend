@@ -186,6 +186,7 @@ export default function MasterMillsPage() {
     { key: "phone_no", header: "Phone No" },
     { key: "address", header: "Address" },
     { key: "installation_date", header: "Installation Date" },
+    { key: "warranty_start_date", header: "Warranty Start Date" },
     { key: "warranty_years", header: "Warranty Yrs" },
     { key: "warranty_months", header: "Warranty Mths" },
     { key: "amc_starting_date", header: "AMC Start Date" },
@@ -313,6 +314,11 @@ export default function MasterMillsPage() {
           {
             label: "Installation Date",
             value: formatDateSafe(viewMillData.installation_date),
+            icon: Calendar,
+          },
+          {
+            label: "Warranty Start Date",
+            value: formatDateSafe(viewMillData.warranty_start_date),
             icon: Calendar,
           },
           {

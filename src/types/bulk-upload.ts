@@ -13,6 +13,7 @@ export interface PreviewRow {
     phone_no: string;
     address: string;
     installation_date: string;
+    warranty_start_date: string;
     warranty_years: string;
     warranty_months: string;
     amc_starting_date: string;
