@@ -42,7 +42,7 @@ export function ExportReportDrawer({
 }: ExportReportDrawerProps) {
   const [dateFrom, setDateFrom] = React.useState("");
   const [dateTo, setDateTo] = React.useState("");
-  const [format, setFormat] = React.useState<"pdf" | "excel" | "csv">("pdf");
+  const [format, setFormat] = React.useState<"pdf" | "excel" | "csv">("excel");
   const [isExporting, setIsExporting] = React.useState(false);
 
   // Synchronize initial dates whenever drawer opens
@@ -50,7 +50,7 @@ export function ExportReportDrawer({
     if (isOpen) {
       setDateFrom(initialDateFrom);
       setDateTo(initialDateTo);
-      setFormat("pdf");
+      setFormat("excel");
     }
   }, [isOpen, initialDateFrom, initialDateTo]);
 
@@ -77,10 +77,11 @@ export function ExportReportDrawer({
   const handleReset = () => {
     setDateFrom("");
     setDateTo("");
-    setFormat("pdf");
+    setFormat("excel");
   };
 
   const formats = [
+    /*
     {
       id: "pdf" as const,
       label: "PDF Document",
@@ -89,6 +90,7 @@ export function ExportReportDrawer({
       colorClass: "border-rose-100 dark:border-rose-950/20 text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/10 hover:bg-rose-100/30 dark:hover:bg-rose-950/20",
       activeClass: "ring-2 ring-rose-500 border-rose-300 dark:border-rose-800 bg-rose-100/50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300",
     },
+    */
     {
       id: "excel" as const,
       label: "Excel Spreadsheet",
@@ -97,6 +99,7 @@ export function ExportReportDrawer({
       colorClass: "border-emerald-100 dark:border-emerald-950/20 text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/10 hover:bg-emerald-100/30 dark:hover:bg-emerald-950/20",
       activeClass: "ring-2 ring-emerald-500 border-emerald-300 dark:border-emerald-800 bg-emerald-100/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300",
     },
+    /*
     {
       id: "csv" as const,
       label: "CSV File",
@@ -105,6 +108,7 @@ export function ExportReportDrawer({
       colorClass: "border-blue-100 dark:border-blue-950/20 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/10 hover:bg-blue-100/30 dark:hover:bg-blue-950/20",
       activeClass: "ring-2 ring-blue-500 border-blue-300 dark:border-blue-800 bg-blue-100/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300",
     },
+    */
   ];
 
   return (

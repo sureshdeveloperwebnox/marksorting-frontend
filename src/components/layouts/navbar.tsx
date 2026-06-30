@@ -575,18 +575,10 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
         >
           {(() => {
             const filteredNavItems = getFilteredNavItems();
-            // Find which dropdown is active based on current pathname
-            const activeGroupLabel = filteredNavItems.find(
-              (item) =>
-                item.subItems?.some((sub) => isHrefActive(sub.href, pathname))
-            )?.label || null;
-
             return filteredNavItems.map((item) => {
               // Dropdown item
               if (item.subItems) {
-                const isOpen = hoveredDropdown
-                  ? hoveredDropdown === item.label
-                  : activeGroupLabel === item.label;
+                const isOpen = hoveredDropdown === item.label;
                 return (
                   <DropdownNavItem
                     key={item.label}
