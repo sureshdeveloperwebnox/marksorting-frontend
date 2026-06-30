@@ -615,56 +615,18 @@ export default function MasterMillsPage() {
         return (
           <div className="flex flex-col gap-1.5 min-w-[160px]">
 
-            {/* ── Warranty Type badge — clickable dropdown ── */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button className={cn(
-                    "inline-flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-lg border font-bold text-xs cursor-pointer outline-none select-none",
-                    "hover:opacity-80 active:scale-95 transition-all duration-200",
-                    cfg.bg, cfg.border, cfg.text
-                  )}>
-                    <span className={cn(
-                      "w-2 h-2 rounded-full flex-shrink-0",
-                      cfg.dot,
-                      cfg.pulse && "animate-pulse"
-                    )} />
-                    {type}
-                    <svg className="w-3 h-3 opacity-50 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                }
-              />
-              <DropdownMenuContent align="start" className="w-44 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 z-[9999]">
-                <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-white/5 pb-1.5 mb-1">
-                  Change Status
-                </div>
-                {(["Under Warranty", "Under AMC", "Non Warranty", "Expired"] as const).map((w) => {
-                  const wCfg = typeConfig[w];
-                  return (
-                    <DropdownMenuItem
-                      key={w}
-                      className={cn(
-                        "rounded-lg font-semibold text-xs my-0.5 cursor-pointer flex items-center gap-2 py-2 px-2.5",
-                        type === w
-                          ? cn("font-black", wCfg.text, wCfg.bg)
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
-                      )}
-                      onClick={() => updateMutation.mutate({ id: millId, all_warranty: w })}
-                    >
-                      <span className={cn("w-2 h-2 rounded-full flex-shrink-0", wCfg.dot)} />
-                      {w}
-                      {type === w && (
-                        <svg className="w-3 h-3 ml-auto" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8.414 15l-4.121-4.121a1 1 0 011.414-1.414L8.414 12.172l6.879-6.879a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* ── Warranty Type badge — label based value ── */}
+            <div className={cn(
+              "inline-flex w-fit items-center gap-1.5 px-2.5 py-1 rounded-lg border font-bold text-xs select-none",
+              cfg.bg, cfg.border, cfg.text
+            )}>
+              <span className={cn(
+                "w-2 h-2 rounded-full flex-shrink-0",
+                cfg.dot,
+                cfg.pulse && "animate-pulse"
+              )} />
+              {type}
+            </div>
 
             {/* ── Period + Installation date ── */}
             <div className="flex items-center gap-1.5 flex-wrap">

@@ -141,6 +141,7 @@ export function StoreFormDrawer() {
   const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
   const [quickCustomerName, setQuickCustomerName] = React.useState('');
   const [quickMillName, setQuickMillName] = React.useState('');
+  const [isMillNameManuallyEdited, setIsMillNameManuallyEdited] = React.useState(false);
   const [quickPhone, setQuickPhone] = React.useState('');
   const [quickAddress, setQuickAddress] = React.useState('');
   const [quickPlace, setQuickPlace] = React.useState('');
@@ -508,6 +509,7 @@ export function StoreFormDrawer() {
                                 setQuickState('');
                                 setQuickRefNo(machineSearchQuery);
                                 setExistingCustomerId(null);
+                                setIsMillNameManuallyEdited(false);
                                 setIsQuickCreateOpen(true);
                                 setMachineSearchQuery('');
                               }}
@@ -540,6 +542,7 @@ export function StoreFormDrawer() {
                           setQuickState('');
                           setQuickRefNo('');
                           setExistingCustomerId(null);
+                          setIsMillNameManuallyEdited(false);
                           setIsQuickCreateOpen(true);
                         }}
                         className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
@@ -580,6 +583,7 @@ export function StoreFormDrawer() {
                             setQuickPlace('');
                             setQuickState('');
                             setQuickRefNo('');
+                            setIsMillNameManuallyEdited(false);
                             setIsQuickCreateOpen(true);
                           }}
                           className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
@@ -1055,7 +1059,12 @@ export function StoreFormDrawer() {
                 </Label>
                 <Input
                   value={quickCustomerName}
-                  onChange={(e) => setQuickCustomerName(e.target.value)}
+                  onChange={(e) => {
+                    setQuickCustomerName(e.target.value);
+                    if (!isMillNameManuallyEdited) {
+                      setQuickMillName(e.target.value);
+                    }
+                  }}
                   disabled={!!existingCustomerId}
                   placeholder="e.g. Seva Mandir"
                   className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
@@ -1091,7 +1100,10 @@ export function StoreFormDrawer() {
                 </Label>
                 <Input
                   value={quickMillName}
-                  onChange={(e) => setQuickMillName(e.target.value)}
+                  onChange={(e) => {
+                    setQuickMillName(e.target.value);
+                    setIsMillNameManuallyEdited(true);
+                  }}
                   placeholder="e.g. Seva Mandir Mill 1"
                   className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
                 />
@@ -1172,6 +1184,8 @@ export function StoreFormDrawer() {
                   onClick={() => {
                     setExistingCustomerId(null);
                     setQuickCustomerName('');
+                    setQuickMillName('');
+                    setIsMillNameManuallyEdited(false);
                   }}
                   className="text-xs font-bold text-rose-500 hover:text-rose-600 cursor-pointer"
                 >

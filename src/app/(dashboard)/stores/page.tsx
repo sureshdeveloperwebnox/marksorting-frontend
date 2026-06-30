@@ -175,14 +175,14 @@ export default function StoresPage() {
   };
 
   const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useStores({ skip: 0, take: 1, ...sharedCountFilters });
-  const { data: availableData, refetch: refetchAvailable, isFetching: isFetchingAvailable } = useStores({ skip: 0, take: 1, ...sharedCountFilters, inflow_status: "Available" });
-  const { data: pendingReturnData, refetch: refetchPending, isFetching: isFetchingPending } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Pending" });
-  const { data: damagedData, refetch: refetchDamaged, isFetching: isFetchingDamaged } = useStores({ skip: 0, take: 1, ...sharedCountFilters, inflow_status: "Damaged" });
+  const { data: pendingData, refetch: refetchPending, isFetching: isFetchingPending } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Pending" });
+  const { data: completedData, refetch: refetchCompleted, isFetching: isFetchingCompleted } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Completed" });
+  const { data: notReturnedData, refetch: refetchNotReturned, isFetching: isFetchingNotReturned } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Not Returned" });
 
-  const isRefreshing = isFetching || isFetchingTotal || isFetchingAvailable || isFetchingPending || isFetchingDamaged;
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingPending || isFetchingCompleted || isFetchingNotReturned;
 
   const handleRefresh = async () => {
-    await Promise.all([refetch(), refetchTotal(), refetchAvailable(), refetchPending(), refetchDamaged()]);
+    await Promise.all([refetch(), refetchTotal(), refetchPending(), refetchCompleted(), refetchNotReturned()]);
   };
 
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
@@ -729,17 +729,17 @@ export default function StoresPage() {
               <TableTabs
                 tabs={[
                   { value: "ALL", label: "All", count: totalData?.total || 0, color: "primary", icon: <Package size={14} /> },
-                  { value: "AVAILABLE", label: "Available", count: availableData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                  { value: "PENDING_RETURNS", label: "Pending Returns", count: pendingReturnData?.total || 0, color: "amber", icon: <Clock size={14} /> },
-                  { value: "DAMAGED", label: "Damaged Stock", count: damagedData?.total || 0, color: "rose", icon: <AlertTriangle size={14} /> },
+                  { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <Clock size={14} /> },
+                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "NOT_RETURNED", label: "Not Returned", count: notReturnedData?.total || 0, color: "rose", icon: <AlertTriangle size={14} /> },
                 ]}
                 activeValue={
-                  inflowFilter === "Available" && !returnFilter
-                    ? "AVAILABLE"
-                    : returnFilter === "Pending" && !inflowFilter
-                      ? "PENDING_RETURNS"
-                      : inflowFilter === "Damaged" && !returnFilter
-                        ? "DAMAGED"
+                  returnFilter === "Pending" && !inflowFilter
+                    ? "PENDING"
+                    : returnFilter === "Completed" && !inflowFilter
+                      ? "COMPLETED"
+                      : returnFilter === "Not Returned" && !inflowFilter
+                        ? "NOT_RETURNED"
                         : inflowFilter === "" && returnFilter === ""
                           ? "ALL"
                           : ""
@@ -748,15 +748,15 @@ export default function StoresPage() {
                   if (value === "ALL") {
                     setInflowFilter("");
                     setReturnFilter("");
-                  } else if (value === "AVAILABLE") {
-                    setInflowFilter("Available");
-                    setReturnFilter("");
-                  } else if (value === "PENDING_RETURNS") {
+                  } else if (value === "PENDING") {
                     setInflowFilter("");
                     setReturnFilter("Pending");
-                  } else if (value === "DAMAGED") {
-                    setInflowFilter("Damaged");
-                    setReturnFilter("");
+                  } else if (value === "COMPLETED") {
+                    setInflowFilter("");
+                    setReturnFilter("Completed");
+                  } else if (value === "NOT_RETURNED") {
+                    setInflowFilter("");
+                    setReturnFilter("Not Returned");
                   }
                 }}
               />

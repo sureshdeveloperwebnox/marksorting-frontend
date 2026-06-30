@@ -199,6 +199,16 @@
   z-index: 10;
 }
 
+.PhoneInputCountrySelect option {
+  background-color: #ffffff;
+  color: #1f2937;
+}
+
+.dark .PhoneInputCountrySelect option {
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
 .PhoneInputCountryIcon {
   width: 1.5rem; /* 24px */
   height: 1.125rem; /* 18px */

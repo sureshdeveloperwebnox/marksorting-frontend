@@ -74,7 +74,6 @@ const INDIAN_STATES = [
   'Daman and Diu', 'Delhi', 'Lakshadweep', 'Puducherry', 'Ladakh', 'Jammu and Kashmir',
 ];
 
-const WARRANTY_TYPES = ['Non Warranty', 'Under Warranty', 'Expired'];
 
 /* ── State Matching Helper ──────────────────────────────────── */
 const matchState = (mill: any) => {
@@ -812,7 +811,7 @@ export function MasterMillFormDrawer() {
               {/* ── Warranty Details ────────────────────────── */}
               <SectionHeader icon={Shield} title="Warranty Details" color="text-emerald-500" />
               <div className="space-y-4 mb-4">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <FieldLabel>Years</FieldLabel>
                     <Input
@@ -831,31 +830,6 @@ export function MasterMillFormDrawer() {
                       min={0}
                       placeholder="12"
                       className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <FieldLabel>Type</FieldLabel>
-                    <Controller
-                      name="all_warranty"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || 'Non Warranty'}
-                          items={WARRANTY_TYPES.map((w) => ({ value: w, label: w }))}
-                        >
-                          <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                            {WARRANTY_TYPES.map((w) => (
-                              <SelectItem key={w} value={w} className="font-bold py-2.5">
-                                {w}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
                     />
                   </div>
                 </div>
