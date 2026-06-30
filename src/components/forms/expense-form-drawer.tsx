@@ -756,9 +756,9 @@ export function ExpenseFormDrawer() {
                             <button
                               type="button"
                               onClick={() => {
-                                  setReportTypeRadio('installation');
-                                  setValue('service_report_id', '');
-                                  setValue('installation_report_id', '');
+                                setReportTypeRadio('installation');
+                                setValue('service_report_id', '');
+                                setValue('installation_report_id', '');
                               }}
                               className={cn(
                                 "flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all duration-200 select-none cursor-pointer",
