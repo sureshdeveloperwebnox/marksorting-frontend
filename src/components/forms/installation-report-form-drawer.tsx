@@ -46,7 +46,7 @@ import { normalizePhoneNumber } from '@/lib/utils';
 import { useCreateInstallationReport, useUpdateInstallationReport, useInstallationReport } from '@/services/installation-report-service';
 import { useMills, useCreateMill } from '@/services/mill-service';
 import { useCustomers, useCreateCustomer } from '@/services/customer-service';
-import { useMasterMills, useCreateMasterMill } from '@/services/master-mill-service';
+import { useMasterMills, useCreateMasterMill, useMasterMillsPrefill } from '@/services/master-mill-service';
 import useInstallationReportStore from '@/store/useInstallationReportStore';
 import { TechnicianMultiSelect } from '@/components/ui/technician-multi-select';
 import { SignaturePad } from '@/components/ui/signature-pad';
@@ -399,15 +399,67 @@ export function InstallationReportFormDrawer() {
 
   // Query master mills matching search term (global search, not mill_id restricted)
   const trimmedSearchQuery = debouncedSearchQuery.trim();
-  const { data: searchMasterMillsData, isLoading: searchMasterMillsLoading } = useMasterMills(
+  const { data: searchMasterMillsData, isLoading: searchMasterMillsLoading } = useMasterMillsPrefill(
     {
       search: trimmedSearchQuery || undefined,
-      skip: 0,
-      take: 10,
+      context: 'installation_report',
     },
     { enabled: trimmedSearchQuery.length >= 2 }
   );
-  const searchedMasterMills = searchMasterMillsData?.masterMills || [];
+  const serviceBased = searchMasterMillsData?.serviceBased || [];
+  const installationBased = searchMasterMillsData?.installationBased || [];
+  const hasResults = serviceBased.length > 0 || installationBased.length > 0;
+
+  const handleSelectMachine = (m: any) => {
+    // Set mill_id and auto-resolve customer
+    if (m.mill_id) {
+      setValue('mill_id', m.mill_id);
+      // Use customer_id from API response first, then fallback to local lookup
+      const millCustomerId = m.mill?.customer_id;
+      if (millCustomerId) {
+        setSelectedCustomerId(millCustomerId);
+      } else {
+        const localMill = mills.find(millItem => millItem.id === m.mill_id);
+        if (localMill?.customer_id) {
+          setSelectedCustomerId(localMill.customer_id);
+        }
+      }
+    }
+    // Prefill frame/serial no
+    if (m.frame_no) {
+      setValue('serial_or_frame_no', m.frame_no);
+    }
+    // Prefill machine model
+    if (m.mc_model) {
+      setValue('machine_model', m.mc_model);
+    }
+    // Prefill place
+    const placeToUse = m.place || m.mill?.place;
+    if (placeToUse) {
+      setValue('place', placeToUse);
+    }
+    // Prefill whatsapp
+    const phoneToUse = m.phone_no || m.mill?.phone;
+    if (phoneToUse) {
+      setValue('mill_whatsapp_number', normalizePhoneNumber(phoneToUse));
+    }
+    // Prefill invoice & warranty details for Installation Report
+    if (m.invoice_no) {
+      setValue('invoice_number', m.invoice_no);
+    }
+    if (m.invoice_date) {
+      setValue('invoice_date', m.invoice_date.split('T')[0]);
+    }
+    if (m.installation_date) {
+      setValue('warranty_start_date', m.installation_date.split('T')[0]);
+    }
+    if (m.warranty_closing_date) {
+      setValue('warranty_end_date', m.warranty_closing_date.split('T')[0]);
+    }
+    setSelectedMachineId(m.id);
+    setMachineSearchQuery('');
+    toast.success('Machine details prefilled! Verify and adjust as needed.');
+  };
 
   // Similar existing customers based on quickCustomerName (for duplicate prevention)
   const similarCustomers = React.useMemo(() => {
@@ -971,78 +1023,68 @@ export function InstallationReportFormDrawer() {
                             <Loader2 className="w-3 h-3 animate-spin text-primary" />
                             Searching...
                           </div>
-                        ) : searchedMasterMills.length > 0 ? (
-                          searchedMasterMills.map((m) => (
-                            <button
-                              key={m.id}
-                              type="button"
-                              onClick={() => {
-                                // Set mill_id and auto-resolve customer
-                                if (m.mill_id) {
-                                  setValue('mill_id', m.mill_id);
-                                  // Use customer_id from API response first, then fallback to local lookup
-                                  const millCustomerId = m.mill?.customer_id;
-                                  if (millCustomerId) {
-                                    setSelectedCustomerId(millCustomerId);
-                                  } else {
-                                    const localMill = mills.find(millItem => millItem.id === m.mill_id);
-                                    if (localMill?.customer_id) {
-                                      setSelectedCustomerId(localMill.customer_id);
-                                    }
-                                  }
-                                }
-                                // Prefill frame/serial no
-                                if (m.frame_no) {
-                                  setValue('serial_or_frame_no', m.frame_no);
-                                }
-                                // Prefill machine model
-                                if (m.mc_model) {
-                                  setValue('machine_model', m.mc_model);
-                                }
-                                // Prefill place
-                                const placeToUse = m.place || m.mill?.place;
-                                if (placeToUse) {
-                                  setValue('place', placeToUse);
-                                }
-                                // Prefill whatsapp
-                                const phoneToUse = m.phone_no || m.mill?.phone;
-                                if (phoneToUse) {
-                                  setValue('mill_whatsapp_number', normalizePhoneNumber(phoneToUse));
-                                }
-                                // Prefill invoice & warranty details for Installation Report
-                                if (m.invoice_no) {
-                                  setValue('invoice_number', m.invoice_no);
-                                }
-                                if (m.invoice_date) {
-                                  setValue('invoice_date', m.invoice_date.split('T')[0]);
-                                }
-                                if (m.installation_date) {
-                                  setValue('warranty_start_date', m.installation_date.split('T')[0]);
-                                }
-                                if (m.warranty_closing_date) {
-                                  setValue('warranty_end_date', m.warranty_closing_date.split('T')[0]);
-                                }
-                                setSelectedMachineId(m.id);
-                                setMachineSearchQuery('');
-                                toast.success('Machine details prefilled! Verify and adjust as needed.');
-                              }}
-                              className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
-                            >
-                              <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
-                                {m.mill?.customer?.name ? `${m.mill.customer.name} — ` : ''}{m.mill?.name || 'Unknown Mill'}
+                        ) : hasResults ? (
+                          <div className="divide-y divide-gray-100 dark:divide-white/5">
+                            {installationBased.length > 0 && (
+                              <div>
+                                <div className="px-3 py-1.5 text-[10px] font-semibold text-primary bg-primary/5 dark:bg-primary/10 tracking-wider uppercase select-none">
+                                  Installation-Based Machines
+                                </div>
+                                {installationBased.map((m: any) => (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => handleSelectMachine(m)}
+                                    className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
+                                  >
+                                    <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
+                                      {m.mill?.customer?.name ? `${m.mill.customer.name} — ` : ''}{m.mill?.name || 'Unknown Mill'}
+                                    </div>
+                                    <div className="text-gray-400 font-medium">
+                                      {[
+                                        (m.ref_no || m.mill?.ref_no) ? `Ref: ${m.ref_no || m.mill?.ref_no}` : null,
+                                        m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                        m.mc_model ? `Model: ${m.mc_model}` : null,
+                                        (m.place || m.mill?.place) ? `Place: ${m.place || m.mill?.place}` : null,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(' | ')}
+                                    </div>
+                                  </button>
+                                ))}
                               </div>
-                              <div className="text-gray-400 font-medium">
-                                {[
-                                  (m.ref_no || m.mill?.ref_no) ? `Ref: ${m.ref_no || m.mill?.ref_no}` : null,
-                                  m.frame_no ? `Frame: ${m.frame_no}` : null,
-                                  m.mc_model ? `Model: ${m.mc_model}` : null,
-                                  (m.place || m.mill?.place) ? `Place: ${m.place || m.mill?.place}` : null,
-                                ]
-                                  .filter(Boolean)
-                                  .join(' | ')}
+                            )}
+
+                            {serviceBased.length > 0 && (
+                              <div>
+                                <div className="px-3 py-1.5 text-[10px] font-semibold text-rose-500 bg-rose-500/5 dark:bg-rose-500/10 tracking-wider uppercase select-none">
+                                  Service-Based Machines
+                                </div>
+                                {serviceBased.map((m: any) => (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => handleSelectMachine(m)}
+                                    className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
+                                  >
+                                    <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
+                                      {m.mill?.customer?.name ? `${m.mill.customer.name} — ` : ''}{m.mill?.name || 'Unknown Mill'}
+                                    </div>
+                                    <div className="text-gray-400 font-medium">
+                                      {[
+                                        (m.ref_no || m.mill?.ref_no) ? `Ref: ${m.ref_no || m.mill?.ref_no}` : null,
+                                        m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                        m.mc_model ? `Model: ${m.mc_model}` : null,
+                                        (m.place || m.mill?.place) ? `Place: ${m.place || m.mill?.place}` : null,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(' | ')}
+                                    </div>
+                                  </button>
+                                ))}
                               </div>
-                            </button>
-                          ))
+                            )}
+                          </div>
                         ) : (
                           <div className="p-3 text-xs text-gray-400 font-bold flex flex-col gap-2">
                             <span>No matching machines found</span>

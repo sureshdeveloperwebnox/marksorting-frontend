@@ -87,6 +87,22 @@ export const useMasterMills = (params: {
   });
 };
 
+export const useMasterMillsPrefill = (params: {
+  search?: string;
+  ref_no?: string;
+  frame_no?: string;
+  context?: 'service_report' | 'installation_report';
+}, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['master-mills-prefill', params],
+    queryFn: async () => {
+      const { data } = await api.get<any>('/master-mills/prefill', { params });
+      return data;
+    },
+    ...options,
+  });
+};
+
 export const useMasterMill = (id: string | null) => {
   return useQuery({
     queryKey: ['master-mill', id],
