@@ -9,6 +9,9 @@ import { TrendBadge } from '@/components/dashboard/trend-badge';
 
 interface ExpenseOverviewChartProps {
   data?: Array<{ name: string; total?: number; [key: string]: any }>;
+  weeklyData?: Array<{ name: string; total?: number; [key: string]: any }>;
+  monthlyData?: Array<{ name: string; total?: number; [key: string]: any }>;
+  yearlyData?: Array<{ name: string; total?: number; [key: string]: any }>;
   totalAmount?: string;
   change?: string;
   trend?: 'up' | 'down' | 'neutral';
@@ -48,7 +51,9 @@ const fallbackExpenseData = [
 ];
 
 export function ExpenseOverviewChart({
-  data = [],
+  weeklyData = [],
+  monthlyData = [],
+  yearlyData = [],
   totalAmount = '₹9,722',
   change = '6.1%',
   trend = 'up',
@@ -56,12 +61,41 @@ export function ExpenseOverviewChart({
   const [period, setPeriod] = React.useState('monthly');
 
   const chartData = React.useMemo(() => {
-    const isDataEmpty = data.length === 0 || data.every(d => !d.total);
-    if (isDataEmpty || period !== 'monthly') {
+    let activeData = monthlyData;
+    if (period === 'weekly') {
+      activeData = weeklyData;
+    } else if (period === 'yearly') {
+      activeData = yearlyData;
+    }
+
+    const isDataEmpty = !activeData || activeData.length === 0 || activeData.every(d => !d.total);
+    if (isDataEmpty) {
       return fallbackExpenseData;
     }
-    return data;
-  }, [data, period]);
+    return activeData;
+  }, [weeklyData, monthlyData, yearlyData, period]);
+
+  // Dynamically calculate total expenses sum for active period
+  const displayTotalAmount = React.useMemo(() => {
+    let activeData = monthlyData;
+    if (period === 'weekly') {
+      activeData = weeklyData;
+    } else if (period === 'yearly') {
+      activeData = yearlyData;
+    }
+
+    const total = activeData?.reduce((sum, d) => sum + (d.total || 0), 0) || 0;
+    if (total > 0) {
+      return `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return totalAmount === '₹0' ? '₹9,722' : totalAmount;
+  }, [period, weeklyData, monthlyData, yearlyData, totalAmount]);
+
+  const trendSubtitle = React.useMemo(() => {
+    if (period === 'weekly') return 'vs last week';
+    if (period === 'yearly') return 'vs last year';
+    return 'vs last month';
+  }, [period]);
 
   // Format currency helper to show "1K", "1.5K" etc. exactly like image
   const formatYAxis = (value: number) => {
@@ -71,6 +105,29 @@ export function ExpenseOverviewChart({
     }
     return value.toString();
   };
+
+  const xAxisProps = React.useMemo(() => {
+    if (period === 'monthly') {
+      const names = chartData.map(d => d.name);
+      if (names.length > 5) {
+        return {
+          ticks: [names[0], names[Math.floor(names.length / 4)], names[Math.floor(names.length / 2)], names[Math.floor(3 * names.length / 4)], names[names.length - 1]]
+        };
+      }
+    }
+    return {};
+  }, [period, chartData]);
+
+  const yAxisProps = React.useMemo(() => {
+    const maxVal = Math.max(...chartData.map(d => Number(d.total || 0)), 100);
+    const step = maxVal > 100000 ? 50000 : maxVal > 10000 ? 5000 : maxVal > 5000 ? 2000 : maxVal > 2000 ? 1000 : 500;
+    const roundedMax = Math.ceil(maxVal / step) * step;
+    const ticks = Array.from({ length: 5 }, (_, i) => (i * roundedMax) / 4);
+    return {
+      domain: [0, roundedMax] as [number, number],
+      ticks
+    };
+  }, [chartData]);
 
   return (
     <DashboardCard
@@ -83,10 +140,10 @@ export function ExpenseOverviewChart({
         {/* Header stats matching image exactly */}
         <div className="flex flex-col mb-4">
           <span className="text-3xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
-            {totalAmount === '₹0' ? '₹9,722' : totalAmount}
+            {displayTotalAmount}
           </span>
           <div className="mt-1 flex items-center">
-            <TrendBadge trend={trend === 'neutral' ? 'up' : trend} value={change === '0%' ? '6.1%' : change} subtitle="vs last month" />
+            <TrendBadge trend={trend === 'neutral' ? 'up' : trend} value={change === '0%' ? '6.1%' : change} subtitle={trendSubtitle} />
           </div>
         </div>
 
@@ -106,7 +163,7 @@ export function ExpenseOverviewChart({
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#a1a1aa', fontSize: 10, fontWeight: 600 }}
-                ticks={['May 1', 'May 8', 'May 15', 'May 22', 'May 29']}
+                {...xAxisProps}
                 dy={10}
               />
               <YAxis
@@ -114,8 +171,7 @@ export function ExpenseOverviewChart({
                 tickLine={false}
                 tick={{ fill: '#a1a1aa', fontSize: 10, fontWeight: 600 }}
                 tickFormatter={formatYAxis}
-                domain={[0, 2000]}
-                ticks={[0, 500, 1000, 1500, 2000]}
+                {...yAxisProps}
                 width={45}
               />
               <Tooltip

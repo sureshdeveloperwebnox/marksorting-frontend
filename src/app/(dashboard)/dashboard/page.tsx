@@ -199,6 +199,9 @@ export default function DashboardPage() {
               installationsCount={installationsCount}
               expensesCount={expensesCount}
               expensesAmount={expensesAmount}
+              weeklyData={weeklyTrendData}
+              monthlyData={monthlyTrendData}
+              yearlyData={yearlyTrendData}
             />
           </div>
         </div>
@@ -210,7 +213,9 @@ export default function DashboardPage() {
           </div>
           <div className="lg:col-span-2">
             <ExpenseOverviewChart
-              data={expenseChartData}
+              weeklyData={expensesWeekPerf}
+              monthlyData={expensesMonthPerf}
+              yearlyData={expensesPerf}
               totalAmount={expensesStat?.value || '₹9,722'}
               change={expensesStat?.change || '6.1%'}
               trend={expensesStat?.trend || 'up'}
