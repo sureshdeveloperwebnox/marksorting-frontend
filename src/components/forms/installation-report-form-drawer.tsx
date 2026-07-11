@@ -133,6 +133,7 @@ const installationReportSchema = z.object({
   visit_time: z.string().optional(),
   call_registered_date: z.string().min(1, 'Call registered date is required'),
   machine_model: z.string().min(1, 'Machine model is required'),
+  machine_mfg_date: z.string().min(1, 'Manufacturing date is required'),
   serial_or_frame_no: z.string().min(1, 'Serial/Frame no is required'),
   authorized_person: z.string().min(1, 'Authorized person is required'),
   authorized_person_phone: z
@@ -310,6 +311,7 @@ export function InstallationReportFormDrawer() {
       visit_time: '',
       call_registered_date: '',
       machine_model: '',
+      machine_mfg_date: '',
       serial_or_frame_no: '',
       authorized_person: '',
       authorized_person_phone: '',
@@ -541,6 +543,7 @@ export function InstallationReportFormDrawer() {
           visit_time: reportData.visit_time || '',
           call_registered_date: reportData.call_registered_date?.split('T')[0] || '',
           machine_model: reportData.machine_model,
+          machine_mfg_date: reportData.machine_mfg_date?.split('T')[0] || '',
           serial_or_frame_no: reportData.serial_or_frame_no,
           authorized_person: reportData.authorized_person,
           authorized_person_phone: reportData.authorized_person_phone || '',
@@ -583,6 +586,7 @@ export function InstallationReportFormDrawer() {
           visit_time: '',
           call_registered_date: '',
           machine_model: '',
+          machine_mfg_date: '',
           serial_or_frame_no: '',
           authorized_person: '',
           authorized_person_phone: '',
@@ -636,6 +640,7 @@ export function InstallationReportFormDrawer() {
       case 'visit_time': return reportData.visit_time || '';
       case 'call_registered_date': return reportData.call_registered_date?.split('T')[0] || '';
       case 'machine_model': return reportData.machine_model;
+      case 'machine_mfg_date': return reportData.machine_mfg_date?.split('T')[0] || '';
       case 'serial_or_frame_no': return reportData.serial_or_frame_no;
       case 'authorized_person': return reportData.authorized_person;
       case 'authorized_person_phone': return reportData.authorized_person_phone || '';
@@ -763,6 +768,7 @@ export function InstallationReportFormDrawer() {
             } else if (key === 'customer_signature') {
               payload.customer_signature = customerSignatureUrl;
             } else if (
+              key === 'machine_mfg_date' ||
               key === 'invoice_date' ||
               key === 'warranty_start_date' ||
               key === 'warranty_end_date' ||
@@ -834,6 +840,7 @@ export function InstallationReportFormDrawer() {
     visit_time: 1,
     call_registered_date: 1,
     machine_model: 1,
+    machine_mfg_date: 1,
     serial_or_frame_no: 1,
     authorized_person: 1,
     authorized_person_phone: 1,
@@ -898,6 +905,7 @@ export function InstallationReportFormDrawer() {
       visit_time: 'Time',
       call_registered_date: 'Call Registered Date',
       machine_model: 'Model',
+      machine_mfg_date: 'Mfg Date',
       serial_or_frame_no: 'Serial / Frame No',
       authorized_person: 'Authorized Person',
       authorized_person_phone: 'Authorized Person Contact No',
@@ -1448,7 +1456,7 @@ export function InstallationReportFormDrawer() {
                     </div>
                   </div>
 
-                  {/* Model, Serial, Authorized Person */}
+                  {/* Model, Mfg Date, Serial */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2" data-error={errors.machine_model ? 'true' : undefined}>
                       <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
@@ -1461,6 +1469,25 @@ export function InstallationReportFormDrawer() {
                         className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                       />
                       <FieldError message={errors.machine_model?.message} />
+                    </div>
+
+                    <div className="space-y-2" data-error={errors.machine_mfg_date ? 'true' : undefined}>
+                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                        <CalendarDays size={14} className="text-primary/70" />
+                        Mfg Date
+                      </Label>
+                      <Controller
+                        name="machine_mfg_date"
+                        control={control}
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Select manufacturing date"
+                          />
+                        )}
+                      />
+                      <FieldError message={errors.machine_mfg_date?.message} />
                     </div>
 
                     <div className="space-y-2" data-error={errors.serial_or_frame_no ? 'true' : undefined}>

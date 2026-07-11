@@ -117,7 +117,7 @@ const serviceReportSchema = z.object({
   visit_time: z.string().optional(),
   call_registered_date: z.string().min(1, 'Call registered date is required'),
   machine_model: z.string().min(1, 'Machine model is required'),
-  machine_mfg_date: z.string().optional().or(z.literal('')),
+  machine_mfg_date: z.string().min(1, 'Manufacturing date is required'),
   machine_installation_date: z.string().optional().or(z.literal('')),
   serial_or_frame_no: z.string().min(1, 'Serial/Frame no is required'),
   authorized_person: z.string().min(1, 'Authorized person is required'),
