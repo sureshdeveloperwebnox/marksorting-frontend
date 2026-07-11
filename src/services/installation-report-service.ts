@@ -20,6 +20,7 @@ export interface InstallationReport {
     visit_time: string;
     call_registered_date: string;
     machine_model: string;
+    machine_mfg_date: string;
     serial_or_frame_no: string;
     authorized_person: string;
     authorized_person_phone?: string;

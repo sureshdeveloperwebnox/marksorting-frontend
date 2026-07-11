@@ -134,6 +134,7 @@ export interface InstallationReportPreviewRow {
     mill_whatsapp_number: string;
     mill_email: string;
     machine_model: string;
+    machine_mfg_date: string;
     serial_or_frame_no: string;
     authorized_person: string;
     authorized_person_phone: string;
