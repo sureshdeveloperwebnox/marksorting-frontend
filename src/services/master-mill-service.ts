@@ -34,6 +34,7 @@ export interface MasterMill {
   phone_no?: string;
   mc_model?: string;
   frame_no?: string;
+  mfg_date?: string;
   warranty_years?: number;
   warranty_months?: number;
   installation_date?: string;

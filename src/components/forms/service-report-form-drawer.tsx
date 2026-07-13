@@ -428,6 +428,10 @@ export function ServiceReportFormDrawer() {
     if (m.installation_date) {
       setValue('machine_installation_date', m.installation_date.split('T')[0]);
     }
+    // Prefill mfg date
+    if (m.mfg_date) {
+      setValue('machine_mfg_date', m.mfg_date.split('T')[0]);
+    }
     // Prefill place: master mill place → mill place fallback
     const placeToUse = m.place || m.mill?.place;
     if (placeToUse) {
@@ -1300,6 +1304,10 @@ export function ServiceReportFormDrawer() {
                               // Installation date
                               if (m.installation_date) {
                                 setValue('machine_installation_date', m.installation_date.split('T')[0]);
+                              }
+                              // Mfg date
+                              if (m.mfg_date) {
+                                setValue('machine_mfg_date', m.mfg_date.split('T')[0]);
                               }
                               // Place: master mill place → mill place fallback
                               const placeToUse = m.place || m.mill?.place;
@@ -2335,6 +2343,9 @@ export function ServiceReportFormDrawer() {
                     setValue('machine_model', newRecord.mc_model || '');
                     if (newRecord.installation_date) {
                       setValue('machine_installation_date', newRecord.installation_date.split('T')[0]);
+                    }
+                    if (newRecord.mfg_date) {
+                      setValue('machine_mfg_date', newRecord.mfg_date.split('T')[0]);
                     }
                     
                     toast.success('Machine record created and prefilled successfully!');

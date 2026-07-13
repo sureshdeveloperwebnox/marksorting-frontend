@@ -5,6 +5,7 @@ export interface PreviewRow {
     invoice_date: string;
     ref_no: string;
     frame_no: string;
+    mfg_date: string;
     mc_model: string;
     mill_name: string;
     customer_name: string;

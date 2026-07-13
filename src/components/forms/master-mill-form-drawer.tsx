@@ -112,6 +112,7 @@ const masterMillSchema = z.object({
     }),
   mc_model: z.string().optional().or(z.literal('')),
   frame_no: z.string().optional().or(z.literal('')),
+  mfg_date: z.string().min(1, 'Manufacturing date is required'),
   warranty_years: z.coerce.number().min(0).optional(),
   warranty_months: z.coerce.number().min(0).optional(),
   installation_date: z.string().optional().or(z.literal('')),
@@ -230,6 +231,7 @@ export function MasterMillFormDrawer() {
     phone_no: '',
     mc_model: '',
     frame_no: '',
+    mfg_date: '',
     warranty_years: 1,
     warranty_months: 12,
     installation_date: '',
@@ -445,6 +447,9 @@ export function MasterMillFormDrawer() {
           phone_no: normalizePhoneNumber(recordData.phone_no) || '',
           mc_model: recordData.mc_model || '',
           frame_no: recordData.frame_no || '',
+          mfg_date: recordData.mfg_date
+            ? recordData.mfg_date.split('T')[0]
+            : '',
           warranty_years: recordData.warranty_years ?? 1,
           warranty_months: recordData.warranty_months ?? 12,
           installation_date: recordData.installation_date
@@ -798,13 +803,35 @@ export function MasterMillFormDrawer() {
                     className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                   />
                 </div>
-                <div className="space-y-2 col-span-2">
+                <div className="space-y-2 col-span-2 sm:col-span-1">
                   <FieldLabel>Frame / W No</FieldLabel>
                   <Input
                     {...register('frame_no')}
                     placeholder="Frame or serial number"
                     className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                   />
+                </div>
+                <div className="space-y-2 col-span-2 sm:col-span-1">
+                  <FieldLabel>
+                    <Calendar size={12} />
+                    Mfg Date *
+                  </FieldLabel>
+                  <Controller
+                    name="mfg_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select mfg date"
+                      />
+                    )}
+                  />
+                  {errors.mfg_date && (
+                    <p className="text-[11px] text-rose-500 font-bold ml-1">
+                      {errors.mfg_date.message}
+                    </p>
+                  )}
                 </div>
               </div>
 

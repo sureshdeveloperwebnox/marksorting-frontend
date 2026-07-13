@@ -435,6 +435,10 @@ export function InstallationReportFormDrawer() {
     if (m.mc_model) {
       setValue('machine_model', m.mc_model);
     }
+    // Prefill mfg date
+    if (m.mfg_date) {
+      setValue('machine_mfg_date', m.mfg_date.split('T')[0]);
+    }
     // Prefill place
     const placeToUse = m.place || m.mill?.place;
     if (placeToUse) {
@@ -1320,6 +1324,9 @@ export function InstallationReportFormDrawer() {
                               }
                               if (m.installation_date) {
                                 setValue('warranty_start_date', m.installation_date.split('T')[0]);
+                              }
+                              if (m.mfg_date) {
+                                setValue('machine_mfg_date', m.mfg_date.split('T')[0]);
                               }
                               if (m.warranty_closing_date) {
                                 setValue('warranty_end_date', m.warranty_closing_date.split('T')[0]);
@@ -2509,6 +2516,7 @@ export function InstallationReportFormDrawer() {
                       warranty_months: quickWarrantyMonths,
                       all_warranty: quickWarrantyType,
                       installation_date: quickInstallationDate || undefined,
+                      mfg_date: quickInstallationDate || new Date().toISOString().split('T')[0],
                       status: 'ACTIVE',
                     });
 
@@ -2523,6 +2531,9 @@ export function InstallationReportFormDrawer() {
                     }
                     if (newRecord.installation_date) {
                       setValue('warranty_start_date', newRecord.installation_date.split('T')[0]);
+                    }
+                    if (newRecord.mfg_date) {
+                      setValue('machine_mfg_date', newRecord.mfg_date.split('T')[0]);
                     }
                     if (newRecord.warranty_closing_date) {
                       setValue('warranty_end_date', newRecord.warranty_closing_date.split('T')[0]);
