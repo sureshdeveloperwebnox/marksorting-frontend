@@ -89,8 +89,8 @@ const getExpenseSchema = (isServiceEngineer: boolean) => z.object({
   installation_report_id: z.string().optional().or(z.literal('')),
   expense_items: z.array(z.object({
     expense_category_id: z.string().min(1, 'Category is required'),
-    amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Amount must be positive')),
-    admin_amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0, 'Admin amount must be positive')),
+    amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().int('Amount must be a whole number (no paise)').min(0, 'Amount must be positive')),
+    admin_amount: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().int('Admin amount must be a whole number (no paise)').min(0, 'Admin amount must be positive')),
     remarks: z.string().optional().or(z.literal('')),
     admin_remarks: z.string().optional().or(z.literal('')),
     expense_images: z.array(z.string()).default([]),
@@ -1427,7 +1427,7 @@ export function ExpenseFormDrawer() {
                               </Label>
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="1"
                                 value={item.amount || ''}
                                 onChange={(e) => {
                                   const val = e.target.value === '' ? 0 : Number(e.target.value);
@@ -1527,7 +1527,7 @@ export function ExpenseFormDrawer() {
                                 </Label>
                                 <Input
                                   type="number"
-                                  step="0.01"
+                                  step="1"
                                   value={item.admin_amount || ''}
                                   onChange={(e) => {
                                     const val = e.target.value === '' ? 0 : Number(e.target.value);

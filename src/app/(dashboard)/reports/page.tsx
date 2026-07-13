@@ -514,15 +514,15 @@ export default function ReportsPage() {
                         {hasAdminAmt ? (
                             <>
                                 <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                                    ₹{adminAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                    ₹{adminAmt.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                                 </span>
                                 <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold line-through">
-                                    Claimed: ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                    Claimed: ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                                 </span>
                             </>
                         ) : (
                             <span className="font-bold text-sm text-gray-900 dark:text-white">
-                                ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                             </span>
                         )}
                     </div>
@@ -747,10 +747,10 @@ export default function ReportsPage() {
                             value={
                                 reportsMetrics
                                     ? `₹${Number((reportsMetrics as any).totalAmount || 0).toLocaleString("en-IN", {
-                                          minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2,
+                                          minimumFractionDigits: 0,
+                                          maximumFractionDigits: 0,
                                       })}`
-                                    : "₹0.00"
+                                    : "₹0"
                             }
                             loading={isReportsLoading}
                             icon={<DollarSign size={18} className="text-emerald-500" />}

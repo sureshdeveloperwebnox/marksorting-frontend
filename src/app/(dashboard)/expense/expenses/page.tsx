@@ -218,7 +218,7 @@ export default function ExpensesPage() {
             "text-sm font-bold mt-0.5",
             hasAdmin ? "text-gray-400 dark:text-gray-600 line-through font-bold" : "text-primary dark:text-orange-400 font-extrabold"
           )}>
-            ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            ₹{amount.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
           </span>
         </div>
 
@@ -234,7 +234,7 @@ export default function ExpensesPage() {
                 Approved Expense Amount
               </span>
               <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-                ₹{adminAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                ₹{adminAmount.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
               </span>
             </div>
           </>
@@ -314,7 +314,7 @@ export default function ExpensesPage() {
             value: (
               <div className="flex flex-col gap-1 mt-0.5">
                 <span className={cn("font-bold text-sm text-gray-900 dark:text-white", Number(viewExpenseData.admin_amount || 0) > 0 && "line-through text-gray-400 dark:text-gray-500 font-semibold")}>
-                  ₹{Number(viewExpenseData.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  ₹{Number(viewExpenseData.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                 </span>
                 {Number(viewExpenseData.admin_amount || 0) > 0 && (
                   <span className="text-[9px] uppercase font-extrabold tracking-wider bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-gray-400 dark:text-gray-500 w-fit select-none">
@@ -330,7 +330,7 @@ export default function ExpensesPage() {
             value: (
               <div className="flex flex-col gap-1 mt-0.5">
                 <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                  ₹{Number(viewExpenseData.admin_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  ₹{Number(viewExpenseData.admin_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                 </span>
                 <span className="text-[9px] uppercase font-extrabold tracking-wider bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-600 dark:text-emerald-400 w-fit select-none border border-emerald-500/20">
                   Approved
@@ -645,15 +645,15 @@ export default function ExpensesPage() {
             {hasAdminAmt ? (
               <>
                 <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                  ₹{adminAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  ₹{adminAmt.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                 </span>
                 <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold line-through">
-                  Claimed: ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  Claimed: ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                 </span>
               </>
             ) : (
               <span className="font-bold text-sm text-gray-900 dark:text-white">
-                ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
               </span>
             )}
           </div>

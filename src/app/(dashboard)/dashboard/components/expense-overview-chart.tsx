@@ -86,7 +86,7 @@ export function ExpenseOverviewChart({
 
     const total = activeData?.reduce((sum, d) => sum + (d.total || 0), 0) || 0;
     if (total > 0) {
-      return `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     }
     return totalAmount === '₹0' ? '₹9,722' : totalAmount;
   }, [period, weeklyData, monthlyData, yearlyData, totalAmount]);
@@ -185,7 +185,7 @@ export function ExpenseOverviewChart({
                 }}
                 labelStyle={{ fontWeight: 700, fontSize: '12px', marginBottom: '4px' }}
                 itemStyle={{ fontSize: '11px', fontWeight: 600 }}
-                formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Amount']}
+                formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 'Amount']}
               />
               <Bar dataKey="total" fill="url(#colorExpenseBar)" radius={[4, 4, 0, 0]} barSize={8}>
                 {chartData.map((entry, index) => (
