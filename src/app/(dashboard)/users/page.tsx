@@ -437,7 +437,7 @@ export default function UsersPage() {
           trend="All registered accounts"
         />
         <StatsCard
-          title="Active Engineers"
+          title="Active Users"
           value={activeData?.total}
           loading={!activeData}
           icon={<UserCheck size={20} className="text-emerald-600 dark:text-emerald-400" />}
