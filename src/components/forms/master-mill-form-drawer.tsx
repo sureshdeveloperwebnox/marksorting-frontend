@@ -233,7 +233,7 @@ export function MasterMillFormDrawer() {
     frame_no: '',
     mfg_date: '',
     warranty_years: 1,
-    warranty_months: 12,
+    warranty_months: 0,
     installation_date: '',
     warranty_start_date: '',
     warranty_closing_date: '',
@@ -451,7 +451,7 @@ export function MasterMillFormDrawer() {
             ? recordData.mfg_date.split('T')[0]
             : '',
           warranty_years: recordData.warranty_years ?? 1,
-          warranty_months: recordData.warranty_months ?? 12,
+          warranty_months: recordData.warranty_months ?? 0,
           installation_date: recordData.installation_date
             ? recordData.installation_date.split('T')[0]
             : '',
@@ -838,7 +838,7 @@ export function MasterMillFormDrawer() {
               {/* ── Warranty Details ────────────────────────── */}
               <SectionHeader icon={Shield} title="Warranty Details" color="text-emerald-500" />
               <div className="space-y-4 mb-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div>
                   <div className="space-y-2">
                     <FieldLabel>Years</FieldLabel>
                     <Input
@@ -849,14 +849,10 @@ export function MasterMillFormDrawer() {
                       className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <FieldLabel>Months</FieldLabel>
+                  <div className="hidden">
                     <Input
                       {...register('warranty_months')}
                       type="number"
-                      min={0}
-                      placeholder="12"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                     />
                   </div>
                 </div>

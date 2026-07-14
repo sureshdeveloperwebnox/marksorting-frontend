@@ -189,7 +189,6 @@ export default function MasterMillsPage() {
     { key: "installation_date", header: "Installation Date" },
     { key: "warranty_start_date", header: "Warranty Start Date" },
     { key: "warranty_years", header: "Warranty Yrs" },
-    { key: "warranty_months", header: "Warranty Mths" },
     { key: "amc_starting_date", header: "AMC Start Date" },
     { key: "amc_period", header: "AMC Period (Mths)" },
     { key: "amc_amount", header: "AMC Amount" },
