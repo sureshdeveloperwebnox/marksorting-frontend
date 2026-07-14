@@ -456,12 +456,6 @@ export function InstallationReportFormDrawer() {
     if (m.invoice_date) {
       setValue('invoice_date', m.invoice_date.split('T')[0]);
     }
-    if (m.installation_date) {
-      setValue('warranty_start_date', m.installation_date.split('T')[0]);
-    }
-    if (m.warranty_closing_date) {
-      setValue('warranty_end_date', m.warranty_closing_date.split('T')[0]);
-    }
     setSelectedMachineId(m.id);
     setMachineSearchQuery('');
     toast.success('Machine details prefilled! Verify and adjust as needed.');
@@ -1322,14 +1316,8 @@ export function InstallationReportFormDrawer() {
                               if (m.invoice_date) {
                                 setValue('invoice_date', m.invoice_date.split('T')[0]);
                               }
-                              if (m.installation_date) {
-                                setValue('warranty_start_date', m.installation_date.split('T')[0]);
-                              }
                               if (m.mfg_date) {
                                 setValue('machine_mfg_date', m.mfg_date.split('T')[0]);
-                              }
-                              if (m.warranty_closing_date) {
-                                setValue('warranty_end_date', m.warranty_closing_date.split('T')[0]);
                               }
                               setSelectedMachineId(m.id);
                               toast.success('Machine details prefilled! Verify and adjust as needed.');
@@ -2326,7 +2314,6 @@ export function InstallationReportFormDrawer() {
                       setValue('serial_or_frame_no', quickRefNo.trim());
                       setValue('invoice_number', 'QR-' + quickRefNo.trim());
                       setValue('invoice_date', (watch('visit_date') || new Date().toISOString().split('T')[0]));
-                      setValue('warranty_start_date', (watch('visit_date') || new Date().toISOString().split('T')[0]));
                     }
                     
                     toast.success('Customer, Mill, and Machine linked successfully!');
@@ -2529,14 +2516,8 @@ export function InstallationReportFormDrawer() {
                     if (newRecord.invoice_date) {
                       setValue('invoice_date', newRecord.invoice_date.split('T')[0]);
                     }
-                    if (newRecord.installation_date) {
-                      setValue('warranty_start_date', newRecord.installation_date.split('T')[0]);
-                    }
                     if (newRecord.mfg_date) {
                       setValue('machine_mfg_date', newRecord.mfg_date.split('T')[0]);
-                    }
-                    if (newRecord.warranty_closing_date) {
-                      setValue('warranty_end_date', newRecord.warranty_closing_date.split('T')[0]);
                     }
                     
                     toast.success('Machine record created and prefilled successfully!');
