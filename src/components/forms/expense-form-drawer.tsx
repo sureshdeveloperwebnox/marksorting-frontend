@@ -1430,13 +1430,20 @@ export function ExpenseFormDrawer() {
                                 step="1"
                                 value={item.amount || ''}
                                 onChange={(e) => {
+                                  if (isEdit) return;
                                   const val = e.target.value === '' ? 0 : Number(e.target.value);
                                   const updated = [...(watch('expense_items') || [])];
                                   updated[index].amount = val;
                                   setValue('expense_items', updated, { shouldValidate: true });
                                 }}
                                 placeholder="Enter amount"
-                                className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                                readOnly={isEdit}
+                                className={cn(
+                                  "h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm",
+                                  isEdit
+                                    ? "cursor-default opacity-70 select-none focus-visible:ring-0"
+                                    : "focus-visible:ring-2 focus-visible:ring-primary/20"
+                                )}
                               />
                               <FieldError message={itemErrors?.amount?.message} />
                             </div>
@@ -1449,13 +1456,20 @@ export function ExpenseFormDrawer() {
                               <textarea
                                 value={item.remarks || ''}
                                 onChange={(e) => {
+                                  if (isEdit) return;
                                   const updated = [...(watch('expense_items') || [])];
                                   updated[index].remarks = e.target.value;
                                   setValue('expense_items', updated, { shouldValidate: true });
                                 }}
                                 placeholder="Enter remarks…"
                                 rows={1}
-                                className="w-full min-h-[44px] p-3 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none resize-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                                readOnly={isEdit}
+                                className={cn(
+                                  "w-full min-h-[44px] p-3 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none resize-none",
+                                  isEdit
+                                    ? "cursor-default opacity-70 select-none focus-visible:ring-0"
+                                    : "focus-visible:ring-2 focus-visible:ring-primary/20"
+                                )}
                               />
                             </div>
                           </div>
