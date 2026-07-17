@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 interface ReportsState {
-    activeTab: "services" | "installations" | "expenses" | "master-mills";
+    activeTab: "services" | "installations" | "expenses" | "master-mills" | "stores";
     pagination: {
         pageIndex: number;
         pageSize: number;
@@ -15,7 +15,14 @@ interface ReportsState {
     technicianFilter: string;
     millNameFilter: string;
     frameNoFilter: string;
-    setActiveTab: (tab: "services" | "installations" | "expenses" | "master-mills") => void;
+    // Store specific filters
+    storeWarrantyFilter: string;
+    storeReturnFilter: string;
+    storeInflowFilter: string;
+    storeCustomerFilter: string;
+    storeMaterialFilter: string;
+
+    setActiveTab: (tab: "services" | "installations" | "expenses" | "master-mills" | "stores") => void;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
     setStatusFilter: (status: string) => void;
@@ -26,6 +33,13 @@ interface ReportsState {
     setTechnicianFilter: (technicianId: string) => void;
     setMillNameFilter: (millName: string) => void;
     setFrameNoFilter: (frameNo: string) => void;
+    // Store setters
+    setStoreWarrantyFilter: (val: string) => void;
+    setStoreReturnFilter: (val: string) => void;
+    setStoreInflowFilter: (val: string) => void;
+    setStoreCustomerFilter: (val: string) => void;
+    setStoreMaterialFilter: (val: string) => void;
+    
     resetFilters: () => void;
 }
 
@@ -44,6 +58,12 @@ const useReportsStore = create<ReportsState>((set) => ({
     technicianFilter: "",
     millNameFilter: "",
     frameNoFilter: "",
+    storeWarrantyFilter: "",
+    storeReturnFilter: "",
+    storeInflowFilter: "",
+    storeCustomerFilter: "",
+    storeMaterialFilter: "",
+
     setActiveTab: (activeTab) =>
         set((state) => ({
             activeTab,
@@ -57,6 +77,11 @@ const useReportsStore = create<ReportsState>((set) => ({
             technicianFilter: "",
             millNameFilter: "",
             frameNoFilter: "",
+            storeWarrantyFilter: "",
+            storeReturnFilter: "",
+            storeInflowFilter: "",
+            storeCustomerFilter: "",
+            storeMaterialFilter: "",
         })),
     setPagination: (pagination) => set({ pagination }),
     setSearch: (search) =>
@@ -104,6 +129,32 @@ const useReportsStore = create<ReportsState>((set) => ({
             frameNoFilter,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setStoreWarrantyFilter: (storeWarrantyFilter) =>
+        set((state) => ({
+            storeWarrantyFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setStoreReturnFilter: (storeReturnFilter) =>
+        set((state) => ({
+            storeReturnFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setStoreInflowFilter: (storeInflowFilter) =>
+        set((state) => ({
+            storeInflowFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setStoreCustomerFilter: (storeCustomerFilter) =>
+        set((state) => ({
+            storeCustomerFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setStoreMaterialFilter: (storeMaterialFilter) =>
+        set((state) => ({
+            storeMaterialFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+
     resetFilters: () =>
         set((state) => ({
             search: "",
@@ -115,6 +166,11 @@ const useReportsStore = create<ReportsState>((set) => ({
             technicianFilter: "",
             millNameFilter: "",
             frameNoFilter: "",
+            storeWarrantyFilter: "",
+            storeReturnFilter: "",
+            storeInflowFilter: "",
+            storeCustomerFilter: "",
+            storeMaterialFilter: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
 }));

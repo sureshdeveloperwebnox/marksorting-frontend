@@ -8,17 +8,21 @@ import {
     useReportsInstallations,
     useReportsExpenses,
     useReportsMasterMills,
+    useReportsStores,
     downloadReportFile,
     ReportsServiceReport,
     ReportsInstallationReport,
     ReportsExpenseReport,
     ReportsMasterMill,
+    ReportsStore,
 } from "@/services/reports-service";
 import useReportsStore from "@/store/useReportsStore";
 import { useServiceCategories } from "@/services/service-category-service";
 import { useExpenseCategories } from "@/services/expense-category-service";
 import { useMills } from "@/services/mill-service";
 import { useTechnicians } from "@/services/technician-service";
+import { useCustomers } from "@/services/customer-service";
+import { useMaterials } from "@/services/store-service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -44,6 +48,7 @@ import {
     Building,
     ShieldAlert,
     ShieldCheck,
+    Package,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -171,6 +176,16 @@ export default function ReportsPage() {
         setMillNameFilter,
         frameNoFilter,
         setFrameNoFilter,
+        storeWarrantyFilter,
+        storeReturnFilter,
+        storeInflowFilter,
+        storeCustomerFilter,
+        storeMaterialFilter,
+        setStoreWarrantyFilter,
+        setStoreReturnFilter,
+        setStoreInflowFilter,
+        setStoreCustomerFilter,
+        setStoreMaterialFilter,
         resetFilters,
     } = useReportsStore();
 
@@ -240,14 +255,59 @@ export default function ReportsPage() {
         frameNo: frameNoFilter || undefined,
     });
 
+    const storesQuery = useReportsStores({
+        skip: pagination.pageIndex * pagination.pageSize,
+        take: pagination.pageSize,
+        search: search || undefined,
+        serviceEngineerId: technicianFilter || undefined,
+        customerId: storeCustomerFilter || undefined,
+        materialId: storeMaterialFilter || undefined,
+        warrantyStatus: storeWarrantyFilter || undefined,
+        returnStatus: storeReturnFilter || undefined,
+        inflowStatus: storeInflowFilter || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+    });
+
     // Fetch categories + lookup data for filter drawer
     const { data: serviceCategoriesData } = useServiceCategories({ skip: 0, take: 100 });
     const { data: expenseCategoriesData } = useExpenseCategories({ skip: 0, take: 100 });
     const { data: millsData } = useMills({ skip: 0, take: 500 });
     const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
+    const { data: customersData } = useCustomers({ skip: 0, take: 500, status: "ACTIVE" });
+    const { data: materialsData } = useMaterials({ skip: 0, take: 500, status: "ACTIVE" });
 
-    const hasActiveFilters = !!(search || statusFilter || categoryFilter || dateFrom || dateTo || millFilter || technicianFilter || millNameFilter || frameNoFilter);
-    const activeFilterCount = [statusFilter, categoryFilter, millFilter, technicianFilter, dateFrom, dateTo, millNameFilter, frameNoFilter].filter(Boolean).length;
+    const hasActiveFilters = !!(
+        search ||
+        statusFilter ||
+        categoryFilter ||
+        dateFrom ||
+        dateTo ||
+        millFilter ||
+        technicianFilter ||
+        millNameFilter ||
+        frameNoFilter ||
+        storeWarrantyFilter ||
+        storeReturnFilter ||
+        storeInflowFilter ||
+        storeCustomerFilter ||
+        storeMaterialFilter
+    );
+    const activeFilterCount = [
+        statusFilter,
+        categoryFilter,
+        millFilter,
+        technicianFilter,
+        dateFrom,
+        dateTo,
+        millNameFilter,
+        frameNoFilter,
+        storeWarrantyFilter,
+        storeReturnFilter,
+        storeInflowFilter,
+        storeCustomerFilter,
+        storeMaterialFilter,
+    ].filter(Boolean).length;
 
     // Build tab-aware filter fields for the drawer
     const filterFields: FilterField[] = React.useMemo(() => {
@@ -349,8 +409,76 @@ export default function ReportsPage() {
         if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
         if (activeTab === "installations") return [statusField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
         if (activeTab === "master-mills") return [statusField, millField, millNameField, frameNoField, dateFromField, dateToField];
+        if (activeTab === "stores") {
+            const engineerField: FilterField = {
+                id: "technicianId",
+                label: "Service Engineer",
+                placeholder: "All Service Engineers",
+                options: [
+                    { value: "ALL", label: "All Service Engineers" },
+                    ...(techniciansData?.technicians ?? []).map((t) => ({ value: t.id, label: t.full_name })),
+                ],
+            };
+
+            const customerField: FilterField = {
+                id: "storeCustomer",
+                label: "Customer",
+                placeholder: "All Customers",
+                options: [
+                    { value: "ALL", label: "All Customers" },
+                    ...(customersData?.customers ?? []).map((c) => ({ value: c.id, label: c.name })),
+                ],
+            };
+
+            const materialField: FilterField = {
+                id: "storeMaterial",
+                label: "Material",
+                placeholder: "All Materials",
+                options: [
+                    { value: "ALL", label: "All Materials" },
+                    ...(materialsData?.materials ?? []).map((m) => ({ value: m.id, label: m.name })),
+                ],
+            };
+
+            const warrantyStatusField: FilterField = {
+                id: "storeWarranty",
+                label: "Warranty Status",
+                placeholder: "All Warranty Statuses",
+                options: [
+                    { value: "ALL", label: "All Warranty Statuses" },
+                    { value: "Under Warranty", label: "Under Warranty" },
+                    { value: "Out of Warranty", label: "Out of Warranty" },
+                ],
+            };
+
+            const returnStatusField: FilterField = {
+                id: "storeReturn",
+                label: "Return Status",
+                placeholder: "All Return Statuses",
+                options: [
+                    { value: "ALL", label: "All Return Statuses" },
+                    { value: "Returned", label: "Returned" },
+                    { value: "Pending", label: "Pending" },
+                    { value: "Not Returned", label: "Not Returned" },
+                    { value: "Completed", label: "Completed" },
+                ],
+            };
+
+            const inflowStatusField: FilterField = {
+                id: "storeInflow",
+                label: "Stock Status",
+                placeholder: "All Stock Statuses",
+                options: [
+                    { value: "ALL", label: "All Stock Statuses" },
+                    { value: "In Flow", label: "In Flow" },
+                    { value: "Out Flow", label: "Out Flow" },
+                ],
+            };
+
+            return [engineerField, customerField, materialField, warrantyStatusField, returnStatusField, inflowStatusField, dateFromField, dateToField];
+        }
         return [statusField, expenseCategoryField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
-    }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData]);
+    }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData, customersData, materialsData]);
 
     const filterActiveValues: Record<string, string> = {
         status: statusFilter || "ALL",
@@ -361,6 +489,11 @@ export default function ReportsPage() {
         dateTo: dateTo || "",
         millName: millNameFilter || "",
         frameNo: frameNoFilter || "",
+        storeWarranty: storeWarrantyFilter || "ALL",
+        storeReturn: storeReturnFilter || "ALL",
+        storeInflow: storeInflowFilter || "ALL",
+        storeCustomer: storeCustomerFilter || "ALL",
+        storeMaterial: storeMaterialFilter || "ALL",
     };
 
     const handleFilterApply = (values: Record<string, string>) => {
@@ -372,6 +505,11 @@ export default function ReportsPage() {
         setDateTo(values.dateTo ?? "");
         setMillNameFilter(values.millName ?? "");
         setFrameNoFilter(values.frameNo ?? "");
+        setStoreWarrantyFilter(values.storeWarranty === "ALL" ? "" : (values.storeWarranty ?? ""));
+        setStoreReturnFilter(values.storeReturn === "ALL" ? "" : (values.storeReturn ?? ""));
+        setStoreInflowFilter(values.storeInflow === "ALL" ? "" : (values.storeInflow ?? ""));
+        setStoreCustomerFilter(values.storeCustomer === "ALL" ? "" : (values.storeCustomer ?? ""));
+        setStoreMaterialFilter(values.storeMaterial === "ALL" ? "" : (values.storeMaterial ?? ""));
     };
 
     /* ─── TABLE COLUMNS DEFINITION ────────────────────────────────── */
@@ -709,6 +847,98 @@ export default function ReportsPage() {
         },
     ];
 
+    // 5. Stores Log Columns
+    const storeColumns: ColumnDef<ReportsStore>[] = [
+        {
+            accessorKey: "service_engineer.full_name",
+            header: "Service Engineer",
+            cell: ({ row }) => (
+                <span className="font-semibold text-gray-900 dark:text-white">
+                    {row.original.service_engineer?.full_name || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "customer.name",
+            header: "Customer",
+            cell: ({ row }) => (
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                    {row.original.customer?.name || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "materials",
+            header: "Materials",
+            cell: ({ row }) => {
+                const materials = row.original.materials || [];
+                return (
+                    <span className="text-gray-600 dark:text-gray-300 font-medium">
+                        {materials.map(m => `${m.material.name} (x${m.quantity || 1})`).join(", ") || "—"}
+                    </span>
+                );
+            },
+        },
+        {
+            accessorKey: "quantity",
+            header: "Qty",
+            cell: ({ row }) => (
+                <span className="text-gray-700 dark:text-gray-300 font-bold">{row.original.quantity || 0}</span>
+            ),
+        },
+        {
+            accessorKey: "warranty_status",
+            header: "Warranty Status",
+            cell: ({ row }) => (
+                <Badge variant="outline" className="bg-gray-50/50 dark:bg-white/5 border-gray-200 dark:border-white/5 text-gray-500 dark:text-gray-400 py-0.5">
+                    {row.original.warranty_status || "—"}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: "return_status",
+            header: "Return Status",
+            cell: ({ row }) => {
+                const status = row.original.return_status;
+                const colors = status === "Returned"
+                    ? "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-400/20"
+                    : status === "Pending"
+                    ? "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20 dark:border-amber-400/20"
+                    : "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20 dark:border-rose-400/20";
+                return (
+                    <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", colors)}>
+                        {status || "—"}
+                    </Badge>
+                );
+            },
+        },
+        {
+            accessorKey: "inflow_status",
+            header: "Stock Status",
+            cell: ({ row }) => (
+                <Badge variant="outline" className="bg-gray-50/50 dark:bg-white/5 border-gray-200 dark:border-white/5 text-gray-500 dark:text-gray-400 py-0.5">
+                    {row.original.inflow_status || "—"}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: "barcode",
+            header: "Barcode",
+            cell: ({ row }) => (
+                <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{row.original.barcode || "—"}</span>
+            ),
+        },
+        {
+            accessorKey: "created_at",
+            header: "Created At",
+            cell: ({ row }) => (
+                <span className="text-gray-500 dark:text-gray-400">
+                    {row.original.created_at ? format(new Date(row.original.created_at), "dd-MM-yyyy") : "—"}
+                </span>
+            ),
+        },
+    ];
+
     // Determine current query loading state & response values
     const currentQuery =
         activeTab === "services"
@@ -717,11 +947,16 @@ export default function ReportsPage() {
             ? installationsQuery
             : activeTab === "expenses"
             ? expensesQuery
-            : masterMillsQuery;
+            : activeTab === "master-mills"
+            ? masterMillsQuery
+            : storesQuery;
 
-    const reportsData = currentQuery.data?.reports || [];
+    const reportsData =
+        activeTab === "stores"
+            ? (currentQuery.data as any)?.stores || []
+            : (currentQuery.data as any)?.reports || [];
     const reportsTotal = currentQuery.data?.total || 0;
-    const reportsMetrics = currentQuery.data?.metrics;
+    const reportsMetrics = (currentQuery.data as any)?.metrics;
     const isReportsLoading = currentQuery.isLoading;
     const isRefreshing = currentQuery.isFetching;
 
@@ -751,6 +986,7 @@ export default function ReportsPage() {
                         { id: "installations", label: "Installation List", icon: Factory },
                         { id: "expenses", label: "Expenses", icon: Receipt },
                         { id: "master-mills", label: "Master Mills", icon: Building },
+                        { id: "stores", label: "Stores", icon: Package },
                     ].map((tab) => {
                         const Icon = tab.icon;
                         const isTabActive = activeTab === tab.id;
@@ -871,6 +1107,45 @@ export default function ReportsPage() {
                             description="Out of warranty/AMC"
                         />
                     </>
+                ) : activeTab === "stores" ? (
+                    <>
+                        <StatsCard
+                            title="Total Records"
+                            value={(reportsMetrics as any)?.totalCount}
+                            loading={isReportsLoading}
+                            icon={<FileText size={18} className="text-primary" />}
+                            iconBg="bg-primary/10"
+                            gradient="bg-primary"
+                            description="Total store inventory logs"
+                        />
+                        <StatsCard
+                            title="Returned"
+                            value={(reportsMetrics as any)?.returnedCount}
+                            loading={isReportsLoading}
+                            icon={<CheckCircle2 size={18} className="text-emerald-500" />}
+                            iconBg="bg-emerald-500/10"
+                            gradient="bg-emerald-500"
+                            description="Materials returned"
+                        />
+                        <StatsCard
+                            title="Pending"
+                            value={(reportsMetrics as any)?.pendingCount}
+                            loading={isReportsLoading}
+                            icon={<Clock size={18} className="text-amber-500" />}
+                            iconBg="bg-amber-500/10"
+                            gradient="bg-amber-500"
+                            description="Pending return status"
+                        />
+                        <StatsCard
+                            title="Completed"
+                            value={(reportsMetrics as any)?.completedCount}
+                            loading={isReportsLoading}
+                            icon={<ShieldCheck size={18} className="text-blue-500" />}
+                            iconBg="bg-blue-500/10"
+                            gradient="bg-blue-500"
+                            description="Completed return processing"
+                        />
+                    </>
                 ) : (
                     <>
                         <StatsCard
@@ -889,13 +1164,13 @@ export default function ReportsPage() {
                             icon={<CheckCircle2 size={18} className="text-emerald-500" />}
                             iconBg="bg-emerald-500/10"
                             gradient="bg-emerald-500"
-                            description="Successfully executed logs"
+                            description="Processed status"
                         />
                         <StatsCard
                             title="In Progress"
                             value={(reportsMetrics as any)?.inProgressCount}
                             loading={isReportsLoading}
-                            icon={<Clock size={18} className="text-blue-500" />}
+                            icon={<Loader2 size={18} className="text-blue-500 animate-spin" />}
                             iconBg="bg-blue-500/10"
                             gradient="bg-blue-500"
                             description="Under dynamic processing"
@@ -1017,7 +1292,9 @@ export default function ReportsPage() {
                                 ? (installationColumns as any)
                                 : activeTab === "expenses"
                                 ? (expenseColumns as any)
-                                : (masterMillColumns as any)
+                                : activeTab === "master-mills"
+                                ? (masterMillColumns as any)
+                                : (storeColumns as any)
                         }
                         data={reportsData as any}
                         loading={isReportsLoading || isRefreshing}
@@ -1030,7 +1307,9 @@ export default function ReportsPage() {
                                 ? "installations"
                                 : activeTab === "expenses"
                                 ? "expenses"
-                                : "master mills"
+                                : activeTab === "master-mills"
+                                ? "master mills"
+                                : "store logs"
                         }
                         pagination={pagination}
                         onPaginationChange={setPagination}
@@ -1073,6 +1352,12 @@ export default function ReportsPage() {
                             technicianId: technicianFilter || undefined,
                             millName: millNameFilter || undefined,
                             frameNo: frameNoFilter || undefined,
+                            serviceEngineerId: technicianFilter || undefined,
+                            customerId: storeCustomerFilter || undefined,
+                            materialId: storeMaterialFilter || undefined,
+                            warrantyStatus: storeWarrantyFilter || undefined,
+                            returnStatus: storeReturnFilter || undefined,
+                            inflowStatus: storeInflowFilter || undefined,
                         };
                         await downloadReportFile(activeTab, fmt, params);
                         toast.success(`${fmt.toUpperCase()} report downloaded successfully`);

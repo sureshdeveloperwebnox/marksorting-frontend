@@ -83,7 +83,6 @@ export interface ServicesReportResponse {
         completedCount: number;
     };
 }
-
 export interface InstallationsReportResponse {
     reports: ReportsInstallationReport[];
     total: number;
@@ -93,6 +92,34 @@ export interface InstallationsReportResponse {
         inProgressCount: number;
         completedCount: number;
     };
+}
+
+export interface ReportsStoreMaterial {
+    material: {
+        id: string;
+        name: string;
+    };
+    quantity: number;
+}
+
+export interface ReportsStore {
+    id: string;
+    service_engineer?: { id: string; full_name: string };
+    customer?: { id: string; name: string };
+    materials: ReportsStoreMaterial[];
+    quantity: number;
+    warranty_status?: string;
+    return_status?: string;
+    inflow_status?: string;
+    frame_number?: string;
+    barcode?: string;
+    remarks?: string;
+    created_at?: string;
+}
+
+export interface StoresReportResponse {
+    stores: ReportsStore[];
+    total: number;
 }
 
 export interface ExpensesReportResponse {
@@ -208,8 +235,31 @@ export const useReportsMasterMills = (params: {
     });
 };
 
+export const useReportsStores = (params: {
+    skip: number;
+    take: number;
+    search?: string;
+    serviceEngineerId?: string;
+    customerId?: string;
+    materialId?: string;
+    warrantyStatus?: string;
+    returnStatus?: string;
+    inflowStatus?: string;
+    dateFrom?: string;
+    dateTo?: string;
+}) => {
+    return useQuery({
+        queryKey: ["reports", "stores", params],
+        queryFn: async () => {
+            const { data } = await api.get<StoresReportResponse>("/reports/stores", { params });
+            return data;
+        },
+        placeholderData: keepPreviousData,
+    });
+};
+
 export const downloadReportFile = async (
-    tab: "services" | "installations" | "expenses" | "master-mills",
+    tab: "services" | "installations" | "expenses" | "master-mills" | "stores",
     format: "pdf" | "csv" | "excel",
     params: Record<string, any>
 ) => {
