@@ -13,6 +13,8 @@ interface ReportsState {
     dateTo: string;
     millFilter: string;
     technicianFilter: string;
+    millNameFilter: string;
+    frameNoFilter: string;
     setActiveTab: (tab: "services" | "installations" | "expenses" | "master-mills") => void;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
@@ -22,6 +24,8 @@ interface ReportsState {
     setDateTo: (date: string) => void;
     setMillFilter: (millId: string) => void;
     setTechnicianFilter: (technicianId: string) => void;
+    setMillNameFilter: (millName: string) => void;
+    setFrameNoFilter: (frameNo: string) => void;
     resetFilters: () => void;
 }
 
@@ -38,6 +42,8 @@ const useReportsStore = create<ReportsState>((set) => ({
     dateTo: "",
     millFilter: "",
     technicianFilter: "",
+    millNameFilter: "",
+    frameNoFilter: "",
     setActiveTab: (activeTab) =>
         set((state) => ({
             activeTab,
@@ -49,6 +55,8 @@ const useReportsStore = create<ReportsState>((set) => ({
             dateTo: "",
             millFilter: "",
             technicianFilter: "",
+            millNameFilter: "",
+            frameNoFilter: "",
         })),
     setPagination: (pagination) => set({ pagination }),
     setSearch: (search) =>
@@ -86,6 +94,16 @@ const useReportsStore = create<ReportsState>((set) => ({
             technicianFilter,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setMillNameFilter: (millNameFilter) =>
+        set((state) => ({
+            millNameFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setFrameNoFilter: (frameNoFilter) =>
+        set((state) => ({
+            frameNoFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
     resetFilters: () =>
         set((state) => ({
             search: "",
@@ -95,6 +113,8 @@ const useReportsStore = create<ReportsState>((set) => ({
             dateTo: "",
             millFilter: "",
             technicianFilter: "",
+            millNameFilter: "",
+            frameNoFilter: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
 }));

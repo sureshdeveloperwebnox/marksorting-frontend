@@ -118,6 +118,7 @@ export interface MasterMillsReportResponse {
     };
 }
 
+
 export const useReportsServices = (params: {
     skip: number;
     take: number;
@@ -128,6 +129,8 @@ export const useReportsServices = (params: {
     dateTo?: string;
     millId?: string;
     technicianId?: string;
+    millName?: string;
+    frameNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "services", params],
@@ -148,6 +151,8 @@ export const useReportsInstallations = (params: {
     dateTo?: string;
     millId?: string;
     technicianId?: string;
+    millName?: string;
+    frameNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "installations", params],
@@ -169,6 +174,8 @@ export const useReportsExpenses = (params: {
     dateTo?: string;
     millId?: string;
     technicianId?: string;
+    millName?: string;
+    frameNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "expenses", params],
@@ -188,6 +195,8 @@ export const useReportsMasterMills = (params: {
     dateFrom?: string;
     dateTo?: string;
     millId?: string;
+    millName?: string;
+    frameNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "master-mills", params],

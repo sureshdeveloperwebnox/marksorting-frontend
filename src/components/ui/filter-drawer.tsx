@@ -21,6 +21,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
 import { RotateCcw, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 export interface FilterOption {
   value: string;
@@ -33,8 +34,8 @@ export interface FilterField {
   id: string;
   label: string;
   placeholder?: string;
-  /** "select" (default) renders a dropdown; "date" renders a DatePicker; "date-range" renders a DateRangePicker */
-  type?: "select" | "date" | "date-range";
+  /** "select" (default) renders a dropdown; "date" renders a DatePicker; "date-range" renders a DateRangePicker; "text" renders a text input */
+  type?: "select" | "date" | "date-range" | "text";
   options?: FilterOption[];
   /** When true, the field is rendered but interaction is disabled */
   disabled?: boolean;
@@ -92,7 +93,7 @@ export function GenericFilterDrawer({
       // Drawer just opened — initialize local values from activeValues
       const initial: Record<string, string> = {};
       fields.forEach((field) => {
-        initial[field.id] = activeValues[field.id] || (field.type === "date" || field.type === "date-range" ? "" : "ALL");
+        initial[field.id] = activeValues[field.id] || (field.type === "date" || field.type === "date-range" || field.type === "text" ? "" : "ALL");
       });
       setLocalValues(initial);
     }
@@ -112,7 +113,7 @@ export function GenericFilterDrawer({
       let changed = false;
       fields.forEach((field) => {
         if (!(field.id in merged)) {
-          merged[field.id] = activeValues[field.id] || (field.type === "date" || field.type === "date-range" ? "" : "ALL");
+          merged[field.id] = activeValues[field.id] || (field.type === "date" || field.type === "date-range" || field.type === "text" ? "" : "ALL");
           changed = true;
         }
       });
@@ -128,7 +129,7 @@ export function GenericFilterDrawer({
   const handleReset = () => {
     const cleared: Record<string, string> = {};
     fields.forEach((field) => {
-      cleared[field.id] = field.type === "date" || field.type === "date-range" ? "" : "ALL";
+      cleared[field.id] = field.type === "date" || field.type === "date-range" || field.type === "text" ? "" : "ALL";
     });
     setLocalValues(cleared);
     onReset();
@@ -213,6 +214,14 @@ export function GenericFilterDrawer({
                     value={currentValue}
                     onChange={(val) => { if (!isDisabled) handleValueChange(field.id, val); }}
                     placeholder={field.placeholder || "Select date..."}
+                  />
+                ) : field.type === "text" ? (
+                  <Input
+                    value={currentValue}
+                    onChange={(e) => { if (!isDisabled) handleValueChange(field.id, e.target.value); }}
+                    placeholder={field.placeholder || "Enter search term..."}
+                    className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold px-4 transition-all duration-300 shadow-sm text-gray-700 dark:text-gray-300"
+                    disabled={isDisabled}
                   />
                 ) : (
                   <Select

@@ -154,6 +154,10 @@ export default function ReportsPage() {
         setMillFilter,
         technicianFilter,
         setTechnicianFilter,
+        millNameFilter,
+        setMillNameFilter,
+        frameNoFilter,
+        setFrameNoFilter,
         resetFilters,
     } = useReportsStore();
 
@@ -180,6 +184,8 @@ export default function ReportsPage() {
         dateTo: dateTo || undefined,
         millId: millFilter || undefined,
         technicianId: technicianFilter || undefined,
+        millName: millNameFilter || undefined,
+        frameNo: frameNoFilter || undefined,
     });
 
     const installationsQuery = useReportsInstallations({
@@ -191,6 +197,8 @@ export default function ReportsPage() {
         dateTo: dateTo || undefined,
         millId: millFilter || undefined,
         technicianId: technicianFilter || undefined,
+        millName: millNameFilter || undefined,
+        frameNo: frameNoFilter || undefined,
     });
 
     const expensesQuery = useReportsExpenses({
@@ -203,6 +211,8 @@ export default function ReportsPage() {
         dateTo: dateTo || undefined,
         millId: millFilter || undefined,
         technicianId: technicianFilter || undefined,
+        millName: millNameFilter || undefined,
+        frameNo: frameNoFilter || undefined,
     });
 
     const masterMillsQuery = useReportsMasterMills({
@@ -213,6 +223,8 @@ export default function ReportsPage() {
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         millId: millFilter || undefined,
+        millName: millNameFilter || undefined,
+        frameNo: frameNoFilter || undefined,
     });
 
     // Fetch categories + lookup data for filter drawer
@@ -221,8 +233,8 @@ export default function ReportsPage() {
     const { data: millsData } = useMills({ skip: 0, take: 500 });
     const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
 
-    const hasActiveFilters = !!(search || statusFilter || categoryFilter || dateFrom || dateTo || millFilter || technicianFilter);
-    const activeFilterCount = [statusFilter, categoryFilter, millFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
+    const hasActiveFilters = !!(search || statusFilter || categoryFilter || dateFrom || dateTo || millFilter || technicianFilter || millNameFilter || frameNoFilter);
+    const activeFilterCount = [statusFilter, categoryFilter, millFilter, technicianFilter, dateFrom, dateTo, millNameFilter, frameNoFilter].filter(Boolean).length;
 
     // Build tab-aware filter fields for the drawer
     const filterFields: FilterField[] = React.useMemo(() => {
@@ -247,12 +259,26 @@ export default function ReportsPage() {
 
         const millField: FilterField = {
             id: "millId",
-            label: "Mill",
+            label: "Select Mill",
             placeholder: "All Mills",
             options: [
                 { value: "ALL", label: "All Mills" },
                 ...(millsData?.mills ?? []).map((m) => ({ value: m.id, label: m.name })),
             ],
+        };
+
+        const millNameField: FilterField = {
+            id: "millName",
+            label: "Mill Name",
+            type: "text",
+            placeholder: "Enter Mill Name...",
+        };
+
+        const frameNoField: FilterField = {
+            id: "frameNo",
+            label: "Machine Frame No",
+            type: "text",
+            placeholder: "Enter Machine Frame No...",
         };
 
         const techField: FilterField = {
@@ -299,10 +325,10 @@ export default function ReportsPage() {
             placeholder: "To Date",
         };
 
-        if (activeTab === "services") return [statusField, serviceCategoryField, millField, techField, dateFromField, dateToField];
-        if (activeTab === "installations") return [statusField, millField, techField, dateFromField, dateToField];
-        if (activeTab === "master-mills") return [statusField, millField, dateFromField, dateToField];
-        return [statusField, expenseCategoryField, millField, techField, dateFromField, dateToField];
+        if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
+        if (activeTab === "installations") return [statusField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
+        if (activeTab === "master-mills") return [statusField, millField, millNameField, frameNoField, dateFromField, dateToField];
+        return [statusField, expenseCategoryField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
     }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData]);
 
     const filterActiveValues: Record<string, string> = {
@@ -312,6 +338,8 @@ export default function ReportsPage() {
         technicianId: technicianFilter || "ALL",
         dateFrom: dateFrom || "",
         dateTo: dateTo || "",
+        millName: millNameFilter || "",
+        frameNo: frameNoFilter || "",
     };
 
     const handleFilterApply = (values: Record<string, string>) => {
@@ -321,6 +349,8 @@ export default function ReportsPage() {
         setTechnicianFilter(values.technicianId === "ALL" ? "" : (values.technicianId ?? ""));
         setDateFrom(values.dateFrom ?? "");
         setDateTo(values.dateTo ?? "");
+        setMillNameFilter(values.millName ?? "");
+        setFrameNoFilter(values.frameNo ?? "");
     };
 
     /* ─── TABLE COLUMNS DEFINITION ────────────────────────────────── */
@@ -1020,6 +1050,8 @@ export default function ReportsPage() {
                             dateTo: to || undefined,
                             millId: millFilter || undefined,
                             technicianId: technicianFilter || undefined,
+                            millName: millNameFilter || undefined,
+                            frameNo: frameNoFilter || undefined,
                         };
                         await downloadReportFile(activeTab, fmt, params);
                         toast.success(`${fmt.toUpperCase()} report downloaded successfully`);
