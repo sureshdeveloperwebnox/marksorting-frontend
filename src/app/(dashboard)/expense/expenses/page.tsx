@@ -687,49 +687,19 @@ export default function ExpensesPage() {
       header: "Status",
       cell: ({ row }) => {
         const status = row.original.status;
-        const expenseId = row.original.id;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <button className="flex items-center gap-2 cursor-pointer outline-none select-none group/status hover:scale-105 active:scale-95 transition-all duration-300">
-                  <div className={cn("w-2 h-2 rounded-full animate-pulse", getStatusDotColors(status))} />
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "rounded-md font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-1 shadow-sm transition-all duration-300 cursor-pointer group-hover/status:border-primary/50",
-                      getStatusColors(status)
-                    )}
-                  >
-                    {getStatusLabel(status)}
-                  </Badge>
-                </button>
-              }
-            />
-            <DropdownMenuContent align="start" className="w-40 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 z-[9999]">
-              <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">Set Status</div>
-              {[
-                { value: "PENDING", label: "Pending", color: "amber" },
-                { value: "IN_PROGRESS", label: "In Progress", color: "blue" },
-                { value: "COMPLETED", label: "Approved", color: "emerald" },
-                { value: "CANCELLED", label: "Rejected", color: "rose" },
-              ].map((s) => (
-                <DropdownMenuItem
-                  key={s.value}
-                  className={cn(
-                    "rounded-lg font-semibold text-xs my-0.5 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
-                    status === s.value
-                      ? `text-${s.color}-500 bg-${s.color}-500/5`
-                      : "text-gray-700 dark:text-gray-300"
-                  )}
-                  onClick={() => updateExpenseMutation.mutate({ id: expenseId, status: s.value })}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full bg-${s.color}-500`} />
-                  {s.label.toUpperCase()}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2 select-none">
+            <div className={cn("w-1.5 h-1.5 rounded-full", getStatusDotColors(status))} />
+            <Badge
+              variant="outline"
+              className={cn(
+                "rounded-md font-semibold text-[10px] uppercase px-2.5 py-1 shadow-sm",
+                getStatusColors(status)
+              )}
+            >
+              {getStatusLabel(status)}
+            </Badge>
+          </div>
         );
       },
     },
