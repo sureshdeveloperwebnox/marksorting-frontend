@@ -147,6 +147,8 @@ const installationReportSchema = z.object({
   invoice_date: z.string().optional().or(z.literal('')),
   warranty_start_date: z.string().optional().or(z.literal('')),
   warranty_end_date: z.string().optional().or(z.literal('')),
+  warranty_years: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0).optional()),
+  warranty_months: z.preprocess((val) => val === '' || val === null || val === undefined ? 0 : Number(val), z.number().min(0).optional()),
   commodity: z.string().optional().or(z.literal('')),
   contamination: z.string().optional().or(z.literal('')),
   output_capacity_per_hour: z.string().optional().or(z.literal('')),
@@ -319,6 +321,8 @@ export function InstallationReportFormDrawer() {
       invoice_date: '',
       warranty_start_date: '',
       warranty_end_date: '',
+      warranty_years: 0,
+      warranty_months: 0,
       commodity: '',
       contamination: '',
       output_capacity_per_hour: '',
@@ -456,6 +460,18 @@ export function InstallationReportFormDrawer() {
     if (m.invoice_date) {
       setValue('invoice_date', m.invoice_date.split('T')[0]);
     }
+    if (m.warranty_start_date) {
+      setValue('warranty_start_date', m.warranty_start_date.split('T')[0]);
+    }
+    if (m.warranty_closing_date) {
+      setValue('warranty_end_date', m.warranty_closing_date.split('T')[0]);
+    }
+    if (m.warranty_years !== undefined && m.warranty_years !== null) {
+      setValue('warranty_years', m.warranty_years);
+    }
+    if (m.warranty_months !== undefined && m.warranty_months !== null) {
+      setValue('warranty_months', m.warranty_months);
+    }
     setSelectedMachineId(m.id);
     setMachineSearchQuery('');
     toast.success('Machine details prefilled! Verify and adjust as needed.');
@@ -512,6 +528,29 @@ export function InstallationReportFormDrawer() {
     }
   }, [masterMills, watch('serial_or_frame_no')]);
 
+  // Dynamic auto-calculation of Warranty End Date
+  const watchedWarrantyStartDate = watch('warranty_start_date');
+  const watchedWarrantyYears = watch('warranty_years');
+  const watchedWarrantyMonths = watch('warranty_months');
+
+  React.useEffect(() => {
+    if (watchedWarrantyStartDate) {
+      const date = new Date(watchedWarrantyStartDate);
+      if (!isNaN(date.getTime())) {
+        const years = Number(watchedWarrantyYears) || 0;
+        const months = Number(watchedWarrantyMonths) || 0;
+        date.setFullYear(date.getFullYear() + years);
+        date.setMonth(date.getMonth() + months);
+        date.setDate(date.getDate() - 1);
+        const formatted = date.toISOString().split('T')[0];
+        setValue('warranty_end_date', formatted);
+      }
+    } else {
+      setValue('warranty_end_date', '');
+    }
+  }, [watchedWarrantyStartDate, watchedWarrantyYears, watchedWarrantyMonths, setValue]);
+
+
   React.useEffect(() => {
     if (!isFormDrawerOpen) {
       initializedFormKeyRef.current = null;
@@ -549,6 +588,8 @@ export function InstallationReportFormDrawer() {
           invoice_date: reportData.invoice_date?.split('T')[0] || '',
           warranty_start_date: reportData.warranty_start_date?.split('T')[0] || '',
           warranty_end_date: reportData.warranty_end_date?.split('T')[0] || '',
+          warranty_years: reportData.warranty_years ?? 0,
+          warranty_months: reportData.warranty_months ?? 0,
           commodity: reportData.commodity || '',
           contamination: reportData.contamination || '',
           output_capacity_per_hour: reportData.output_capacity_per_hour || '',
@@ -592,6 +633,8 @@ export function InstallationReportFormDrawer() {
           invoice_date: '',
           warranty_start_date: '',
           warranty_end_date: '',
+          warranty_years: 0,
+          warranty_months: 0,
           commodity: '',
           contamination: '',
           output_capacity_per_hour: '',
@@ -761,6 +804,10 @@ export function InstallationReportFormDrawer() {
               payload.running_channel_combination = val ? Number(val) : null;
             } else if (key === 'no_of_filters_installed') {
               payload.no_of_filters_installed = val ? Number(val) : null;
+            } else if (key === 'warranty_years') {
+              payload.warranty_years = val ? Number(val) : null;
+            } else if (key === 'warranty_months') {
+              payload.warranty_months = val ? Number(val) : null;
             } else if (key === 'engineer_signature') {
               payload.engineer_signature = engineerSignatureUrl;
             } else if (key === 'customer_signature') {
@@ -811,6 +858,8 @@ export function InstallationReportFormDrawer() {
           invoice_date: data.invoice_date || undefined,
           warranty_start_date: data.warranty_start_date || undefined,
           warranty_end_date: data.warranty_end_date || undefined,
+          warranty_years: data.warranty_years ? Number(data.warranty_years) : undefined,
+          warranty_months: data.warranty_months ? Number(data.warranty_months) : undefined,
           authorized_person_phone: data.authorized_person_phone || undefined,
           visit_time: data.visit_time || undefined,
           engineer_signature: engineerSignatureUrl,
@@ -1295,6 +1344,8 @@ export function InstallationReportFormDrawer() {
                               setValue('invoice_date', '');
                               setValue('warranty_start_date', '');
                               setValue('warranty_end_date', '');
+                              setValue('warranty_years', 0);
+                              setValue('warranty_months', 0);
                               return;
                             }
                             const m = masterMills.find((rec) => rec.id === val);
@@ -1318,6 +1369,18 @@ export function InstallationReportFormDrawer() {
                               }
                               if (m.mfg_date) {
                                 setValue('machine_mfg_date', m.mfg_date.split('T')[0]);
+                              }
+                              if (m.warranty_start_date) {
+                                setValue('warranty_start_date', m.warranty_start_date.split('T')[0]);
+                              }
+                              if (m.warranty_closing_date) {
+                                setValue('warranty_end_date', m.warranty_closing_date.split('T')[0]);
+                              }
+                              if (m.warranty_years !== undefined && m.warranty_years !== null) {
+                                setValue('warranty_years', m.warranty_years);
+                              }
+                              if (m.warranty_months !== undefined && m.warranty_months !== null) {
+                                setValue('warranty_months', m.warranty_months);
                               }
                               setSelectedMachineId(m.id);
                               toast.success('Machine details prefilled! Verify and adjust as needed.');
@@ -1568,41 +1631,58 @@ export function InstallationReportFormDrawer() {
                   </div>
 
                   {/* Warranty details */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                        <ShieldCheck size={14} className="text-primary/70" />
-                        Warranty Start Date
-                      </Label>
-                      <Controller
-                        name="warranty_start_date"
-                        control={control}
-                        render={({ field }) => (
-                          <DatePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Select warranty start date"
-                          />
-                        )}
-                      />
-                    </div>
+                  <div className="border-t border-gray-100 dark:border-white/5 pt-4 my-2">
+                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Warranty Details</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                          <ShieldCheck size={14} className="text-primary/70" />
+                          Warranty Start Date
+                        </Label>
+                        <Controller
+                          name="warranty_start_date"
+                          control={control}
+                          render={({ field }) => (
+                            <DatePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Select warranty start date"
+                            />
+                          )}
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                        <ShieldCheck size={14} className="text-primary/70" />
-                        Warranty End Date
-                      </Label>
-                      <Controller
-                        name="warranty_end_date"
-                        control={control}
-                        render={({ field }) => (
-                          <DatePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Select warranty end date"
-                          />
-                        )}
-                      />
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                          Warranty Duration (Years)
+                        </Label>
+                        <Input
+                          {...register('warranty_years')}
+                          type="number"
+                          min={0}
+                          placeholder="1"
+                          className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                          <ShieldCheck size={14} className="text-primary/70" />
+                          Warranty End Date
+                        </Label>
+                        <Controller
+                          name="warranty_end_date"
+                          control={control}
+                          render={({ field }) => (
+                            <DatePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Auto-calculated"
+                            />
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

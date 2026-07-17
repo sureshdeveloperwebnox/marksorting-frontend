@@ -28,6 +28,8 @@ export interface InstallationReport {
     invoice_date?: string;
     warranty_start_date?: string;
     warranty_end_date?: string;
+    warranty_years?: number;
+    warranty_months?: number;
     commodity?: string;
     contamination?: string;
     output_capacity_per_hour?: string;

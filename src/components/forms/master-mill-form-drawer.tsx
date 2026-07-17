@@ -323,6 +323,7 @@ export function MasterMillFormDrawer() {
         const months = Number(watchedWarrantyMonths) || 0;
         date.setFullYear(date.getFullYear() + years);
         date.setMonth(date.getMonth() + months);
+        date.setDate(date.getDate() - 1);
         const formatted = date.toISOString().split('T')[0];
         setValue('warranty_closing_date', formatted);
       }
@@ -341,6 +342,7 @@ export function MasterMillFormDrawer() {
       if (!isNaN(date.getTime())) {
         const period = Number(watchedAmcPeriod) || 0;
         date.setMonth(date.getMonth() + period);
+        date.setDate(date.getDate() - 1);
         const formatted = date.toISOString().split('T')[0];
         setValue('amc_closing_date', formatted);
       }
