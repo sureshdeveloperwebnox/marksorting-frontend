@@ -83,6 +83,16 @@ const getStatusDotColors = (status: string) => {
   }
 };
 
+const getStatusLabel = (status: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING": return "PENDING";
+    case "IN_PROGRESS": return "IN PROGRESS";
+    case "COMPLETED": return "APPROVED";
+    case "CANCELLED": return "REJECTED";
+    default: return status || "";
+  }
+};
+
 
 
 /* ─── Page ──────────────────────────────────────────────────────── */
@@ -270,7 +280,7 @@ export default function ExpensesPage() {
                   getStatusColors(viewExpenseData.status)
                 )}
               >
-                {viewExpenseData.status?.replace("_", " ")}
+                {getStatusLabel(viewExpenseData.status)}
               </Badge>
             ),
             icon: Activity,
@@ -516,8 +526,8 @@ export default function ExpensesPage() {
         { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
         { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
         { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
-        { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500", animatePulse: true },
-        { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500", animatePulse: true },
+        { value: "COMPLETED", label: "Approved", iconColor: "bg-emerald-500", animatePulse: true },
+        { value: "CANCELLED", label: "Rejected", iconColor: "bg-rose-500", animatePulse: true },
       ],
     },
     {
@@ -691,7 +701,7 @@ export default function ExpensesPage() {
                       getStatusColors(status)
                     )}
                   >
-                    {status?.replace("_", " ")}
+                    {getStatusLabel(status)}
                   </Badge>
                 </button>
               }
@@ -701,8 +711,8 @@ export default function ExpensesPage() {
               {[
                 { value: "PENDING", label: "Pending", color: "amber" },
                 { value: "IN_PROGRESS", label: "In Progress", color: "blue" },
-                { value: "COMPLETED", label: "Completed", color: "emerald" },
-                { value: "CANCELLED", label: "Cancelled", color: "rose" },
+                { value: "COMPLETED", label: "Approved", color: "emerald" },
+                { value: "CANCELLED", label: "Rejected", color: "rose" },
               ].map((s) => (
                 <DropdownMenuItem
                   key={s.value}
@@ -811,8 +821,8 @@ export default function ExpensesPage() {
                   { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
                   { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
                   { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
-                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                  { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+                  { value: "COMPLETED", label: "Approved", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "CANCELLED", label: "Rejected", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
                 ]}
                 activeValue={statusFilter || ""}
                 onChange={(value) => setStatusFilter(value)}

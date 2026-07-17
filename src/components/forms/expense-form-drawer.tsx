@@ -30,6 +30,8 @@ import {
   PlusCircle,
   Cpu,
   FileText,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -196,9 +198,30 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-[11px] text-rose-500 font-bold ml-1">{message}</p> : null;
 }
 
+const getStatusColors = (status?: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
+    case "IN_PROGRESS": return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500 dark:border-blue-400";
+    case "COMPLETED": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
+    case "CANCELLED": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
+    default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
+  }
+};
+
+const getStatusLabel = (status?: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING": return "PENDING";
+    case "IN_PROGRESS": return "IN PROGRESS";
+    case "COMPLETED": return "APPROVED";
+    case "CANCELLED": return "REJECTED";
+    default: return status || "";
+  }
+};
+
 export function ExpenseFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedId } = useExpenseStore();
   const isEdit = !!selectedId;
+  const [statusToSet, setStatusToSet] = React.useState<string | undefined>(undefined);
 
   const { data: expenseData, isLoading: expenseLoading } = useExpense(selectedId);
   const { data: millsData } = useMills({ skip: 0, take: 500 });
@@ -404,6 +427,7 @@ export function ExpenseFormDrawer() {
       initializedFormKeyRef.current = null;
       setSelectedCustomerId('');
       setSelectedMachineId('');
+      setStatusToSet(undefined);
       return;
     }
 
@@ -531,7 +555,7 @@ export function ExpenseFormDrawer() {
 
   const onSubmit: SubmitHandler<ExpenseFormValues> = async (data) => {
     try {
-      const payload = {
+      const payload: any = {
         ...data,
         mill_id: data.expense_type === 'MILL' ? (data.mill_id || null) : null,
         place: data.place || null,
@@ -544,6 +568,10 @@ export function ExpenseFormDrawer() {
           amount: Number(item.amount || 0),
         })),
       };
+
+      if (statusToSet) {
+        payload.status = statusToSet;
+      }
 
       if (isEdit) {
         await updateExpense({ id: selectedId, ...payload });
@@ -1606,33 +1634,92 @@ export function ExpenseFormDrawer() {
         </div>
 
         <SheetFooter className="px-6 py-4 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900 z-10">
-          <div className="flex gap-3 w-full">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={closeFormDrawer}
-              className="flex-1 h-11 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="expense-report-form"
-              disabled={isSubmitting}
-              className="flex-1 h-11 rounded-xl text-sm font-bold bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/20"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  {isEdit ? 'Save Changes' : 'Create Expense'}
-                </>
-              )}
-            </Button>
+          <div className="flex flex-col gap-3 w-full">
+            {isEdit && (expenseData?.status === "COMPLETED" || expenseData?.status === "CANCELLED") ? (
+              <div className="flex items-center justify-between gap-3 w-full">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Status:</span>
+                  <span className={cn(
+                    "inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold border uppercase tracking-wider",
+                    getStatusColors(expenseData.status)
+                  )}>
+                    {getStatusLabel(expenseData.status)}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeFormDrawer}
+                  className="w-32 h-11 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
+                >
+                  Close
+                </Button>
+              </div>
+            ) : (
+              <>
+                {isEdit && (
+                  <div className="flex gap-3 w-full">
+                    <Button
+                      type="submit"
+                      form="expense-report-form"
+                      onClick={() => setStatusToSet("COMPLETED")}
+                      disabled={isSubmitting}
+                      className="flex-1 h-11 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting && statusToSet === "COMPLETED" ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                      Approve
+                    </Button>
+                    <Button
+                      type="submit"
+                      form="expense-report-form"
+                      onClick={() => setStatusToSet("CANCELLED")}
+                      disabled={isSubmitting}
+                      className="flex-1 h-11 rounded-xl text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/10 flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting && statusToSet === "CANCELLED" ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                      Reject
+                    </Button>
+                  </div>
+                )}
+                <div className="flex gap-3 w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeFormDrawer}
+                    className="flex-1 h-11 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="expense-report-form"
+                    onClick={() => setStatusToSet(undefined)}
+                    disabled={isSubmitting}
+                    className="flex-1 h-11 rounded-xl text-sm font-bold bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/20"
+                  >
+                    {isSubmitting && !statusToSet ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {isEdit ? 'Save Changes' : 'Create Expense'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </SheetFooter>
 

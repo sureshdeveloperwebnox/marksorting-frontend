@@ -82,6 +82,19 @@ const getStatusDotColors = (status: string) => {
     }
 };
 
+const getStatusLabel = (status: string, tab: string) => {
+    if (tab === "expenses") {
+        switch (status?.toUpperCase()) {
+            case "PENDING": return "PENDING";
+            case "IN_PROGRESS": return "IN PROGRESS";
+            case "COMPLETED": return "APPROVED";
+            case "CANCELLED": return "REJECTED";
+            default: return status || "";
+        }
+    }
+    return status?.replace("_", " ") || "";
+};
+
 /* ─── Stats Card Component ─────────────────────────────────────── */
 
 interface StatsCardProps {
@@ -247,6 +260,14 @@ export default function ReportsPage() {
                     { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
                     { value: "ACTIVE", label: "Active", iconColor: "bg-emerald-500" },
                     { value: "INACTIVE", label: "Inactive", iconColor: "bg-gray-400" },
+                  ]
+                : activeTab === "expenses"
+                ? [
+                    { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
+                    { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
+                    { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
+                    { value: "COMPLETED", label: "Approved", iconColor: "bg-emerald-500" },
+                    { value: "CANCELLED", label: "Rejected", iconColor: "bg-rose-500" },
                   ]
                 : [
                     { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
@@ -417,7 +438,7 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2 select-none">
                         <div className={cn("w-1.5 h-1.5 rounded-full", getStatusDotColors(status))} />
                         <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", getStatusColors(status))}>
-                            {status}
+                            {getStatusLabel(status, "services")}
                         </Badge>
                     </div>
                 );
@@ -485,7 +506,7 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2 select-none">
                         <div className={cn("w-1.5 h-1.5 rounded-full", getStatusDotColors(status))} />
                         <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", getStatusColors(status))}>
-                            {status}
+                            {getStatusLabel(status, "installations")}
                         </Badge>
                     </div>
                 );
@@ -577,7 +598,7 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2 select-none">
                         <div className={cn("w-1.5 h-1.5 rounded-full", getStatusDotColors(status))} />
                         <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", getStatusColors(status))}>
-                            {status}
+                            {getStatusLabel(status, "expenses")}
                         </Badge>
                     </div>
                 );
