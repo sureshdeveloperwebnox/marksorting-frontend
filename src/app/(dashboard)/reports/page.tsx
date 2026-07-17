@@ -176,6 +176,8 @@ export default function ReportsPage() {
         setMillNameFilter,
         frameNoFilter,
         setFrameNoFilter,
+        refNoFilter,
+        setRefNoFilter,
         storeWarrantyFilter,
         storeReturnFilter,
         storeInflowFilter,
@@ -214,6 +216,7 @@ export default function ReportsPage() {
         technicianId: technicianFilter || undefined,
         millName: millNameFilter || undefined,
         frameNo: frameNoFilter || undefined,
+        refNo: refNoFilter || undefined,
     });
 
     const installationsQuery = useReportsInstallations({
@@ -227,6 +230,7 @@ export default function ReportsPage() {
         technicianId: technicianFilter || undefined,
         millName: millNameFilter || undefined,
         frameNo: frameNoFilter || undefined,
+        refNo: refNoFilter || undefined,
     });
 
     const expensesQuery = useReportsExpenses({
@@ -241,6 +245,7 @@ export default function ReportsPage() {
         technicianId: technicianFilter || undefined,
         millName: millNameFilter || undefined,
         frameNo: frameNoFilter || undefined,
+        refNo: refNoFilter || undefined,
     });
 
     const masterMillsQuery = useReportsMasterMills({
@@ -253,6 +258,7 @@ export default function ReportsPage() {
         millId: millFilter || undefined,
         millName: millNameFilter || undefined,
         frameNo: frameNoFilter || undefined,
+        refNo: refNoFilter || undefined,
     });
 
     const storesQuery = useReportsStores({
@@ -287,6 +293,7 @@ export default function ReportsPage() {
         technicianFilter ||
         millNameFilter ||
         frameNoFilter ||
+        refNoFilter ||
         storeWarrantyFilter ||
         storeReturnFilter ||
         storeInflowFilter ||
@@ -302,6 +309,7 @@ export default function ReportsPage() {
         dateTo,
         millNameFilter,
         frameNoFilter,
+        refNoFilter,
         storeWarrantyFilter,
         storeReturnFilter,
         storeInflowFilter,
@@ -362,6 +370,13 @@ export default function ReportsPage() {
             placeholder: "Enter Machine Frame No...",
         };
 
+        const refNoField: FilterField = {
+            id: "refNo",
+            label: "Ref No",
+            type: "text",
+            placeholder: "Enter Ref No...",
+        };
+
         const techField: FilterField = {
             id: "technicianId",
             label: "Technician",
@@ -406,9 +421,9 @@ export default function ReportsPage() {
             placeholder: "To Date",
         };
 
-        if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
-        if (activeTab === "installations") return [statusField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
-        if (activeTab === "master-mills") return [statusField, millField, millNameField, frameNoField, dateFromField, dateToField];
+        if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
+        if (activeTab === "installations") return [statusField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
+        if (activeTab === "master-mills") return [statusField, millField, millNameField, refNoField, frameNoField, dateFromField, dateToField];
         if (activeTab === "stores") {
             const engineerField: FilterField = {
                 id: "technicianId",
@@ -477,7 +492,7 @@ export default function ReportsPage() {
 
             return [engineerField, customerField, materialField, warrantyStatusField, returnStatusField, inflowStatusField, dateFromField, dateToField];
         }
-        return [statusField, expenseCategoryField, millField, millNameField, frameNoField, techField, dateFromField, dateToField];
+        return [statusField, expenseCategoryField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
     }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData, customersData, materialsData]);
 
     const filterActiveValues: Record<string, string> = {
@@ -489,6 +504,7 @@ export default function ReportsPage() {
         dateTo: dateTo || "",
         millName: millNameFilter || "",
         frameNo: frameNoFilter || "",
+        refNo: refNoFilter || "",
         storeWarranty: storeWarrantyFilter || "ALL",
         storeReturn: storeReturnFilter || "ALL",
         storeInflow: storeInflowFilter || "ALL",
@@ -505,6 +521,7 @@ export default function ReportsPage() {
         setDateTo(values.dateTo ?? "");
         setMillNameFilter(values.millName ?? "");
         setFrameNoFilter(values.frameNo ?? "");
+        setRefNoFilter(values.refNo ?? "");
         setStoreWarrantyFilter(values.storeWarranty === "ALL" ? "" : (values.storeWarranty ?? ""));
         setStoreReturnFilter(values.storeReturn === "ALL" ? "" : (values.storeReturn ?? ""));
         setStoreInflowFilter(values.storeInflow === "ALL" ? "" : (values.storeInflow ?? ""));
@@ -1352,6 +1369,7 @@ export default function ReportsPage() {
                             technicianId: technicianFilter || undefined,
                             millName: millNameFilter || undefined,
                             frameNo: frameNoFilter || undefined,
+                            refNo: refNoFilter || undefined,
                             serviceEngineerId: technicianFilter || undefined,
                             customerId: storeCustomerFilter || undefined,
                             materialId: storeMaterialFilter || undefined,

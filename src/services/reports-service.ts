@@ -158,6 +158,7 @@ export const useReportsServices = (params: {
     technicianId?: string;
     millName?: string;
     frameNo?: string;
+    refNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "services", params],
@@ -180,6 +181,7 @@ export const useReportsInstallations = (params: {
     technicianId?: string;
     millName?: string;
     frameNo?: string;
+    refNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "installations", params],
@@ -203,6 +205,7 @@ export const useReportsExpenses = (params: {
     technicianId?: string;
     millName?: string;
     frameNo?: string;
+    refNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "expenses", params],
@@ -224,6 +227,7 @@ export const useReportsMasterMills = (params: {
     millId?: string;
     millName?: string;
     frameNo?: string;
+    refNo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "master-mills", params],

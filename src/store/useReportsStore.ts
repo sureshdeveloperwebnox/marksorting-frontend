@@ -15,6 +15,7 @@ interface ReportsState {
     technicianFilter: string;
     millNameFilter: string;
     frameNoFilter: string;
+    refNoFilter: string;
     // Store specific filters
     storeWarrantyFilter: string;
     storeReturnFilter: string;
@@ -33,6 +34,7 @@ interface ReportsState {
     setTechnicianFilter: (technicianId: string) => void;
     setMillNameFilter: (millName: string) => void;
     setFrameNoFilter: (frameNo: string) => void;
+    setRefNoFilter: (refNo: string) => void;
     // Store setters
     setStoreWarrantyFilter: (val: string) => void;
     setStoreReturnFilter: (val: string) => void;
@@ -58,6 +60,7 @@ const useReportsStore = create<ReportsState>((set) => ({
     technicianFilter: "",
     millNameFilter: "",
     frameNoFilter: "",
+    refNoFilter: "",
     storeWarrantyFilter: "",
     storeReturnFilter: "",
     storeInflowFilter: "",
@@ -77,6 +80,7 @@ const useReportsStore = create<ReportsState>((set) => ({
             technicianFilter: "",
             millNameFilter: "",
             frameNoFilter: "",
+            refNoFilter: "",
             storeWarrantyFilter: "",
             storeReturnFilter: "",
             storeInflowFilter: "",
@@ -129,6 +133,11 @@ const useReportsStore = create<ReportsState>((set) => ({
             frameNoFilter,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setRefNoFilter: (refNoFilter) =>
+        set((state) => ({
+            refNoFilter,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
     setStoreWarrantyFilter: (storeWarrantyFilter) =>
         set((state) => ({
             storeWarrantyFilter,
@@ -166,6 +175,7 @@ const useReportsStore = create<ReportsState>((set) => ({
             technicianFilter: "",
             millNameFilter: "",
             frameNoFilter: "",
+            refNoFilter: "",
             storeWarrantyFilter: "",
             storeReturnFilter: "",
             storeInflowFilter: "",
