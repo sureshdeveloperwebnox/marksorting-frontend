@@ -9,6 +9,7 @@ import {
     useReportsExpenses,
     useReportsMasterMills,
     useReportsStores,
+    useReportsFilterOptions,
     downloadReportFile,
     ReportsServiceReport,
     ReportsInstallationReport,
@@ -283,6 +284,10 @@ export default function ReportsPage() {
     const { data: customersData } = useCustomers({ skip: 0, take: 500, status: "ACTIVE" });
     const { data: materialsData } = useMaterials({ skip: 0, take: 500, status: "ACTIVE" });
 
+    // Fetch distinct Ref No + Frame No values for dropdown filters (not needed for stores tab)
+    const filterOptionsType = activeTab !== "stores" ? activeTab : undefined;
+    const { data: filterOptionsData } = useReportsFilterOptions(filterOptionsType);
+
     const hasActiveFilters = !!(
         search ||
         statusFilter ||
@@ -363,18 +368,27 @@ export default function ReportsPage() {
             placeholder: "Enter Mill Name...",
         };
 
+        const frameNos = filterOptionsData?.frameNos ?? [];
+        const refNos = filterOptionsData?.refNos ?? [];
+
         const frameNoField: FilterField = {
             id: "frameNo",
             label: "Machine Frame No",
-            type: "text",
-            placeholder: "Enter Machine Frame No...",
+            placeholder: frameNos.length > 0 ? "Select Frame No..." : "Loading...",
+            options: [
+                { value: "ALL", label: "All Frame Nos" },
+                ...frameNos.map((f) => ({ value: f, label: f })),
+            ],
         };
 
         const refNoField: FilterField = {
             id: "refNo",
             label: "Ref No",
-            type: "text",
-            placeholder: "Enter Ref No...",
+            placeholder: refNos.length > 0 ? "Select Ref No..." : "Loading...",
+            options: [
+                { value: "ALL", label: "All Ref Nos" },
+                ...refNos.map((r) => ({ value: r, label: r })),
+            ],
         };
 
         const techField: FilterField = {
@@ -493,7 +507,7 @@ export default function ReportsPage() {
             return [engineerField, customerField, materialField, warrantyStatusField, returnStatusField, inflowStatusField, dateFromField, dateToField];
         }
         return [statusField, expenseCategoryField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
-    }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData, customersData, materialsData]);
+    }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData, customersData, materialsData, filterOptionsData]);
 
     const filterActiveValues: Record<string, string> = {
         status: statusFilter || "ALL",
@@ -503,8 +517,8 @@ export default function ReportsPage() {
         dateFrom: dateFrom || "",
         dateTo: dateTo || "",
         millName: millNameFilter || "",
-        frameNo: frameNoFilter || "",
-        refNo: refNoFilter || "",
+        frameNo: frameNoFilter || "ALL",
+        refNo: refNoFilter || "ALL",
         storeWarranty: storeWarrantyFilter || "ALL",
         storeReturn: storeReturnFilter || "ALL",
         storeInflow: storeInflowFilter || "ALL",
@@ -520,8 +534,8 @@ export default function ReportsPage() {
         setDateFrom(values.dateFrom ?? "");
         setDateTo(values.dateTo ?? "");
         setMillNameFilter(values.millName ?? "");
-        setFrameNoFilter(values.frameNo ?? "");
-        setRefNoFilter(values.refNo ?? "");
+        setFrameNoFilter(values.frameNo === "ALL" ? "" : (values.frameNo ?? ""));
+        setRefNoFilter(values.refNo === "ALL" ? "" : (values.refNo ?? ""));
         setStoreWarrantyFilter(values.storeWarranty === "ALL" ? "" : (values.storeWarranty ?? ""));
         setStoreReturnFilter(values.storeReturn === "ALL" ? "" : (values.storeReturn ?? ""));
         setStoreInflowFilter(values.storeInflow === "ALL" ? "" : (values.storeInflow ?? ""));

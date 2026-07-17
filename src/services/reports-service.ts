@@ -262,6 +262,24 @@ export const useReportsStores = (params: {
     });
 };
 
+export interface ReportsFilterOptions {
+    refNos: string[];
+    frameNos: string[];
+}
+
+export const useReportsFilterOptions = (type?: string) => {
+    return useQuery({
+        queryKey: ["reports", "filter-options", type],
+        queryFn: async () => {
+            const { data } = await api.get<ReportsFilterOptions>("/reports/filter-options", {
+                params: type ? { type } : {},
+            });
+            return data;
+        },
+        staleTime: 5 * 60 * 1000, // 5 min — matches backend cache
+    });
+};
+
 export const downloadReportFile = async (
     tab: "services" | "installations" | "expenses" | "master-mills" | "stores",
     format: "pdf" | "csv" | "excel",
