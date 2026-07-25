@@ -350,7 +350,7 @@ export function ExpenseFormDrawer() {
   const [quickFrameNo, setQuickFrameNo] = React.useState('');
   const [quickInstallationDate, setQuickInstallationDate] = React.useState('');
   const [quickWarrantyYears, setQuickWarrantyYears] = React.useState(1);
-  const [quickWarrantyMonths, setQuickWarrantyMonths] = React.useState(12);
+  const [quickWarrantyMonths, setQuickWarrantyMonths] = React.useState(0);
   const [quickWarrantyType, setQuickWarrantyType] = React.useState('Non Warranty');
   const [isQuickMasterMillRegistering, setIsQuickMasterMillRegistering] = React.useState(false);
 
@@ -1154,7 +1154,7 @@ export function ExpenseFormDrawer() {
                                 setQuickFrameNo('');
                                 setQuickInstallationDate('');
                                 setQuickWarrantyYears(1);
-                                setQuickWarrantyMonths(12);
+                                setQuickWarrantyMonths(0);
                                 setQuickWarrantyType('Non Warranty');
                                 setIsQuickMasterMillOpen(true);
                               }}

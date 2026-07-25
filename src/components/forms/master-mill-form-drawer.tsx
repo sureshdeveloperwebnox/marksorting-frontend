@@ -840,7 +840,7 @@ export function MasterMillFormDrawer() {
               {/* ── Warranty Details ────────────────────────── */}
               <SectionHeader icon={Shield} title="Warranty Details" color="text-emerald-500" />
               <div className="space-y-4 mb-4">
-                <div>
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <FieldLabel>Years</FieldLabel>
                     <Input
@@ -851,10 +851,14 @@ export function MasterMillFormDrawer() {
                       className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                     />
                   </div>
-                  <div className="hidden">
+                  <div className="space-y-2">
+                    <FieldLabel>Months</FieldLabel>
                     <Input
                       {...register('warranty_months')}
                       type="number"
+                      min={0}
+                      placeholder="0"
+                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                     />
                   </div>
                 </div>

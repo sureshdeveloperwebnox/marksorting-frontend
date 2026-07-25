@@ -388,7 +388,7 @@ export function InstallationReportFormDrawer() {
   const [quickFrameNo, setQuickFrameNo] = React.useState('');
   const [quickInstallationDate, setQuickInstallationDate] = React.useState('');
   const [quickWarrantyYears, setQuickWarrantyYears] = React.useState(1);
-  const [quickWarrantyMonths, setQuickWarrantyMonths] = React.useState(12);
+  const [quickWarrantyMonths, setQuickWarrantyMonths] = React.useState(0);
   const [quickWarrantyType, setQuickWarrantyType] = React.useState('Non Warranty');
   const [isQuickMasterMillRegistering, setIsQuickMasterMillRegistering] = React.useState(false);
 
@@ -1320,7 +1320,7 @@ export function InstallationReportFormDrawer() {
                             setQuickFrameNo('');
                             setQuickInstallationDate('');
                             setQuickWarrantyYears(1);
-                            setQuickWarrantyMonths(12);
+                            setQuickWarrantyMonths(0);
                             setQuickWarrantyType('Non Warranty');
                             setIsQuickMasterMillOpen(true);
                           }}
@@ -1634,7 +1634,7 @@ export function InstallationReportFormDrawer() {
                   <div className="border-t border-gray-100 dark:border-white/5 pt-4 my-2">
                     <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Warranty Details</h4>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                           <ShieldCheck size={14} className="text-primary/70" />
@@ -1662,6 +1662,19 @@ export function InstallationReportFormDrawer() {
                           type="number"
                           min={0}
                           placeholder="1"
+                          className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
+                          Warranty Duration (Months)
+                        </Label>
+                        <Input
+                          {...register('warranty_months')}
+                          type="number"
+                          min={0}
+                          placeholder="0"
                           className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                         />
                       </div>

@@ -189,6 +189,7 @@ export default function MasterMillsPage() {
     { key: "installation_date", header: "Installation Date" },
     { key: "warranty_start_date", header: "Warranty Start Date" },
     { key: "warranty_years", header: "Warranty Yrs" },
+    { key: "warranty_months", header: "Warranty Mths" },
     { key: "amc_starting_date", header: "AMC Start Date" },
     { key: "amc_period", header: "AMC Period (Mths)" },
     { key: "amc_amount", header: "AMC Amount" },
@@ -203,12 +204,14 @@ export default function MasterMillsPage() {
 
     const years = viewMillData.warranty_years ?? 0;
     const months = viewMillData.warranty_months ?? 0;
-    const warrantyPeriod = [
+    const warrantyPeriodParts = [
       years > 0 ? `${years} Year${years > 1 ? "s" : ""}` : null,
       months > 0 ? `${months} Month${months > 1 ? "s" : ""}` : null,
-    ]
-      .filter(Boolean)
-      .join(" ");
+    ].filter(Boolean);
+
+    const warrantyPeriod = warrantyPeriodParts.length > 0
+      ? warrantyPeriodParts.join(" ")
+      : `${years} Years ${months} Months`;
 
     return [
       {
@@ -325,6 +328,16 @@ export default function MasterMillsPage() {
             label: "Warranty Start Date",
             value: formatDateSafe(viewMillData.warranty_start_date),
             icon: Calendar,
+          },
+          {
+            label: "Warranty Years",
+            value: `${years} Year${years !== 1 ? "s" : ""}`,
+            icon: Clock,
+          },
+          {
+            label: "Warranty Months",
+            value: `${months} Month${months !== 1 ? "s" : ""}`,
+            icon: Clock,
           },
           {
             label: "Warranty Period",

@@ -176,6 +176,8 @@ export default function InstallationReportPage() {
     { key: "invoice_number", header: "Invoice No" },
     { key: "invoice_date", header: "Invoice Date" },
     { key: "warranty_start_date", header: "Warranty Start" },
+    { key: "warranty_years", header: "Warranty Yrs" },
+    { key: "warranty_months", header: "Warranty Mths" },
     { key: "warranty_end_date", header: "Warranty End" },
     { key: "commodity", header: "Commodity" },
     { key: "contamination", header: "Contamination" },
@@ -498,6 +500,18 @@ export default function InstallationReportPage() {
             label: "Warranty Start",
             value: safeFormatDate(viewReportData.warranty_start_date),
             icon: ShieldCheck,
+          },
+          {
+            label: "Warranty Duration",
+            value: (() => {
+              const y = viewReportData.warranty_years ?? 0;
+              const m = viewReportData.warranty_months ?? 0;
+              const parts = [];
+              if (y > 0) parts.push(`${y} Year${y > 1 ? "s" : ""}`);
+              if (m > 0) parts.push(`${m} Month${m > 1 ? "s" : ""}`);
+              return parts.join(" ") || (y === 0 && m === 0 ? "0 Months" : "—");
+            })(),
+            icon: Clock,
           },
           {
             label: "Warranty End",

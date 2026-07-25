@@ -142,6 +142,8 @@ export interface InstallationReportPreviewRow {
     invoice_number: string;
     invoice_date: string;
     warranty_start_date: string;
+    warranty_years: string;
+    warranty_months: string;
     warranty_end_date: string;
     commodity: string;
     contamination: string;
