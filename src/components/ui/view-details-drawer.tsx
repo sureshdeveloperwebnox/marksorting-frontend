@@ -46,10 +46,10 @@ interface ViewDetailsDrawerProps {
 }
 
 const sizeClasses = {
-  md: "sm:max-w-md",
-  lg: "sm:max-w-lg",
-  xl: "sm:max-w-xl",
-  "2xl": "sm:max-w-2xl",
+  md: "w-full max-w-full",
+  lg: "w-full max-w-full",
+  xl: "w-full max-w-full",
+  "2xl": "w-full max-w-full",
 };
 
 export function ViewDetailsDrawer({
@@ -94,13 +94,13 @@ export function ViewDetailsDrawer({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-6 custom-scrollbar pb-28 space-y-6">
+        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-6 custom-scrollbar pb-24 space-y-5">
           {isLoading ? (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {[1, 2].map((group) => (
-                <div key={group} className="space-y-4">
+                <div key={group} className="space-y-3">
                   <Skeleton className="h-4 w-28 bg-gray-100 dark:bg-white/5 rounded-lg" />
-                  <div className="grid grid-cols-2 gap-4 bg-gray-50/30 dark:bg-white/[0.02] border border-gray-100/50 dark:border-white/5 rounded-2xl p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-4 sm:p-5">
                     {[1, 2, 3, 4].map((item) => (
                       <div key={item} className="space-y-2">
                         <Skeleton className="h-3 w-16 bg-gray-100/50 dark:bg-white/5 rounded-md" />
@@ -113,28 +113,28 @@ export function ViewDetailsDrawer({
             </div>
           ) : (
             sections.map((section, secIdx) => (
-              <div key={secIdx} className="space-y-4">
+              <div key={secIdx} className="space-y-2.5">
                 {section.title && (
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-primary/80 dark:text-primary/70">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-primary/80 dark:text-primary/70 ml-0.5">
                     {section.title}
                   </h3>
                 )}
-                <div className="grid grid-cols-2 gap-4 bg-gray-50/30 dark:bg-white/[0.02] border border-gray-100/50 dark:border-white/5 rounded-2xl p-4 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl p-4 sm:p-5 shadow-sm">
                   {section.items.map((item, itemIdx) => (
                     <div
                       key={itemIdx}
                       className={cn(
-                        "space-y-1.5",
-                        item.fullWidth ? "col-span-2" : "col-span-1"
+                        "space-y-1.5 min-w-0",
+                        item.fullWidth ? "col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4" : "col-span-1"
                       )}
                     >
-                      <span className="text-[10px] font-black tracking-widest uppercase text-gray-400 dark:text-gray-500 flex items-center gap-1.5 select-none">
+                      <span className="text-[11px] font-bold tracking-wider uppercase text-gray-400 dark:text-gray-500 flex items-center gap-1.5 select-none">
                         {item.icon && (
-                          <item.icon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                          <item.icon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
                         )}
                         {item.label}
                       </span>
-                      <div className="text-sm font-bold text-gray-800 dark:text-gray-200 break-words">
+                      <div className="text-sm font-bold text-gray-900 dark:text-white break-words">
                         {item.value || <span className="text-gray-400 dark:text-gray-600 font-medium">—</span>}
                       </div>
                     </div>

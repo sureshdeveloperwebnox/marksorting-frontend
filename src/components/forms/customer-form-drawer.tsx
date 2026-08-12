@@ -107,7 +107,7 @@ export function CustomerFormDrawer() {
         <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
             <SheetContent
                 side="right"
-                className="w-full sm:max-w-md p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5"
+                className="w-full max-w-full p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-none"
             >
                 {/* Header */}
                 <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">

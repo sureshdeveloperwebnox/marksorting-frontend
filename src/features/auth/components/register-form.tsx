@@ -52,12 +52,7 @@ export function RegisterForm() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="w-full"
-    >
+    <div className="w-full">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
         {/* User Name / Full Name Field */}
         <div className="space-y-1">
@@ -224,6 +219,6 @@ export function RegisterForm() {
           </Link>
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 }

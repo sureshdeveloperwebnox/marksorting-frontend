@@ -188,7 +188,7 @@ export function RoleFormDrawer() {
         closeFormDrawer();
       }
     }}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5">
+      <SheetContent side="right" className="w-full max-w-full p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-none">
         <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20">

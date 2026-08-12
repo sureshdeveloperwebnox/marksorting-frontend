@@ -220,7 +220,7 @@ export function ActivityLogFilters({
 
       {/* ── Filter Drawer ── */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="right" className="sm:max-w-md bg-white dark:bg-gray-900 border-none shadow-2xl !p-0 overflow-hidden">
+        <SheetContent side="right" className="w-full max-w-full bg-white dark:bg-gray-900 border-none shadow-2xl !p-0 overflow-hidden">
           {/* Header */}
           <div className="px-6 pt-6 pb-5 border-b border-gray-100 dark:border-white/5">
             <div className="flex items-center gap-3 text-primary">

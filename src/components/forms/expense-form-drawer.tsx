@@ -648,7 +648,7 @@ export function ExpenseFormDrawer() {
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-gray-50 dark:bg-gray-950 border-l border-gray-100 dark:border-white/5"
+        className="w-full max-w-full p-0 flex flex-col h-full bg-gray-50 dark:bg-gray-950 border-none"
       >
         <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900 z-10">
           <div className="flex items-center gap-4">

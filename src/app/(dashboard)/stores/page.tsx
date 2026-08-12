@@ -193,8 +193,44 @@ export default function StoresPage() {
   const deleteStoreMutation = useDeleteStore();
   const updateStoreMutation = useUpdateStore();
 
+  const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, string[]> => {
+    if (!remarks) return {};
+    const map: Record<string, string[]> = {};
+    const serialMatch = remarks.match(/Serial Nos:\s*([^)]+)/i);
+    if (serialMatch && serialMatch[1]) {
+      const parts = serialMatch[1].split('|');
+      parts.forEach((part) => {
+        const colIdx = part.indexOf(':');
+        if (colIdx !== -1) {
+          const matName = part.substring(0, colIdx).trim();
+          const serialsStr = part.substring(colIdx + 1).trim();
+          const bracketMatch = serialsStr.match(/\[(.*?)\]/);
+          if (bracketMatch && bracketMatch[1]) {
+            const serials = bracketMatch[1].split(',').map((s) => s.trim()).filter(Boolean);
+            map[matName] = serials;
+          }
+        }
+      });
+    }
+    return map;
+  };
+
+  const extractCleanRemarks = (remarks?: string | null): string => {
+    if (!remarks) return "—";
+    let cleaned = remarks;
+    cleaned = cleaned.replace(/\s*\([^)]*Serial Nos:[^)]*\)/gi, "");
+    cleaned = cleaned.replace(/\s*Serial Nos:[^|)]*/gi, "");
+    cleaned = cleaned.replace(/\s*\|\s*Service Type:[^|]*/gi, "");
+    cleaned = cleaned.replace(/\s*Service Type:[^|]*/gi, "");
+    cleaned = cleaned.trim();
+    return cleaned || "—";
+  };
+
   const viewSections = React.useMemo(() => {
     if (!viewStoreData) return [];
+
+    const serialMap = parseSerialMapFromRemarks(viewStoreData.remarks);
+    const cleanRemarks = extractCleanRemarks(viewStoreData.remarks);
 
     return [
       {
@@ -232,16 +268,50 @@ export default function StoresPage() {
           {
             label: "Materials",
             value: (
-              <div className="flex flex-wrap gap-1">
-                {viewStoreData.materials?.map((m) => (
-                  <Badge
-                    key={m.material.id}
-                    variant="outline"
-                    className="text-[10px] font-bold py-0.5 px-2 bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-300 rounded-md"
-                  >
-                    {m.material.name} (x{m.quantity || 1})
-                  </Badge>
-                ))}
+              <div className="space-y-2.5 w-full">
+                {viewStoreData.materials?.map((m) => {
+                  const serials = serialMap[m.material.name] || [];
+
+                  return (
+                    <div
+                      key={m.material.id}
+                      className="p-3 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Package size={14} className="text-primary/70 shrink-0" />
+                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                            {m.material.name}
+                          </span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-bold py-0.5 px-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10 text-primary rounded-md shrink-0"
+                        >
+                          QTY: {m.quantity || 1}
+                        </Badge>
+                      </div>
+
+                      {serials.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1 border-t border-gray-100 dark:border-white/5">
+                          {serials.map((ser, sIdx) => (
+                            <div
+                              key={sIdx}
+                              className="flex items-center gap-2 bg-white dark:bg-gray-900 px-2.5 py-1.5 rounded-lg border border-gray-100 dark:border-white/5 text-xs"
+                            >
+                              <span className="text-[10px] font-extrabold text-primary/70 shrink-0">
+                                Unit {sIdx + 1}:
+                              </span>
+                              <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                {ser}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 {!viewStoreData.materials?.length && "—"}
               </div>
             ),
@@ -250,7 +320,7 @@ export default function StoresPage() {
           },
           {
             label: "Remarks",
-            value: viewStoreData.remarks || "—",
+            value: cleanRemarks,
             icon: Info,
             fullWidth: true,
           },
@@ -309,36 +379,6 @@ export default function StoresPage() {
               </div>
             ),
             icon: StoreIcon,
-          },
-          {
-            label: "Barcode",
-            value: viewStoreData.barcode ? (
-              <div className="flex items-center gap-2 p-2 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl">
-                <Barcode className="w-4 h-4 text-gray-400" />
-                <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">
-                  {viewStoreData.barcode}
-                </span>
-              </div>
-            ) : (
-              "—"
-            ),
-            icon: Barcode,
-            fullWidth: true,
-          },
-        ],
-      },
-      {
-        title: "Return Shipment Details",
-        items: [
-          {
-            label: "Provider Name",
-            value: viewStoreData.provider_name || "—",
-            icon: Users,
-          },
-          {
-            label: "Invoice/Receipt Number",
-            value: viewStoreData.invoice_number || "—",
-            icon: Hash,
           },
         ],
       },

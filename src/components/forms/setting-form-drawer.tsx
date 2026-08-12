@@ -74,7 +74,7 @@ export function SettingFormDrawer() {
 
     return (
         <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
-            <SheetContent className="flex flex-col h-full sm:max-w-lg bg-white dark:bg-gray-900 border-none shadow-2xl p-0">
+            <SheetContent className="flex flex-col h-full w-full max-w-full bg-white dark:bg-gray-900 border-none shadow-2xl p-0">
                 {/* Header */}
                 <SheetHeader className="px-6 pt-6 pb-5 border-b border-gray-100 dark:border-white/5">
                     <div className="flex items-center gap-3">

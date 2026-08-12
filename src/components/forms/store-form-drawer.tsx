@@ -12,7 +12,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert, Barcode, Plus, PlusCircle, Cpu, Building2 } from 'lucide-react';
+import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert, Barcode, Plus, PlusCircle, Cpu, Building2, ChevronDown, ChevronUp, Check, Edit3 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -50,14 +50,32 @@ const storeSchema = z.object({
   service_engineer_id: z.string().min(1, 'Service Engineer is required'),
   customer_id: z.string().min(1, 'Customer is required'),
   material_ids: z.array(z.string()).min(1, 'At least one material must be selected'),
-  material_quantities: z.array(
-    z.object({
-      material_id: z.string(),
-      quantity: z.number().min(1, 'Quantity must be at least 1'),
+  material_quantities: z
+    .array(
+      z.object({
+        material_id: z.string(),
+        quantity: z.number().min(1, 'Quantity must be at least 1'),
+        serial_numbers: z.array(z.string()).optional(),
+      })
+    )
+    .superRefine((items, ctx) => {
+      items.forEach((item, itemIdx) => {
+        const serials = item.serial_numbers || [];
+        for (let u = 0; u < item.quantity; u++) {
+          if (!serials[u] || !serials[u].trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Unit ${u + 1} Serial No. / Code is required`,
+              path: [itemIdx, 'serial_numbers', u],
+            });
+          }
+        }
+      });
     })
-  ).optional(),
+    .optional(),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   warranty_status: z.string().min(1, 'Warranty status is required'),
+  service_type: z.string().optional().default('Payment'),
   frame_number: z.string().min(1, 'Frame number is required'),
   return_status: z.string().min(1, 'Return status is required'),
   inflow_status: z.string().min(1, 'Stock status is required'),
@@ -81,6 +99,39 @@ const mapMachineWarrantyToStore = (allWarranty?: string | null): string => {
   return 'Non Warranty';
 };
 
+const extractCleanRemarks = (remarks?: string | null): string => {
+  if (!remarks) return '';
+  let cleaned = remarks;
+  cleaned = cleaned.replace(/\s*\([^)]*Serial Nos:[^)]*\)/gi, '');
+  cleaned = cleaned.replace(/\s*Serial Nos:[^|)]*/gi, '');
+  cleaned = cleaned.replace(/\s*\|\s*Service Type:[^|]*/gi, '');
+  cleaned = cleaned.replace(/\s*Service Type:[^|]*/gi, '');
+  cleaned = cleaned.trim();
+  return cleaned;
+};
+
+const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, string[]> => {
+  if (!remarks) return {};
+  const map: Record<string, string[]> = {};
+  const serialMatch = remarks.match(/Serial Nos:\s*([^)]+)/i);
+  if (serialMatch && serialMatch[1]) {
+    const parts = serialMatch[1].split('|');
+    parts.forEach((part) => {
+      const colIdx = part.indexOf(':');
+      if (colIdx !== -1) {
+        const matName = part.substring(0, colIdx).trim();
+        const serialsStr = part.substring(colIdx + 1).trim();
+        const bracketMatch = serialsStr.match(/\[(.*?)\]/);
+        if (bracketMatch && bracketMatch[1]) {
+          const serials = bracketMatch[1].split(',').map((s) => s.trim()).filter(Boolean);
+          map[matName] = serials;
+        }
+      }
+    });
+  }
+  return map;
+};
+
 type StoreFormValues = z.infer<typeof storeSchema>;
 
 export function StoreFormDrawer() {
@@ -96,6 +147,7 @@ export function StoreFormDrawer() {
   const allMaterials = materialsData?.materials || [];
 
   const [newMaterialName, setNewMaterialName] = React.useState('');
+  const [expandedMaterials, setExpandedMaterials] = React.useState<Record<string, boolean>>({});
 
   const technicians = techniciansData?.technicians || [];
 
@@ -115,6 +167,7 @@ export function StoreFormDrawer() {
       material_ids: [],
       quantity: 1,
       warranty_status: 'Non Warranty',
+      service_type: 'Payment',
       frame_number: '',
       return_status: 'Pending',
       inflow_status: 'Available',
@@ -215,6 +268,47 @@ export function StoreFormDrawer() {
     return mills.filter((m) => m.customer_id === selectedCustomerId);
   }, [mills, selectedCustomerId]);
 
+  // Query master mills specifically for current frame_number to ensure Warranty & AMC details load immediately in edit mode
+  const currentFrameNumber = watch('frame_number');
+  const { data: frameMachineData } = useMasterMills(
+    {
+      search: currentFrameNumber || undefined,
+      skip: 0,
+      take: 5,
+    },
+    { enabled: !!currentFrameNumber && currentFrameNumber.length >= 2 }
+  );
+  const frameMasterMills = frameMachineData?.masterMills || [];
+
+  // Selected Machine object for displaying Warranty & AMC details
+  const selectedMachine = React.useMemo(() => {
+    if (selectedMachineId) {
+      const found =
+        searchedMasterMills.find((m) => m.id === selectedMachineId) ||
+        masterMills.find((m) => m.id === selectedMachineId) ||
+        frameMasterMills.find((m) => m.id === selectedMachineId);
+      if (found) return found;
+    }
+    if (currentFrameNumber) {
+      const found =
+        searchedMasterMills.find((m) => m.frame_no === currentFrameNumber) ||
+        masterMills.find((m) => m.frame_no === currentFrameNumber) ||
+        frameMasterMills.find((m) => m.frame_no === currentFrameNumber);
+      if (found) return found;
+    }
+    return null;
+  }, [selectedMachineId, currentFrameNumber, searchedMasterMills, masterMills, frameMasterMills]);
+
+  // Sync mill selection when machine is matched
+  React.useEffect(() => {
+    if (selectedMachine?.mill_id && (!selectedMillId || selectedMillId !== selectedMachine.mill_id)) {
+      setSelectedMillId(selectedMachine.mill_id);
+    }
+    if (selectedMachine?.id && (!selectedMachineId || selectedMachineId !== selectedMachine.id)) {
+      setSelectedMachineId(selectedMachine.id);
+    }
+  }, [selectedMachine]);
+
   // Mutations for quick creation
   const { mutateAsync: createCustomer } = useCreateCustomer();
   const { mutateAsync: createMill } = useCreateMill();
@@ -247,27 +341,49 @@ export function StoreFormDrawer() {
   React.useEffect(() => {
     if (isFormDrawerOpen) {
       if (isEdit && storeData) {
+        const serialMap = parseSerialMapFromRemarks(storeData.remarks);
+
+        const initialQuantities = storeData.materials.map((m) => {
+          const matName = m.material.name;
+          const serials = serialMap[matName] || [];
+          const qty = m.quantity || 1;
+          const fullSerials = Array.from({ length: qty }).map((_, idx) => serials[idx] || '');
+          return {
+            material_id: m.material.id,
+            quantity: qty,
+            serial_numbers: fullSerials,
+          };
+        });
+
+        // Expand all material cards so user sees pre-filled barcodes / serial numbers immediately
+        const initialExpanded: Record<string, boolean> = {};
+        storeData.materials.forEach((m) => {
+          initialExpanded[m.material.id] = true;
+        });
+        setExpandedMaterials(initialExpanded);
+
         reset({
           service_engineer_id: storeData.service_engineer_id,
           customer_id: storeData.customer_id,
           material_ids: storeData.materials.map((m) => m.material.id),
-          material_quantities: storeData.materials.map((m) => ({
-            material_id: m.material.id,
-            quantity: m.quantity || 1,
-          })),
+          material_quantities: initialQuantities,
           quantity: storeData.quantity,
           warranty_status: storeData.warranty_status,
+          service_type: (storeData as any)?.service_type || 'Payment',
           frame_number: storeData.frame_number,
           return_status: storeData.return_status,
           inflow_status: storeData.inflow_status,
           barcode: storeData.barcode || '',
           provider_name: storeData.provider_name || '',
           invoice_number: storeData.invoice_number || '',
-          remarks: storeData.remarks || '',
+          remarks: extractCleanRemarks(storeData.remarks),
         });
+
         setSelectedCustomerId(storeData.customer_id);
-        setSelectedMillId('');
-        setSelectedMachineId('');
+        if (storeData.frame_number) {
+          setMachineSearchQuery(storeData.frame_number);
+          setDebouncedSearchQuery(storeData.frame_number);
+        }
       } else if (!isEdit) {
         reset({
           service_engineer_id: '',
@@ -276,6 +392,7 @@ export function StoreFormDrawer() {
           material_quantities: [],
           quantity: 1,
           warranty_status: 'Non Warranty',
+          service_type: 'Payment',
           frame_number: '',
           return_status: 'Pending',
           inflow_status: 'Available',
@@ -287,6 +404,9 @@ export function StoreFormDrawer() {
         setSelectedCustomerId('');
         setSelectedMillId('');
         setSelectedMachineId('');
+        setMachineSearchQuery('');
+        setDebouncedSearchQuery('');
+        setExpandedMaterials({});
       }
     }
   }, [isFormDrawerOpen, storeData, reset, isEdit]);
@@ -302,7 +422,7 @@ export function StoreFormDrawer() {
     // Add any new materialIdsWatch that are not yet in material_quantities
     const newItems = materialIdsWatch
       .filter(id => !filtered.some(q => q.material_id === id))
-      .map(id => ({ material_id: id, quantity: 1 }));
+      .map(id => ({ material_id: id, quantity: 1, serial_numbers: [''] }));
     
     const nextQuantities = [...filtered, ...newItems];
     
@@ -336,13 +456,67 @@ export function StoreFormDrawer() {
     }
   };
 
+  const handleSerialNumberChange = (materialId: string, unitIdx: number, value: string) => {
+    const currentQuantities = watch('material_quantities') || [];
+    const nextQuantities = currentQuantities.map((q) => {
+      if (q.material_id === materialId) {
+        const serials = [...(q.serial_numbers || [])];
+        while (serials.length < q.quantity) {
+          serials.push('');
+        }
+        serials[unitIdx] = value;
+        return { ...q, serial_numbers: serials };
+      }
+      return q;
+    });
+    setValue('material_quantities', nextQuantities, { shouldDirty: true });
+  };
+
   const onSubmit: SubmitHandler<StoreFormValues> = async (data) => {
+    // Validate that all dynamic unit fields are filled
+    const missingMap: Record<string, boolean> = {};
+    let hasMissingUnit = false;
+
+    data.material_quantities?.forEach((mq) => {
+      const serials = mq.serial_numbers || [];
+      for (let u = 0; u < mq.quantity; u++) {
+        if (!serials[u] || !serials[u].trim()) {
+          hasMissingUnit = true;
+          missingMap[mq.material_id] = true;
+          break;
+        }
+      }
+    });
+
+    if (hasMissingUnit) {
+      setExpandedMaterials((prev) => ({ ...prev, ...missingMap }));
+      toast.error('All dynamic unit fields (Unit 1, Unit 2, etc.) are mandatory! Please fill in all unit codes.');
+      return;
+    }
+
+    const serialSummaries: string[] = [];
+    data.material_quantities?.forEach((mq) => {
+      const mat = allMaterials.find((m) => m.id === mq.material_id);
+      const matName = mat ? mat.name : 'Material';
+      const enteredSerials = mq.serial_numbers?.filter((s) => s.trim() !== '') || [];
+      if (enteredSerials.length > 0) {
+        serialSummaries.push(`${matName}: [${enteredSerials.join(', ')}]`);
+      }
+    });
+
+    let cleanRemarksInput = extractCleanRemarks(data.remarks);
+    let finalRemarks = cleanRemarksInput;
+    if (serialSummaries.length > 0) {
+      const serialsText = `Serial Nos: ${serialSummaries.join(' | ')}`;
+      finalRemarks = finalRemarks ? `${finalRemarks} (${serialsText})` : serialsText;
+    }
+
     const payload = {
       ...data,
+      remarks: finalRemarks || undefined,
       barcode: data.barcode || undefined,
       provider_name: data.provider_name || undefined,
       invoice_number: data.invoice_number || undefined,
-      remarks: data.remarks || undefined,
     };
     try {
       if (isEdit) {
@@ -361,7 +535,7 @@ export function StoreFormDrawer() {
 
   return (
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5">
+      <SheetContent side="right" className="w-full max-w-full p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-none">
         <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20">
@@ -739,6 +913,154 @@ export function StoreFormDrawer() {
                       )}
                     </div>
                   )}
+
+                  {/* Warranty Status (Moved directly below Machine) */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <ShieldAlert size={14} className="text-primary/70" />
+                      Warranty Status
+                    </Label>
+                    <Controller
+                      name="warranty_status"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || ''}
+                        >
+                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                            <SelectItem value="Non Warranty" className="font-bold py-3 text-rose-500">Non Warranty</SelectItem>
+                            <SelectItem value="Supplementary" className="font-bold py-3 text-blue-500">Supplementary</SelectItem>
+                            <SelectItem value="AMC With Spare" className="font-bold py-3 text-emerald-500">AMC With Spare</SelectItem>
+                            <SelectItem value="AMC Without Spare" className="font-bold py-3 text-amber-500">AMC Without Spare</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.warranty_status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.warranty_status.message}</p>}
+                  </div>
+
+                  {/* Service Type Dropdown (New Field) */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Wrench size={14} className="text-primary/70" />
+                      Service Type
+                    </Label>
+                    <Controller
+                      name="service_type"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || 'Payment'}
+                        >
+                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                            <SelectValue placeholder="Select Service Type..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                            <SelectItem value="Payment" className="font-bold py-3 text-emerald-600 dark:text-emerald-400">
+                              Payment
+                            </SelectItem>
+                            <SelectItem value="Replacement" className="font-bold py-3 text-blue-600 dark:text-blue-400">
+                              Replacement
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.service_type && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.service_type.message}</p>}
+                  </div>
+
+                  {/* Warranty & AMC Details (Display Information Only) */}
+                  <div className="space-y-2 p-4 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Clock size={14} className="text-primary/70" />
+                      Warranty &amp; AMC Details
+                    </Label>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                      {/* Warranty Info Card */}
+                      <div className="p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-white/5 space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between pb-1 border-b border-gray-100 dark:border-white/5">
+                          <span className="text-[11px] font-extrabold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                            Warranty Info
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {selectedMachine?.all_warranty || watch('warranty_status') || 'Non Warranty'}
+                          </span>
+                        </div>
+                        <div className="text-xs space-y-1.5 text-gray-700 dark:text-gray-300 font-semibold pt-0.5">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">Start Date:</span>
+                            <span>
+                              {selectedMachine?.warranty_start_date
+                                ? new Date(selectedMachine.warranty_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : selectedMachine?.installation_date
+                                ? new Date(selectedMachine.installation_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">End Date:</span>
+                            <span>
+                              {selectedMachine?.warranty_closing_date
+                                ? new Date(selectedMachine.warranty_closing_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">Duration:</span>
+                            <span>
+                              {selectedMachine?.warranty_years || selectedMachine?.warranty_months
+                                ? `${selectedMachine.warranty_years || 0} Yrs ${selectedMachine.warranty_months || 0} Mos`
+                                : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* AMC Info Card */}
+                      <div className="p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-white/5 space-y-2 shadow-sm">
+                        <div className="flex items-center justify-between pb-1 border-b border-gray-100 dark:border-white/5">
+                          <span className="text-[11px] font-extrabold text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                            AMC Info
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            {selectedMachine?.amc_particular || 'N/A'}
+                          </span>
+                        </div>
+                        <div className="text-xs space-y-1.5 text-gray-700 dark:text-gray-300 font-semibold pt-0.5">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">Start Date:</span>
+                            <span>
+                              {selectedMachine?.amc_starting_date
+                                ? new Date(selectedMachine.amc_starting_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">End Date:</span>
+                            <span>
+                              {selectedMachine?.amc_closing_date
+                                ? new Date(selectedMachine.amc_closing_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400 font-medium">Duration:</span>
+                            <span>
+                              {selectedMachine?.amc_period
+                                ? `${selectedMachine.amc_period} Months`
+                                : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                                 {/* Material Selection */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -759,40 +1081,207 @@ export function StoreFormDrawer() {
 
                   {/* Dynamic quantities input for each selected material */}
                   {materialQuantitiesWatch.length > 0 && (
-                    <div className="space-y-2.5 mt-3 p-3 bg-gray-50/30 dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-2xl">
+                    <div className="space-y-3 mt-3 p-3.5 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl">
                       <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                        Configure Material Quantities
+                        Configure Material Quantities &amp; Dynamic Unit Fields
                       </Label>
                       {materialQuantitiesWatch.map((item, index) => {
                         const mat = allMaterials.find((m) => m.id === item.material_id);
                         const matName = mat ? mat.name : 'Loading Material...';
+                        const isExpanded = !!expandedMaterials[item.material_id];
+
                         return (
                           <div
                             key={item.material_id}
-                            className="flex items-center justify-between gap-4 p-2.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-white/5 shadow-sm"
+                            className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-white/5 shadow-sm space-y-2.5"
                           >
-                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate max-w-[180px]">
-                              {matName}
-                            </span>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qty:</span>
-                              <Input
-                                type="number"
-                                min="1"
-                                className="w-16 h-8 bg-gray-50 dark:bg-white/5 border-none rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 font-bold text-right text-xs"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  const val = Math.max(1, parseInt(e.target.value, 10) || 1);
-                                  const nextQuantities = materialQuantitiesWatch.map((q, idx) =>
-                                    idx === index ? { ...q, quantity: val } : q
-                                  );
-                                  setValue('material_quantities', nextQuantities, { shouldDirty: true });
-                                }}
-                              />
+                            {/* Material Header: Toggle + Name on Left | Stock Status + Qty on Right */}
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setExpandedMaterials((prev) => ({
+                                      ...prev,
+                                      [item.material_id]: !prev[item.material_id],
+                                    }));
+                                  }}
+                                  className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                                  title={isExpanded ? 'Collapse fields' : 'Click dropdown button to open input fields'}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp size={18} className="text-primary font-bold" />
+                                  ) : (
+                                    <ChevronDown size={18} className="text-gray-400 hover:text-primary transition-colors font-bold" />
+                                  )}
+                                </button>
+                                <Package size={14} className="text-primary/70 shrink-0" />
+                                <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                  {matName}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-3 flex-shrink-0">
+                                {/* Stock Status dropdown near QTY */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Stock:</span>
+                                  <Controller
+                                    name="inflow_status"
+                                    control={control}
+                                    render={({ field }) => (
+                                      <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value || 'Available'}
+                                      >
+                                        <SelectTrigger className="h-8 w-28 bg-gray-50/80 dark:bg-white/5 border-none rounded-lg focus:ring-1 focus:ring-primary/20 font-bold text-xs">
+                                          <SelectValue placeholder="Stock Status" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                                          <SelectItem value="Available" className="font-bold text-xs py-2 text-emerald-500">Available</SelectItem>
+                                          <SelectItem value="Inflow" className="font-bold text-xs py-2 text-blue-500">Inflow</SelectItem>
+                                          <SelectItem value="Outflow" className="font-bold text-xs py-2 text-purple-500">Outflow</SelectItem>
+                                          <SelectItem value="Damaged" className="font-bold text-xs py-2 text-rose-500">Damaged</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  />
+                                </div>
+
+                                {/* QTY counter input */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">QTY:</span>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    className="w-16 h-8 bg-gray-50 dark:bg-white/5 border-none rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 font-bold text-right text-xs"
+                                    value={item.quantity}
+                                    onChange={(e) => {
+                                      const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                      const currentSerials = item.serial_numbers || [];
+                                      let newSerials = [...currentSerials];
+                                      if (val > currentSerials.length) {
+                                        for (let i = currentSerials.length; i < val; i++) {
+                                          newSerials.push('');
+                                        }
+                                      } else {
+                                        newSerials = newSerials.slice(0, val);
+                                      }
+                                      const nextQuantities = materialQuantitiesWatch.map((q, idx) =>
+                                        idx === index ? { ...q, quantity: val, serial_numbers: newSerials } : q
+                                      );
+                                      setValue('material_quantities', nextQuantities, { shouldDirty: true });
+                                    }}
+                                  />
+                                </div>
+                              </div>
                             </div>
+
+                            {/* Dynamic Input Fields (Appears ONLY after clicking the dropdown button) */}
+                            {isExpanded && (
+                              <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-2 animate-in fade-in-0 duration-200">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    <Hash size={11} className="text-primary/60" />
+                                    Dynamic Unit Fields ({item.quantity} {item.quantity === 1 ? 'required field' : 'required fields'})
+                                    <span className="text-rose-500 font-black">*</span>
+                                  </span>
+                                  <span className="text-[10px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-200/50 dark:border-rose-500/20">
+                                    Mandatory
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {Array.from({ length: item.quantity }).map((_, unitIdx) => {
+                                    const val = item.serial_numbers?.[unitIdx] || '';
+                                    const isMissing = !val.trim();
+
+                                    return (
+                                      <div
+                                        key={unitIdx}
+                                        className={cn(
+                                          "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all",
+                                          isMissing
+                                            ? "bg-rose-50/40 dark:bg-rose-500/5 border-rose-300 dark:border-rose-500/30 focus-within:border-rose-500 focus-within:ring-1 focus-within:ring-rose-500/20"
+                                            : "bg-gray-50/80 dark:bg-white/5 border-gray-100 dark:border-white/5 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20"
+                                        )}
+                                      >
+                                        <span className="text-[10px] font-extrabold shrink-0 w-14 flex items-center gap-0.5 text-primary/80">
+                                          Unit {unitIdx + 1} <span className="text-rose-500 font-black">*</span>
+                                        </span>
+                                        <Input
+                                          type="text"
+                                          placeholder={`Enter Serial No. / Code #${unitIdx + 1}`}
+                                          value={val}
+                                          onChange={(e) => handleSerialNumberChange(item.material_id, unitIdx, e.target.value)}
+                                          className="h-7 bg-transparent border-none p-0 text-xs font-bold text-gray-800 dark:text-gray-200 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400 placeholder:font-medium"
+                                        />
+                                        {isMissing && (
+                                          <span className="text-[9px] font-bold text-rose-500 shrink-0 uppercase tracking-tighter pr-1">Required</span>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
+
+                      {/* Edit & Save Buttons at the end of Material Selection */}
+                      <div className="flex items-center justify-end gap-3 pt-3 mt-3 border-t border-gray-100 dark:border-white/5">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const allExp: Record<string, boolean> = {};
+                            materialQuantitiesWatch.forEach((q) => {
+                              allExp[q.material_id] = true;
+                            });
+                            setExpandedMaterials(allExp);
+                            toast.info('Material input fields expanded for editing');
+                          }}
+                          className="h-9 px-5 rounded-xl border-gray-200 dark:border-white/10 hover:bg-gray-100 font-bold text-xs transition-all shadow-sm flex items-center gap-1.5"
+                        >
+                          <Edit3 size={13} />
+                          Edit
+                        </Button>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            // Check if any unit input field is empty
+                            const missingMap: Record<string, boolean> = {};
+                            let hasMissingUnit = false;
+
+                            materialQuantitiesWatch.forEach((q) => {
+                              const serials = q.serial_numbers || [];
+                              for (let u = 0; u < q.quantity; u++) {
+                                if (!serials[u] || !serials[u].trim()) {
+                                  hasMissingUnit = true;
+                                  missingMap[q.material_id] = true;
+                                  break;
+                                }
+                              }
+                            });
+
+                            if (hasMissingUnit) {
+                              setExpandedMaterials((prev) => ({ ...prev, ...missingMap }));
+                              toast.error('All dynamic unit fields (Unit 1, Unit 2, etc.) are mandatory! Please fill in all unit codes.');
+                              return;
+                            }
+
+                            setExpandedMaterials({});
+                            toast.success('Material selection saved!');
+                          }}
+                          className="h-9 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs transition-all shadow-md shadow-primary/20 flex items-center gap-1.5"
+                        >
+                          <Check size={14} strokeWidth={2.5} />
+                          Save
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -855,35 +1344,6 @@ export function StoreFormDrawer() {
                   {errors.quantity && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.quantity.message}</p>}
                 </div>
 
-                {/* Warranty Status */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <ShieldAlert size={14} className="text-primary/70" />
-                    Warranty Status
-                  </Label>
-                  <Controller
-                    name="warranty_status"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ''}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="Non Warranty" className="font-bold py-3 text-rose-500">Non Warranty</SelectItem>
-                          <SelectItem value="Supplementary" className="font-bold py-3 text-blue-500">Supplementary</SelectItem>
-                          <SelectItem value="AMC With Spare" className="font-bold py-3 text-emerald-500">AMC With Spare</SelectItem>
-                          <SelectItem value="AMC Without Spare" className="font-bold py-3 text-amber-500">AMC Without Spare</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.warranty_status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.warranty_status.message}</p>}
-                </div>
-
                 {/* Frame Number */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
@@ -926,48 +1386,9 @@ export function StoreFormDrawer() {
                   {errors.return_status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.return_status.message}</p>}
                 </div>
 
-                {/* Inflow / Stock Status */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Store size={14} className="text-primary/70" />
-                    Inflow / Stock Status
-                  </Label>
-                  <Controller
-                    name="inflow_status"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ''}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="Inflow" className="font-bold py-3 text-blue-500">Inflow</SelectItem>
-                          <SelectItem value="Outflow" className="font-bold py-3 text-purple-500">Outflow</SelectItem>
-                          <SelectItem value="Available" className="font-bold py-3 text-emerald-500">Available</SelectItem>
-                          <SelectItem value="Damaged" className="font-bold py-3 text-rose-500">Damaged</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.inflow_status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.inflow_status.message}</p>}
-                </div>
 
-                {/* Barcode details */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Barcode size={14} className="text-primary/70" />
-                    Barcode (Optional)
-                  </Label>
-                  <Input
-                    placeholder="Scan or enter barcode"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                    {...register('barcode')}
-                  />
-                  {errors.barcode && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.barcode.message}</p>}
-                </div>
+
+
 
                 {/* Provider Name */}
                 <div className="space-y-2">

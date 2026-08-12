@@ -46,7 +46,7 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
     const [isDownloading, setIsDownloading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const MAX_SIZE = 10 * 1024 * 1024 // 10 MB
+    const MAX_SIZE = 15 * 1024 * 1024 // 15 MB
 
     const uploadPreviewMutation = useUploadPreview(previewEndpoint)
 
@@ -57,7 +57,7 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
             return
         }
         if (file.size > MAX_SIZE) {
-            setSizeError('File exceeds the 10 MB size limit. Please upload a smaller file.')
+            setSizeError('File exceeds the 15 MB size limit. Please upload a smaller file.')
             setSelectedFile(null)
             return
         }
@@ -128,7 +128,7 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
                         Drag &amp; drop your Excel file here
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                        or click to browse &nbsp;·&nbsp; .xlsx and .xls only &nbsp;·&nbsp; max 10 MB
+                        or click to browse &nbsp;·&nbsp; .xlsx and .xls only &nbsp;·&nbsp; max 15 MB
                     </p>
                 </div>
                 {selectedFile && (

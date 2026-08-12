@@ -52,20 +52,15 @@ export function LoginForm() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="w-full"
-    >
+    <div className="w-full">
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {/* Email Field */}
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+          <Label htmlFor="email" className="text-xs font-bold text-gray-800 dark:text-gray-200 ml-1">
             Email Address
           </Label>
-          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-14 group">
-            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+          <div className="flex items-center w-full rounded-2xl border border-gray-300 dark:border-white/20 bg-gray-50/80 dark:bg-white/5 focus-within:border-[#ff6b00] focus-within:bg-white dark:focus-within:bg-[#18181b] focus-within:ring-2 focus-within:ring-[#ff6b00]/20 transition-all overflow-hidden h-14 group shadow-sm">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200 dark:border-white/10 text-gray-500 group-focus-within:text-[#ff6b00] transition-colors bg-gray-100/60 dark:bg-white/5 shrink-0">
               <Mail size={18} />
             </div>
             <input 
@@ -73,24 +68,24 @@ export function LoginForm() {
               type="email" 
               {...form.register('email')} 
               placeholder="Enter your email address" 
-              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 placeholder:font-normal focus:ring-0 focus:outline-none"
             />
           </div>
           {form.formState.errors.email && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+            <p className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
               {form.formState.errors.email.message}
-            </motion.p>
+            </p>
           )}
         </div>
         
         {/* Password Field */}
         <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
+          <Label htmlFor="password" className="text-xs font-bold text-gray-800 dark:text-gray-200 ml-1">
             Password
           </Label>
-          <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-14 group">
-            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
+          <div className="flex items-center w-full rounded-2xl border border-gray-300 dark:border-white/20 bg-gray-50/80 dark:bg-white/5 focus-within:border-[#ff6b00] focus-within:bg-white dark:focus-within:bg-[#18181b] focus-within:ring-2 focus-within:ring-[#ff6b00]/20 transition-all overflow-hidden h-14 group shadow-sm">
+            <div className="w-12 h-full flex items-center justify-center border-r border-gray-200 dark:border-white/10 text-gray-500 group-focus-within:text-[#ff6b00] transition-colors bg-gray-100/60 dark:bg-white/5 shrink-0">
               <Lock size={18} />
             </div>
             <input 
@@ -98,7 +93,7 @@ export function LoginForm() {
               type={showPassword ? 'text' : 'password'} 
               {...form.register('password')} 
               placeholder="Enter your password"
-              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+              className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 placeholder:font-normal focus:ring-0 focus:outline-none"
             />
             <button
               type="button"
@@ -109,10 +104,10 @@ export function LoginForm() {
             </button>
           </div>
           {form.formState.errors.password && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
+            <p className="text-xs font-medium text-red-500 mt-1 ml-1 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
               {form.formState.errors.password.message}
-            </motion.p>
+            </p>
           )}
         </div>
 
@@ -185,6 +180,6 @@ export function LoginForm() {
           </p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

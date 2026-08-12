@@ -127,7 +127,7 @@ export function TicketViewDrawer() {
 
   return (
     <Sheet open={isViewDrawerOpen} onOpenChange={(open) => !open && closeViewDrawer()}>
-      <SheetContent className="flex flex-col h-full sm:max-w-xl bg-white dark:bg-gray-900 border-none shadow-2xl p-0 overflow-hidden">
+      <SheetContent className="flex flex-col h-full w-full max-w-full bg-white dark:bg-gray-900 border-none shadow-2xl p-0 overflow-hidden">
         {/* Header */}
         <SheetHeader className="px-6 pt-6 pb-5 border-b border-gray-100 dark:border-white/5 flex-shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-start gap-4">

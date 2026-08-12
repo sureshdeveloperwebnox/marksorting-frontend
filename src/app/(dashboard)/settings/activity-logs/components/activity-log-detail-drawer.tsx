@@ -82,7 +82,7 @@ export function ActivityLogDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-md flex flex-col p-0">
+      <SheetContent side="right" className="w-full max-w-full flex flex-col p-0">
         {/* Header */}
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-white/5">
           <div className="flex items-center gap-3">

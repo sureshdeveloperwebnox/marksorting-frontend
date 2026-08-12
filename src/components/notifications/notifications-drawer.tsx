@@ -230,7 +230,7 @@ export function NotificationsDrawer({ open, onOpenChange, onMarkAllRead }: Notif
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" showCloseButton className="w-full max-w-sm p-0 flex flex-col">
+      <SheetContent side="right" showCloseButton className="w-full max-w-full p-0 flex flex-col">
 
         {/* ── Header ── */}
         <SheetHeader className="flex-row items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-white/10 gap-0 flex-shrink-0">

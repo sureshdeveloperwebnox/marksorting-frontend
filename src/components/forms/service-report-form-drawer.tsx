@@ -928,7 +928,7 @@ export function ServiceReportFormDrawer() {
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
       <SheetContent
         side="right"
-        className="w-screen sm:max-w-[92vw] xl:max-w-[900px] p-0 flex flex-col h-full bg-gray-50 dark:bg-gray-950 border-l border-gray-100 dark:border-white/5"
+        className="w-full max-w-full p-0 flex flex-col h-full bg-gray-50 dark:bg-gray-950 border-none"
       >
         <SheetHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900 z-10">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0 pr-8">
