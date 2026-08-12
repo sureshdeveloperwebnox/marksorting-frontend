@@ -169,13 +169,18 @@ export const useUpdateStore = () => {
       barcode?: string;
       provider_name?: string;
       invoice_number?: string;
+      remarks?: string;
+      service_type?: string;
     }) => {
       const { data } = await api.put(`/stores/${id}`, storeData);
       return data;
     },
-    onSuccess: (updatedStore) => {
+    onSuccess: (response: any) => {
+      const updatedStore = response?.after || response;
       queryClient.invalidateQueries({ queryKey: ["stores"] });
-      queryClient.setQueryData(["store", updatedStore.id], updatedStore);
+      if (updatedStore?.id) {
+        queryClient.setQueryData(["store", updatedStore.id], updatedStore);
+      }
       toast.success("Store record updated successfully");
     },
     onError: (error: any) => {

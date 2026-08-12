@@ -50,6 +50,8 @@ import { StoreFormDrawer } from "@/components/forms/store-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 import { TableTabs } from "@/components/ui/table-tabs";
+import { MobileSimulationModal } from "@/components/modals/MobileSimulationModal";
+import { Smartphone } from "lucide-react";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -67,6 +69,7 @@ const getReturnColors = (status: string) => {
   switch (status) {
     case "Returned": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20";
     case "Pending": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20";
+    case "In Progress": return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500/20";
     case "Not Returned": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20";
     case "Completed": return "bg-teal-500/5 dark:bg-teal-500/10 text-teal-500 dark:text-teal-400 border-teal-500/20";
     default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500/20";
@@ -77,6 +80,7 @@ const getReturnDotColors = (status: string) => {
   switch (status) {
     case "Returned": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
     case "Pending": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+    case "In Progress": return "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]";
     case "Not Returned": return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
     case "Completed": return "bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]";
     default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
@@ -141,6 +145,7 @@ export default function StoresPage() {
 
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
+  const [isSimulationOpen, setIsSimulationOpen] = React.useState(false);
 
   // Debounce search
   React.useEffect(() => {
@@ -196,33 +201,89 @@ export default function StoresPage() {
   const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, string[]> => {
     if (!remarks) return {};
     const map: Record<string, string[]> = {};
-    const serialMatch = remarks.match(/Serial Nos:\s*([^)]+)/i);
-    if (serialMatch && serialMatch[1]) {
-      const parts = serialMatch[1].split('|');
-      parts.forEach((part) => {
-        const colIdx = part.indexOf(':');
-        if (colIdx !== -1) {
-          const matName = part.substring(0, colIdx).trim();
-          const serialsStr = part.substring(colIdx + 1).trim();
-          const bracketMatch = serialsStr.match(/\[(.*?)\]/);
-          if (bracketMatch && bracketMatch[1]) {
-            const serials = bracketMatch[1].split(',').map((s) => s.trim()).filter(Boolean);
-            map[matName] = serials;
-          }
-        }
-      });
+    const serialNosIdx = remarks.indexOf('Serial Nos:');
+    if (serialNosIdx === -1) return {};
+
+    let serialStr = remarks.substring(serialNosIdx + 'Serial Nos:'.length);
+    const stIdx = serialStr.indexOf('Service Type:');
+    if (stIdx !== -1) {
+      serialStr = serialStr.substring(0, stIdx);
     }
+    serialStr = serialStr.replace(/[\)\|\s]+$/, '').trim();
+
+    const parts = serialStr.split('|');
+    parts.forEach((part) => {
+      const colIdx = part.indexOf(':');
+      if (colIdx !== -1) {
+        const matName = part.substring(0, colIdx).trim();
+        const serialsStr = part.substring(colIdx + 1).trim();
+        const bracketMatch = serialsStr.match(/\[(.*?)\]/);
+        if (bracketMatch && bracketMatch[1]) {
+          const serials = bracketMatch[1].split(',').map((s) => s.trim().replace(/\s*\(USED\)/gi, '')).filter(Boolean);
+          map[matName] = serials;
+        }
+      }
+    });
     return map;
+  };
+
+  // Parse full serial info including (USED) flag for barcode table in view
+  const parseFullSerialMapFromRemarks = (remarks?: string | null): Record<string, { barcode: string; used: boolean }[]> => {
+    if (!remarks) return {};
+    const map: Record<string, { barcode: string; used: boolean }[]> = {};
+    const serialNosIdx = remarks.indexOf('Serial Nos:');
+    if (serialNosIdx === -1) return {};
+
+    let serialStr = remarks.substring(serialNosIdx + 'Serial Nos:'.length);
+    const stIdx = serialStr.indexOf('Service Type:');
+    if (stIdx !== -1) {
+      serialStr = serialStr.substring(0, stIdx);
+    }
+    serialStr = serialStr.replace(/[\)\|\s]+$/, '').trim();
+
+    const parts = serialStr.split('|');
+    parts.forEach((part) => {
+      const colIdx = part.indexOf(':');
+      if (colIdx !== -1) {
+        const matName = part.substring(0, colIdx).trim();
+        const serialsStr = part.substring(colIdx + 1).trim();
+        const bracketMatch = serialsStr.match(/\[(.*?)\]/);
+        if (bracketMatch && bracketMatch[1]) {
+          const serials = bracketMatch[1].split(',').map((s) => {
+            const raw = s.trim();
+            const used = /\(USED\)/i.test(raw);
+            const barcode = raw.replace(/\s*\(USED\)/gi, '').trim();
+            return { barcode, used };
+          }).filter((s) => s.barcode);
+          map[matName] = serials;
+        }
+      }
+    });
+    return map;
+  };
+
+  const parseServiceTypeFromRemarks = (remarks?: string | null): string => {
+    if (!remarks) return 'Payment';
+    const matches = [...remarks.matchAll(/Service Type:\s*([^\s|)]+)/gi)];
+    if (matches.length > 0) {
+      const lastMatch = matches[matches.length - 1];
+      if (lastMatch && lastMatch[1]) return lastMatch[1].trim();
+    }
+    return 'Payment';
   };
 
   const extractCleanRemarks = (remarks?: string | null): string => {
     if (!remarks) return "—";
     let cleaned = remarks;
-    cleaned = cleaned.replace(/\s*\([^)]*Serial Nos:[^)]*\)/gi, "");
-    cleaned = cleaned.replace(/\s*Serial Nos:[^|)]*/gi, "");
-    cleaned = cleaned.replace(/\s*\|\s*Service Type:[^|]*/gi, "");
-    cleaned = cleaned.replace(/\s*Service Type:[^|]*/gi, "");
-    cleaned = cleaned.trim();
+    const serialIdx = cleaned.search(/\(?\s*Serial Nos:/i);
+    if (serialIdx !== -1) {
+      cleaned = cleaned.substring(0, serialIdx);
+    }
+    const stIdx = cleaned.search(/\(?\s*Service Type:/i);
+    if (stIdx !== -1) {
+      cleaned = cleaned.substring(0, stIdx);
+    }
+    cleaned = cleaned.replace(/[\(\)\|\s,]+$/, "").trim();
     return cleaned || "—";
   };
 
@@ -326,6 +387,97 @@ export default function StoresPage() {
           },
         ],
       },
+      // Show barcode table section when return_status is "In Progress"
+      ...(viewStoreData.return_status === 'In Progress' ? [{
+        title: "Barcode / Return Details",
+        items: [
+          {
+            label: "Shipment",
+            icon: Barcode,
+            fullWidth: true,
+            value: (() => {
+              const fullSerialMap = parseFullSerialMapFromRemarks(viewStoreData.remarks);
+              const serviceType = parseServiceTypeFromRemarks(viewStoreData.remarks);
+              const allMats = viewStoreData.materials || [];
+              if (allMats.length === 0) return <span className="text-gray-400 text-xs">No barcode data available.</span>;
+              return (
+                <div className="w-full space-y-4">
+                  {/* Courier details */}
+                  {(viewStoreData.provider_name || viewStoreData.invoice_number) && (
+                    <div className="flex flex-wrap gap-4 mb-2">
+                      {viewStoreData.provider_name && (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Courier Service</span>
+                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.provider_name}</span>
+                        </div>
+                      )}
+                      {viewStoreData.invoice_number && (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Tracking ID</span>
+                          <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.invoice_number}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {allMats.map((m) => {
+                    const serials = fullSerialMap[m.material.name] || [];
+                    if (serials.length === 0) return null;
+                    return (
+                      <div key={m.material.id} className="rounded-xl border border-gray-100 dark:border-white/5 overflow-hidden">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5">
+                          <Package size={13} className="text-primary/70" />
+                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{m.material.name}</span>
+                          <span className="ml-auto text-[10px] font-bold text-primary/60">QTY: {serials.length}</span>
+                        </div>
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b border-gray-100 dark:border-white/5">
+                              <th className="text-left px-3 py-2 text-[10px] font-extrabold text-gray-500 uppercase">Barcode</th>
+                              <th className="text-center px-3 py-2 text-[10px] font-extrabold text-orange-500 uppercase">Used</th>
+                              <th className="text-center px-3 py-2 text-[10px] font-extrabold text-emerald-600 uppercase">New Return</th>
+                              {serviceType === 'Replacement' && (
+                                <th className="text-center px-3 py-2 text-[10px] font-extrabold text-rose-500 uppercase">Old Return</th>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {serials.map((s, idx) => {
+                              const newReturn = !s.used ? 1 : 0;
+                              const oldReturn = s.used && serviceType === 'Replacement' ? 1 : 0;
+                              return (
+                                <tr key={idx} className="border-b border-gray-50 dark:border-white/5 last:border-0">
+                                  <td className="px-3 py-2 font-mono font-bold text-gray-800 dark:text-gray-200">{s.barcode}</td>
+                                  <td className="px-3 py-2 text-center">
+                                    {s.used
+                                      ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-900/30"><svg className="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" /></svg></span>
+                                      : <span className="inline-block w-4 h-4 rounded-full border-2 border-gray-200 dark:border-white/20" />}
+                                  </td>
+                                  <td className="px-3 py-2 text-center">
+                                    {newReturn > 0
+                                      ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-xs font-bold text-emerald-600">{newReturn}</span>
+                                      : <span className="text-gray-300 dark:text-gray-600">0</span>}
+                                  </td>
+                                  {serviceType === 'Replacement' && (
+                                    <td className="px-3 py-2 text-center">
+                                      {oldReturn > 0
+                                        ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-xs font-bold text-rose-500">{oldReturn}</span>
+                                        : <span className="text-gray-300 dark:text-gray-600">0</span>}
+                                    </td>
+                                  )}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })(),
+          },
+        ],
+      }] : []),
       {
         title: "Status & Warranties",
         items: [
@@ -451,6 +603,7 @@ export default function StoresPage() {
         { value: "ALL", label: "All Returns" },
         { value: "Returned", label: "Returned", iconColor: "bg-emerald-500" },
         { value: "Pending", label: "Pending", iconColor: "bg-amber-500" },
+        { value: "In Progress", label: "In Progress", iconColor: "bg-blue-500" },
         { value: "Not Returned", label: "Not Returned", iconColor: "bg-rose-500" },
         { value: "Completed", label: "Completed", iconColor: "bg-teal-500" },
       ],
@@ -551,11 +704,14 @@ export default function StoresPage() {
     {
       accessorKey: "remarks",
       header: "Remarks",
-      cell: ({ row }) => (
-        <span className="text-gray-600 dark:text-gray-400 font-medium text-xs truncate max-w-[150px] block" title={row.original.remarks || ''}>
-          {row.original.remarks || "—"}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const clean = extractCleanRemarks(row.original.remarks);
+        return (
+          <span className="text-gray-600 dark:text-gray-400 font-medium text-xs truncate max-w-[150px] block" title={clean}>
+            {clean}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "return_status",
@@ -582,6 +738,7 @@ export default function StoresPage() {
               {[
                 { value: "Returned", color: "emerald" },
                 { value: "Pending", color: "amber" },
+                { value: "In Progress", color: "blue" },
                 { value: "Not Returned", color: "rose" },
               ].map((s) => (
                 <DropdownMenuItem
@@ -750,18 +907,28 @@ export default function StoresPage() {
                 </p>
               </div>
 
-              <PageHeaderControls
-                searchValue={localSearch}
-                onSearchChange={setLocalSearch}
-                searchPlaceholder="Search store records..."
-                onFilterClick={() => setIsFilterDrawerOpen(true)}
-                activeFiltersCount={activeFiltersCount}
-                addLabel="Add Record"
-                addIcon={<StoreIcon size={15} />}
-                onAddClick={() => openFormDrawer()}
-                onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
-              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  onClick={() => setIsSimulationOpen(true)}
+                  variant="outline"
+                  className="h-9 px-4 rounded-xl font-bold text-sm border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 gap-2 transition-all shadow-sm"
+                >
+                  <Smartphone size={15} />
+                  Simulation
+                </Button>
+                <PageHeaderControls
+                  searchValue={localSearch}
+                  onSearchChange={setLocalSearch}
+                  searchPlaceholder="Search store records..."
+                  onFilterClick={() => setIsFilterDrawerOpen(true)}
+                  activeFiltersCount={activeFiltersCount}
+                  addLabel="Add Record"
+                  addIcon={<StoreIcon size={15} />}
+                  onAddClick={() => openFormDrawer()}
+                  onRefresh={handleRefresh}
+                  isRefreshing={isRefreshing}
+                />
+              </div>
             </div>
 
             {/* Reusable Table Tabs */}
@@ -841,6 +1008,12 @@ export default function StoresPage() {
             setDateTo("");
             resetFilters();
           }}
+        />
+
+        {/* ── Mobile Simulation Modal ── */}
+        <MobileSimulationModal
+          isOpen={isSimulationOpen}
+          onClose={() => setIsSimulationOpen(false)}
         />
 
         {/* ── Store Form Drawer ── */}

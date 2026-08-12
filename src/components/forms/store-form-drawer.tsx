@@ -102,34 +102,59 @@ const mapMachineWarrantyToStore = (allWarranty?: string | null): string => {
 const extractCleanRemarks = (remarks?: string | null): string => {
   if (!remarks) return '';
   let cleaned = remarks;
-  cleaned = cleaned.replace(/\s*\([^)]*Serial Nos:[^)]*\)/gi, '');
-  cleaned = cleaned.replace(/\s*Serial Nos:[^|)]*/gi, '');
-  cleaned = cleaned.replace(/\s*\|\s*Service Type:[^|]*/gi, '');
-  cleaned = cleaned.replace(/\s*Service Type:[^|]*/gi, '');
-  cleaned = cleaned.trim();
+  const serialIdx = cleaned.search(/\(?\s*Serial Nos:/i);
+  if (serialIdx !== -1) {
+    cleaned = cleaned.substring(0, serialIdx);
+  }
+  const stIdx = cleaned.search(/\(?\s*Service Type:/i);
+  if (stIdx !== -1) {
+    cleaned = cleaned.substring(0, stIdx);
+  }
+  cleaned = cleaned.replace(/[\(\)\|\s,]+$/, '').trim();
   return cleaned;
 };
 
 const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, string[]> => {
   if (!remarks) return {};
   const map: Record<string, string[]> = {};
-  const serialMatch = remarks.match(/Serial Nos:\s*([^)]+)/i);
-  if (serialMatch && serialMatch[1]) {
-    const parts = serialMatch[1].split('|');
-    parts.forEach((part) => {
-      const colIdx = part.indexOf(':');
-      if (colIdx !== -1) {
-        const matName = part.substring(0, colIdx).trim();
-        const serialsStr = part.substring(colIdx + 1).trim();
-        const bracketMatch = serialsStr.match(/\[(.*?)\]/);
-        if (bracketMatch && bracketMatch[1]) {
-          const serials = bracketMatch[1].split(',').map((s) => s.trim()).filter(Boolean);
-          map[matName] = serials;
-        }
-      }
-    });
+  const serialNosIdx = remarks.indexOf('Serial Nos:');
+  if (serialNosIdx === -1) return {};
+
+  let serialStr = remarks.substring(serialNosIdx + 'Serial Nos:'.length);
+  const stIdx = serialStr.indexOf('Service Type:');
+  if (stIdx !== -1) {
+    serialStr = serialStr.substring(0, stIdx);
   }
+  serialStr = serialStr.replace(/[\)\|\s]+$/, '').trim();
+
+  const parts = serialStr.split('|');
+  parts.forEach((part) => {
+    const colIdx = part.indexOf(':');
+    if (colIdx !== -1) {
+      const matName = part.substring(0, colIdx).trim();
+      const serialsStr = part.substring(colIdx + 1).trim();
+      const bracketMatch = serialsStr.match(/\[(.*?)\]/);
+      if (bracketMatch && bracketMatch[1]) {
+        const serials = bracketMatch[1].split(',').map((s) => s.trim().replace(/\s*\(USED\)/gi, '')).filter(Boolean);
+        map[matName] = serials;
+      }
+    }
+  });
   return map;
+};
+
+const parseServiceTypeFromRemarks = (remarks?: string | null): 'Replacement' | 'Payment' => {
+  if (!remarks) return 'Payment';
+  const matches = [...remarks.matchAll(/Service Type:\s*([^\s|)]+)/gi)];
+  if (matches.length > 0) {
+    const lastMatch = matches[matches.length - 1];
+    if (lastMatch && lastMatch[1]) {
+      const val = lastMatch[1].trim().toLowerCase();
+      if (val === 'replacement') return 'Replacement';
+      if (val === 'payment') return 'Payment';
+    }
+  }
+  return 'Payment';
 };
 
 type StoreFormValues = z.infer<typeof storeSchema>;
@@ -369,7 +394,7 @@ export function StoreFormDrawer() {
           material_quantities: initialQuantities,
           quantity: storeData.quantity,
           warranty_status: storeData.warranty_status,
-          service_type: (storeData as any)?.service_type || 'Payment',
+          service_type: parseServiceTypeFromRemarks(storeData.remarks),
           frame_number: storeData.frame_number,
           return_status: storeData.return_status,
           inflow_status: storeData.inflow_status,
@@ -506,9 +531,16 @@ export function StoreFormDrawer() {
 
     let cleanRemarksInput = extractCleanRemarks(data.remarks);
     let finalRemarks = cleanRemarksInput;
+    const extraParts: string[] = [];
     if (serialSummaries.length > 0) {
-      const serialsText = `Serial Nos: ${serialSummaries.join(' | ')}`;
-      finalRemarks = finalRemarks ? `${finalRemarks} (${serialsText})` : serialsText;
+      extraParts.push(`Serial Nos: ${serialSummaries.join(' | ')}`);
+    }
+    if (data.service_type) {
+      extraParts.push(`Service Type: ${data.service_type}`);
+    }
+    if (extraParts.length > 0) {
+      const extraText = extraParts.join(' | ');
+      finalRemarks = finalRemarks ? `${finalRemarks} (${extraText})` : `(${extraText})`;
     }
 
     const payload = {

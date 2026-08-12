@@ -80,18 +80,24 @@ export function MaterialMultiSelect({
   return (
     <div ref={containerRef} className="relative">
       {/* Trigger */}
-      <button
-        type="button"
-        disabled={disabled}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => !disabled && setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            setOpen((v) => !v);
+          }
+        }}
         className={cn(
-          'w-full min-h-[44px] px-3 py-2 text-left',
+          'w-full min-h-[44px] px-3 py-2 text-left cursor-pointer',
           'bg-gray-50/50 dark:bg-white/5 rounded-xl',
           'border-none outline-none',
           'focus:ring-2 focus:ring-primary/20',
           'transition-all duration-200',
           'flex items-start gap-2 flex-wrap',
-          disabled && 'opacity-50 cursor-not-allowed'
+          disabled && 'opacity-50 cursor-not-allowed pointer-events-none'
         )}
       >
         {selectedMaterials.length > 0 ? (
@@ -102,13 +108,20 @@ export function MaterialMultiSelect({
                 className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 dark:bg-primary/20 text-primary rounded-lg text-xs font-bold border border-primary/20"
               >
                 {m.name}
-                <button
-                  type="button"
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => remove(m.id, e)}
-                  className="hover:text-rose-500 transition-colors ml-0.5"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      remove(m.id, e as any);
+                    }
+                  }}
+                  className="hover:text-rose-500 transition-colors ml-0.5 cursor-pointer"
                 >
                   <X size={11} strokeWidth={3} />
-                </button>
+                </span>
               </span>
             ))}
           </div>
@@ -125,7 +138,7 @@ export function MaterialMultiSelect({
             open && 'rotate-180'
           )}
         />
-      </button>
+      </div>
 
       {/* Dropdown */}
       {open && (
