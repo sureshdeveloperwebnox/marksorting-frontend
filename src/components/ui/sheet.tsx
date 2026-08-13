@@ -55,7 +55,7 @@ function SheetContent({
     top: "fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-top data-closed:animate-out data-closed:slide-out-to-top",
     bottom: "fixed bottom-0 left-0 right-0 z-50 w-full border-t border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom",
     left: "fixed top-0 left-0 z-50 h-full w-full max-w-xs border-r border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-left data-closed:animate-out data-closed:slide-out-to-left",
-    right: "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 h-[85vh] w-[92vw] sm:w-full sm:max-w-2xl bg-white dark:bg-gray-950 border border-gray-100 dark:border-white/10 rounded-[28px] p-0 shadow-2xl duration-300 ease-out outline-none transition-all flex flex-col overflow-hidden data-open:animate-in data-open:zoom-in-95 data-closed:animate-out data-closed:zoom-out-95",
+    right: "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 h-[92vh] w-[95vw] sm:w-[94vw] md:w-[92vw] max-w-7xl bg-white dark:bg-gray-950 border border-gray-100 dark:border-white/10 rounded-[28px] p-0 shadow-2xl duration-300 ease-out outline-none transition-all flex flex-col overflow-hidden data-open:animate-in data-open:zoom-in-95 data-closed:animate-out data-closed:zoom-out-95",
   }
 
   return (

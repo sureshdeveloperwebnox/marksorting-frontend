@@ -350,34 +350,55 @@ export default function CompanySettingsPage() {
             Live Preview
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white px-5 py-7 text-center shadow-inner dark:border-white/10 dark:bg-gray-950">
-            {logoUrl && (
-              <div className="mb-3 flex justify-center">
-                <img
-                  src={logoUrl}
-                  alt="Company header logo"
-                  className="max-h-14 max-w-44 object-contain"
-                />
+          <div className="rounded-lg border border-gray-200 bg-white px-5 py-7 shadow-inner dark:border-white/10 dark:bg-gray-950">
+            <div className="flex items-start gap-6">
+              {/* Logo – left side */}
+              <div className="shrink-0" style={{ width: "140px", minHeight: "56px" }}>
+                {logoUrl && (
+                  <img
+                    src={logoUrl}
+                    alt="Company header logo"
+                    className="max-h-14 max-w-[140px] object-contain"
+                  />
+                )}
               </div>
-            )}
-            <h2 className="text-3xl font-black tracking-normal text-emerald-800 dark:text-emerald-300">
-              {form.COMPANY_NAME || "Company Name"}
-            </h2>
-            <p className="mt-1 text-base font-black leading-snug text-orange-600 dark:text-orange-400">
-              ({form.COMPANY_PARTNER_DESCRIPTION || "Partner Description"})
-            </p>
-            <div className="mt-2 space-y-0.5 text-base font-black leading-snug text-gray-800 dark:text-gray-100">
-              <p>{form.COMPANY_ADDRESS_LINE_1 || "Address Line 1"}</p>
-              <p>{form.COMPANY_ADDRESS_LINE_2 || "Address Line 2"}</p>
-              <p>
-                {form.COMPANY_REGION || "State / Country"}
-                {form.COMPANY_EMAIL ? `, E-mail : ${form.COMPANY_EMAIL}` : ""}
-              </p>
-              <p>
-                Toll Free : {form.COMPANY_TOLL_FREE || "Toll Free"}
-                {form.COMPANY_CELL_NUMBERS ? ` / Cell : ${form.COMPANY_CELL_NUMBERS}` : ""}
-              </p>
-              {form.COMPANY_GST_NO && <p>GST No : {form.COMPANY_GST_NO}</p>}
+
+              {/* Company details – right-aligned */}
+              <div className="flex-1 text-right">
+                <h2 className="text-2xl font-black tracking-normal text-emerald-800 dark:text-emerald-300">
+                  {form.COMPANY_NAME || "Company Name"}
+                </h2>
+                {(() => {
+                  const desc = form.COMPANY_PARTNER_DESCRIPTION || "Partner Description";
+                  const match = desc.match(/^(.+?\bpartner)\s+(of\b.+)$/i);
+                  return (
+                    <p className="mt-0.5 text-sm font-bold leading-snug text-orange-600 dark:text-orange-400">
+                      {match ? (
+                        <>
+                          ({match[1]}
+                          <br />
+                          {match[2]})
+                        </>
+                      ) : (
+                        `(${desc})`
+                      )}
+                    </p>
+                  );
+                })()}
+                <div className="mt-1.5 space-y-0 text-sm font-extrabold leading-snug text-gray-800 dark:text-gray-100">
+                  {form.COMPANY_ADDRESS_LINE_1 && <p>{form.COMPANY_ADDRESS_LINE_1}</p>}
+                  {form.COMPANY_ADDRESS_LINE_2 && <p>{form.COMPANY_ADDRESS_LINE_2}</p>}
+                  <p>
+                    {form.COMPANY_REGION || "State / Country"}
+                    {form.COMPANY_EMAIL ? `, E-mail : ${form.COMPANY_EMAIL}` : ""}
+                  </p>
+                  <p>
+                    {form.COMPANY_TOLL_FREE ? `Toll Free : ${form.COMPANY_TOLL_FREE}` : ""}
+                    {form.COMPANY_CELL_NUMBERS ? ` / Cell : ${form.COMPANY_CELL_NUMBERS}` : ""}
+                  </p>
+                  {form.COMPANY_GST_NO && <p>GST No : {form.COMPANY_GST_NO}</p>}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -65,13 +65,7 @@ export function ViewDetailsDrawer({
 }: ViewDetailsDrawerProps) {
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent
-        side="right"
-        className={cn(
-          "w-full p-0 flex flex-col h-screen max-h-screen bg-white dark:bg-gray-950 border-l border-gray-100 dark:border-white/5 shadow-2xl",
-          sizeClasses[size]
-        )}
-      >
+      <SheetContent side="right">
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
           <div className="flex items-center gap-4">
