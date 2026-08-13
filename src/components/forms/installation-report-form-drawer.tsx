@@ -200,7 +200,7 @@ function SectionToggle({
         type="button"
         onClick={() => onToggle(section.id)}
         className={cn(
-          "w-full flex items-center justify-between px-5 py-4 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors",
+          "w-full flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors",
           isOpen ? "rounded-t-xl" : "rounded-xl"
         )}
       >
@@ -234,7 +234,7 @@ function SectionToggle({
             }}
             transition={{ duration: 0.2 }}
           >
-            <div className="px-5 pb-5 pt-4 space-y-4">{children}</div>
+            <div className="px-4 pb-4 pt-3 space-y-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -321,8 +321,7 @@ export function InstallationReportFormDrawer() {
       invoice_date: '',
       warranty_start_date: '',
       warranty_end_date: '',
-      warranty_years: 0,
-      warranty_months: 0,
+      warranty_months: 12,
       commodity: '',
       contamination: '',
       output_capacity_per_hour: '',
@@ -530,16 +529,13 @@ export function InstallationReportFormDrawer() {
 
   // Dynamic auto-calculation of Warranty End Date
   const watchedWarrantyStartDate = watch('warranty_start_date');
-  const watchedWarrantyYears = watch('warranty_years');
   const watchedWarrantyMonths = watch('warranty_months');
 
   React.useEffect(() => {
     if (watchedWarrantyStartDate) {
       const date = new Date(watchedWarrantyStartDate);
       if (!isNaN(date.getTime())) {
-        const years = Number(watchedWarrantyYears) || 0;
         const months = Number(watchedWarrantyMonths) || 0;
-        date.setFullYear(date.getFullYear() + years);
         date.setMonth(date.getMonth() + months);
         date.setDate(date.getDate() - 1);
         const formatted = date.toISOString().split('T')[0];
@@ -548,7 +544,7 @@ export function InstallationReportFormDrawer() {
     } else {
       setValue('warranty_end_date', '');
     }
-  }, [watchedWarrantyStartDate, watchedWarrantyYears, watchedWarrantyMonths, setValue]);
+  }, [watchedWarrantyStartDate, watchedWarrantyMonths, setValue]);
 
 
   React.useEffect(() => {
@@ -588,8 +584,9 @@ export function InstallationReportFormDrawer() {
           invoice_date: reportData.invoice_date?.split('T')[0] || '',
           warranty_start_date: reportData.warranty_start_date?.split('T')[0] || '',
           warranty_end_date: reportData.warranty_end_date?.split('T')[0] || '',
-          warranty_years: reportData.warranty_years ?? 0,
-          warranty_months: reportData.warranty_months ?? 0,
+          warranty_months: (reportData.warranty_months && reportData.warranty_months > 0)
+            ? reportData.warranty_months
+            : ((reportData.warranty_years ?? 0) * 12 || 12),
           commodity: reportData.commodity || '',
           contamination: reportData.contamination || '',
           output_capacity_per_hour: reportData.output_capacity_per_hour || '',
@@ -633,8 +630,7 @@ export function InstallationReportFormDrawer() {
           invoice_date: '',
           warranty_start_date: '',
           warranty_end_date: '',
-          warranty_years: 0,
-          warranty_months: 0,
+          warranty_months: 12,
           commodity: '',
           contamination: '',
           output_capacity_per_hour: '',
@@ -804,10 +800,10 @@ export function InstallationReportFormDrawer() {
               payload.running_channel_combination = val ? Number(val) : null;
             } else if (key === 'no_of_filters_installed') {
               payload.no_of_filters_installed = val ? Number(val) : null;
-            } else if (key === 'warranty_years') {
-              payload.warranty_years = val ? Number(val) : null;
             } else if (key === 'warranty_months') {
-              payload.warranty_months = val ? Number(val) : null;
+              const months = val ? Number(val) : 12;
+              payload.warranty_months = months;
+              payload.warranty_years = Math.floor(months / 12);
             } else if (key === 'engineer_signature') {
               payload.engineer_signature = engineerSignatureUrl;
             } else if (key === 'customer_signature') {
@@ -858,8 +854,8 @@ export function InstallationReportFormDrawer() {
           invoice_date: data.invoice_date || undefined,
           warranty_start_date: data.warranty_start_date || undefined,
           warranty_end_date: data.warranty_end_date || undefined,
-          warranty_years: data.warranty_years ? Number(data.warranty_years) : undefined,
-          warranty_months: data.warranty_months ? Number(data.warranty_months) : undefined,
+          warranty_months: data.warranty_months ? Number(data.warranty_months) : 12,
+          warranty_years: data.warranty_months ? Math.floor(Number(data.warranty_months) / 12) : 1,
           authorized_person_phone: data.authorized_person_phone || undefined,
           visit_time: data.visit_time || undefined,
           engineer_signature: engineerSignatureUrl,
@@ -1007,10 +1003,7 @@ export function InstallationReportFormDrawer() {
 
   return (
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
-      <SheetContent
-        side="right"
-        className="w-full max-w-full p-0 flex flex-col h-full bg-gray-50 dark:bg-gray-950 border-none"
-      >
+      <SheetContent side="right">
         <SheetHeader className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900 z-10">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0 pr-8">
             <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20 flex-shrink-0">
@@ -1027,18 +1020,19 @@ export function InstallationReportFormDrawer() {
           </div>
         </SheetHeader>
 
-        <div ref={sheetRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-6 py-4 sm:py-6 scrollbar-hide pb-32 sm:pb-24">
-          {isLoading ? (
+        <div ref={sheetRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scrollbar-hide pb-20">
+          <div className="w-full">
+            {isLoading ? (
             <div className="flex items-center justify-center h-full min-h-[300px]">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
-            <form id="installation-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4 min-w-0">
+            <form id="installation-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-3 min-w-0">
               {/* Section 1 - Basic Details */}
               <SectionToggle section={sections[0]} isOpen={!!openSections[1]} onToggle={toggleSection}>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Select Service Engineers */}
-                  <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
+                  <div className="space-y-1.5" data-error={errors.technician_ids ? 'true' : undefined}>
                     <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                       <Users size={14} className="text-primary/70" />
                       Select Service Engineers
@@ -1058,7 +1052,7 @@ export function InstallationReportFormDrawer() {
                   </div>
 
                   {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
-                  <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                  <div className="space-y-1.5 p-3 bg-primary/5 rounded-xl border border-primary/10">
                     <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
                       Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
@@ -1634,7 +1628,7 @@ export function InstallationReportFormDrawer() {
                   <div className="border-t border-gray-100 dark:border-white/5 pt-4 my-2">
                     <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Warranty Details</h4>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                           <ShieldCheck size={14} className="text-primary/70" />
@@ -1655,26 +1649,13 @@ export function InstallationReportFormDrawer() {
 
                       <div className="space-y-2">
                         <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                          Warranty Duration (Years)
-                        </Label>
-                        <Input
-                          {...register('warranty_years')}
-                          type="number"
-                          min={0}
-                          placeholder="1"
-                          className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
                           Warranty Duration (Months)
                         </Label>
                         <Input
                           {...register('warranty_months')}
                           type="number"
                           min={0}
-                          placeholder="0"
+                          placeholder="e.g. 12"
                           className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                         />
                       </div>
@@ -2136,10 +2117,11 @@ export function InstallationReportFormDrawer() {
               </SectionToggle>
             </form>
           )}
+          </div>
         </div>
 
-        <SheetFooter className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5 z-10">
-          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full">
+        <SheetFooter className="p-3 sm:p-4 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5 z-10">
+          <div className="w-full flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
             <Button
               type="button"
               variant="ghost"

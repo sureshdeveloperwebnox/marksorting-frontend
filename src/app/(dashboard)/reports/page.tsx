@@ -178,6 +178,14 @@ export default function ReportsPage() {
         frameNoFilter,
         setFrameNoFilter,
         refNoFilter,
+        createdDateFrom,
+        setCreatedDateFrom,
+        createdDateTo,
+        setCreatedDateTo,
+        expenseDateFrom,
+        setExpenseDateFrom,
+        expenseDateTo,
+        setExpenseDateTo,
         setRefNoFilter,
         storeWarrantyFilter,
         storeReturnFilter,
@@ -242,6 +250,10 @@ export default function ReportsPage() {
         categoryId: categoryFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        createdDateFrom: createdDateFrom || undefined,
+        createdDateTo: createdDateTo || undefined,
+        expenseDateFrom: expenseDateFrom || undefined,
+        expenseDateTo: expenseDateTo || undefined,
         millId: millFilter || undefined,
         technicianId: technicianFilter || undefined,
         millName: millNameFilter || undefined,
@@ -435,6 +447,34 @@ export default function ReportsPage() {
             placeholder: "To Date",
         };
 
+        const createdDateFromField: FilterField = {
+            id: "createdDateFrom",
+            label: "Created Date From",
+            type: "date",
+            placeholder: "Created Date From",
+        };
+
+        const createdDateToField: FilterField = {
+            id: "createdDateTo",
+            label: "Created Date To",
+            type: "date",
+            placeholder: "Created Date To",
+        };
+
+        const expenseDateFromField: FilterField = {
+            id: "expenseDateFrom",
+            label: "Expense Date From",
+            type: "date",
+            placeholder: "Expense Date From",
+        };
+
+        const expenseDateToField: FilterField = {
+            id: "expenseDateTo",
+            label: "Expense Date To",
+            type: "date",
+            placeholder: "Expense Date To",
+        };
+
         if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
         if (activeTab === "installations") return [statusField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
         if (activeTab === "master-mills") return [statusField, millField, millNameField, refNoField, frameNoField, dateFromField, dateToField];
@@ -506,7 +546,7 @@ export default function ReportsPage() {
 
             return [engineerField, customerField, materialField, warrantyStatusField, returnStatusField, inflowStatusField, dateFromField, dateToField];
         }
-        return [statusField, expenseCategoryField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
+        return [statusField, expenseCategoryField, millField, millNameField, refNoField, frameNoField, techField, expenseDateFromField, expenseDateToField, createdDateFromField, createdDateToField];
     }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData, customersData, materialsData, filterOptionsData]);
 
     const filterActiveValues: Record<string, string> = {
@@ -516,6 +556,10 @@ export default function ReportsPage() {
         technicianId: technicianFilter || "ALL",
         dateFrom: dateFrom || "",
         dateTo: dateTo || "",
+        createdDateFrom: createdDateFrom || "",
+        createdDateTo: createdDateTo || "",
+        expenseDateFrom: expenseDateFrom || "",
+        expenseDateTo: expenseDateTo || "",
         millName: millNameFilter || "",
         frameNo: frameNoFilter || "ALL",
         refNo: refNoFilter || "ALL",
@@ -533,6 +577,10 @@ export default function ReportsPage() {
         setTechnicianFilter(values.technicianId === "ALL" ? "" : (values.technicianId ?? ""));
         setDateFrom(values.dateFrom ?? "");
         setDateTo(values.dateTo ?? "");
+        setCreatedDateFrom(values.createdDateFrom ?? "");
+        setCreatedDateTo(values.createdDateTo ?? "");
+        setExpenseDateFrom(values.expenseDateFrom ?? "");
+        setExpenseDateTo(values.expenseDateTo ?? "");
         setMillNameFilter(values.millName ?? "");
         setFrameNoFilter(values.frameNo === "ALL" ? "" : (values.frameNo ?? ""));
         setRefNoFilter(values.refNo === "ALL" ? "" : (values.refNo ?? ""));

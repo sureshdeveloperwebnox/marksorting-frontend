@@ -184,9 +184,24 @@ const items: SidebarItem[] = [
   {
     label: 'Stores',
     icon: StoreIcon,
-    href: '/stores',
     module: 'stores',
     action: 'view',
+    subItems: [
+      {
+        label: 'Store Management',
+        href: '/stores',
+        icon: StoreIcon,
+        module: 'stores',
+        action: 'view',
+      },
+      {
+        label: 'Material Master',
+        href: '/stores/materials',
+        icon: StoreIcon,
+        module: 'stores',
+        action: 'view',
+      },
+    ],
   },
   {
     label: 'Reports',

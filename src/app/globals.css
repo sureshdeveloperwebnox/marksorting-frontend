@@ -285,3 +285,47 @@ nextjs-portal,
   display: none !important;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Differentiated Field Styling & Input vs. Filled State Colors
+   ───────────────────────────────────────────────────────────── */
+
+/* Default/Empty Input state */
+input:placeholder-shown:not([type="checkbox"]):not([type="radio"]),
+textarea:placeholder-shown {
+  background-color: rgba(249, 250, 251, 0.8);
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  font-weight: 500;
+  color: #111827;
+}
+
+.dark input:placeholder-shown:not([type="checkbox"]):not([type="radio"]),
+.dark textarea:placeholder-shown {
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f9fafb;
+}
+
+/* Filled Input state (Value provided) */
+input:not(:placeholder-shown):not([type="checkbox"]):not([type="radio"]),
+textarea:not(:placeholder-shown) {
+  background-color: rgba(234, 88, 12, 0.04);
+  border: 1px solid rgba(234, 88, 12, 0.25);
+  font-weight: 700;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.dark input:not(:placeholder-shown):not([type="checkbox"]):not([type="radio"]),
+.dark textarea:not(:placeholder-shown) {
+  background-color: rgba(234, 88, 12, 0.12);
+  border: 1px solid rgba(234, 88, 12, 0.35);
+  color: #ffffff;
+}
+
+/* Focus state */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: rgba(234, 88, 12, 0.6);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+

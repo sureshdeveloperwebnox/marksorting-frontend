@@ -11,6 +11,10 @@ interface ReportsState {
     categoryFilter: string;
     dateFrom: string;
     dateTo: string;
+    createdDateFrom: string;
+    createdDateTo: string;
+    expenseDateFrom: string;
+    expenseDateTo: string;
     millFilter: string;
     technicianFilter: string;
     millNameFilter: string;
@@ -30,6 +34,10 @@ interface ReportsState {
     setCategoryFilter: (categoryId: string) => void;
     setDateFrom: (date: string) => void;
     setDateTo: (date: string) => void;
+    setCreatedDateFrom: (date: string) => void;
+    setCreatedDateTo: (date: string) => void;
+    setExpenseDateFrom: (date: string) => void;
+    setExpenseDateTo: (date: string) => void;
     setMillFilter: (millId: string) => void;
     setTechnicianFilter: (technicianId: string) => void;
     setMillNameFilter: (millName: string) => void;
@@ -56,6 +64,10 @@ const useReportsStore = create<ReportsState>((set) => ({
     categoryFilter: "",
     dateFrom: "",
     dateTo: "",
+    createdDateFrom: "",
+    createdDateTo: "",
+    expenseDateFrom: "",
+    expenseDateTo: "",
     millFilter: "",
     technicianFilter: "",
     millNameFilter: "",
@@ -76,6 +88,10 @@ const useReportsStore = create<ReportsState>((set) => ({
             categoryFilter: "",
             dateFrom: "",
             dateTo: "",
+            createdDateFrom: "",
+            createdDateTo: "",
+            expenseDateFrom: "",
+            expenseDateTo: "",
             millFilter: "",
             technicianFilter: "",
             millNameFilter: "",
@@ -111,6 +127,26 @@ const useReportsStore = create<ReportsState>((set) => ({
     setDateTo: (dateTo) =>
         set((state) => ({
             dateTo,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setCreatedDateFrom: (createdDateFrom) =>
+        set((state) => ({
+            createdDateFrom,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setCreatedDateTo: (createdDateTo) =>
+        set((state) => ({
+            createdDateTo,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setExpenseDateFrom: (expenseDateFrom) =>
+        set((state) => ({
+            expenseDateFrom,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setExpenseDateTo: (expenseDateTo) =>
+        set((state) => ({
+            expenseDateTo,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
     setMillFilter: (millFilter) =>
@@ -171,6 +207,10 @@ const useReportsStore = create<ReportsState>((set) => ({
             categoryFilter: "",
             dateFrom: "",
             dateTo: "",
+            createdDateFrom: "",
+            createdDateTo: "",
+            expenseDateFrom: "",
+            expenseDateTo: "",
             millFilter: "",
             technicianFilter: "",
             millNameFilter: "",

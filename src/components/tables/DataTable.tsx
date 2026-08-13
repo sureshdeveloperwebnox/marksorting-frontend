@@ -228,7 +228,7 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="h-16 text-primary/90 dark:text-primary/90 font-bold uppercase tracking-[0.12em] text-[12px] px-8">
+                  <TableHead key={header.id} className="h-10 text-primary/90 dark:text-primary/90 font-bold uppercase tracking-wider text-[11px] px-3.5 whitespace-nowrap">
                     {header.isPlaceholder ? null : (
                       <div
                         className={
@@ -265,8 +265,8 @@ export function DataTable<TData, TValue>({
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i} className="border-b border-gray-50 dark:border-white/5 last:border-0">
                   {columns.map((_, j) => (
-                    <TableCell key={j} className="px-8 py-6">
-                      <Skeleton className="h-6 w-full rounded-xl" />
+                    <TableCell key={j} className="px-3.5 py-3">
+                      <Skeleton className="h-5 w-full rounded-xl" />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -279,7 +279,7 @@ export function DataTable<TData, TValue>({
                   className="border-b border-gray-50 dark:border-white/5 last:border-0 hover:bg-primary/[0.015] dark:hover:bg-primary/[0.035] transition-all duration-300 group/row"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-8 py-5 transition-all duration-300">
+                    <TableCell key={cell.id} className="px-3.5 py-2.5 transition-all duration-300">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

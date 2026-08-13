@@ -6,6 +6,7 @@ export interface Material {
   id: string;
   name: string;
   description?: string;
+  uom?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -13,6 +14,7 @@ export interface Material {
 
 export interface StoreMaterialRelation {
   quantity: number;
+  stock_type?: string;
   material: {
     id: string;
     name: string;
@@ -36,6 +38,7 @@ export interface Store {
   frame_number: string;
   return_status: string;
   inflow_status: string;
+  stock_type?: string;
   barcode?: string;
   provider_name?: string;
   invoice_number?: string;
@@ -71,7 +74,7 @@ export const useMaterials = (params?: { skip?: number; take?: number; search?: s
 export const useCreateMaterial = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (materialData: { name: string; description?: string; status?: string }) => {
+    mutationFn: async (materialData: { name: string; description?: string; uom?: string; status?: string }) => {
       const { data } = await api.post<Material>("/materials", materialData);
       return data;
     },
@@ -81,6 +84,40 @@ export const useCreateMaterial = () => {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to create material");
+    }
+  });
+};
+
+export const useUpdateMaterial = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data: materialData }: { id: string; data: { name?: string; description?: string; uom?: string; status?: string } }) => {
+      const { data } = await api.put<Material>(`/materials/${id}`, materialData);
+      return data;
+    },
+    onSuccess: (updatedMaterial) => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      toast.success("Material updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update material");
+    }
+  });
+};
+
+export const useDeleteMaterial = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(`/materials/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      toast.success("Material deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete material");
     }
   });
 };
@@ -97,6 +134,7 @@ export const useStores = (params: {
   warranty_status?: string;
   return_status?: string;
   inflow_status?: string;
+  stock_type?: string;
   dateFrom?: string;
   dateTo?: string;
 }) => {
@@ -129,12 +167,13 @@ export const useCreateStore = () => {
       service_engineer_id: string;
       customer_id: string;
       material_ids: string[];
-      material_quantities?: { material_id: string; quantity: number }[];
+      material_quantities?: { material_id: string; quantity: number; stock_type?: string }[];
       quantity: number;
       warranty_status: string;
       frame_number: string;
       return_status: string;
       inflow_status: string;
+      stock_type?: string;
       barcode?: string;
       provider_name?: string;
       invoice_number?: string;
@@ -147,20 +186,24 @@ export const useCreateStore = () => {
       toast.success("Store record created successfully");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create store record");
-    }
+      const message = error.response?.data?.message || "Failed to create store record";
+      toast.error(message);
+    },
   });
 };
 
 export const useUpdateStore = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...storeData }: {
+    mutationFn: async ({
+      id,
+      ...storeData
+    }: {
       id: string;
       service_engineer_id?: string;
       customer_id?: string;
       material_ids?: string[];
-      material_quantities?: { material_id: string; quantity: number }[];
+      material_quantities?: { material_id: string; quantity: number; stock_type?: string }[];
       quantity?: number;
       warranty_status?: string;
       frame_number?: string;

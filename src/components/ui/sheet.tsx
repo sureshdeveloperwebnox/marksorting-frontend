@@ -31,7 +31,7 @@ function SheetOverlay({
     <DialogPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/30 backdrop-blur-[2px] duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/60 backdrop-blur-sm duration-300 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
@@ -55,7 +55,7 @@ function SheetContent({
     top: "fixed top-0 left-0 right-0 z-50 w-full border-b border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-top data-closed:animate-out data-closed:slide-out-to-top",
     bottom: "fixed bottom-0 left-0 right-0 z-50 w-full border-t border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom",
     left: "fixed top-0 left-0 z-50 h-full w-full max-w-xs border-r border-gray-100 dark:border-white/5 bg-white dark:bg-gray-950 p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:slide-in-from-left data-closed:animate-out data-closed:slide-out-to-left",
-    right: "fixed inset-0 z-50 h-full w-full max-w-none bg-white dark:bg-gray-950 border-none p-6 shadow-2xl duration-300 ease-out outline-none transition-all data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+    right: "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 h-[85vh] w-[92vw] sm:w-full sm:max-w-2xl bg-white dark:bg-gray-950 border border-gray-100 dark:border-white/10 rounded-[28px] p-0 shadow-2xl duration-300 ease-out outline-none transition-all flex flex-col overflow-hidden data-open:animate-in data-open:zoom-in-95 data-closed:animate-out data-closed:zoom-out-95",
   }
 
   return (
@@ -105,7 +105,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sheet-footer"
       className={cn(
-        "absolute bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5 p-6 flex items-center gap-3",
+        "bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5 p-4 flex items-center gap-3 flex-shrink-0 mt-auto",
         className
       )}
       {...props}

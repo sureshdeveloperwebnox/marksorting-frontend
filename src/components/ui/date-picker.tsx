@@ -55,44 +55,17 @@ export function DatePicker({
   React.useLayoutEffect(() => {
     if (!isOpen || !containerRef.current) return;
 
-    const updatePosition = () => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+    const estimatedPopoverHeight = viewMode === 'years' ? 310 : 390;
 
-      const viewportPadding = 12;
-      const popoverWidth = Math.min(310, window.innerWidth - viewportPadding * 2);
-      const estimatedPopoverHeight = viewMode === 'years' ? 310 : 390;
-      const availableBelow = window.innerHeight - rect.bottom - viewportPadding;
-      const availableAbove = rect.top - viewportPadding;
-
-      const left = Math.min(
-        Math.max(viewportPadding, rect.left),
-        window.innerWidth - popoverWidth - viewportPadding
-      );
-      const top =
-        availableBelow >= estimatedPopoverHeight || availableBelow >= availableAbove
-          ? rect.bottom + 6
-          : Math.max(viewportPadding, rect.top - estimatedPopoverHeight - 6);
-
-      setPopoverStyle({
-        position: 'fixed',
-        top,
-        left,
-        width: popoverWidth,
-        maxHeight: Math.min(
-          estimatedPopoverHeight,
-          window.innerHeight - viewportPadding * 2
-        ),
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
+    setPopoverStyle({
+      position: 'absolute',
+      top: 'calc(100% + 6px)',
+      left: 0,
+      width: '100%',
+      minWidth: '280px',
+      maxWidth: '320px',
+      maxHeight: `${Math.min(estimatedPopoverHeight, window.innerHeight - 24)}px`,
+    });
   }, [isOpen, viewMode]);
 
   // Handle click outside to close popover

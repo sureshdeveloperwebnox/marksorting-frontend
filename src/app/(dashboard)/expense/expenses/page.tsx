@@ -107,10 +107,18 @@ export default function ExpensesPage() {
     technicianFilter,
     dateFrom,
     dateTo,
+    createdDateFrom,
+    createdDateTo,
+    expenseDateFrom,
+    expenseDateTo,
     setStatusFilter,
     setTechnicianFilter,
     setDateFrom,
     setDateTo,
+    setCreatedDateFrom,
+    setCreatedDateTo,
+    setExpenseDateFrom,
+    setExpenseDateTo,
     resetFilters,
     deleteId,
     setDeleteId,
@@ -140,6 +148,10 @@ export default function ExpensesPage() {
     technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    createdDateFrom: createdDateFrom || undefined,
+    createdDateTo: createdDateTo || undefined,
+    expenseDateFrom: expenseDateFrom || undefined,
+    expenseDateTo: expenseDateTo || undefined,
   });
 
   const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useExpenses({
@@ -147,6 +159,10 @@ export default function ExpensesPage() {
     technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    createdDateFrom: createdDateFrom || undefined,
+    createdDateTo: createdDateTo || undefined,
+    expenseDateFrom: expenseDateFrom || undefined,
+    expenseDateTo: expenseDateTo || undefined,
     search: search || undefined,
   });
   const { data: completedData, refetch: refetchCompleted, isFetching: isFetchingCompleted } = useExpenses({
@@ -154,6 +170,10 @@ export default function ExpensesPage() {
     technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    createdDateFrom: createdDateFrom || undefined,
+    createdDateTo: createdDateTo || undefined,
+    expenseDateFrom: expenseDateFrom || undefined,
+    expenseDateTo: expenseDateTo || undefined,
     search: search || undefined,
   });
   const { data: pendingData, refetch: refetchPending, isFetching: isFetchingPending } = useExpenses({
@@ -161,6 +181,10 @@ export default function ExpensesPage() {
     technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    createdDateFrom: createdDateFrom || undefined,
+    createdDateTo: createdDateTo || undefined,
+    expenseDateFrom: expenseDateFrom || undefined,
+    expenseDateTo: expenseDateTo || undefined,
     search: search || undefined,
   });
   const { data: inProgressData, refetch: refetchInProgress, isFetching: isFetchingInProgress } = useExpenses({
@@ -168,6 +192,10 @@ export default function ExpensesPage() {
     technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    createdDateFrom: createdDateFrom || undefined,
+    createdDateTo: createdDateTo || undefined,
+    expenseDateFrom: expenseDateFrom || undefined,
+    expenseDateTo: expenseDateTo || undefined,
     search: search || undefined,
   });
   const { data: cancelledData, refetch: refetchCancelled, isFetching: isFetchingCancelled } = useExpenses({
@@ -175,6 +203,10 @@ export default function ExpensesPage() {
     technicianId: technicianFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    createdDateFrom: createdDateFrom || undefined,
+    createdDateTo: createdDateTo || undefined,
+    expenseDateFrom: expenseDateFrom || undefined,
+    expenseDateTo: expenseDateTo || undefined,
     search: search || undefined,
   });
 
@@ -515,7 +547,7 @@ export default function ExpensesPage() {
     ];
   }, [viewExpenseData]);
 
-  const activeFilterCount = [statusFilter, technicianFilter, dateFrom, dateTo].filter(Boolean).length;
+  const activeFilterCount = [statusFilter, technicianFilter, dateFrom, dateTo, createdDateFrom, createdDateTo, expenseDateFrom, expenseDateTo].filter(Boolean).length;
 
   /* ── Filter fields ── */
   const filterFields: FilterField[] = [
@@ -543,10 +575,28 @@ export default function ExpensesPage() {
       ],
     },
     {
-      id: "dateRange",
-      label: "Select Date",
-      type: "date-range",
-      placeholder: "Select date range...",
+      id: "expenseDateFrom",
+      label: "Expense Date From",
+      type: "date",
+      placeholder: "Select expense start date...",
+    },
+    {
+      id: "expenseDateTo",
+      label: "Expense Date To",
+      type: "date",
+      placeholder: "Select expense end date...",
+    },
+    {
+      id: "createdDateFrom",
+      label: "Created Date From",
+      type: "date",
+      placeholder: "Select created start date...",
+    },
+    {
+      id: "createdDateTo",
+      label: "Created Date To",
+      type: "date",
+      placeholder: "Select created end date...",
     },
   ];
 
@@ -828,30 +878,30 @@ export default function ExpensesPage() {
           activeValues={{
             status: statusFilter || "ALL",
             technicianId: technicianFilter || "ALL",
-            dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
+            expenseDateFrom: expenseDateFrom || dateFrom || "",
+            expenseDateTo: expenseDateTo || dateTo || "",
+            createdDateFrom: createdDateFrom || "",
+            createdDateTo: createdDateTo || "",
           }}
           onApply={(values) => {
             setStatusFilter(values.status === "ALL" ? "" : values.status);
             setTechnicianFilter(values.technicianId === "ALL" ? "" : values.technicianId);
-            if (values.dateRange) {
-              try {
-                const range = JSON.parse(values.dateRange);
-                setDateFrom(range.startDate || "");
-                setDateTo(range.endDate || range.startDate || "");
-              } catch {
-                setDateFrom("");
-                setDateTo("");
-              }
-            } else {
-              setDateFrom("");
-              setDateTo("");
-            }
+            setExpenseDateFrom(values.expenseDateFrom || "");
+            setExpenseDateTo(values.expenseDateTo || "");
+            setDateFrom(values.expenseDateFrom || "");
+            setDateTo(values.expenseDateTo || "");
+            setCreatedDateFrom(values.createdDateFrom || "");
+            setCreatedDateTo(values.createdDateTo || "");
           }}
           onReset={() => {
             setStatusFilter("");
             setTechnicianFilter("");
             setDateFrom("");
             setDateTo("");
+            setExpenseDateFrom("");
+            setExpenseDateTo("");
+            setCreatedDateFrom("");
+            setCreatedDateTo("");
             resetFilters();
           }}
         />

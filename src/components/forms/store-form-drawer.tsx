@@ -12,7 +12,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert, Barcode, Plus, PlusCircle, Cpu, Building2, ChevronDown, ChevronUp, Check, Edit3 } from 'lucide-react';
+import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert, Barcode, Plus, PlusCircle, Cpu, Building2, ChevronDown, ChevronUp, Check, Edit3, Sparkles } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -55,19 +55,36 @@ const storeSchema = z.object({
       z.object({
         material_id: z.string(),
         quantity: z.number().min(1, 'Quantity must be at least 1'),
+        stock_type: z.string().optional().default('Inflow'),
         serial_numbers: z.array(z.string()).optional(),
       })
     )
     .superRefine((items, ctx) => {
+      const seenBarcodes = new Set<string>();
       items.forEach((item, itemIdx) => {
         const serials = item.serial_numbers || [];
         for (let u = 0; u < item.quantity; u++) {
-          if (!serials[u] || !serials[u].trim()) {
+          const raw = serials[u]?.trim() || '';
+          if (!raw) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: `Unit ${u + 1} Serial No. / Code is required`,
+              message: `Unit ${u + 1} Barcode is required`,
               path: [itemIdx, 'serial_numbers', u],
             });
+          } else if (!/^\d{7}$/.test(raw)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Unit ${u + 1} Barcode must be exactly 7 digits (e.g. 7001024)`,
+              path: [itemIdx, 'serial_numbers', u],
+            });
+          } else if (seenBarcodes.has(raw)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Barcode ${raw} is duplicate! Each unit must have a unique 7-digit barcode`,
+              path: [itemIdx, 'serial_numbers', u],
+            });
+          } else {
+            seenBarcodes.add(raw);
           }
         }
       });
@@ -75,10 +92,11 @@ const storeSchema = z.object({
     .optional(),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   warranty_status: z.string().min(1, 'Warranty status is required'),
-  service_type: z.string().optional().default('Payment'),
+  service_type: z.string().optional().default('Acknowledgement'),
   frame_number: z.string().min(1, 'Frame number is required'),
   return_status: z.string().min(1, 'Return status is required'),
   inflow_status: z.string().min(1, 'Stock status is required'),
+  stock_type: z.string().optional().default('Inflow'),
   barcode: z.string().optional().or(z.literal('')),
   provider_name: z.string().optional().or(z.literal('')),
   invoice_number: z.string().optional().or(z.literal('')),
@@ -143,18 +161,18 @@ const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, stri
   return map;
 };
 
-const parseServiceTypeFromRemarks = (remarks?: string | null): 'Replacement' | 'Payment' => {
-  if (!remarks) return 'Payment';
+const parseServiceTypeFromRemarks = (remarks?: string | null): 'Replacement' | 'Acknowledgement' => {
+  if (!remarks) return 'Acknowledgement';
   const matches = [...remarks.matchAll(/Service Type:\s*([^\s|)]+)/gi)];
   if (matches.length > 0) {
     const lastMatch = matches[matches.length - 1];
     if (lastMatch && lastMatch[1]) {
       const val = lastMatch[1].trim().toLowerCase();
       if (val === 'replacement') return 'Replacement';
-      if (val === 'payment') return 'Payment';
+      if (val === 'acknowledgement' || val === 'payment') return 'Acknowledgement';
     }
   }
-  return 'Payment';
+  return 'Acknowledgement';
 };
 
 type StoreFormValues = z.infer<typeof storeSchema>;
@@ -192,7 +210,7 @@ export function StoreFormDrawer() {
       material_ids: [],
       quantity: 1,
       warranty_status: 'Non Warranty',
-      service_type: 'Payment',
+      service_type: 'Acknowledgement',
       frame_number: '',
       return_status: 'Pending',
       inflow_status: 'Available',
@@ -376,6 +394,7 @@ export function StoreFormDrawer() {
           return {
             material_id: m.material.id,
             quantity: qty,
+            stock_type: m.stock_type || 'Inflow',
             serial_numbers: fullSerials,
           };
         });
@@ -417,7 +436,7 @@ export function StoreFormDrawer() {
           material_quantities: [],
           quantity: 1,
           warranty_status: 'Non Warranty',
-          service_type: 'Payment',
+          service_type: 'Acknowledgement',
           frame_number: '',
           return_status: 'Pending',
           inflow_status: 'Available',
@@ -447,7 +466,7 @@ export function StoreFormDrawer() {
     // Add any new materialIdsWatch that are not yet in material_quantities
     const newItems = materialIdsWatch
       .filter(id => !filtered.some(q => q.material_id === id))
-      .map(id => ({ material_id: id, quantity: 1, serial_numbers: [''] }));
+      .map(id => ({ material_id: id, quantity: 1, stock_type: 'Inflow', serial_numbers: [''] }));
     
     const nextQuantities = [...filtered, ...newItems];
     
@@ -482,6 +501,8 @@ export function StoreFormDrawer() {
   };
 
   const handleSerialNumberChange = (materialId: string, unitIdx: number, value: string) => {
+    // Restrict input to digits only and max 7 characters
+    const numericOnly = value.replace(/\D/g, '').slice(0, 7);
     const currentQuantities = watch('material_quantities') || [];
     const nextQuantities = currentQuantities.map((q) => {
       if (q.material_id === materialId) {
@@ -489,12 +510,42 @@ export function StoreFormDrawer() {
         while (serials.length < q.quantity) {
           serials.push('');
         }
-        serials[unitIdx] = value;
+        serials[unitIdx] = numericOnly;
         return { ...q, serial_numbers: serials };
       }
       return q;
     });
-    setValue('material_quantities', nextQuantities, { shouldDirty: true });
+    setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const handleAutoGenerateBarcodes = (materialId: string) => {
+    const currentQuantities = watch('material_quantities') || [];
+    const allExistingBarcodes = new Set<string>();
+    currentQuantities.forEach((q) => {
+      q.serial_numbers?.forEach((s) => {
+        if (s && s.trim().length === 7) allExistingBarcodes.add(s.trim());
+      });
+    });
+
+    const nextQuantities = currentQuantities.map((q) => {
+      if (q.material_id === materialId) {
+        const serials = [...(q.serial_numbers || [])];
+        for (let u = 0; u < q.quantity; u++) {
+          if (!serials[u] || serials[u].trim().length !== 7) {
+            let candidate = '';
+            do {
+              candidate = Math.floor(1000000 + Math.random() * 9000000).toString();
+            } while (allExistingBarcodes.has(candidate));
+            allExistingBarcodes.add(candidate);
+            serials[u] = candidate;
+          }
+        }
+        return { ...q, serial_numbers: serials };
+      }
+      return q;
+    });
+    setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
+    toast.success('7-digit unit barcodes auto-generated!');
   };
 
   const onSubmit: SubmitHandler<StoreFormValues> = async (data) => {
@@ -567,7 +618,7 @@ export function StoreFormDrawer() {
 
   return (
     <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
-      <SheetContent side="right" className="w-full max-w-full p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-none">
+      <SheetContent side="right">
         <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20">
@@ -585,7 +636,8 @@ export function StoreFormDrawer() {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide pb-24">
-          {isLoading ? (
+          <div className="w-full">
+            {isLoading ? (
             <div className="flex items-center justify-center h-full min-h-[300px]">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
@@ -987,14 +1039,14 @@ export function StoreFormDrawer() {
                       render={({ field }) => (
                         <Select
                           onValueChange={field.onChange}
-                          value={field.value || 'Payment'}
+                          value={field.value || 'Acknowledgement'}
                         >
                           <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
                             <SelectValue placeholder="Select Service Type..." />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                            <SelectItem value="Payment" className="font-bold py-3 text-emerald-600 dark:text-emerald-400">
-                              Payment
+                            <SelectItem value="Acknowledgement" className="font-bold py-3 text-emerald-600 dark:text-emerald-400">
+                              Acknowledgement
                             </SelectItem>
                             <SelectItem value="Replacement" className="font-bold py-3 text-blue-600 dark:text-blue-400">
                               Replacement
@@ -1004,6 +1056,36 @@ export function StoreFormDrawer() {
                       )}
                     />
                     {errors.service_type && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.service_type.message}</p>}
+                  </div>
+
+                  {/* Return Status */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Clock size={14} className="text-primary/70" />
+                      Return Status
+                    </Label>
+                    <Controller
+                      name="return_status"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || 'Pending'}
+                        >
+                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                            <SelectValue placeholder="Select Return Status..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                            <SelectItem value="Pending" className="font-bold py-3 text-amber-500">Pending</SelectItem>
+                            <SelectItem value="In Progress" className="font-bold py-3 text-blue-500">In Progress</SelectItem>
+                            <SelectItem value="Returned" className="font-bold py-3 text-emerald-500">Returned</SelectItem>
+                            <SelectItem value="Not Returned" className="font-bold py-3 text-rose-500">Not Returned</SelectItem>
+                            <SelectItem value="Completed" className="font-bold py-3 text-teal-500">Completed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.return_status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.return_status.message}</p>}
                   </div>
 
                   {/* Warranty & AMC Details (Display Information Only) */}
@@ -1154,29 +1236,32 @@ export function StoreFormDrawer() {
                               </div>
 
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                {/* Stock Status dropdown near QTY */}
+                                {/* Stock Type dropdown per material */}
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Stock:</span>
-                                  <Controller
-                                    name="inflow_status"
-                                    control={control}
-                                    render={({ field }) => (
-                                      <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value || 'Available'}
-                                      >
-                                        <SelectTrigger className="h-8 w-28 bg-gray-50/80 dark:bg-white/5 border-none rounded-lg focus:ring-1 focus:ring-primary/20 font-bold text-xs">
-                                          <SelectValue placeholder="Stock Status" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                                          <SelectItem value="Available" className="font-bold text-xs py-2 text-emerald-500">Available</SelectItem>
-                                          <SelectItem value="Inflow" className="font-bold text-xs py-2 text-blue-500">Inflow</SelectItem>
-                                          <SelectItem value="Outflow" className="font-bold text-xs py-2 text-purple-500">Outflow</SelectItem>
-                                          <SelectItem value="Damaged" className="font-bold text-xs py-2 text-rose-500">Damaged</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    )}
-                                  />
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Stock Type:</span>
+                                  <Select
+                                    onValueChange={(val) => {
+                                      const current = watch('material_quantities') || [];
+                                      setValue(
+                                        'material_quantities',
+                                        current.map((q) =>
+                                          q.material_id === item.material_id
+                                            ? { ...q, stock_type: val || 'Inflow' }
+                                            : q
+                                        ),
+                                        { shouldDirty: true }
+                                      );
+                                    }}
+                                    value={item.stock_type || 'Inflow'}
+                                  >
+                                    <SelectTrigger className="h-8 w-32 bg-gray-50/80 dark:bg-white/5 border-none rounded-lg focus:ring-1 focus:ring-primary/20 font-bold text-xs">
+                                      <SelectValue placeholder="Stock Type" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-gray-100 shadow-xl z-[9999]">
+                                      <SelectItem value="Inflow" className="font-bold text-xs py-2 text-emerald-500">Inflow</SelectItem>
+                                      <SelectItem value="From Store" className="font-bold text-xs py-2 text-purple-500">From Store</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 </div>
 
                                 {/* QTY counter input */}
@@ -1211,45 +1296,61 @@ export function StoreFormDrawer() {
                             {/* Dynamic Input Fields (Appears ONLY after clicking the dropdown button) */}
                             {isExpanded && (
                               <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-2 animate-in fade-in-0 duration-200">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
                                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                                     <Hash size={11} className="text-primary/60" />
-                                    Dynamic Unit Fields ({item.quantity} {item.quantity === 1 ? 'required field' : 'required fields'})
+                                    7-Digit Unit Barcodes ({item.quantity} {item.quantity === 1 ? 'required code' : 'required codes'})
                                     <span className="text-rose-500 font-black">*</span>
                                   </span>
-                                  <span className="text-[10px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-200/50 dark:border-rose-500/20">
-                                    Mandatory
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleAutoGenerateBarcodes(item.material_id)}
+                                      className="h-6 px-2 text-[10px] font-bold rounded-lg border-primary/30 text-primary hover:bg-primary/10 transition-all gap-1 shadow-xs"
+                                    >
+                                      <Sparkles size={10} />
+                                      Auto-Generate
+                                    </Button>
+                                    <span className="text-[10px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-200/50 dark:border-rose-500/20">
+                                      Mandatory (7 Digits)
+                                    </span>
+                                  </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                                   {Array.from({ length: item.quantity }).map((_, unitIdx) => {
                                     const val = item.serial_numbers?.[unitIdx] || '';
                                     const isMissing = !val.trim();
 
                                     return (
-                                      <div
-                                        key={unitIdx}
-                                        className={cn(
-                                          "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all",
-                                          isMissing
-                                            ? "bg-rose-50/40 dark:bg-rose-500/5 border-rose-300 dark:border-rose-500/30 focus-within:border-rose-500 focus-within:ring-1 focus-within:ring-rose-500/20"
-                                            : "bg-gray-50/80 dark:bg-white/5 border-gray-100 dark:border-white/5 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20"
-                                        )}
-                                      >
-                                        <span className="text-[10px] font-extrabold shrink-0 w-14 flex items-center gap-0.5 text-primary/80">
-                                          Unit {unitIdx + 1} <span className="text-rose-500 font-black">*</span>
-                                        </span>
+                                      <div key={unitIdx} className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                                            Unit {unitIdx + 1} Barcode <span className="text-rose-500 font-black">*</span>
+                                          </span>
+                                          {isMissing ? (
+                                            <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">7 Digits Required</span>
+                                          ) : val.length < 7 ? (
+                                            <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wider">{val.length}/7 Digits</span>
+                                          ) : (
+                                            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Valid 7-Digit</span>
+                                          )}
+                                        </div>
                                         <Input
                                           type="text"
-                                          placeholder={`Enter Serial No. / Code #${unitIdx + 1}`}
+                                          maxLength={7}
+                                          placeholder={`Enter 7-digit barcode (e.g. 700100${unitIdx + 1})`}
                                           value={val}
                                           onChange={(e) => handleSerialNumberChange(item.material_id, unitIdx, e.target.value)}
-                                          className="h-7 bg-transparent border-none p-0 text-xs font-bold text-gray-800 dark:text-gray-200 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400 placeholder:font-medium"
+                                          className={cn(
+                                            "h-10 rounded-xl font-mono font-bold text-xs transition-all tracking-wider",
+                                            isMissing || val.length < 7
+                                              ? "bg-rose-50/50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-gray-900 dark:text-white"
+                                              : "bg-emerald-50/30 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 text-gray-900 dark:text-white"
+                                          )}
                                         />
-                                        {isMissing && (
-                                          <span className="text-[9px] font-bold text-rose-500 shrink-0 uppercase tracking-tighter pr-1">Required</span>
-                                        )}
                                       </div>
                                     );
                                   })}
@@ -1390,34 +1491,6 @@ export function StoreFormDrawer() {
                   {errors.frame_number && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.frame_number.message}</p>}
                 </div>
 
-                {/* Return Status */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Clock size={14} className="text-primary/70" />
-                    Return Status
-                  </Label>
-                  <Controller
-                    name="return_status"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || ''}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                          <SelectItem value="Returned" className="font-bold py-3 text-emerald-500">Returned</SelectItem>
-                          <SelectItem value="Pending" className="font-bold py-3 text-amber-500">Pending</SelectItem>
-                          <SelectItem value="Not Returned" className="font-bold py-3 text-rose-500">Not Returned</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.return_status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.return_status.message}</p>}
-                </div>
-
 
 
 
@@ -1460,16 +1533,15 @@ export function StoreFormDrawer() {
                     className="min-h-[100px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-xs"
                     {...register('remarks')}
                   />
-                  {errors.remarks && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.remarks.message}</p>}
                 </div>
-
               </div>
             </form>
           )}
+          </div>
         </div>
 
-        <SheetFooter className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-gray-955/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5">
-          <div className="flex gap-3 w-full">
+        <SheetFooter className="p-4 bg-white/90 dark:bg-gray-955/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5">
+          <div className="w-full flex gap-3">
             <Button
               type="button"
               variant="ghost"

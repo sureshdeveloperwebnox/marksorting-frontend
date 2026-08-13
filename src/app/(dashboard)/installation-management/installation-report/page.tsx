@@ -10,6 +10,7 @@ import {
   useUpdateInstallationReport,
   downloadInstallationReportPdf,
   useInstallationReport,
+  useBulkDeleteInstallationReportsByDate,
 } from "@/services/installation-report-service";
 import { useTechnicians } from "@/services/technician-service";
 import useInstallationReportStore from "@/store/useInstallationReportStore";
@@ -144,6 +145,25 @@ export default function InstallationReportPage() {
   const [selectedViewId, setSelectedViewId] = React.useState<string | null>(null);
   const [isViewDrawerOpen, setIsViewDrawerOpen] = React.useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = React.useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [bulkDeleteFromDate, setBulkDeleteFromDate] = React.useState("");
+  const [bulkDeleteToDate, setBulkDeleteToDate] = React.useState("");
+
+  const bulkDeleteMutation = useBulkDeleteInstallationReportsByDate();
+
+  const handleConfirmBulkDelete = async () => {
+    if (!bulkDeleteFromDate && !bulkDeleteToDate) return;
+    await bulkDeleteMutation.mutateAsync({
+      startDate: bulkDeleteFromDate || undefined,
+      endDate: bulkDeleteToDate || undefined,
+    });
+    setBulkDeleteOpen(false);
+    refetch();
+    refetchTotal();
+    refetchPending();
+    refetchCompleted();
+  };
+
   // Tracks the customer selected INSIDE the filter drawer (before Apply) for reactive mill list
   const [drawerCustomerId, setDrawerCustomerId] = React.useState<string>("");
 
@@ -506,10 +526,8 @@ export default function InstallationReportPage() {
             value: (() => {
               const y = viewReportData.warranty_years ?? 0;
               const m = viewReportData.warranty_months ?? 0;
-              const parts = [];
-              if (y > 0) parts.push(`${y} Year${y > 1 ? "s" : ""}`);
-              if (m > 0) parts.push(`${m} Month${m > 1 ? "s" : ""}`);
-              return parts.join(" ") || (y === 0 && m === 0 ? "0 Months" : "—");
+              const totalMonths = (m > 0 ? m : y * 12);
+              return totalMonths > 0 ? `${totalMonths} Month${totalMonths !== 1 ? "s" : ""}` : "—";
             })(),
             icon: Clock,
           },
@@ -937,19 +955,33 @@ export default function InstallationReportPage() {
                 onRefresh={handleRefresh}
                 isRefreshing={isRefreshing}
                 renderExtraControls={() => (
-                  <button
-                    type="button"
-                    onClick={() => setBulkUploadOpen(true)}
-                    className={cn(
-                      "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
-                      "bg-transparent border border-gray-200 dark:border-white/10",
-                      "text-gray-600 dark:text-gray-400",
-                      "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
-                    )}
-                  >
-                    <Upload size={14} />
-                    Upload Excel
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBulkDeleteOpen(true)}
+                      className={cn(
+                        "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
+                        "bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400",
+                        "hover:bg-rose-500/20 hover:border-rose-500/30",
+                      )}
+                    >
+                      <Trash2 size={14} />
+                      Bulk Delete Old
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkUploadOpen(true)}
+                      className={cn(
+                        "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
+                        "bg-transparent border border-gray-200 dark:border-white/10",
+                        "text-gray-600 dark:text-gray-400",
+                        "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                      )}
+                    >
+                      <Upload size={14} />
+                      Upload Excel
+                    </button>
+                  </div>
                 )}
               />
             </div>
@@ -1113,6 +1145,66 @@ export default function InstallationReportPage() {
           templateEndpoint="/installation-reports/bulk-upload/template"
           columnConfig={irColumnConfig as any}
         />
+
+        {/* ── Bulk Delete Old Reports Dialog ── */}
+        <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+          <DialogContent className="sm:max-w-[460px] rounded-[32px] border-none shadow-2xl p-8 bg-white dark:bg-gray-900">
+            <DialogHeader className="space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mx-auto animate-bounce">
+                <Trash2 size={32} />
+              </div>
+              <DialogTitle className="text-2xl font-black text-center text-gray-900 dark:text-white">
+                Bulk Delete Reports
+              </DialogTitle>
+              <DialogDescription className="text-center text-gray-500 font-bold">
+                Select From and To dates to delete all installation reports created within the date range.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-2 gap-3 py-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">
+                  From Date
+                </label>
+                <input
+                  type="date"
+                  value={bulkDeleteFromDate}
+                  onChange={(e) => setBulkDeleteFromDate(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 font-bold text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">
+                  To Date
+                </label>
+                <input
+                  type="date"
+                  value={bulkDeleteToDate}
+                  onChange={(e) => setBulkDeleteToDate(e.target.value)}
+                  className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 font-bold text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex gap-3 sm:justify-center pt-2">
+              <Button
+                variant="ghost"
+                onClick={() => setBulkDeleteOpen(false)}
+                className="flex-1 rounded-xl h-12 font-black text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmBulkDelete}
+                disabled={bulkDeleteMutation.isPending || (!bulkDeleteFromDate && !bulkDeleteToDate)}
+                className="flex-1 rounded-xl h-12 bg-rose-500 hover:bg-rose-600 text-white font-black shadow-lg shadow-rose-500/20"
+              >
+                {bulkDeleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete Reports"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </RouteGuard>
   );

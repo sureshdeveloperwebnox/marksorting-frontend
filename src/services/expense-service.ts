@@ -59,6 +59,10 @@ export const useExpenses = (params: {
     technicianId?: string;
     dateFrom?: string;
     dateTo?: string;
+    createdDateFrom?: string;
+    createdDateTo?: string;
+    expenseDateFrom?: string;
+    expenseDateTo?: string;
 }) => {
     const user = useAuthStore((state) => state.user);
     const isServiceEngineer = user?.role === 'Service Engineer';

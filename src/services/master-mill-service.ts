@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 
 export interface MasterMill {
   id: string;
-  type?: string;
   invoice_no: string;
   invoice_date?: string;
   ref_no?: string;
@@ -61,8 +60,6 @@ export interface MasterMillStats {
   underWarranty: number;
   underAmc: number;
   nonWarranty: number;
-  installationCount?: number;
-  serviceCount?: number;
 }
 
 export const useMasterMills = (params: {
@@ -73,7 +70,6 @@ export const useMasterMills = (params: {
   state?: string;
   all_warranty?: string;
   mill_id?: string;
-  type?: string;
   dateFrom?: string;
   dateTo?: string;
 }, options?: { enabled?: boolean }) => {

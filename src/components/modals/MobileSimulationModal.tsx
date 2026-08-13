@@ -98,7 +98,7 @@ const constructUpdatedRemarks = (
   existingRemarks: string | null | undefined,
   currentMaterialName: string,
   tableRows: BarcodeRow[],
-  serviceType: "Replacement" | "Payment"
+  serviceType: "Replacement" | "Acknowledgement"
 ): string => {
   const cleanRemarks = extractCleanRemarks(existingRemarks);
   const currentSerialMap = parseSerialMapFromRemarks(existingRemarks);
@@ -128,18 +128,18 @@ const constructUpdatedRemarks = (
 
 const parseServiceTypeFromRemarks = (
   remarks?: string | null
-): "Replacement" | "Payment" => {
-  if (!remarks) return "Payment";
+): "Replacement" | "Acknowledgement" => {
+  if (!remarks) return "Acknowledgement";
   const matches = [...remarks.matchAll(/Service Type:\s*([^\s|)]+)/gi)];
   if (matches.length > 0) {
     const lastMatch = matches[matches.length - 1];
     if (lastMatch && lastMatch[1]) {
       const val = lastMatch[1].trim().toLowerCase();
       if (val === "replacement") return "Replacement";
-      if (val === "payment") return "Payment";
+      if (val === "acknowledgement" || val === "payment") return "Acknowledgement";
     }
   }
-  return "Payment";
+  return "Acknowledgement";
 };
 
 /* ── types ───────────────────────────────────────────── */
@@ -176,10 +176,10 @@ export function MobileSimulationModal({
   const [tableState, setTableState] =
     React.useState<MaterialTableState | null>(null);
   const [materialDropdownOpen, setMaterialDropdownOpen] = React.useState(false);
-  const [paymentStatus, setPaymentStatus] = React.useState<"paid" | "unpaid">("unpaid");
+  const [acknowledgementStatus, setAcknowledgementStatus] = React.useState<"Acknowledged" | "Pending">("Pending");
   const [courierName, setCourierName] = React.useState("");
   const [trackingId, setTrackingId] = React.useState("");
-  const [serviceType, setServiceType] = React.useState<"Replacement" | "Payment">("Replacement");
+  const [serviceType, setServiceType] = React.useState<"Replacement" | "Acknowledgement">("Replacement");
 
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedStoreSearch(storeSearch), 350);
@@ -211,7 +211,7 @@ export function MobileSimulationModal({
       setSelectedMaterial(null);
       setTableState(null);
       setMaterialDropdownOpen(false);
-      setPaymentStatus("unpaid");
+      setAcknowledgementStatus("Pending");
       setCourierName("");
       setTrackingId("");
       setServiceType("Replacement");
@@ -351,8 +351,8 @@ export function MobileSimulationModal({
         new_product_return: newProductReturn,
         ...(serviceType === "Replacement" ? { old_product_return: oldProductReturn } : {}),
       },
-      payment: {
-        ...(serviceType === "Payment" ? { status: paymentStatus } : {}),
+      acknowledgement: {
+        ...(serviceType === "Acknowledgement" ? { status: acknowledgementStatus } : {}),
         courier_service_name: courierName || null,
         tracking_id: trackingId || null,
       },
@@ -382,8 +382,8 @@ export function MobileSimulationModal({
           new_product_return: newProductReturn,
           ...(serviceType === "Replacement" ? { old_product_return: oldProductReturn } : {}),
         },
-        payment: {
-          ...(serviceType === "Payment" ? { status: paymentStatus } : {}),
+        acknowledgement: {
+          ...(serviceType === "Acknowledgement" ? { status: acknowledgementStatus } : {}),
           courier_service_name: courierName || null,
           tracking_id: trackingId || null,
         },
@@ -391,7 +391,7 @@ export function MobileSimulationModal({
       null,
       2
     );
-  }, [selectedStore, tableState, totalCount, usedCount, newProductReturn, oldProductReturn, paymentStatus, courierName, trackingId, serviceType]);
+  }, [selectedStore, tableState, totalCount, usedCount, newProductReturn, oldProductReturn, acknowledgementStatus, courierName, trackingId, serviceType]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -587,15 +587,15 @@ export function MobileSimulationModal({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setServiceType("Payment")}
+                      onClick={() => setServiceType("Acknowledgement")}
                       className={cn(
                         "px-3 py-1 text-xs font-bold rounded-lg transition-all",
-                        serviceType === "Payment"
+                        serviceType === "Acknowledgement"
                           ? "bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
                           : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                       )}
                     >
-                      Payment
+                      Acknowledgement
                     </button>
                   </div>
 
@@ -698,18 +698,18 @@ export function MobileSimulationModal({
                   </table>
                 </div>
 
-                {/* Payment & Shipment Fields */}
+                {/* Acknowledgement & Shipment Fields */}
                 <div className="space-y-4 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 p-5 rounded-2xl">
-                  <div className={cn("grid gap-5", serviceType === "Payment" ? "grid-cols-3" : "grid-cols-2")}>
-                    {serviceType === "Payment" && (
+                  <div className={cn("grid gap-5", serviceType === "Acknowledgement" ? "grid-cols-3" : "grid-cols-2")}>
+                    {serviceType === "Acknowledgement" && (
                       <div className="space-y-2">
-                        <label className="text-[11px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">Payment Status</label>
+                        <label className="text-[11px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">Acknowledgement Status</label>
                         <div className="flex gap-2">
-                          <button type="button" onClick={() => setPaymentStatus("paid")} className={cn("flex-1 h-11 rounded-xl text-sm font-bold border-2 transition-all", paymentStatus === "paid" ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 hover:border-emerald-300")}>
-                            ✓ Paid
+                          <button type="button" onClick={() => setAcknowledgementStatus("Acknowledged")} className={cn("flex-1 h-11 rounded-xl text-sm font-bold border-2 transition-all", acknowledgementStatus === "Acknowledged" ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 hover:border-emerald-300")}>
+                            ✓ Acknowledged
                           </button>
-                          <button type="button" onClick={() => setPaymentStatus("unpaid")} className={cn("flex-1 h-11 rounded-xl text-sm font-bold border-2 transition-all", paymentStatus === "unpaid" ? "bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-500/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 hover:border-rose-300")}>
-                            ✗ Unpaid
+                          <button type="button" onClick={() => setAcknowledgementStatus("Pending")} className={cn("flex-1 h-11 rounded-xl text-sm font-bold border-2 transition-all", acknowledgementStatus === "Pending" ? "bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 hover:border-amber-300")}>
+                            ⏳ Pending
                           </button>
                         </div>
                       </div>

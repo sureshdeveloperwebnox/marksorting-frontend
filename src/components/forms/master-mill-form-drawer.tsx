@@ -96,7 +96,6 @@ const matchState = (mill: any) => {
 
 /* ── Zod Schema ─────────────────────────────────────────────── */
 const masterMillSchema = z.object({
-  type: z.string().min(1, 'Record type is required'),
   invoice_no: z.string().min(1, 'Invoice number is required'),
   invoice_date: z.string().optional().or(z.literal('')),
   ref_no: z.string().optional().or(z.literal('')),
@@ -220,7 +219,6 @@ export function MasterMillFormDrawer() {
   const createMillMutation = useCreateMill();
 
   const defaultValues: MasterMillFormValues = {
-    type: 'Installation',
     invoice_no: '',
     invoice_date: '',
     ref_no: '',
@@ -232,8 +230,7 @@ export function MasterMillFormDrawer() {
     mc_model: '',
     frame_no: '',
     mfg_date: '',
-    warranty_years: 1,
-    warranty_months: 0,
+    warranty_months: 12,
     installation_date: '',
     warranty_start_date: '',
     warranty_closing_date: '',
@@ -311,7 +308,6 @@ export function MasterMillFormDrawer() {
   // Dynamic auto-calculation of Warranty Closing Date
   const watchedInstallationDate = watch('installation_date');
   const watchedWarrantyStartDate = watch('warranty_start_date');
-  const watchedWarrantyYears = watch('warranty_years');
   const watchedWarrantyMonths = watch('warranty_months');
 
   React.useEffect(() => {
@@ -319,9 +315,7 @@ export function MasterMillFormDrawer() {
     if (baseDate) {
       const date = new Date(baseDate);
       if (!isNaN(date.getTime())) {
-        const years = Number(watchedWarrantyYears) || 0;
         const months = Number(watchedWarrantyMonths) || 0;
-        date.setFullYear(date.getFullYear() + years);
         date.setMonth(date.getMonth() + months);
         date.setDate(date.getDate() - 1);
         const formatted = date.toISOString().split('T')[0];
@@ -330,7 +324,7 @@ export function MasterMillFormDrawer() {
     } else {
       setValue('warranty_closing_date', '');
     }
-  }, [watchedInstallationDate, watchedWarrantyStartDate, watchedWarrantyYears, watchedWarrantyMonths, setValue]);
+  }, [watchedInstallationDate, watchedWarrantyStartDate, watchedWarrantyMonths, setValue]);
 
   // Dynamic auto-calculation of AMC Closing Date
   const watchedAmcStartingDate = watch('amc_starting_date');
@@ -436,7 +430,6 @@ export function MasterMillFormDrawer() {
     if (isFormDrawerOpen) {
       if (isEdit && recordData) {
         reset({
-          type: recordData.type || 'Installation',
           invoice_no: recordData.invoice_no || '',
           invoice_date: recordData.invoice_date
             ? recordData.invoice_date.split('T')[0]
@@ -452,8 +445,9 @@ export function MasterMillFormDrawer() {
           mfg_date: recordData.mfg_date
             ? recordData.mfg_date.split('T')[0]
             : '',
-          warranty_years: recordData.warranty_years ?? 1,
-          warranty_months: recordData.warranty_months ?? 0,
+          warranty_months: (recordData.warranty_months && recordData.warranty_months > 0)
+            ? recordData.warranty_months
+            : ((recordData.warranty_years ?? 0) * 12 || 12),
           installation_date: recordData.installation_date
             ? recordData.installation_date.split('T')[0]
             : '',
@@ -482,8 +476,11 @@ export function MasterMillFormDrawer() {
   }, [isFormDrawerOpen, recordData, reset, isEdit]);
 
   const onSubmit: SubmitHandler<MasterMillFormValues> = async (data) => {
+    const totalMonths = data.warranty_months !== undefined ? Number(data.warranty_months) : 12;
     const payload: any = {
       ...data,
+      warranty_months: totalMonths,
+      warranty_years: Math.floor(totalMonths / 12),
       mill_id: data.mill_id || undefined,
       invoice_date: data.invoice_date || undefined,
       installation_date: data.installation_date || undefined,
@@ -513,32 +510,30 @@ export function MasterMillFormDrawer() {
         open={isFormDrawerOpen}
         onOpenChange={(open) => !open && closeFormDrawer()}
       >
-      <SheetContent
-        side="right"
-        className="w-full max-w-full p-0 flex flex-col h-full bg-white dark:bg-gray-950 border-none"
-      >
+      <SheetContent side="right">
         {/* Header */}
         <SheetHeader className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 flex-shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20">
-              <FileText size={22} />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                <FileText size={22} />
+              </div>
+              <div>
+                <SheetTitle className="text-xl">
+                  {isEdit ? 'Edit Master Mill Record' : 'Add Master Mill Record'}
+                </SheetTitle>
+                <SheetDescription>
+                  {isEdit
+                    ? 'Update the machine/warranty details.'
+                    : 'Register a new machine installation record.'}
+                </SheetDescription>
+              </div>
             </div>
-            <div>
-              <SheetTitle className="text-xl">
-                {isEdit ? 'Edit Master Mill Record' : 'Add Master Mill Record'}
-              </SheetTitle>
-              <SheetDescription>
-                {isEdit
-                  ? 'Update the machine/warranty details.'
-                  : 'Register a new machine installation record.'}
-              </SheetDescription>
-            </div>
-          </div>
         </SheetHeader>
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-hide pb-24">
-          {isLoading ? (
+          <div className="w-full">
+            {isLoading ? (
             <div className="flex items-center justify-center h-full min-h-[300px]">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
@@ -548,45 +543,7 @@ export function MasterMillFormDrawer() {
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-1"
             >
-              {/* ── Record Type Segmented Selector ──────────────────── */}
-              <div className="mb-6 p-4 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-100/50 dark:border-white/5 space-y-2">
-                <FieldLabel>
-                  <FileText size={12} />
-                  Record Type
-                </FieldLabel>
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <div className="grid grid-cols-2 gap-2 bg-gray-100 dark:bg-white/10 p-1 rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() => field.onChange('Installation')}
-                        className={cn(
-                          "py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer",
-                          field.value === 'Installation'
-                            ? "bg-white dark:bg-gray-800 text-primary shadow-sm"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        )}
-                      >
-                        Installation
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => field.onChange('Service')}
-                        className={cn(
-                          "py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer",
-                          field.value === 'Service'
-                            ? "bg-white dark:bg-gray-800 text-primary shadow-sm"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        )}
-                      >
-                        Service
-                      </button>
-                    </div>
-                  )}
-                />
-              </div>
+
 
               {/* ── Invoice Details ─────────────────────────── */}
               <SectionHeader icon={FileText} title="Invoice Details" color="text-blue-500" />
@@ -840,27 +797,15 @@ export function MasterMillFormDrawer() {
               {/* ── Warranty Details ────────────────────────── */}
               <SectionHeader icon={Shield} title="Warranty Details" color="text-emerald-500" />
               <div className="space-y-4 mb-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <FieldLabel>Years</FieldLabel>
-                    <Input
-                      {...register('warranty_years')}
-                      type="number"
-                      min={0}
-                      placeholder="0"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <FieldLabel>Months</FieldLabel>
-                    <Input
-                      {...register('warranty_months')}
-                      type="number"
-                      min={0}
-                      placeholder="0"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <FieldLabel>Warranty Period (Months)</FieldLabel>
+                  <Input
+                    {...register('warranty_months')}
+                    type="number"
+                    min={0}
+                    placeholder="e.g. 12"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                  />
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -943,7 +888,7 @@ export function MasterMillFormDrawer() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <FieldLabel>AMC Period (months)</FieldLabel>
+                    <FieldLabel>AMC Period (Months)</FieldLabel>
                     <Input
                       {...register('amc_period')}
                       type="number"
@@ -956,10 +901,27 @@ export function MasterMillFormDrawer() {
 
                 <div className="space-y-2">
                   <FieldLabel>AMC Particular</FieldLabel>
-                  <Input
-                    {...register('amc_particular')}
-                    placeholder="AMC description or notes"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                  <Controller
+                    name="amc_particular"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || ''}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm">
+                          <SelectValue placeholder="Select AMC Particular" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10">
+                          <SelectItem value="With AMC" className="font-semibold text-sm rounded-lg">
+                            With AMC
+                          </SelectItem>
+                          <SelectItem value="Without AMC" className="font-semibold text-sm rounded-lg">
+                            Without AMC
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
                 </div>
 
@@ -1030,10 +992,11 @@ export function MasterMillFormDrawer() {
             </form>
           )}
         </div>
+      </div>
 
         {/* Footer */}
-        <SheetFooter className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5">
-          <div className="flex gap-3 w-full">
+        <SheetFooter className="p-4 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-gray-100 dark:border-white/5">
+          <div className="w-full flex gap-3">
             <Button
               type="button"
               variant="ghost"

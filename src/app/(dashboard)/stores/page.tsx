@@ -129,6 +129,8 @@ export default function StoresPage() {
     setReturnFilter,
     inflowFilter,
     setInflowFilter,
+    stockTypeFilter,
+    setStockTypeFilter,
     dateFrom,
     dateTo,
     setDateFrom,
@@ -164,6 +166,7 @@ export default function StoresPage() {
     warranty_status: warrantyFilter || undefined,
     return_status: returnFilter || undefined,
     inflow_status: inflowFilter || undefined,
+    stock_type: stockTypeFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -175,6 +178,7 @@ export default function StoresPage() {
     customer_id: customerFilter || undefined,
     material_id: materialFilter || undefined,
     warranty_status: warrantyFilter || undefined,
+    stock_type: stockTypeFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   };
@@ -263,13 +267,13 @@ export default function StoresPage() {
   };
 
   const parseServiceTypeFromRemarks = (remarks?: string | null): string => {
-    if (!remarks) return 'Payment';
+    if (!remarks) return 'Acknowledgement';
     const matches = [...remarks.matchAll(/Service Type:\s*([^\s|)]+)/gi)];
     if (matches.length > 0) {
       const lastMatch = matches[matches.length - 1];
       if (lastMatch && lastMatch[1]) return lastMatch[1].trim();
     }
-    return 'Payment';
+    return 'Acknowledgement';
   };
 
   const extractCleanRemarks = (remarks?: string | null): string => {
@@ -345,12 +349,25 @@ export default function StoresPage() {
                             {m.material.name}
                           </span>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] font-bold py-0.5 px-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10 text-primary rounded-md shrink-0"
-                        >
-                          QTY: {m.quantity || 1}
-                        </Badge>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] font-extrabold py-0.5 px-2 rounded-md uppercase",
+                              m.stock_type === "From Store"
+                                ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                            )}
+                          >
+                            {m.stock_type || "Inflow"}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-bold py-0.5 px-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10 text-primary rounded-md"
+                          >
+                            QTY: {m.quantity || 1}
+                          </Badge>
+                        </div>
                       </div>
 
                       {serials.length > 0 && (
@@ -387,8 +404,8 @@ export default function StoresPage() {
           },
         ],
       },
-      // Show barcode table section when return_status is "In Progress"
-      ...(viewStoreData.return_status === 'In Progress' ? [{
+      // Show barcode table section when return_status is "In Progress", "Returned", "Not Returned", or "Completed"
+      ...(['In Progress', 'Returned', 'Not Returned', 'Completed'].includes(viewStoreData.return_status) ? [{
         title: "Barcode / Return Details",
         items: [
           {
@@ -532,6 +549,23 @@ export default function StoresPage() {
             ),
             icon: StoreIcon,
           },
+          {
+            label: "Stock Type",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  viewStoreData.stock_type === "From Store"
+                    ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                )}
+              >
+                {viewStoreData.stock_type || "Inflow"}
+              </Badge>
+            ),
+            icon: Package,
+          },
         ],
       },
       {
@@ -586,6 +620,15 @@ export default function StoresPage() {
       ],
     },
     {
+      id: "stock_type",
+      label: "Stock Type",
+      options: [
+        { value: "ALL", label: "All Stock Types" },
+        { value: "Inflow", label: "Inflow", iconColor: "bg-emerald-500" },
+        { value: "From Store", label: "From Store", iconColor: "bg-purple-500" },
+      ],
+    },
+    {
       id: "warranty_status",
       label: "Warranty Status",
       options: [
@@ -634,6 +677,7 @@ export default function StoresPage() {
     warrantyFilter,
     returnFilter,
     inflowFilter,
+    stockTypeFilter,
     dateFrom,
     dateTo,
   ].filter(Boolean).length;
@@ -662,9 +706,19 @@ export default function StoresPage() {
       id: "materials",
       header: "Materials",
       cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1 max-w-[200px]">
+        <div className="flex flex-wrap gap-1 max-w-[170px]">
           {row.original.materials.map((m) => (
-            <Badge key={m.material.id} variant="outline" className="text-[10px] font-bold py-0.5 px-1.5 bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5">
+            <Badge
+              key={m.material.id}
+              variant="outline"
+              className={cn(
+                "text-[10px] font-bold py-0.5 px-1.5 border",
+                m.stock_type === "From Store"
+                  ? "bg-purple-50 dark:bg-purple-950/20 text-purple-600 border-purple-200 dark:border-purple-900/30"
+                  : "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 border-emerald-200 dark:border-emerald-900/30"
+              )}
+              title={`Stock Type: ${m.stock_type || 'Inflow'}`}
+            >
               {m.material.name} (x{m.quantity || 1})
             </Badge>
           ))}
@@ -707,7 +761,7 @@ export default function StoresPage() {
       cell: ({ row }) => {
         const clean = extractCleanRemarks(row.original.remarks);
         return (
-          <span className="text-gray-600 dark:text-gray-400 font-medium text-xs truncate max-w-[150px] block" title={clean}>
+          <span className="text-gray-600 dark:text-gray-400 font-medium text-xs truncate max-w-[110px] block" title={clean}>
             {clean}
           </span>
         );
@@ -718,45 +772,13 @@ export default function StoresPage() {
       header: "Return Status",
       cell: ({ row }) => {
         const val = row.original.return_status;
-        const storeId = row.original.id;
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <button className="flex items-center gap-1.5 cursor-pointer outline-none select-none group/status hover:scale-105 transition-all duration-300">
-                  <div className={cn("w-2 h-2 rounded-full", getReturnDotColors(val))} />
-                  <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm group-hover/status:border-primary/50", getReturnColors(val))}>
-                    {val}
-                  </Badge>
-                </button>
-              }
-            />
-            <DropdownMenuContent align="start" className="w-36 rounded-xl p-1.5 border border-gray-100 dark:border-white/10 shadow-2xl bg-white dark:bg-gray-900 z-[9999]">
-              <div className="px-2.5 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-50 dark:border-white/5 pb-1.5 mb-1 select-none">
-                Set Return
-              </div>
-              {[
-                { value: "Returned", color: "emerald" },
-                { value: "Pending", color: "amber" },
-                { value: "In Progress", color: "blue" },
-                { value: "Not Returned", color: "rose" },
-              ].map((s) => (
-                <DropdownMenuItem
-                  key={s.value}
-                  className={cn(
-                    "rounded-lg font-semibold text-xs my-0.5 cursor-pointer flex items-center gap-2 py-2 px-2.5 transition-colors",
-                    val === s.value
-                      ? `text-${s.color}-500 bg-${s.color}-500/5`
-                      : "text-gray-700 dark:text-gray-300"
-                  )}
-                  onClick={() => updateStoreMutation.mutate({ id: storeId, return_status: s.value })}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full bg-${s.color}-500`} />
-                  {s.value.toUpperCase()}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1.5 select-none">
+            <div className={cn("w-2 h-2 rounded-full", getReturnDotColors(val))} />
+            <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", getReturnColors(val))}>
+              {val}
+            </Badge>
+          </div>
         );
       },
     },
@@ -808,15 +830,6 @@ export default function StoresPage() {
       },
     },
     {
-      accessorKey: "barcode",
-      header: "Barcode",
-      cell: ({ row }) => (
-        <span className="text-gray-400 dark:text-gray-500 text-xs font-semibold">
-          {row.original.barcode || "—"}
-        </span>
-      ),
-    },
-    {
       id: "actions",
       header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
@@ -854,6 +867,7 @@ export default function StoresPage() {
   const handleFilterApply = (values: Record<string, string>) => {
     setServiceEngineerFilter(values.service_engineer_id === "ALL" ? "" : values.service_engineer_id || "");
     setCustomerFilter(values.customer_id === "ALL" ? "" : values.customer_id || "");
+    setStockTypeFilter(values.stock_type === "ALL" ? "" : values.stock_type || "");
     setWarrantyFilter(values.warranty_status === "ALL" ? "" : values.warranty_status || "");
     setReturnFilter(values.return_status === "ALL" ? "" : values.return_status || "");
     setInflowFilter(values.inflow_status === "ALL" ? "" : values.inflow_status || "");
@@ -875,6 +889,7 @@ export default function StoresPage() {
   const filterActiveValues = {
     service_engineer_id: serviceEngineerFilter || "ALL",
     customer_id: customerFilter || "ALL",
+    stock_type: stockTypeFilter || "ALL",
     warranty_status: warrantyFilter || "ALL",
     return_status: returnFilter || "ALL",
     inflow_status: inflowFilter || "ALL",
@@ -1001,6 +1016,7 @@ export default function StoresPage() {
           onReset={() => {
             setServiceEngineerFilter("");
             setCustomerFilter("");
+            setStockTypeFilter("");
             setWarrantyFilter("");
             setReturnFilter("");
             setInflowFilter("");

@@ -104,15 +104,6 @@ function isExpired(dateStr?: string): boolean {
 
 const filterFields: FilterField[] = [
   {
-    id: "type",
-    label: "Record Type",
-    options: [
-      { value: "ALL", label: "All Records", iconColor: "bg-gray-400" },
-      { value: "Installation", label: "Installation Only", iconColor: "bg-orange-500" },
-      { value: "Service", label: "Service Only", iconColor: "bg-blue-500" },
-    ],
-  },
-  {
     id: "all_warranty",
     label: "Warranty Type",
     options: [
@@ -154,8 +145,6 @@ export default function MasterMillsPage() {
     setStateFilter,
     warrantyFilter,
     setWarrantyFilter,
-    typeFilter,
-    setTypeFilter,
     dateFrom,
     dateTo,
     setDateFrom,
@@ -174,7 +163,6 @@ export default function MasterMillsPage() {
 
   const columnConfig: ColumnConfig[] = [
     { key: "invoice_no", header: "Invoice No" },
-    { key: "type", header: "Record Type" },
     { key: "invoice_date", header: "Invoice Date" },
     { key: "ref_no", header: "Ref No" },
     { key: "frame_no", header: "Frame No" },
@@ -204,36 +192,13 @@ export default function MasterMillsPage() {
 
     const years = viewMillData.warranty_years ?? 0;
     const months = viewMillData.warranty_months ?? 0;
-    const warrantyPeriodParts = [
-      years > 0 ? `${years} Year${years > 1 ? "s" : ""}` : null,
-      months > 0 ? `${months} Month${months > 1 ? "s" : ""}` : null,
-    ].filter(Boolean);
-
-    const warrantyPeriod = warrantyPeriodParts.length > 0
-      ? warrantyPeriodParts.join(" ")
-      : `${years} Years ${months} Months`;
+    const totalMonths = (months > 0 ? months : years * 12);
+    const warrantyPeriod = totalMonths > 0 ? `${totalMonths} Month${totalMonths !== 1 ? "s" : ""}` : "—";
 
     return [
       {
         title: "General & Mill Info",
         items: [
-          {
-            label: "Record Type",
-            value: (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-md font-black text-[10px] uppercase tracking-[0.1em] px-2 py-0.5 shadow-sm",
-                  viewMillData.type === "Service"
-                    ? "bg-blue-500/5 text-blue-500 border-blue-500/30"
-                    : "bg-primary/5 text-primary border-primary/30"
-                )}
-              >
-                {viewMillData.type || "Installation"}
-              </Badge>
-            ),
-            icon: FileText,
-          },
           {
             label: "Invoice No",
             value: (
@@ -330,18 +295,8 @@ export default function MasterMillsPage() {
             icon: Calendar,
           },
           {
-            label: "Warranty Years",
-            value: `${years} Year${years !== 1 ? "s" : ""}`,
-            icon: Clock,
-          },
-          {
-            label: "Warranty Months",
-            value: `${months} Month${months !== 1 ? "s" : ""}`,
-            icon: Clock,
-          },
-          {
-            label: "Warranty Period",
-            value: warrantyPeriod || "—",
+            label: "Warranty Duration",
+            value: warrantyPeriod,
             icon: Clock,
           },
           {
@@ -434,7 +389,7 @@ export default function MasterMillsPage() {
   // Reset pagination on tab change
   React.useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: pagination.pageSize });
-  }, [warrantyFilter, typeFilter, setPagination, pagination.pageSize]);
+  }, [warrantyFilter, setPagination, pagination.pageSize]);
 
   /* ── Data queries ── */
   const { data, isLoading, isFetching, refetch } = useMasterMills({
@@ -443,7 +398,6 @@ export default function MasterMillsPage() {
     search,
     all_warranty: warrantyFilter || undefined,
     state: stateFilter || undefined,
-    type: typeFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
@@ -472,7 +426,7 @@ export default function MasterMillsPage() {
   };
 
   /* ── Active filters count ── */
-  const activeFiltersCount = [warrantyFilter, stateFilter, typeFilter, dateFrom, dateTo].filter(Boolean).length;
+  const activeFiltersCount = [warrantyFilter, stateFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Columns ─────────────────────────────────────────────────── */
   const columns: ColumnDef<MasterMill>[] = [
@@ -489,7 +443,7 @@ export default function MasterMillsPage() {
       accessorKey: "invoice_no",
       header: "Invoice No",
       cell: ({ row }) => (
-        <div className="flex flex-col gap-1 min-w-[160px]">
+        <div className="flex flex-col gap-0.5">
           <span className="font-medium text-sm text-primary dark:text-orange-400 tracking-tight leading-tight">
             {row.original.invoice_no}
           </span>
@@ -518,30 +472,10 @@ export default function MasterMillsPage() {
       ),
     },
     {
-      accessorKey: "type",
-      header: "Record Type",
-      cell: ({ row }) => {
-        const type = row.original.type || "Installation";
-        return (
-          <Badge
-            variant="outline"
-            className={cn(
-              "rounded-lg font-bold text-[10px] uppercase tracking-[0.1em] px-2 py-0.5 shadow-sm border select-none w-fit",
-              type === "Service"
-                ? "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-400"
-                : "bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800/50 text-orange-700 dark:text-orange-400"
-            )}
-          >
-            {type}
-          </Badge>
-        );
-      },
-    },
-    {
       accessorKey: "mill",
       header: "Mill Name",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2.5 min-w-[160px]">
+        <div className="flex items-center gap-2 max-w-[220px]">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-black text-xs border border-primary/10 flex-shrink-0">
             {(row.original.mill?.name || row.original.mc_model || "?").charAt(0)}
           </div>
@@ -562,7 +496,7 @@ export default function MasterMillsPage() {
       accessorKey: "mc_model",
       header: "MC Model",
       cell: ({ row }) => (
-        <div className="flex flex-col gap-1 min-w-[140px]">
+        <div className="flex flex-col gap-0.5 max-w-[180px]">
           <p className="font-bold text-sm text-gray-700 dark:text-gray-300 leading-tight">
             {row.original.mc_model || "—"}
           </p>
@@ -585,12 +519,8 @@ export default function MasterMillsPage() {
       cell: ({ row }) => {
         const years = row.original.warranty_years ?? 0;
         const months = row.original.warranty_months ?? 0;
-        const period = [
-          years > 0 ? `${years}Y` : null,
-          months > 0 ? `${months}M` : null,
-        ]
-          .filter(Boolean)
-          .join(" ");
+        const totalMonths = (months > 0 ? months : years * 12);
+        const period = totalMonths > 0 ? `${totalMonths} Months` : null;
 
         const type = row.original.all_warranty || "Non Warranty";
         const millId = row.original.id;
@@ -631,7 +561,7 @@ export default function MasterMillsPage() {
         const cfg = typeConfig[type as keyof typeof typeConfig] ?? typeConfig["Non Warranty"];
 
         return (
-          <div className="flex flex-col gap-1.5 min-w-[160px]">
+          <div className="flex flex-col gap-1">
 
             {/* ── Warranty Type badge — label based value ── */}
             <div className={cn(
@@ -685,7 +615,7 @@ export default function MasterMillsPage() {
           row.original.amc_starting_date || row.original.amc_amount;
         const amcExpired = isExpired(row.original.amc_closing_date);
         return hasAmc ? (
-          <div className="min-w-[110px]">
+          <div>
             {row.original.amc_amount != null && row.original.amc_amount > 0 && (
               <p className="font-black text-sm text-gray-800 dark:text-gray-200">
                 ₹{Number(row.original.amc_amount).toLocaleString("en-IN")}
@@ -810,23 +740,6 @@ export default function MasterMillsPage() {
               />
             </div>
 
-            {/* Record Type Tabs */}
-            <div className="px-6 pt-3 pb-2 border-b border-gray-100 dark:border-white/5 bg-gray-50/30 dark:bg-black/[0.04]">
-              <TableTabs
-                layoutId="type-tab"
-                tabs={[
-                  { value: "", label: "All Types", count: stats?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
-                  { value: "Installation", label: "Installation", count: stats?.installationCount || 0, color: "primary", icon: <FileText size={14} /> },
-                  { value: "Service", label: "Service", count: stats?.serviceCount || 0, color: "blue", icon: <Wrench size={14} /> },
-                ]}
-                activeValue={typeFilter || ""}
-                onChange={(value) => {
-                  setTypeFilter(value);
-                  setWarrantyFilter("");
-                }}
-              />
-            </div>
-
             {/* Warranty Status Tabs */}
             <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
               <TableTabs
@@ -874,13 +787,11 @@ export default function MasterMillsPage() {
           activeValues={{
             all_warranty: warrantyFilter || "ALL",
             state: stateFilter || "ALL",
-            type: typeFilter || "ALL",
             dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
           }}
           onApply={(values) => {
             setWarrantyFilter(values.all_warranty === "ALL" ? "" : values.all_warranty);
             setStateFilter(values.state === "ALL" ? "" : values.state);
-            setTypeFilter(values.type === "ALL" ? "" : values.type);
             if (values.dateRange) {
               try {
                 const range = JSON.parse(values.dateRange);
@@ -898,7 +809,6 @@ export default function MasterMillsPage() {
           onReset={() => {
             setWarrantyFilter("");
             setStateFilter("");
-            setTypeFilter("");
             setDateFrom("");
             setDateTo("");
             resetFilters();

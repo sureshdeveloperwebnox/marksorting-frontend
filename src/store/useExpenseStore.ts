@@ -10,12 +10,20 @@ interface ExpenseState {
     technicianFilter: string;
     dateFrom: string;
     dateTo: string;
+    createdDateFrom: string;
+    createdDateTo: string;
+    expenseDateFrom: string;
+    expenseDateTo: string;
     setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
     setSearch: (search: string) => void;
     setStatusFilter: (statusFilter: string) => void;
     setTechnicianFilter: (technicianFilter: string) => void;
     setDateFrom: (dateFrom: string) => void;
     setDateTo: (dateTo: string) => void;
+    setCreatedDateFrom: (date: string) => void;
+    setCreatedDateTo: (date: string) => void;
+    setExpenseDateFrom: (date: string) => void;
+    setExpenseDateTo: (date: string) => void;
     resetFilters: () => void;
     // UI State
     deleteId: string | null;
@@ -36,6 +44,10 @@ const useExpenseStore = create<ExpenseState>((set) => ({
     technicianFilter: "",
     dateFrom: "",
     dateTo: "",
+    createdDateFrom: "",
+    createdDateTo: "",
+    expenseDateFrom: "",
+    expenseDateTo: "",
     setPagination: (pagination) => set({ pagination }),
     setSearch: (search) =>
         set((state) => ({
@@ -62,6 +74,26 @@ const useExpenseStore = create<ExpenseState>((set) => ({
             dateTo,
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
+    setCreatedDateFrom: (createdDateFrom) =>
+        set((state) => ({
+            createdDateFrom,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setCreatedDateTo: (createdDateTo) =>
+        set((state) => ({
+            createdDateTo,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setExpenseDateFrom: (expenseDateFrom) =>
+        set((state) => ({
+            expenseDateFrom,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
+    setExpenseDateTo: (expenseDateTo) =>
+        set((state) => ({
+            expenseDateTo,
+            pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+        })),
     resetFilters: () =>
         set((state) => ({
             search: "",
@@ -69,6 +101,10 @@ const useExpenseStore = create<ExpenseState>((set) => ({
             technicianFilter: "",
             dateFrom: "",
             dateTo: "",
+            createdDateFrom: "",
+            createdDateTo: "",
+            expenseDateFrom: "",
+            expenseDateTo: "",
             pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
         })),
     deleteId: null,

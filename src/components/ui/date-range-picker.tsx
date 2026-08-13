@@ -94,42 +94,17 @@ export function DateRangePicker({
   React.useLayoutEffect(() => {
     if (!isOpen || !containerRef.current) return;
 
-    const updatePosition = () => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
+    const estimatedHeight = 380;
 
-      const viewportPadding = 12;
-      const popoverWidth = 540; // Double-pane style width
-      const estimatedHeight = 380;
-      
-      let left = rect.right - popoverWidth;
-      if (left < viewportPadding) {
-        left = viewportPadding;
-      }
-      
-      const availableBelow = window.innerHeight - rect.bottom - viewportPadding;
-      const availableAbove = rect.top - viewportPadding;
-
-      const top =
-        availableBelow >= estimatedHeight || availableBelow >= availableAbove
-          ? rect.bottom + 6
-          : Math.max(viewportPadding, rect.top - estimatedHeight - 6);
-
-      setPopoverStyle({
-        position: 'fixed',
-        top,
-        left,
-        width: Math.min(popoverWidth, window.innerWidth - viewportPadding * 2),
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
-    };
+    setPopoverStyle({
+      position: 'absolute',
+      top: 'calc(100% + 6px)',
+      left: 0,
+      width: '100%',
+      minWidth: '280px',
+      maxWidth: '540px',
+      maxHeight: `${Math.min(estimatedHeight, window.innerHeight - 24)}px`,
+    });
   }, [isOpen]);
 
   // Presets definition

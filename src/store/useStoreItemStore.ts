@@ -12,6 +12,7 @@ interface StoreItemState {
   warrantyFilter: string;
   returnFilter: string;
   inflowFilter: string;
+  stockTypeFilter: string;
   dateFrom: string;
   dateTo: string;
   setPagination: (pagination: { pageIndex: number; pageSize: number }) => void;
@@ -22,6 +23,7 @@ interface StoreItemState {
   setWarrantyFilter: (val: string) => void;
   setReturnFilter: (val: string) => void;
   setInflowFilter: (val: string) => void;
+  setStockTypeFilter: (val: string) => void;
   setDateFrom: (val: string) => void;
   setDateTo: (val: string) => void;
   resetFilters: () => void;
@@ -51,6 +53,7 @@ export const useStoreItemStore = create<StoreItemState>((set) => ({
   warrantyFilter: "",
   returnFilter: "",
   inflowFilter: "",
+  stockTypeFilter: "",
   dateFrom: "",
   dateTo: "",
   setPagination: (pagination) => set({ pagination }),
@@ -89,6 +92,11 @@ export const useStoreItemStore = create<StoreItemState>((set) => ({
       inflowFilter: val,
       pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
     })),
+  setStockTypeFilter: (val) =>
+    set((state) => ({
+      stockTypeFilter: val,
+      pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+    })),
   setDateFrom: (val) =>
     set((state) => ({
       dateFrom: val,
@@ -109,6 +117,7 @@ export const useStoreItemStore = create<StoreItemState>((set) => ({
       warrantyFilter: "",
       returnFilter: "",
       inflowFilter: "",
+      stockTypeFilter: "",
       dateFrom: "",
       dateTo: "",
     }),

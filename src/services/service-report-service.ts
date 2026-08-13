@@ -194,3 +194,25 @@ export const useDeleteServiceReport = () => {
         },
     });
 };
+
+export const useBulkDeleteServiceReportsByDate = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ startDate, endDate }: { startDate?: string; endDate?: string }) => {
+            const params = new URLSearchParams();
+            if (startDate) params.append("startDate", startDate);
+            if (endDate) params.append("endDate", endDate);
+            const { data } = await api.delete<{ count: number; message: string }>(
+                `/service-reports/bulk-delete/by-date?${params.toString()}`
+            );
+            return data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["serviceReports"] });
+            toast.success(data.message || `Bulk deleted ${data.count} service report(s)`);
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to bulk delete service reports");
+        },
+    });
+};
