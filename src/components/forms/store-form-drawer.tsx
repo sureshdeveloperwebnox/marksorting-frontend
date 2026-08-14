@@ -1080,7 +1080,6 @@ export function StoreFormDrawer() {
                             <SelectItem value="In Progress" className="font-bold py-3 text-blue-500">In Progress</SelectItem>
                             <SelectItem value="Returned" className="font-bold py-3 text-emerald-500">Returned</SelectItem>
                             <SelectItem value="Not Returned" className="font-bold py-3 text-rose-500">Not Returned</SelectItem>
-                            <SelectItem value="Completed" className="font-bold py-3 text-teal-500">Completed</SelectItem>
                           </SelectContent>
                         </Select>
                       )}

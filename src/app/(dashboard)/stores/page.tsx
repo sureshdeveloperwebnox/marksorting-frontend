@@ -25,6 +25,7 @@ import {
   ShieldAlert,
   Barcode,
   Info,
+  RefreshCw,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -185,13 +186,14 @@ export default function StoresPage() {
 
   const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useStores({ skip: 0, take: 1, ...sharedCountFilters });
   const { data: pendingData, refetch: refetchPending, isFetching: isFetchingPending } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Pending" });
-  const { data: completedData, refetch: refetchCompleted, isFetching: isFetchingCompleted } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Completed" });
+  const { data: inProgressData, refetch: refetchInProgress, isFetching: isFetchingInProgress } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "In Progress" });
+  const { data: returnedData, refetch: refetchReturned, isFetching: isFetchingReturned } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Returned" });
   const { data: notReturnedData, refetch: refetchNotReturned, isFetching: isFetchingNotReturned } = useStores({ skip: 0, take: 1, ...sharedCountFilters, return_status: "Not Returned" });
 
-  const isRefreshing = isFetching || isFetchingTotal || isFetchingPending || isFetchingCompleted || isFetchingNotReturned;
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingPending || isFetchingInProgress || isFetchingReturned || isFetchingNotReturned;
 
   const handleRefresh = async () => {
-    await Promise.all([refetch(), refetchTotal(), refetchPending(), refetchCompleted(), refetchNotReturned()]);
+    await Promise.all([refetch(), refetchTotal(), refetchPending(), refetchInProgress(), refetchReturned(), refetchNotReturned()]);
   };
 
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
@@ -644,11 +646,10 @@ export default function StoresPage() {
       label: "Return Status",
       options: [
         { value: "ALL", label: "All Returns" },
-        { value: "Returned", label: "Returned", iconColor: "bg-emerald-500" },
         { value: "Pending", label: "Pending", iconColor: "bg-amber-500" },
         { value: "In Progress", label: "In Progress", iconColor: "bg-blue-500" },
+        { value: "Returned", label: "Returned", iconColor: "bg-emerald-500" },
         { value: "Not Returned", label: "Not Returned", iconColor: "bg-rose-500" },
-        { value: "Completed", label: "Completed", iconColor: "bg-teal-500" },
       ],
     },
     {
@@ -952,19 +953,22 @@ export default function StoresPage() {
                 tabs={[
                   { value: "ALL", label: "All", count: totalData?.total || 0, color: "primary", icon: <Package size={14} /> },
                   { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <Clock size={14} /> },
-                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <RefreshCw size={14} /> },
+                  { value: "RETURNED", label: "Returned", count: returnedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
                   { value: "NOT_RETURNED", label: "Not Returned", count: notReturnedData?.total || 0, color: "rose", icon: <AlertTriangle size={14} /> },
                 ]}
                 activeValue={
                   returnFilter === "Pending" && !inflowFilter
                     ? "PENDING"
-                    : returnFilter === "Completed" && !inflowFilter
-                      ? "COMPLETED"
-                      : returnFilter === "Not Returned" && !inflowFilter
-                        ? "NOT_RETURNED"
-                        : inflowFilter === "" && returnFilter === ""
-                          ? "ALL"
-                          : ""
+                    : returnFilter === "In Progress" && !inflowFilter
+                      ? "IN_PROGRESS"
+                      : returnFilter === "Returned" && !inflowFilter
+                        ? "RETURNED"
+                        : returnFilter === "Not Returned" && !inflowFilter
+                          ? "NOT_RETURNED"
+                          : inflowFilter === "" && returnFilter === ""
+                            ? "ALL"
+                            : ""
                 }
                 onChange={(value) => {
                   if (value === "ALL") {
@@ -973,9 +977,12 @@ export default function StoresPage() {
                   } else if (value === "PENDING") {
                     setInflowFilter("");
                     setReturnFilter("Pending");
-                  } else if (value === "COMPLETED") {
+                  } else if (value === "IN_PROGRESS") {
                     setInflowFilter("");
-                    setReturnFilter("Completed");
+                    setReturnFilter("In Progress");
+                  } else if (value === "RETURNED") {
+                    setInflowFilter("");
+                    setReturnFilter("Returned");
                   } else if (value === "NOT_RETURNED") {
                     setInflowFilter("");
                     setReturnFilter("Not Returned");

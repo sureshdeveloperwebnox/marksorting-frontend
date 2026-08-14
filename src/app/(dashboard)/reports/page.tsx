@@ -526,10 +526,10 @@ export default function ReportsPage() {
                 placeholder: "All Return Statuses",
                 options: [
                     { value: "ALL", label: "All Return Statuses" },
-                    { value: "Returned", label: "Returned" },
                     { value: "Pending", label: "Pending" },
+                    { value: "In Progress", label: "In Progress" },
+                    { value: "Returned", label: "Returned" },
                     { value: "Not Returned", label: "Not Returned" },
-                    { value: "Completed", label: "Completed" },
                 ],
             };
 
