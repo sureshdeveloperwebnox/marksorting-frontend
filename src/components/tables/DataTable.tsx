@@ -222,13 +222,13 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Desktop View - Table */}
-      <div className="hidden md:block rounded-[24px] border border-gray-100 dark:border-white/5 overflow-hidden bg-white/50 dark:bg-black/5 backdrop-blur-xl shadow-md shadow-gray-100/10">
+      <div className="hidden md:block rounded-[24px] border-2 border-gray-200 dark:border-white/10 overflow-hidden bg-white/50 dark:bg-black/5 backdrop-blur-xl shadow-md shadow-gray-100/10">
         <Table>
-          <TableHeader className="bg-primary/[0.02] dark:bg-primary/[0.04] border-b border-primary/10">
+          <TableHeader className="bg-primary/[0.04] dark:bg-primary/[0.06] border-b-2 border-primary/20">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="h-10 text-primary/90 dark:text-primary/90 font-bold uppercase tracking-wider text-[11px] px-3.5 whitespace-nowrap">
+                  <TableHead key={header.id} className="h-11 text-primary/95 dark:text-primary font-black uppercase tracking-wider text-[11px] px-3.5 whitespace-nowrap">
                     {header.isPlaceholder ? null : (
                       <div
                         className={
@@ -240,7 +240,7 @@ export function DataTable<TData, TValue>({
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.getCanSort() && (
-                          <div className="flex flex-col text-gray-300 dark:text-gray-600 transition-colors group-hover/head:text-primary">
+                          <div className="flex flex-col text-gray-400 dark:text-gray-500 transition-colors group-hover/head:text-primary">
                             {header.column.getIsSorted() === "asc" ? (
                               <ChevronRight className="h-3 w-3 -rotate-90 text-primary" />
                             ) : header.column.getIsSorted() === "desc" ? (
@@ -263,7 +263,7 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i} className="border-b border-gray-50 dark:border-white/5 last:border-0">
+                <TableRow key={i} className="border-b-2 border-gray-200/80 dark:border-white/10 last:border-0">
                   {columns.map((_, j) => (
                     <TableCell key={j} className="px-3.5 py-3">
                       <Skeleton className="h-5 w-full rounded-xl" />
@@ -276,10 +276,10 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-white/5 last:border-0 hover:bg-primary/[0.015] dark:hover:bg-primary/[0.035] transition-all duration-300 group/row"
+                  className="border-b-2 border-gray-200/90 dark:border-white/15 last:border-0 hover:bg-primary/[0.025] dark:hover:bg-primary/[0.045] transition-all duration-200 group/row"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-3.5 py-2.5 transition-all duration-300">
+                    <TableCell key={cell.id} className="px-3.5 py-3 transition-all duration-200">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

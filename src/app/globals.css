@@ -131,21 +131,13 @@
 }
 
 @layer components {
-  [data-slot="sheet-content"] form,
-  [data-slot="sheet-content"] form *,
-  [data-slot="sheet-content"] [data-slot="sheet-footer"],
-  [data-slot="sheet-content"] [data-slot="sheet-footer"] *,
-  [data-slot="select-content"],
-  [data-slot="select-content"] *,
-  .form-typography-normal,
-  .form-typography-normal * {
-    font-weight: 500 !important;
+  /* Retain standard font styling for specific generic typography helper if needed */
+  .form-typography-normal {
+    font-weight: 500;
   }
 
-  [data-slot="sheet-content"] form input::placeholder,
-  [data-slot="sheet-content"] form textarea::placeholder,
-  .form-typography-normal input::placeholder,
-  .form-typography-normal textarea::placeholder {
+  input::placeholder,
+  textarea::placeholder {
     font-weight: 400 !important;
   }
 }
@@ -341,13 +333,44 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Universal Field Titles / Labels Boldness
+   Universal Field Titles / Labels & Modal Titles Boldness
    ───────────────────────────────────────────────────────────── */
+[data-slot="sheet-title"],
+[data-slot="dialog-title"],
+.sheet-title,
+.dialog-title {
+  font-weight: 900 !important;
+  letter-spacing: -0.02em;
+}
+
 label,
 [data-slot="label"],
 .field-label,
 .form-label {
-  font-weight: 800 !important;
-  letter-spacing: 0.08em;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Universal Table Divider Lines Boldness
+   ───────────────────────────────────────────────────────────── */
+table tbody tr,
+[data-slot="table-row"] {
+  border-bottom: 1.5px solid rgba(209, 213, 219, 0.8) !important;
+}
+
+.dark table tbody tr,
+.dark [data-slot="table-row"] {
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+table tbody tr:last-child,
+[data-slot="table-row"]:last-child {
+  border-bottom: none !important;
+}
+
+table thead tr,
+[data-slot="table-header"] tr {
+  border-bottom: 2px solid rgba(234, 88, 12, 0.35) !important;
 }
 

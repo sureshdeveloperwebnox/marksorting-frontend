@@ -625,10 +625,10 @@ export function StoreFormDrawer() {
               <Store size={24} />
             </div>
             <div>
-              <SheetTitle className="text-xl">
+              <SheetTitle className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
                 {isEdit ? 'Edit Store Record' : 'Add Store Record'}
               </SheetTitle>
-              <SheetDescription>
+              <SheetDescription className="text-sm font-bold text-gray-500 mt-0.5">
                 {isEdit ? 'Update details of the store item.' : 'Register a new item in the stores inventory.'}
               </SheetDescription>
             </div>
@@ -647,8 +647,8 @@ export function StoreFormDrawer() {
                 
                 {/* Service Engineer Selection */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Wrench size={14} className="text-primary/70" />
+                  <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Wrench size={15} strokeWidth={2.5} className="text-primary" />
                     Service Engineer
                   </Label>
                   <Controller
@@ -686,16 +686,16 @@ export function StoreFormDrawer() {
                 </div>
 
                   {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
-                  <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Cpu size={14} className="text-primary/70" />
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                      <Cpu size={15} strokeWidth={2.5} className="text-primary" />
                       Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                     </Label>
                     <Input
                       value={machineSearchQuery}
                       onChange={(e) => setMachineSearchQuery(e.target.value)}
                       placeholder="Type REF NO, Frame No, Customer or Mill to search..."
-                      className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
                     />
                     
                     {/* Search Results List */}
@@ -773,7 +773,7 @@ export function StoreFormDrawer() {
                               }}
                               className="w-fit text-left text-primary hover:underline flex items-center gap-1 cursor-pointer font-black border-none bg-transparent p-0"
                             >
-                              <PlusCircle size={12} />
+                              <PlusCircle size={12} strokeWidth={2.5} />
                               Quick Register Customer & Mill
                             </button>
                           </div>
@@ -785,8 +785,8 @@ export function StoreFormDrawer() {
                   {/* Customer Selection */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Users size={14} className="text-primary/70" />
+                      <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                        <Users size={15} strokeWidth={2.5} className="text-primary" />
                         Customer Selection
                       </Label>
                       <button
@@ -803,9 +803,9 @@ export function StoreFormDrawer() {
                           setIsMillNameManuallyEdited(false);
                           setIsQuickCreateOpen(true);
                         }}
-                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-black text-primary hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        <PlusCircle size={12} />
+                        <PlusCircle size={13} strokeWidth={2.5} />
                         Quick Register
                       </button>
                     </div>
@@ -826,8 +826,8 @@ export function StoreFormDrawer() {
                   {selectedCustomerId && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                          <Building2 size={14} className="text-primary/70" />
+                        <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                          <Building2 size={15} strokeWidth={2.5} className="text-primary" />
                           Select Mill (Optional Helper)
                         </Label>
                         <button
@@ -844,9 +844,9 @@ export function StoreFormDrawer() {
                             setIsMillNameManuallyEdited(false);
                             setIsQuickCreateOpen(true);
                           }}
-                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                          className="text-xs font-black text-primary hover:underline flex items-center gap-1 cursor-pointer"
                         >
-                          <PlusCircle size={12} />
+                          <PlusCircle size={13} strokeWidth={2.5} />
                           Quick Add Mill
                         </button>
                       </div>
@@ -892,10 +892,10 @@ export function StoreFormDrawer() {
 
                   {/* Machine / Installation Record Helper Dropdown */}
                   {selectedMillId && (
-                    <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between mb-1.5">
-                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                          <Cpu size={14} className="text-primary/70" />
+                        <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                          <Cpu size={15} strokeWidth={2.5} className="text-primary" />
                           Select Machine (REF NO / Frame No)
                         </Label>
                         <button
@@ -912,9 +912,9 @@ export function StoreFormDrawer() {
                             setQuickWarrantyType('Non Warranty');
                             setIsQuickMasterMillOpen(true);
                           }}
-                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                          className="text-xs font-black text-primary hover:underline flex items-center gap-1 cursor-pointer"
                         >
-                          <PlusCircle size={12} />
+                          <PlusCircle size={13} strokeWidth={2.5} />
                           Add Machine
                         </button>
                       </div>
@@ -939,7 +939,7 @@ export function StoreFormDrawer() {
                             }
                           }}
                         >
-                          <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
                             {selectedMachineId ? (
                               <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
                                 {(() => {
@@ -1000,8 +1000,8 @@ export function StoreFormDrawer() {
 
                   {/* Warranty Status (Moved directly below Machine) */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <ShieldAlert size={14} className="text-primary/70" />
+                    <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                      <ShieldAlert size={15} strokeWidth={2.5} className="text-primary" />
                       Warranty Status
                     </Label>
                     <Controller
@@ -1029,8 +1029,8 @@ export function StoreFormDrawer() {
 
                   {/* Service Type Dropdown (New Field) */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Wrench size={14} className="text-primary/70" />
+                    <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                      <Wrench size={15} strokeWidth={2.5} className="text-primary" />
                       Service Type
                     </Label>
                     <Controller
@@ -1060,8 +1060,8 @@ export function StoreFormDrawer() {
 
                   {/* Return Status */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Clock size={14} className="text-primary/70" />
+                    <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                      <Clock size={15} strokeWidth={2.5} className="text-primary" />
                       Return Status
                     </Label>
                     <Controller
@@ -1089,13 +1089,13 @@ export function StoreFormDrawer() {
                   </div>
 
                   {/* Warranty & AMC Details (Display Information Only) */}
-                  <div className="space-y-2 p-4 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Clock size={14} className="text-primary/70" />
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                      <Clock size={15} strokeWidth={2.5} className="text-primary" />
                       Warranty &amp; AMC Details
                     </Label>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {/* Warranty Info Card */}
                       <div className="p-3.5 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-white/5 space-y-2 shadow-sm">
                         <div className="flex items-center justify-between pb-1 border-b border-gray-100 dark:border-white/5">
@@ -1175,10 +1175,10 @@ export function StoreFormDrawer() {
                       </div>
                     </div>
                   </div>
-                                {/* Material Selection */}
+                          {/* Material Selection */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Package size={14} className="text-primary/70" />
+                  <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Package size={15} strokeWidth={2.5} className="text-primary" />
                     Material Selection
                   </Label>
                   <Controller
@@ -1196,7 +1196,7 @@ export function StoreFormDrawer() {
                   {/* Dynamic quantities input for each selected material */}
                   {materialQuantitiesWatch.length > 0 && (
                     <div className="space-y-3 mt-3 p-3.5 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-2xl">
-                      <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                      <Label className="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider block mb-1">
                         Configure Material Quantities &amp; Dynamic Unit Fields
                       </Label>
                       {materialQuantitiesWatch.map((item, index) => {
@@ -1229,8 +1229,8 @@ export function StoreFormDrawer() {
                                     <ChevronDown size={18} className="text-gray-400 hover:text-primary transition-colors font-bold" />
                                   )}
                                 </button>
-                                <Package size={14} className="text-primary/70 shrink-0" />
-                                <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                <Package size={15} strokeWidth={2.5} className="text-primary shrink-0" />
+                                <span className="text-xs font-black text-gray-800 dark:text-gray-200 truncate">
                                   {matName}
                                 </span>
                               </div>
@@ -1238,7 +1238,7 @@ export function StoreFormDrawer() {
                               <div className="flex items-center gap-3 flex-shrink-0">
                                 {/* Stock Type dropdown per material */}
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Stock Type:</span>
+                                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:inline">Stock Type:</span>
                                   <Select
                                     onValueChange={(val) => {
                                       const current = watch('material_quantities') || [];
@@ -1266,7 +1266,7 @@ export function StoreFormDrawer() {
 
                                 {/* QTY counter input */}
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">QTY:</span>
+                                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">QTY:</span>
                                   <Input
                                     type="number"
                                     min="1"
@@ -1297,8 +1297,8 @@ export function StoreFormDrawer() {
                             {isExpanded && (
                               <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-2 animate-in fade-in-0 duration-200">
                                 <div className="flex items-center justify-between flex-wrap gap-2">
-                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                                    <Hash size={11} className="text-primary/60" />
+                                  <span className="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Hash size={12} className="text-primary" />
                                     7-Digit Unit Barcodes ({item.quantity} {item.quantity === 1 ? 'required code' : 'required codes'})
                                     <span className="text-rose-500 font-black">*</span>
                                   </span>
@@ -1308,7 +1308,7 @@ export function StoreFormDrawer() {
                                       variant="outline"
                                       size="sm"
                                       onClick={() => handleAutoGenerateBarcodes(item.material_id)}
-                                      className="h-6 px-2 text-[10px] font-bold rounded-lg border-primary/30 text-primary hover:bg-primary/10 transition-all gap-1 shadow-xs"
+                                      className="h-6 px-2 text-[10px] font-black rounded-lg border-primary/30 text-primary hover:bg-primary/10 transition-all gap-1 shadow-xs"
                                     >
                                       <Sparkles size={10} />
                                       Auto-Generate
@@ -1327,7 +1327,7 @@ export function StoreFormDrawer() {
                                     return (
                                       <div key={unitIdx} className="space-y-1.5">
                                         <div className="flex items-center justify-between">
-                                          <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                                          <span className="text-[11px] font-black text-gray-800 dark:text-gray-200">
                                             Unit {unitIdx + 1} Barcode <span className="text-rose-500 font-black">*</span>
                                           </span>
                                           {isMissing ? (
@@ -1422,7 +1422,7 @@ export function StoreFormDrawer() {
                   <div className="pt-2 pb-1">
                     <div className="relative flex py-2 items-center">
                       <div className="flex-grow border-t border-gray-100 dark:border-white/5"></div>
-                      <span className="flex-shrink mx-4 text-[10px] text-gray-400 font-bold uppercase tracking-widest">Or create new material</span>
+                      <span className="flex-shrink mx-4 text-[10px] text-gray-500 font-black uppercase tracking-wider">Or create new material</span>
                       <div className="flex-grow border-t border-gray-100 dark:border-white/5"></div>
                     </div>
                     
@@ -1462,8 +1462,8 @@ export function StoreFormDrawer() {
 
                 {/* Quantity */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Hash size={14} className="text-primary/70" />
+                  <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Hash size={15} strokeWidth={2.5} className="text-primary" />
                     Total Quantity (Auto-Calculated)
                   </Label>
                   <Input
@@ -1479,8 +1479,8 @@ export function StoreFormDrawer() {
 
                 {/* Frame Number */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Hash size={14} className="text-primary/70" />
+                  <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Hash size={15} strokeWidth={2.5} className="text-primary" />
                     Frame Number
                   </Label>
                   <Input
@@ -1491,14 +1491,10 @@ export function StoreFormDrawer() {
                   {errors.frame_number && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.frame_number.message}</p>}
                 </div>
 
-
-
-
-
                 {/* Provider Name */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Users size={14} className="text-primary/70" />
+                  <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Users size={15} strokeWidth={2.5} className="text-primary" />
                     Shipment Provider (Optional)
                   </Label>
                   <Input
@@ -1511,8 +1507,8 @@ export function StoreFormDrawer() {
 
                 {/* Invoice/Receipt Number */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Hash size={14} className="text-primary/70" />
+                  <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                    <Hash size={15} strokeWidth={2.5} className="text-primary" />
                     Shipment Number (Optional)
                   </Label>
                   <Input
@@ -1525,7 +1521,7 @@ export function StoreFormDrawer() {
 
                 {/* Remarks */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     Remarks (Optional)
                   </Label>
                   <Textarea
@@ -1579,7 +1575,7 @@ export function StoreFormDrawer() {
             <div className="space-y-4 my-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-hide">
               {/* Customer Name (disabled if existing) */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Customer Name *
                 </Label>
                 <Input
@@ -1620,7 +1616,7 @@ export function StoreFormDrawer() {
 
               {/* Mill Name */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Mill Name *
                 </Label>
                 <Input
@@ -1636,7 +1632,7 @@ export function StoreFormDrawer() {
 
               {/* Ref No */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Ref No / Code
                 </Label>
                 <Input
@@ -1649,7 +1645,7 @@ export function StoreFormDrawer() {
 
               {/* Address */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Full Address
                 </Label>
                 <Input
@@ -1662,7 +1658,7 @@ export function StoreFormDrawer() {
 
               {/* Place */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Place / City
                 </Label>
                 <Input
@@ -1675,7 +1671,7 @@ export function StoreFormDrawer() {
 
               {/* State Select */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   State
                 </Label>
                 <StateSearchSelect
@@ -1689,7 +1685,7 @@ export function StoreFormDrawer() {
 
               {/* Phone */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   WhatsApp Phone Number
                 </Label>
                 <PhoneInput
@@ -1843,7 +1839,7 @@ export function StoreFormDrawer() {
             <div className="space-y-4 my-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-hide">
               {/* Invoice No */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Invoice No *
                 </Label>
                 <Input
@@ -1856,7 +1852,7 @@ export function StoreFormDrawer() {
 
               {/* Invoice Date */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Invoice Date
                 </Label>
                 <DatePicker
@@ -1868,7 +1864,7 @@ export function StoreFormDrawer() {
 
               {/* Ref No */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Ref No / Code
                 </Label>
                 <Input
@@ -1881,7 +1877,7 @@ export function StoreFormDrawer() {
 
               {/* MC Model */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Machine Model
                 </Label>
                 <Input
@@ -1894,7 +1890,7 @@ export function StoreFormDrawer() {
 
               {/* Frame No */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Frame / W No *
                 </Label>
                 <Input
@@ -1907,7 +1903,7 @@ export function StoreFormDrawer() {
 
               {/* Installation Date */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">
                   Installation Date
                 </Label>
                 <DatePicker
@@ -1920,7 +1916,7 @@ export function StoreFormDrawer() {
               {/* Warranty type */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Years</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">Years</Label>
                   <Input
                     type="number"
                     value={quickWarrantyYears}
@@ -1929,7 +1925,7 @@ export function StoreFormDrawer() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Months</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">Months</Label>
                   <Input
                     type="number"
                     value={quickWarrantyMonths}
@@ -1938,7 +1934,7 @@ export function StoreFormDrawer() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Warranty</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">Warranty</Label>
                   <Select
                     value={quickWarrantyType}
                     onValueChange={(val) => setQuickWarrantyType(val || 'Non Warranty')}
