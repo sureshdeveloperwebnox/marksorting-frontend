@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO } from 'date-fns';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,7 +30,13 @@ export function DatePicker({
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [viewMode, setViewMode] = React.useState<'days' | 'months' | 'years'>('days');
   const [popoverStyle, setPopoverStyle] = React.useState<React.CSSProperties>({});
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Parse value to Date object or default to null
   const selectedDate = React.useMemo(() => {
@@ -48,35 +55,72 @@ export function DatePicker({
       setCurrentMonth(selectedDate);
     }
     if (!isOpen) {
-      setViewMode('days'); // Reset view to day grid when closed
+      setViewMode('days');
     }
   }, [isOpen, selectedDate]);
 
-  React.useLayoutEffect(() => {
-    if (!isOpen || !containerRef.current) return;
+  // Calculate fixed viewport positioning relative to trigger button
+  const updatePosition = React.useCallback(() => {
+    if (!isOpen || !triggerRef.current) return;
 
-    const estimatedPopoverHeight = viewMode === 'years' ? 310 : 390;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const estimatedHeight = viewMode === 'years' ? 310 : 390;
+    const estimatedWidth = Math.min(320, viewportWidth - 24);
+
+    const spaceBelow = viewportHeight - rect.bottom;
+    const openUpward = spaceBelow < estimatedHeight && rect.top > estimatedHeight;
+
+    const top = openUpward
+      ? Math.max(12, rect.top - estimatedHeight - 6)
+      : Math.min(viewportHeight - estimatedHeight - 12, rect.bottom + 6);
+
+    // Center popover relative to the trigger input element
+    let left = rect.left + (rect.width - estimatedWidth) / 2;
+
+    // Ensure it stays within screen boundaries
+    if (left < 12) {
+      left = 12;
+    } else if (left + estimatedWidth > viewportWidth - 12) {
+      left = viewportWidth - estimatedWidth - 12;
+    }
 
     setPopoverStyle({
-      position: 'absolute',
-      top: 'calc(100% + 6px)',
-      left: 0,
-      width: '100%',
-      minWidth: '280px',
-      maxWidth: '320px',
-      maxHeight: `${Math.min(estimatedPopoverHeight, window.innerHeight - 24)}px`,
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      width: `${estimatedWidth}px`,
+      maxHeight: `${Math.min(estimatedHeight, viewportHeight - 24)}px`,
+      zIndex: 99999,
     });
   }, [isOpen, viewMode]);
 
-  // Handle click outside to close popover
+  React.useLayoutEffect(() => {
+    if (!isOpen) return;
+    updatePosition();
+
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
+
+  // Handle click outside & escape key
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
-    
-    // Listen for Escape key
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
@@ -217,9 +261,10 @@ export function DatePicker({
   }, [viewMode]);
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div className="w-full">
       {/* Input Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
@@ -247,19 +292,22 @@ export function DatePicker({
         </div>
       </button>
 
-      {/* Floating Popover */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 4, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            style={popoverStyle}
-            className={cn(
-              "z-[9999] overflow-y-auto p-3 sm:p-4 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl origin-top"
-            )}
-          >
+      {/* Floating Popover via Portal */}
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                ref={popoverRef}
+                initial={{ opacity: 0, y: 6, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                style={popoverStyle}
+                className={cn(
+                  "overflow-y-auto p-3 sm:p-4 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl origin-top"
+                )}
+              >
             {/* Calendar Header */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-white/5">
               <div className="flex items-center gap-1">
@@ -413,9 +461,11 @@ export function DatePicker({
                 </button>
               </div>
             )}
-          </motion.div>
+                      </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 }

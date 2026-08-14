@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import {
   format,
   addMonths,
@@ -34,6 +35,7 @@ interface DateRangePickerProps {
   onChange: (value: DateRangeValue) => void;
   className?: string;
   disabled?: boolean;
+  align?: 'start' | 'end' | 'auto';
 }
 
 export function DateRangePicker({
@@ -41,6 +43,7 @@ export function DateRangePicker({
   onChange,
   className,
   disabled = false,
+  align = 'auto',
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
@@ -67,10 +70,89 @@ export function DateRangePicker({
     }
   }, [isOpen, parsedStart, parsedEnd]);
 
-  // Handle outside click and escape key
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = React.useState(false);
+  const [isAlignRight, setIsAlignRight] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const updatePosition = React.useCallback(() => {
+    if (!isOpen || !triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const estimatedHeight = 390;
+    const estimatedWidth = Math.min(540, viewportWidth - 24);
+
+    let shouldAlignRight = align === 'end';
+    if (align === 'auto') {
+      shouldAlignRight =
+        rect.left + estimatedWidth > viewportWidth - 16 ||
+        rect.left > viewportWidth / 2;
+    }
+    setIsAlignRight(shouldAlignRight);
+
+    const spaceBelow = viewportHeight - rect.bottom;
+    const openUpward = spaceBelow < estimatedHeight && rect.top > estimatedHeight;
+
+    const top = openUpward
+      ? Math.max(12, rect.top - estimatedHeight - 6)
+      : Math.min(viewportHeight - estimatedHeight - 12, rect.bottom + 6);
+
+    let left = rect.left;
+    if (align === 'end') {
+      left = rect.right - estimatedWidth;
+    } else if (align === 'start') {
+      left = rect.left;
+    } else {
+      // Default / auto: Center relative to the trigger button
+      left = rect.left + (rect.width - estimatedWidth) / 2;
+    }
+
+    if (left < 12) {
+      left = 12;
+    } else if (left + estimatedWidth > viewportWidth - 12) {
+      left = viewportWidth - estimatedWidth - 12;
+    }
+
+    const style: React.CSSProperties = {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      maxHeight: `${Math.min(420, viewportHeight - 24)}px`,
+      maxWidth: 'calc(100vw - 24px)',
+      zIndex: 99999,
+    };
+
+    setPopoverStyle(style);
+  }, [isOpen, align]);
+
+  React.useLayoutEffect(() => {
+    if (!isOpen) return;
+    updatePosition();
+
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
+
+  // Handle outside click & escape key
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -88,23 +170,6 @@ export function DateRangePicker({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen]);
-
-  // Dynamically position the popover
-  React.useLayoutEffect(() => {
-    if (!isOpen || !containerRef.current) return;
-
-    const estimatedHeight = 380;
-
-    setPopoverStyle({
-      position: 'absolute',
-      top: 'calc(100% + 6px)',
-      left: 0,
-      width: '100%',
-      minWidth: '280px',
-      maxWidth: '540px',
-      maxHeight: `${Math.min(estimatedHeight, window.innerHeight - 24)}px`,
-    });
   }, [isOpen]);
 
   // Presets definition
@@ -287,8 +352,9 @@ export function DateRangePicker({
   }, [parsedStart, parsedEnd, value.label]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div className="w-full">
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
@@ -316,18 +382,22 @@ export function DateRangePicker({
         )}
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 4, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
-            style={popoverStyle}
-            className={cn(
-              "z-[9999] p-2 sm:p-3 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl origin-top flex flex-col md:flex-row gap-4"
-            )}
-          >
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                ref={popoverRef}
+                initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                style={popoverStyle}
+                className={cn(
+                  "overflow-y-auto p-2 sm:p-3 rounded-2xl border bg-white dark:bg-gray-950 border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-black/60 backdrop-blur-xl flex flex-col md:flex-row gap-4",
+                  isAlignRight ? "origin-top-right" : "origin-top-left"
+                )}
+              >
             {/* Presets Sidebar */}
             <div className="w-full md:w-[160px] flex flex-col gap-1 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/5 pb-3 md:pb-0 md:pr-3 shrink-0">
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-2 mb-1.5 block">
@@ -446,8 +516,10 @@ export function DateRangePicker({
               </div>
             </div>
           </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 }

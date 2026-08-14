@@ -71,20 +71,20 @@ const storeSchema = z.object({
               message: `Unit ${u + 1} Barcode is required`,
               path: [itemIdx, 'serial_numbers', u],
             });
-          } else if (!/^\d{7}$/.test(raw)) {
+          } else if (raw.length > 8) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: `Unit ${u + 1} Barcode must be exactly 7 digits (e.g. 7001024)`,
+              message: `Unit ${u + 1} Barcode must be maximum 8 characters`,
               path: [itemIdx, 'serial_numbers', u],
             });
-          } else if (seenBarcodes.has(raw)) {
+          } else if (seenBarcodes.has(raw.toUpperCase())) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: `Barcode ${raw} is duplicate! Each unit must have a unique 7-digit barcode`,
+              message: `Barcode ${raw} is duplicate! Each unit must have a unique barcode`,
               path: [itemIdx, 'serial_numbers', u],
             });
           } else {
-            seenBarcodes.add(raw);
+            seenBarcodes.add(raw.toUpperCase());
           }
         }
       });
@@ -501,8 +501,8 @@ export function StoreFormDrawer() {
   };
 
   const handleSerialNumberChange = (materialId: string, unitIdx: number, value: string) => {
-    // Restrict input to digits only and max 7 characters
-    const numericOnly = value.replace(/\D/g, '').slice(0, 7);
+    // Allow alphabets, numbers, and special characters up to 8 characters max limit
+    const val = value.slice(0, 8);
     const currentQuantities = watch('material_quantities') || [];
     const nextQuantities = currentQuantities.map((q) => {
       if (q.material_id === materialId) {
@@ -510,7 +510,7 @@ export function StoreFormDrawer() {
         while (serials.length < q.quantity) {
           serials.push('');
         }
-        serials[unitIdx] = numericOnly;
+        serials[unitIdx] = val;
         return { ...q, serial_numbers: serials };
       }
       return q;
@@ -523,7 +523,7 @@ export function StoreFormDrawer() {
     const allExistingBarcodes = new Set<string>();
     currentQuantities.forEach((q) => {
       q.serial_numbers?.forEach((s) => {
-        if (s && s.trim().length === 7) allExistingBarcodes.add(s.trim());
+        if (s && s.trim()) allExistingBarcodes.add(s.trim().toUpperCase());
       });
     });
 
@@ -531,10 +531,10 @@ export function StoreFormDrawer() {
       if (q.material_id === materialId) {
         const serials = [...(q.serial_numbers || [])];
         for (let u = 0; u < q.quantity; u++) {
-          if (!serials[u] || serials[u].trim().length !== 7) {
+          if (!serials[u] || !serials[u].trim()) {
             let candidate = '';
             do {
-              candidate = Math.floor(1000000 + Math.random() * 9000000).toString();
+              candidate = Math.floor(10000000 + Math.random() * 90000000).toString();
             } while (allExistingBarcodes.has(candidate));
             allExistingBarcodes.add(candidate);
             serials[u] = candidate;
@@ -545,7 +545,7 @@ export function StoreFormDrawer() {
       return q;
     });
     setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
-    toast.success('7-digit unit barcodes auto-generated!');
+    toast.success('Unit barcodes auto-generated!');
   };
 
   const onSubmit: SubmitHandler<StoreFormValues> = async (data) => {
@@ -1113,7 +1113,7 @@ export function StoreFormDrawer() {
                                 ? new Date(selectedMachine.warranty_start_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                                 : selectedMachine?.installation_date
                                 ? new Date(selectedMachine.installation_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                                : 'N/A'}
+                                : '-'}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -1121,15 +1121,18 @@ export function StoreFormDrawer() {
                             <span>
                               {selectedMachine?.warranty_closing_date
                                 ? new Date(selectedMachine.warranty_closing_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                                : 'N/A'}
+                                : '-'}
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400 font-medium">Duration:</span>
                             <span>
-                              {selectedMachine?.warranty_years || selectedMachine?.warranty_months
-                                ? `${selectedMachine.warranty_years || 0} Yrs ${selectedMachine.warranty_months || 0} Mos`
-                                : 'N/A'}
+                              {(() => {
+                                const m = selectedMachine?.warranty_months;
+                                const y = selectedMachine?.warranty_years;
+                                const total = (m !== undefined && m !== null && m > 0) ? m : ((y !== undefined && y !== null && y > 0) ? y * 12 : 0);
+                                return total > 0 ? `${total} Months` : '-';
+                              })()}
                             </span>
                           </div>
                         </div>
@@ -1142,7 +1145,7 @@ export function StoreFormDrawer() {
                             AMC Info
                           </span>
                           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            {selectedMachine?.amc_particular || 'N/A'}
+                            {selectedMachine?.amc_particular || '-'}
                           </span>
                         </div>
                         <div className="text-xs space-y-1.5 text-gray-700 dark:text-gray-300 font-semibold pt-0.5">
@@ -1151,7 +1154,7 @@ export function StoreFormDrawer() {
                             <span>
                               {selectedMachine?.amc_starting_date
                                 ? new Date(selectedMachine.amc_starting_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                                : 'N/A'}
+                                : '-'}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -1159,7 +1162,7 @@ export function StoreFormDrawer() {
                             <span>
                               {selectedMachine?.amc_closing_date
                                 ? new Date(selectedMachine.amc_closing_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                                : 'N/A'}
+                                : '-'}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -1167,7 +1170,7 @@ export function StoreFormDrawer() {
                             <span>
                               {selectedMachine?.amc_period
                                 ? `${selectedMachine.amc_period} Months`
-                                : 'N/A'}
+                                : '-'}
                             </span>
                           </div>
                         </div>
@@ -1298,7 +1301,7 @@ export function StoreFormDrawer() {
                                 <div className="flex items-center justify-between flex-wrap gap-2">
                                   <span className="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
                                     <Hash size={12} className="text-primary" />
-                                    7-Digit Unit Barcodes ({item.quantity} {item.quantity === 1 ? 'required code' : 'required codes'})
+                                    Unit Barcodes ({item.quantity} {item.quantity === 1 ? 'required code' : 'required codes'})
                                     <span className="text-rose-500 font-black">*</span>
                                   </span>
                                   <div className="flex items-center gap-2">
@@ -1313,7 +1316,7 @@ export function StoreFormDrawer() {
                                       Auto-Generate
                                     </Button>
                                     <span className="text-[10px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-200/50 dark:border-rose-500/20">
-                                      Mandatory (7 Digits)
+                                      Mandatory (Max 8 Chars)
                                     </span>
                                   </div>
                                 </div>
@@ -1330,22 +1333,20 @@ export function StoreFormDrawer() {
                                             Unit {unitIdx + 1} Barcode <span className="text-rose-500 font-black">*</span>
                                           </span>
                                           {isMissing ? (
-                                            <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">7 Digits Required</span>
-                                          ) : val.length < 7 ? (
-                                            <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wider">{val.length}/7 Digits</span>
+                                            <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
                                           ) : (
-                                            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">Valid 7-Digit</span>
+                                            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">{val.length}/8 Chars</span>
                                           )}
                                         </div>
                                         <Input
                                           type="text"
-                                          maxLength={7}
-                                          placeholder={`Enter 7-digit barcode (e.g. 700100${unitIdx + 1})`}
+                                          maxLength={8}
+                                          placeholder={`Enter barcode (e.g. BC-7000${unitIdx + 1})`}
                                           value={val}
                                           onChange={(e) => handleSerialNumberChange(item.material_id, unitIdx, e.target.value)}
                                           className={cn(
                                             "h-10 rounded-xl font-mono font-bold text-xs transition-all tracking-wider",
-                                            isMissing || val.length < 7
+                                            isMissing
                                               ? "bg-rose-50/50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-gray-900 dark:text-white"
                                               : "bg-emerald-50/30 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 text-gray-900 dark:text-white"
                                           )}
@@ -1913,22 +1914,14 @@ export function StoreFormDrawer() {
               </div>
 
               {/* Warranty type */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">Years</Label>
-                  <Input
-                    type="number"
-                    value={quickWarrantyYears}
-                    onChange={(e) => setQuickWarrantyYears(Number(e.target.value))}
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">Months</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200">Warranty Period (Months)</Label>
                   <Input
                     type="number"
                     value={quickWarrantyMonths}
                     onChange={(e) => setQuickWarrantyMonths(Number(e.target.value))}
+                    placeholder="e.g. 12 or 18"
                     className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
                   />
                 </div>
@@ -1944,6 +1937,7 @@ export function StoreFormDrawer() {
                     <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                       <SelectItem value="Non Warranty" className="font-bold py-2 text-xs">Non Warranty</SelectItem>
                       <SelectItem value="Under Warranty" className="font-bold py-2 text-xs">Under Warranty</SelectItem>
+                      <SelectItem value="Under AMC" className="font-bold py-2 text-xs">Under AMC</SelectItem>
                       <SelectItem value="Expired" className="font-bold py-2 text-xs">Expired</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1989,7 +1983,6 @@ export function StoreFormDrawer() {
                       address: selectedMill?.address || undefined,
                       place: selectedMill?.place || undefined,
                       phone_no: selectedMill?.phone || undefined,
-                      warranty_years: quickWarrantyYears,
                       warranty_months: quickWarrantyMonths,
                       all_warranty: quickWarrantyType,
                       installation_date: quickInstallationDate || undefined,

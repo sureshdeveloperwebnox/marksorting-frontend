@@ -12,13 +12,22 @@ import type {
  * Step 1 → 2: upload file, receive preview.
  * Wraps the file in FormData with key `file` and posts to previewEndpoint.
  */
-export function useUploadPreview(previewEndpoint: string) {
+export function useUploadPreview(
+    previewEndpoint: string,
+    onProgress?: (progress: number) => void,
+) {
     return useMutation<PreviewResponse, Error, File>({
         mutationFn: async (file: File) => {
             const formData = new FormData();
             formData.append('file', file);
             const { data } = await api.post<PreviewResponse>(previewEndpoint, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        if (onProgress) onProgress(percent);
+                    }
+                },
             });
             return data;
         },

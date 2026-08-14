@@ -43,12 +43,15 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [sizeError, setSizeError] = useState<string | null>(null)
+    const [uploadProgress, setUploadProgress] = useState<number>(0)
     const [isDownloading, setIsDownloading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const MAX_SIZE = 15 * 1024 * 1024 // 15 MB
 
-    const uploadPreviewMutation = useUploadPreview(previewEndpoint)
+    const uploadPreviewMutation = useUploadPreview(previewEndpoint, (progress) => {
+        setUploadProgress(progress)
+    })
 
     const validateAndSetFile = useCallback((file: File) => {
         if (!file.name.match(/\.(xlsx|xls)$/i)) {
@@ -63,6 +66,7 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
         }
         setSizeError(null)
         setSelectedFile(file)
+        setUploadProgress(0)
     }, [])
 
     const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -98,9 +102,24 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
 
     const handleUpload = useCallback(() => {
         if (!selectedFile) return
+        setUploadProgress(0)
+        setSizeError(null)
         uploadPreviewMutation.mutate(selectedFile, {
             onSuccess: (data) => {
+                const rowCount = data.totalRows || data.rows?.length || 0
+                if (rowCount > 5000) {
+                    setSizeError('We cannot handle more than 5000 rows, so kindly separate and upload.')
+                    return
+                }
                 onPreviewReady(data)
+            },
+            onError: (err: any) => {
+                const msg = err.response?.data?.message || err.message
+                if (msg && msg.toLowerCase().includes('5000')) {
+                    setSizeError('We cannot handle more than 5000 rows, so kindly separate and upload.')
+                } else if (msg) {
+                    setSizeError(msg)
+                }
             },
         })
     }, [selectedFile, uploadPreviewMutation, onPreviewReady])
@@ -147,9 +166,28 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
                 />
             </div>
 
-            {/* Inline size / type error */}
+            {/* Upload Progress Indicator Bar */}
+            {uploadPreviewMutation.isPending && (
+                <div className="w-full space-y-2 p-3.5 bg-primary/5 dark:bg-white/5 border border-primary/15 rounded-xl">
+                    <div className="flex items-center justify-between text-xs font-bold text-gray-700 dark:text-gray-300">
+                        <span className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                            {uploadProgress < 100 ? 'Uploading file...' : 'Processing Excel rows...'}
+                        </span>
+                        <span className="text-primary font-black text-xs">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-primary transition-all duration-300 rounded-full"
+                            style={{ width: `${uploadProgress}%` }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Inline error (size error or > 5000 rows error) */}
             {sizeError && (
-                <div className="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 px-3 py-2 text-sm text-red-600 dark:text-red-400">
+                <div className="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 font-medium">
                     <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>{sizeError}</span>
                 </div>
@@ -194,7 +232,7 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
                     {uploadPreviewMutation.isPending ? (
                         <>
                             <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                            Uploading…
+                            Uploading ({uploadProgress}%)
                         </>
                     ) : (
                         <>

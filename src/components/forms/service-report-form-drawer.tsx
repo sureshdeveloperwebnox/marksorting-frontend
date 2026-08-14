@@ -2420,22 +2420,14 @@ export function ServiceReportFormDrawer() {
               </div>
 
               {/* Warranty type */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Years</Label>
-                  <Input
-                    type="number"
-                    value={quickWarrantyYears}
-                    onChange={(e) => setQuickWarrantyYears(Number(e.target.value))}
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Months</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400">Warranty Period (Months)</Label>
                   <Input
                     type="number"
                     value={quickWarrantyMonths}
                     onChange={(e) => setQuickWarrantyMonths(Number(e.target.value))}
+                    placeholder="e.g. 12 or 18"
                     className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
                   />
                 </div>

@@ -631,6 +631,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}
+              align="end"
               className="mr-1"
             />
           )}

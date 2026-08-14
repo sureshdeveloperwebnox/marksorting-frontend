@@ -49,7 +49,7 @@ export interface ServiceReport {
     status: string;
     created_at: string;
     updated_at: string;
-    mill: { id: string; name: string; customer?: { id: string; name: string } | null };
+    mill: { id: string; name: string; phone?: string; place?: string; address?: string; customer?: { id: string; name: string } | null };
     serviceCategory: { id: string; name: string };
     technicians: ServiceReportTechnicianEntry[];
 }

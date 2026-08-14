@@ -437,9 +437,18 @@ export default function ServiceReportPage() {
         title: "Mill & Client Details",
         items: [
           {
-            label: "Mill / Place",
+            label: "Mill Name",
             value: viewReportData.mill?.name || "—",
             icon: Building2,
+          },
+          {
+            label: "Mill Phone Number",
+            value: viewReportData.mill?.phone ? (
+              <a href={`tel:${viewReportData.mill.phone}`} className="hover:underline text-primary font-bold">
+                {viewReportData.mill.phone}
+              </a>
+            ) : "—",
+            icon: Phone,
           },
           {
             label: "Location / Place",
@@ -627,10 +636,14 @@ export default function ServiceReportPage() {
         title: "Assigned Engineers & Remarks",
         items: [
           {
-            label: "Engineers",
+            label: "Previous Visit Engineer",
+            value: viewReportData.previous_visit_engineer || "—",
+            icon: User,
+          },
+          {
+            label: "Service Engineers",
             value: viewReportData.technicians?.map((t: any) => t.technician?.full_name).filter(Boolean).join(", ") || "—",
             icon: Wrench,
-            fullWidth: true,
           },
           {
             label: "Engineer Remarks",

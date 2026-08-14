@@ -176,8 +176,7 @@ export default function MasterMillsPage() {
     { key: "address", header: "Address" },
     { key: "installation_date", header: "Installation Date" },
     { key: "warranty_start_date", header: "Warranty Start Date" },
-    { key: "warranty_years", header: "Warranty Yrs" },
-    { key: "warranty_months", header: "Warranty Mths" },
+    { key: "warranty_months", header: "Warranty Duration (Months)" },
     { key: "amc_starting_date", header: "AMC Start Date" },
     { key: "amc_period", header: "AMC Period (Mths)" },
     { key: "amc_amount", header: "AMC Amount" },
@@ -301,18 +300,21 @@ export default function MasterMillsPage() {
           },
           {
             label: "Warranty Closing Date",
-            value: (
-              <span
-                className={cn(
-                  "font-bold",
-                  isExpired(viewMillData.warranty_closing_date)
-                    ? "text-rose-500 dark:text-rose-400"
-                    : "text-emerald-600 dark:text-emerald-400"
-                )}
-              >
-                {formatDateSafe(viewMillData.warranty_closing_date)}
-              </span>
-            ),
+            value:
+              (viewMillData.warranty_start_date || viewMillData.installation_date) && viewMillData.warranty_closing_date ? (
+                <span
+                  className={cn(
+                    "font-bold",
+                    isExpired(viewMillData.warranty_closing_date)
+                      ? "text-rose-500 dark:text-rose-400"
+                      : "text-emerald-600 dark:text-emerald-400"
+                  )}
+                >
+                  {formatDateSafe(viewMillData.warranty_closing_date)}
+                </span>
+              ) : (
+                "—"
+              ),
             icon: Calendar,
           },
         ],
@@ -341,18 +343,21 @@ export default function MasterMillsPage() {
           },
           {
             label: "AMC Closing Date",
-            value: (
-              <span
-                className={cn(
-                  "font-bold",
-                  isExpired(viewMillData.amc_closing_date)
-                    ? "text-rose-500"
-                    : "text-emerald-600 dark:text-emerald-400"
-                )}
-              >
-                {formatDateSafe(viewMillData.amc_closing_date)}
-              </span>
-            ),
+            value:
+              viewMillData.amc_starting_date && viewMillData.amc_closing_date ? (
+                <span
+                  className={cn(
+                    "font-bold",
+                    isExpired(viewMillData.amc_closing_date)
+                      ? "text-rose-500"
+                      : "text-emerald-600 dark:text-emerald-400"
+                  )}
+                >
+                  {formatDateSafe(viewMillData.amc_closing_date)}
+                </span>
+              ) : (
+                "—"
+              ),
             icon: Calendar,
           },
           {
