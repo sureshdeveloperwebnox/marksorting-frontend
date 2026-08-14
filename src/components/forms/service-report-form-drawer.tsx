@@ -480,6 +480,8 @@ export function ServiceReportFormDrawer() {
         const localMill = mills.find(millItem => millItem.id === m.mill_id);
         if (localMill?.customer_id) {
           setSelectedCustomerId(localMill.customer_id);
+        } else {
+          setSelectedCustomerId('');
         }
       }
     }

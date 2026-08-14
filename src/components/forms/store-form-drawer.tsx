@@ -303,14 +303,6 @@ export function StoreFormDrawer() {
     ).slice(0, 5);
   }, [quickCustomerName, customers, existingCustomerId]);
 
-  // Filtered mills for the helper dropdown based on selected customer
-  const filteredMills = React.useMemo(() => {
-    if (!selectedCustomerId) {
-      return mills;
-    }
-    return mills.filter((m) => m.customer_id === selectedCustomerId);
-  }, [mills, selectedCustomerId]);
-
   // Query master mills specifically for current frame_number to ensure Warranty & AMC details load immediately in edit mode
   const currentFrameNumber = watch('frame_number');
   const { data: frameMachineData } = useMasterMills(
@@ -342,13 +334,35 @@ export function StoreFormDrawer() {
     return null;
   }, [selectedMachineId, currentFrameNumber, searchedMasterMills, masterMills, frameMasterMills]);
 
+  // Filtered mills for the helper dropdown based on selected customer
+  const filteredMills = React.useMemo(() => {
+    let baseMills = mills;
+    if (selectedMachine?.mill) {
+      const exists = baseMills.some((m) => m.id === selectedMachine.mill_id);
+      if (!exists) {
+        baseMills = [selectedMachine.mill as any, ...baseMills];
+      }
+    }
+    if (!selectedCustomerId) {
+      return baseMills;
+    }
+    return baseMills.filter((m) => m.customer_id === selectedCustomerId || m.id === selectedMillId);
+  }, [mills, selectedCustomerId, selectedMachine, selectedMillId]);
+
   // Sync mill selection when machine is matched
   React.useEffect(() => {
-    if (selectedMachine?.mill_id && (!selectedMillId || selectedMillId !== selectedMachine.mill_id)) {
+    if (selectedMachine?.mill_id) {
       setSelectedMillId(selectedMachine.mill_id);
     }
     if (selectedMachine?.id && (!selectedMachineId || selectedMachineId !== selectedMachine.id)) {
       setSelectedMachineId(selectedMachine.id);
+    }
+    if (selectedMachine?.mill?.customer_id) {
+      setSelectedCustomerId(selectedMachine.mill.customer_id);
+      setValue('customer_id', selectedMachine.mill.customer_id);
+    } else if (selectedMachine) {
+      setSelectedCustomerId('');
+      setValue('customer_id', '');
     }
   }, [selectedMachine]);
 
@@ -366,19 +380,17 @@ export function StoreFormDrawer() {
       setSelectedCustomerId(customerIdWatch);
     } else {
       setSelectedCustomerId('');
-      setSelectedMillId('');
-      setSelectedMachineId('');
     }
   }, [customerIdWatch]);
 
   // Clean machine selection if it doesn't belong to the selected mill
   React.useEffect(() => {
     if (!selectedMillId || !selectedMachineId) return;
-    const match = masterMills.find((m) => m.id === selectedMachineId);
-    if (!match || match.mill_id !== selectedMillId) {
+    const match = searchedMasterMills.find((m) => m.id === selectedMachineId) || masterMills.find((m) => m.id === selectedMachineId);
+    if (match && match.mill_id !== selectedMillId) {
       setSelectedMachineId('');
     }
-  }, [selectedMillId, masterMills, selectedMachineId]);
+  }, [selectedMillId, masterMills, searchedMasterMills, selectedMachineId]);
 
   // Reset form and helpers when opening / closing the sheet
   React.useEffect(() => {
@@ -712,8 +724,9 @@ export function StoreFormDrawer() {
                               key={m.id}
                               type="button"
                               onClick={() => {
-                                // Set customer_id and prefill frame_number
+                                // Set mill_id, customer_id and prefill frame_number
                                 if (m.mill_id) {
+                                  setSelectedMillId(m.mill_id);
                                   const millCustomerId = m.mill?.customer_id;
                                   if (millCustomerId) {
                                     setValue('customer_id', millCustomerId);
@@ -723,6 +736,9 @@ export function StoreFormDrawer() {
                                     if (localMill?.customer_id) {
                                       setValue('customer_id', localMill.customer_id);
                                       setSelectedCustomerId(localMill.customer_id);
+                                    } else {
+                                      setValue('customer_id', '');
+                                      setSelectedCustomerId('');
                                     }
                                   }
                                 }
@@ -823,72 +839,70 @@ export function StoreFormDrawer() {
                   </div>
 
                   {/* Mill Selection (Optional helper) */}
-                  {selectedCustomerId && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
-                          <Building2 size={15} strokeWidth={2.5} className="text-primary" />
-                          Select Mill (Optional Helper)
-                        </Label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
-                            setExistingCustomerId(selectedCustomerId);
-                            setQuickMillName('');
-                            setQuickPhone('');
-                            setQuickAddress('');
-                            setQuickPlace('');
-                            setQuickState('');
-                            setQuickRefNo('');
-                            setIsMillNameManuallyEdited(false);
-                            setIsQuickCreateOpen(true);
-                          }}
-                          className="text-xs font-black text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <PlusCircle size={13} strokeWidth={2.5} />
-                          Quick Add Mill
-                        </button>
-                      </div>
-                      {mills.length > 0 ? (
-                        <Select
-                          onValueChange={(val) => {
-                            setSelectedMillId(val === 'clear' ? '' : val || '');
-                          }}
-                          value={selectedMillId || ''}
-                          items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
-                        >
-                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                            {selectedMillId ? (
-                              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                {mills.find((m) => m.id === selectedMillId)?.name ?? 'Unknown Mill'}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                                Select a mill to filter machines...
-                              </span>
-                            )}
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                            <SelectItem value="clear" className="font-bold py-3 text-gray-400">Clear Mill Filter</SelectItem>
-                            {filteredMills.length > 0 ? (
-                              filteredMills.map((mill) => (
-                                <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
-                                  {mill.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
-                                No mills found for this customer
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="h-11 bg-gray-50/50 dark:bg-white/5 rounded-xl animate-pulse" />
-                      )}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
+                        <Building2 size={15} strokeWidth={2.5} className="text-primary" />
+                        Select Mill (Optional Helper)
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
+                          setExistingCustomerId(selectedCustomerId);
+                          setQuickMillName('');
+                          setQuickPhone('');
+                          setQuickAddress('');
+                          setQuickPlace('');
+                          setQuickState('');
+                          setQuickRefNo('');
+                          setIsMillNameManuallyEdited(false);
+                          setIsQuickCreateOpen(true);
+                        }}
+                        className="text-xs font-black text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <PlusCircle size={13} strokeWidth={2.5} />
+                        Quick Add Mill
+                      </button>
                     </div>
-                  )}
+                    {mills.length > 0 ? (
+                      <Select
+                        onValueChange={(val) => {
+                          setSelectedMillId(val === 'clear' ? '' : val || '');
+                        }}
+                        value={selectedMillId || ''}
+                        items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
+                      >
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                          {selectedMillId ? (
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                              {mills.find((m) => m.id === selectedMillId)?.name ?? (selectedMachine?.mill_id === selectedMillId ? selectedMachine?.mill?.name : null) ?? 'Unknown Mill'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                              Select a mill to filter machines...
+                            </span>
+                          )}
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
+                          <SelectItem value="clear" className="font-bold py-3 text-gray-400">Clear Mill Filter</SelectItem>
+                          {filteredMills.length > 0 ? (
+                            filteredMills.map((mill) => (
+                              <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
+                                {mill.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
+                              No mills found
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="h-11 bg-gray-50/50 dark:bg-white/5 rounded-xl animate-pulse" />
+                    )}
+                  </div>
 
                   {/* Machine / Installation Record Helper Dropdown */}
                   {selectedMillId && (
