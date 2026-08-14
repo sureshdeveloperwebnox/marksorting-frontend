@@ -139,9 +139,9 @@ function SectionHeader({
   color?: string;
 }) {
   return (
-    <div className="flex items-center gap-2 pt-2 pb-1 border-b border-gray-100 dark:border-white/5 mb-4">
-      <Icon size={14} className={cn('flex-shrink-0', color)} />
-      <span className={cn('text-[11px] font-black uppercase tracking-[0.14em]', color)}>
+    <div className="flex items-center gap-2 pt-3 pb-1.5 border-b border-gray-100 dark:border-white/5 mb-4">
+      <Icon size={15} className={cn('flex-shrink-0', color)} />
+      <span className={cn('text-xs font-black uppercase tracking-[0.14em]', color)}>
         {title}
       </span>
     </div>
@@ -151,7 +151,7 @@ function SectionHeader({
 /* ── Field Label Component ──────────────────────────────────── */
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+    <Label className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
       {children}
     </Label>
   );
@@ -556,7 +556,7 @@ export function MasterMillFormDrawer() {
                   <Input
                     {...register('invoice_no')}
                     placeholder="e.g. INV-0036"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                   />
                   {errors.invoice_no && (
                     <p className="text-[11px] text-rose-500 font-bold ml-1">
@@ -589,7 +589,7 @@ export function MasterMillFormDrawer() {
                   <Input
                     {...register('ref_no')}
                     placeholder="e.g. P-0005-17-18"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                   />
                   
                   {/* Inline warning and suggestion checklist when Ref No is not found */}
@@ -681,7 +681,7 @@ export function MasterMillFormDrawer() {
                     }
                     disabled
                     placeholder="Auto-resolved from selected mill"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm text-gray-500 dark:text-gray-400 disabled:opacity-80"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm text-gray-500 dark:text-gray-400 disabled:opacity-80"
                   />
                 </div>
 
@@ -693,7 +693,7 @@ export function MasterMillFormDrawer() {
                   <Input
                     {...register('address')}
                     placeholder="Full address"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                   />
                 </div>
 
@@ -706,7 +706,7 @@ export function MasterMillFormDrawer() {
                     <Input
                       {...register('place')}
                       placeholder="City / Town"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -759,7 +759,7 @@ export function MasterMillFormDrawer() {
                   <Input
                     {...register('mc_model')}
                     placeholder="e.g. RX-40 B FOR ZX-40"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                   />
                 </div>
                 <div className="space-y-2 col-span-2 sm:col-span-1">
@@ -767,7 +767,7 @@ export function MasterMillFormDrawer() {
                   <Input
                     {...register('frame_no')}
                     placeholder="Frame or serial number"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                   />
                 </div>
                 <div className="space-y-2 col-span-2 sm:col-span-1">
@@ -804,7 +804,7 @@ export function MasterMillFormDrawer() {
                     type="number"
                     min={0}
                     placeholder="e.g. 12"
-                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                    className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                   />
                 </div>
 
@@ -894,7 +894,7 @@ export function MasterMillFormDrawer() {
                       type="number"
                       min={0}
                       placeholder="12"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                     />
                   </div>
                 </div>
@@ -909,7 +909,7 @@ export function MasterMillFormDrawer() {
                         value={field.value || ''}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm">
+                        <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm">
                           <SelectValue placeholder="Select AMC Particular" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 dark:border-white/10">
@@ -957,7 +957,7 @@ export function MasterMillFormDrawer() {
                       min={0}
                       step="0.01"
                       placeholder="0.00"
-                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                     />
                   </div>
                 </div>
@@ -978,7 +978,7 @@ export function MasterMillFormDrawer() {
                         { value: 'INACTIVE', label: 'Inactive' }
                       ]}
                     >
-                      <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-sm">
+                      <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-gray-100 shadow-xl">

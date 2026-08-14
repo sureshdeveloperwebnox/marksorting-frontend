@@ -191,7 +191,7 @@ export function UserFormDrawer() {
                 {/* Images Upload Option */}
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100 dark:border-white/5">
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest">Profile Photo</Label>
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest">Profile Photo</Label>
                     <ImageUpload
                       value={watch('profile_image')}
                       previewUrl={isEdit ? userData?.profile_image_url : undefined}
@@ -201,7 +201,7 @@ export function UserFormDrawer() {
                     />
                   </div>
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest">Cover Photo</Label>
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest">Cover Photo</Label>
                     <ImageUpload
                       value={watch('background_image')}
                       previewUrl={isEdit ? userData?.background_image_url : undefined}
@@ -214,36 +214,36 @@ export function UserFormDrawer() {
 
                 {/* Full Name Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <UserIcon size={14} className="text-primary/70" />
                     Full Name
                   </Label>
                   <Input 
                     {...register('full_name')}
                     placeholder="Enter full name" 
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                   />
-                  {errors.full_name && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.full_name.message}</p>}
+                  {errors.full_name && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.full_name.message}</p>}
                 </div>
 
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Mail size={14} className="text-primary/70" />
                     Email Address
                   </Label>
                   <Input 
                     {...register('email')}
                     placeholder="name@example.com" 
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                   />
-                  {errors.email && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.email.message}</p>}
+                  {errors.email && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.email.message}</p>}
                 </div>
 
                 {/* Password Field */}
                 {!isEdit && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Lock size={14} className="text-primary/70" />
                       Password
                     </Label>
@@ -252,7 +252,7 @@ export function UserFormDrawer() {
                         {...register('password')}
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••" 
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold pr-10"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium pr-10"
                       />
                       <button
                         type="button"
@@ -262,13 +262,13 @@ export function UserFormDrawer() {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
-                    {errors.password && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.password.message}</p>}
+                    {errors.password && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.password.message}</p>}
                   </div>
                 )}
 
                 {isEdit && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Lock size={14} className="text-primary/70" />
                       Password
                     </Label>
@@ -277,7 +277,7 @@ export function UserFormDrawer() {
                         {...register('password')}
                         type={showPassword ? "text" : "password"}
                         placeholder="Leave blank to keep current" 
-                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold pr-10"
+                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium pr-10"
                       />
                       <button
                         type="button"
@@ -287,13 +287,13 @@ export function UserFormDrawer() {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
-                    {errors.password && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.password.message}</p>}
+                    {errors.password && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.password.message}</p>}
                   </div>
                 )}
 
                 {/* Phone Number Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Phone size={14} className="text-primary/70" />
                     Phone Number
                   </Label>
@@ -310,7 +310,7 @@ export function UserFormDrawer() {
                     )}
                   />
                   {errors.phone_number && (
-                    <p className="text-[11px] text-rose-500 font-bold ml-1">
+                    <p className="text-[11px] text-rose-500 font-medium ml-1">
                       {errors.phone_number.message}
                     </p>
                   )}
@@ -318,7 +318,7 @@ export function UserFormDrawer() {
 
                 {/* Role Selection */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Globe size={14} className="text-primary/70" />
                     User Role
                   </Label>
@@ -327,9 +327,9 @@ export function UserFormDrawer() {
                     value={watch('role_id') || undefined}
                     items={roles?.map(r => ({ value: r.id, label: r.name }))}
                   >
-                    <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                    <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                       {watch('role_id') ? (
-                        <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
                           {roles?.find((r) => r.id === watch('role_id'))?.name ?? 'Unknown Role'}
                         </span>
                       ) : (
@@ -340,18 +340,18 @@ export function UserFormDrawer() {
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                       {roles?.map((role) => (
-                        <SelectItem key={role.id} value={role.id} className="font-bold py-3">
+                        <SelectItem key={role.id} value={role.id} className="font-medium py-3">
                           {role.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.role_id && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.role_id.message}</p>}
+                  {errors.role_id && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.role_id.message}</p>}
                 </div>
 
                 {/* Account Status */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <RefreshCcw size={14} className="text-primary/70" />
                     Account Status
                   </Label>
@@ -364,13 +364,13 @@ export function UserFormDrawer() {
                       { value: 'LOCKED', label: 'Locked' }
                     ]}
                   >
-                    <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                    <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                      <SelectItem value="ACTIVE" className="font-bold py-3 text-emerald-500">Active</SelectItem>
-                      <SelectItem value="INACTIVE" className="font-bold py-3 text-amber-500">Inactive</SelectItem>
-                      <SelectItem value="LOCKED" className="font-bold py-3 text-rose-500">Locked</SelectItem>
+                      <SelectItem value="ACTIVE" className="font-medium py-3 text-emerald-500">Active</SelectItem>
+                      <SelectItem value="INACTIVE" className="font-medium py-3 text-amber-500">Inactive</SelectItem>
+                      <SelectItem value="LOCKED" className="font-medium py-3 text-rose-500">Locked</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

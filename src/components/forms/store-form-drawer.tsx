@@ -647,7 +647,7 @@ export function StoreFormDrawer() {
                 
                 {/* Service Engineer Selection */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Wrench size={14} className="text-primary/70" />
                     Service Engineer
                   </Label>
@@ -687,7 +687,7 @@ export function StoreFormDrawer() {
 
                   {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
                   <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
                       Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                     </Label>
@@ -785,7 +785,7 @@ export function StoreFormDrawer() {
                   {/* Customer Selection */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Users size={14} className="text-primary/70" />
                         Customer Selection
                       </Label>
@@ -826,7 +826,7 @@ export function StoreFormDrawer() {
                   {selectedCustomerId && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                           <Building2 size={14} className="text-primary/70" />
                           Select Mill (Optional Helper)
                         </Label>
@@ -894,7 +894,7 @@ export function StoreFormDrawer() {
                   {selectedMillId && (
                     <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
                       <div className="flex items-center justify-between mb-1.5">
-                        <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                           <Cpu size={14} className="text-primary/70" />
                           Select Machine (REF NO / Frame No)
                         </Label>
@@ -1000,7 +1000,7 @@ export function StoreFormDrawer() {
 
                   {/* Warranty Status (Moved directly below Machine) */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <ShieldAlert size={14} className="text-primary/70" />
                       Warranty Status
                     </Label>
@@ -1029,7 +1029,7 @@ export function StoreFormDrawer() {
 
                   {/* Service Type Dropdown (New Field) */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Wrench size={14} className="text-primary/70" />
                       Service Type
                     </Label>
@@ -1060,7 +1060,7 @@ export function StoreFormDrawer() {
 
                   {/* Return Status */}
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Clock size={14} className="text-primary/70" />
                       Return Status
                     </Label>
@@ -1090,7 +1090,7 @@ export function StoreFormDrawer() {
 
                   {/* Warranty & AMC Details (Display Information Only) */}
                   <div className="space-y-2 p-4 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Clock size={14} className="text-primary/70" />
                       Warranty &amp; AMC Details
                     </Label>
@@ -1177,7 +1177,7 @@ export function StoreFormDrawer() {
                   </div>
                                 {/* Material Selection */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Package size={14} className="text-primary/70" />
                     Material Selection
                   </Label>
@@ -1462,7 +1462,7 @@ export function StoreFormDrawer() {
 
                 {/* Quantity */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Hash size={14} className="text-primary/70" />
                     Total Quantity (Auto-Calculated)
                   </Label>
@@ -1479,7 +1479,7 @@ export function StoreFormDrawer() {
 
                 {/* Frame Number */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Hash size={14} className="text-primary/70" />
                     Frame Number
                   </Label>
@@ -1497,7 +1497,7 @@ export function StoreFormDrawer() {
 
                 {/* Provider Name */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Users size={14} className="text-primary/70" />
                     Shipment Provider (Optional)
                   </Label>
@@ -1511,7 +1511,7 @@ export function StoreFormDrawer() {
 
                 {/* Invoice/Receipt Number */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Hash size={14} className="text-primary/70" />
                     Shipment Number (Optional)
                   </Label>
@@ -1525,7 +1525,7 @@ export function StoreFormDrawer() {
 
                 {/* Remarks */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     Remarks (Optional)
                   </Label>
                   <Textarea

@@ -209,25 +209,25 @@ export default function TicketsPage() {
       accessorKey: "subject",
       header: "Subject / Description",
       cell: ({ row }) => (
-        <div className="flex items-start gap-3.5 max-w-[240px] sm:max-w-[280px]">
+        <div className="flex items-start gap-3 max-w-[180px] xl:max-w-[240px]">
           <div className="relative group flex-shrink-0 mt-0.5">
             <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-all duration-500" />
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-semibold text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-105">
-              <Ticket size={16} />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-semibold text-sm relative border border-primary/10 transition-transform duration-500 group-hover:scale-105">
+              <Ticket size={15} />
             </div>
           </div>
-          <div className="flex flex-col gap-1 overflow-hidden">
-            <span className="font-semibold text-[14px] text-gray-900 dark:text-white tracking-tight truncate">
+          <div className="flex flex-col gap-0.5 overflow-hidden min-w-0">
+            <span className="font-semibold text-[13px] text-gray-900 dark:text-white tracking-tight truncate block" title={row.original.subject}>
               {row.original.subject}
             </span>
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <span className="text-gray-450 dark:text-gray-500 font-medium text-xs line-clamp-1 cursor-help text-left block w-full" />
+                  <span className="text-gray-400 dark:text-gray-500 font-medium text-xs truncate cursor-help text-left block w-full">
+                    {row.original.description}
+                  </span>
                 }
-              >
-                {row.original.description}
-              </TooltipTrigger>
+              />
               <TooltipContent>
                 {row.original.description}
               </TooltipContent>
@@ -240,25 +240,25 @@ export default function TicketsPage() {
       accessorKey: "service_engineer.full_name",
       header: "Service Engineer",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-w-[180px] xl:max-w-[220px]">
           <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-500 dark:text-slate-400 flex-shrink-0">
             <User size={12} />
           </div>
-          <div className="flex flex-col items-start gap-0.5">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-gray-800 dark:text-gray-200 font-semibold text-sm">
+          <div className="flex flex-col items-start gap-0.5 overflow-hidden min-w-0">
+            <div className="flex items-center gap-1.5 max-w-full">
+              <span className="text-gray-800 dark:text-gray-200 font-semibold text-sm truncate">
                 {row.original.service_engineer?.full_name || "Unassigned"}
               </span>
               {row.original.service_engineer && (
                 <Badge
                   variant="outline"
-                  className="text-[9px] uppercase tracking-wider px-1.5 py-0 rounded font-black bg-blue-500/5 text-blue-500 border-blue-500/20"
+                  className="text-[9px] uppercase tracking-wider px-1.5 py-0 rounded font-black bg-blue-500/5 text-blue-500 border-blue-500/20 shrink-0"
                 >
                   Engineer
                 </Badge>
               )}
             </div>
-            <span className="text-gray-400 dark:text-gray-500 font-medium text-xs">
+            <span className="text-gray-400 dark:text-gray-500 font-medium text-xs truncate max-w-full block" title={row.original.service_engineer?.email || ""}>
               {row.original.service_engineer?.email || ""}
             </span>
           </div>
@@ -269,11 +269,11 @@ export default function TicketsPage() {
       accessorKey: "customer.name",
       header: "Customer / Mill",
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5">
-          <span className="text-gray-800 dark:text-gray-200 font-semibold text-sm">
+        <div className="flex flex-col gap-0.5 max-w-[150px] xl:max-w-[190px] overflow-hidden min-w-0">
+          <span className="text-gray-800 dark:text-gray-200 font-semibold text-sm truncate block" title={row.original.customer?.name || "No customer"}>
             {row.original.customer?.name || "No customer"}
           </span>
-          <span className="text-gray-400 dark:text-gray-500 font-medium text-xs">
+          <span className="text-gray-400 dark:text-gray-500 font-medium text-xs truncate block" title={row.original.mill?.name || "No mill selected"}>
             {row.original.mill?.name || "No mill selected"}
           </span>
         </div>
@@ -288,7 +288,7 @@ export default function TicketsPage() {
           <Badge
             variant="outline"
             className={cn(
-              "rounded-md font-semibold text-[10px] uppercase tracking-[0.12em] px-2.5 py-0.5 shadow-sm border",
+              "rounded-md font-semibold text-[10px] uppercase tracking-[0.12em] px-2 py-0.5 shadow-sm border whitespace-nowrap",
               getPriorityColors(priority)
             )}
           >
@@ -301,8 +301,8 @@ export default function TicketsPage() {
       accessorKey: "created_at",
       header: "Created Date",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1.5">
-          <Calendar size={13} className="text-gray-405 dark:text-gray-500" />
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <Calendar size={13} className="text-gray-400 dark:text-gray-500 shrink-0" />
           <span className="text-gray-500 dark:text-gray-400 font-medium text-sm">
             {row.original.created_at ? format(new Date(row.original.created_at), "MMM dd, yyyy") : "—"}
           </span>
@@ -318,7 +318,7 @@ export default function TicketsPage() {
         return (
           <button
             onClick={() => openTimelineDrawer(ticketId)}
-            className="flex items-center gap-2 cursor-pointer outline-none select-none group/status hover:scale-105 active:scale-95 transition-all duration-300"
+            className="flex items-center gap-2 cursor-pointer outline-none select-none group/status hover:scale-105 active:scale-95 transition-all duration-300 whitespace-nowrap"
           >
             <div className={cn("w-2 h-2 rounded-full", getStatusDotColors(status))} />
             <Badge
@@ -338,7 +338,7 @@ export default function TicketsPage() {
       id: "actions",
       header: () => <div className="text-right w-full font-bold">Actions</div>,
       cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
           <ViewButton
             onClick={() => openViewDrawer(row.original.id)}
             title="View Ticket Details"
@@ -346,28 +346,28 @@ export default function TicketsPage() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-xl text-primary dark:text-orange-400 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 hover:text-orange-600 hover:bg-orange-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            className="h-8 w-8 rounded-xl text-primary dark:text-orange-400 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-100/50 dark:border-orange-900/30 hover:text-orange-600 hover:bg-orange-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
             onClick={() => openTimelineDrawer(row.original.id)}
             title="View Ticket Timeline"
           >
-            <History className="h-4 w-4" />
+            <History className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
+            className="h-8 w-8 rounded-xl text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100/50 dark:border-amber-900/30 hover:text-amber-700 hover:bg-amber-100/80 hover:scale-110 active:scale-95 transition-all duration-300 shadow-sm"
             onClick={() => openFormDrawer(row.original.id)}
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
+            className="h-8 w-8 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 hover:text-rose-700 hover:bg-rose-100/80 hover:scale-110 active:scale-95 transition-all duration-300 hover:shadow-[0_0_12px_rgba(244,63,94,0.15)] shadow-sm"
             onClick={() => setDeleteId(row.original.id)}
             disabled={deleteMutation.isPending}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       ),

@@ -192,49 +192,49 @@ export function MillFormDrawer() {
               <div className="space-y-4">
                 {/* Mill Name Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Factory size={14} className="text-primary/70" />
                     Mill Name
                   </Label>
                   <Input
                     {...register('name')}
                     placeholder="Enter mill name"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                   />
-                  {errors.name && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.name.message}</p>}
+                  {errors.name && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.name.message}</p>}
                 </div>
 
                 {/* Ref No Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Hash size={14} className="text-primary/70" />
                     Ref No
                   </Label>
                   <Input
                     {...register('ref_no')}
                     placeholder="Enter reference number (Optional)"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                   />
-                  {errors.ref_no && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.ref_no.message}</p>}
+                  {errors.ref_no && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.ref_no.message}</p>}
                 </div>
 
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Mail size={14} className="text-primary/70" />
                     Email Address
                   </Label>
                   <Input
                     {...register('email')}
                     placeholder="contact@mill.com (Optional)"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                   />
-                  {errors.email && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.email.message}</p>}
+                  {errors.email && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.email.message}</p>}
                 </div>
 
                 {/* Phone Number Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Phone size={14} className="text-primary/70" />
                     Contact No.
                   </Label>
@@ -251,7 +251,7 @@ export function MillFormDrawer() {
                     )}
                   />
                   {errors.phone && (
-                    <p className="text-[11px] text-rose-500 font-bold ml-1">
+                    <p className="text-[11px] text-rose-500 font-medium ml-1">
                       {errors.phone.message}
                     </p>
                   )}
@@ -261,7 +261,7 @@ export function MillFormDrawer() {
                 {showPhone2 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Phone size={14} className="text-primary/70" />
                         Contact No. 2
                       </Label>
@@ -290,7 +290,7 @@ export function MillFormDrawer() {
                       )}
                     />
                     {errors.phone_2 && (
-                      <p className="text-[11px] text-rose-500 font-bold ml-1">
+                      <p className="text-[11px] text-rose-500 font-medium ml-1">
                         {errors.phone_2.message}
                       </p>
                     )}
@@ -301,7 +301,7 @@ export function MillFormDrawer() {
                 {showPhone3 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                         <Phone size={14} className="text-primary/70" />
                         Contact No. 3
                       </Label>
@@ -330,7 +330,7 @@ export function MillFormDrawer() {
                       )}
                     />
                     {errors.phone_3 && (
-                      <p className="text-[11px] text-rose-500 font-bold ml-1">
+                      <p className="text-[11px] text-rose-500 font-medium ml-1">
                         {errors.phone_3.message}
                       </p>
                     )}
@@ -348,7 +348,7 @@ export function MillFormDrawer() {
                         setShowPhone3(true);
                       }
                     }}
-                    className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-primary/5 hover:bg-primary/10 transition-all duration-300 w-fit cursor-pointer border border-primary/10"
+                    className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-primary/5 hover:bg-primary/10 transition-all duration-300 w-fit cursor-pointer border border-primary/10"
                   >
                     <Plus size={14} />
                     Add Alternate Contact
@@ -357,49 +357,49 @@ export function MillFormDrawer() {
 
                 {/* Location/Address Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <MapPin size={14} className="text-primary/70" />
                     Location / Address
                   </Label>
                   <Input
                     {...register('address')}
                     placeholder="Enter complete address (Optional)"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                   />
-                  {errors.address && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.address.message}</p>}
+                  {errors.address && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.address.message}</p>}
                 </div>
 
                 {/* Place and City Fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
                       Place
                     </Label>
                     <Input
                       {...register('place')}
                       placeholder="Enter place (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
-                    {errors.place && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.place.message}</p>}
+                    {errors.place && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.place.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
                       City
                     </Label>
                     <Input
                       {...register('city')}
                       placeholder="Enter city (Optional)"
-                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                      className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                     />
-                    {errors.city && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.city.message}</p>}
+                    {errors.city && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.city.message}</p>}
                   </div>
                 </div>
 
                 {/* Customer */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Users size={14} className="text-primary/70" />
                     Customer
                     <span className="text-gray-400 font-normal normal-case tracking-normal text-[11px]">(Optional)</span>
@@ -413,9 +413,9 @@ export function MillFormDrawer() {
                         value={field.value || ''}
                         items={customers.map((c) => ({ value: c.id, label: c.name }))}
                       >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                           {field.value ? (
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
                               {customers.find((c) => c.id === field.value)?.name ?? 'Unknown Customer'}
                             </span>
                           ) : (
@@ -423,9 +423,9 @@ export function MillFormDrawer() {
                           )}
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-[300px] overflow-y-auto">
-                          <SelectItem value="" className="font-bold py-3 text-gray-400">None / Clear</SelectItem>
+                          <SelectItem value="" className="font-medium py-3 text-gray-400">None / Clear</SelectItem>
                           {customers.map((cust) => (
-                            <SelectItem key={cust.id} value={cust.id} className="font-bold py-3">
+                            <SelectItem key={cust.id} value={cust.id} className="font-medium py-3">
                               {cust.name}
                             </SelectItem>
                           ))}
@@ -433,12 +433,12 @@ export function MillFormDrawer() {
                       </Select>
                     )}
                   />
-                  {errors.customer_id && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.customer_id.message}</p>}
+                  {errors.customer_id && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.customer_id.message}</p>}
                 </div>
 
                 {/* Mill Status */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <RefreshCcw size={14} className="text-primary/70" />
                     Mill Status
                   </Label>
@@ -451,13 +451,13 @@ export function MillFormDrawer() {
                       { value: 'CLOSED', label: 'Closed' }
                     ]}
                   >
-                    <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                    <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                      <SelectItem value="ACTIVE" className="font-bold py-3 text-emerald-500">Active</SelectItem>
-                      <SelectItem value="INACTIVE" className="font-bold py-3 text-amber-500">Inactive</SelectItem>
-                      <SelectItem value="CLOSED" className="font-bold py-3 text-rose-500">Closed</SelectItem>
+                      <SelectItem value="ACTIVE" className="font-medium py-3 text-emerald-500">Active</SelectItem>
+                      <SelectItem value="INACTIVE" className="font-medium py-3 text-amber-500">Inactive</SelectItem>
+                      <SelectItem value="CLOSED" className="font-medium py-3 text-rose-500">Closed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

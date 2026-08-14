@@ -127,7 +127,7 @@ export function ExpenseCategoryFormDrawer() {
                             <div className="space-y-4">
                                 {/* Category Name Field */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                         <Tag size={14} className="text-primary/70" />
                                         Category Name
                                         <span className="text-rose-500">*</span>
@@ -135,14 +135,14 @@ export function ExpenseCategoryFormDrawer() {
                                     <Input
                                         {...register('name')}
                                         placeholder="Enter category name"
-                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                                     />
-                                    {errors.name && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.name.message}</p>}
+                                    {errors.name && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.name.message}</p>}
                                 </div>
 
                                 {/* Description Field */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                         <AlignLeft size={14} className="text-primary/70" />
                                         Description
                                         <span className="text-gray-400 font-normal normal-case tracking-normal text-[11px]">(Optional)</span>
@@ -150,14 +150,14 @@ export function ExpenseCategoryFormDrawer() {
                                     <Input
                                         {...register('description')}
                                         placeholder="Enter description (Optional)"
-                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                                     />
-                                    {errors.description && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.description.message}</p>}
+                                    {errors.description && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.description.message}</p>}
                                 </div>
 
                                 {/* Status Field */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                         <RefreshCcw size={14} className="text-primary/70" />
                                         Category Status
                                     </Label>
@@ -165,15 +165,15 @@ export function ExpenseCategoryFormDrawer() {
                                         onValueChange={(val) => setValue('status', val ?? 'ACTIVE')}
                                         value={watch('status')}
                                     >
-                                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                                            <SelectItem value="ACTIVE" className="font-bold py-3 text-emerald-500">Active</SelectItem>
-                                            <SelectItem value="INACTIVE" className="font-bold py-3 text-amber-500">Inactive</SelectItem>
+                                            <SelectItem value="ACTIVE" className="font-medium py-3 text-emerald-500">Active</SelectItem>
+                                            <SelectItem value="INACTIVE" className="font-medium py-3 text-amber-500">Inactive</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    {errors.status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.status.message}</p>}
+                                    {errors.status && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.status.message}</p>}
                                 </div>
                             </div>
                         </form>

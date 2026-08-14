@@ -290,7 +290,7 @@ export function TicketFormDrawer() {
 
                             {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
                             <div className="space-y-1.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                                <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                     <Cpu size={14} className="text-primary/70" />
                                     Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                                 </Label>
@@ -298,7 +298,7 @@ export function TicketFormDrawer() {
                                     value={machineSearchQuery}
                                     onChange={(e) => setMachineSearchQuery(e.target.value)}
                                     placeholder="Type REF NO, Frame No, Customer or Mill to search..."
-                                    className="h-11 bg-white dark:bg-gray-905 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                                    className="h-11 bg-white dark:bg-gray-905 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                                 />
                                 
                                 {/* Search Results List */}
@@ -660,7 +660,7 @@ export function TicketFormDrawer() {
                           }}
                           disabled={!!existingCustomerId}
                           placeholder="e.g. Seva Mandir"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                         
                         {/* Duplicate warnings/suggestions */}
@@ -698,7 +698,7 @@ export function TicketFormDrawer() {
                             setIsMillNameManuallyEdited(true);
                           }}
                           placeholder="e.g. Seva Mandir Mill 1"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -711,7 +711,7 @@ export function TicketFormDrawer() {
                           value={quickRefNo}
                           onChange={(e) => setQuickRefNo(e.target.value)}
                           placeholder="e.g. P-0005"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -724,7 +724,7 @@ export function TicketFormDrawer() {
                           value={quickAddress}
                           onChange={(e) => setQuickAddress(e.target.value)}
                           placeholder="e.g. 123 Main Street"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -737,7 +737,7 @@ export function TicketFormDrawer() {
                           value={quickPlace}
                           onChange={(e) => setQuickPlace(e.target.value)}
                           placeholder="e.g. Coimbatore"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -915,7 +915,7 @@ export function TicketFormDrawer() {
                           value={quickInvoiceNo}
                           onChange={(e) => setQuickInvoiceNo(e.target.value)}
                           placeholder="e.g. INV-0036"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -940,7 +940,7 @@ export function TicketFormDrawer() {
                           value={quickMasterMillRefNo}
                           onChange={(e) => setQuickMasterMillRefNo(e.target.value)}
                           placeholder="e.g. P-0005"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -953,7 +953,7 @@ export function TicketFormDrawer() {
                           value={quickMcModel}
                           onChange={(e) => setQuickMcModel(e.target.value)}
                           placeholder="e.g. RX-40"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -966,7 +966,7 @@ export function TicketFormDrawer() {
                           value={quickFrameNo}
                           onChange={(e) => setQuickFrameNo(e.target.value)}
                           placeholder="e.g. Frame 12345"
-                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                          className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                         />
                       </div>
 
@@ -990,7 +990,7 @@ export function TicketFormDrawer() {
                             type="number"
                             value={quickWarrantyYears}
                             onChange={(e) => setQuickWarrantyYears(Number(e.target.value))}
-                            className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm"
+                            className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-medium text-sm"
                           />
                         </div>
                         <div className="space-y-1.5">

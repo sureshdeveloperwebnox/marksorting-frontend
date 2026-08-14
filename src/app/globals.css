@@ -271,6 +271,15 @@
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
+/* Scrollbar Hide Utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
@@ -294,7 +303,7 @@ input:placeholder-shown:not([type="checkbox"]):not([type="radio"]),
 textarea:placeholder-shown {
   background-color: rgba(249, 250, 251, 0.8);
   border: 1px solid rgba(229, 231, 235, 0.8);
-  font-weight: 500;
+  font-weight: 450;
   color: #111827;
 }
 
@@ -302,24 +311,26 @@ textarea:placeholder-shown {
 .dark textarea:placeholder-shown {
   background-color: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 450;
   color: #f9fafb;
 }
 
 /* Filled Input state (Value provided) */
 input:not(:placeholder-shown):not([type="checkbox"]):not([type="radio"]),
 textarea:not(:placeholder-shown) {
-  background-color: rgba(234, 88, 12, 0.04);
+  background-color: rgba(234, 88, 12, 0.03);
   border: 1px solid rgba(234, 88, 12, 0.25);
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: 500;
+  color: #111827;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .dark input:not(:placeholder-shown):not([type="checkbox"]):not([type="radio"]),
 .dark textarea:not(:placeholder-shown) {
-  background-color: rgba(234, 88, 12, 0.12);
+  background-color: rgba(234, 88, 12, 0.1);
   border: 1px solid rgba(234, 88, 12, 0.35);
-  color: #ffffff;
+  font-weight: 500;
+  color: #f9fafb;
 }
 
 /* Focus state */
@@ -327,5 +338,16 @@ input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: rgba(234, 88, 12, 0.6);
   box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Universal Field Titles / Labels Boldness
+   ───────────────────────────────────────────────────────────── */
+label,
+[data-slot="label"],
+.field-label,
+.form-label {
+  font-weight: 800 !important;
+  letter-spacing: 0.08em;
 }
 

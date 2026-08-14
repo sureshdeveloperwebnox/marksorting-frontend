@@ -32,6 +32,9 @@ import {
   FileText,
   CheckCircle,
   XCircle,
+  Shield,
+  RotateCcw,
+  CheckCircle2,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -200,28 +203,70 @@ function FieldError({ message }: { message?: string }) {
 
 const getStatusColors = (status?: string) => {
   switch (status?.toUpperCase()) {
-    case "PENDING": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
-    case "IN_PROGRESS": return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500 dark:border-blue-400";
-    case "COMPLETED": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
-    case "CANCELLED": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
-    default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
+    case "PENDING": return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
+    case "IN_PROGRESS": return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30";
+    case "COMPLETED": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+    case "CANCELLED": return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30";
+    default: return "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30";
+  }
+};
+
+const getStatusDotBg = (status?: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING": return "bg-amber-500";
+    case "IN_PROGRESS": return "bg-blue-500";
+    case "COMPLETED": return "bg-emerald-500";
+    case "CANCELLED": return "bg-rose-500";
+    default: return "bg-gray-400";
   }
 };
 
 const getStatusLabel = (status?: string) => {
   switch (status?.toUpperCase()) {
-    case "PENDING": return "PENDING";
-    case "IN_PROGRESS": return "IN PROGRESS";
-    case "COMPLETED": return "APPROVED";
-    case "CANCELLED": return "REJECTED";
+    case "PENDING": return "Pending";
+    case "IN_PROGRESS": return "In Progress";
+    case "COMPLETED": return "Approved";
+    case "CANCELLED": return "Rejected";
     default: return status || "";
   }
 };
 
+const EXPENSE_STATUS_OPTIONS = [
+  {
+    value: "PENDING",
+    label: "Pending",
+    icon: Clock,
+    iconColor: "text-amber-500",
+    activeClasses: "bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 font-bold",
+  },
+  {
+    value: "IN_PROGRESS",
+    label: "In Progress",
+    icon: RotateCcw,
+    iconColor: "text-blue-500",
+    activeClasses: "bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-500/20 font-bold",
+  },
+  {
+    value: "COMPLETED",
+    label: "Approved",
+    icon: CheckCircle2,
+    iconColor: "text-emerald-500",
+    activeClasses: "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-500/20 font-bold",
+  },
+  {
+    value: "CANCELLED",
+    label: "Rejected",
+    icon: XCircle,
+    iconColor: "text-rose-500",
+    activeClasses: "bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-500/20 font-bold",
+  },
+];
+
 export function ExpenseFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedId } = useExpenseStore();
   const isEdit = !!selectedId;
-  const [statusToSet, setStatusToSet] = React.useState<string | undefined>(undefined);
+  const [selectedStatus, setSelectedStatus] = React.useState<string>('PENDING');
+  const [isUpdatingStatusAlone, setIsUpdatingStatusAlone] = React.useState(false);
 
   const { data: expenseData, isLoading: expenseLoading } = useExpense(selectedId);
   const { data: millsData } = useMills({ skip: 0, take: 500 });
@@ -427,7 +472,7 @@ export function ExpenseFormDrawer() {
       initializedFormKeyRef.current = null;
       setSelectedCustomerId('');
       setSelectedMachineId('');
-      setStatusToSet(undefined);
+      setSelectedStatus('PENDING');
       return;
     }
 
@@ -440,6 +485,7 @@ export function ExpenseFormDrawer() {
 
     if (isFormDrawerOpen) {
       if (isEdit && expenseData) {
+        setSelectedStatus(expenseData.status || 'PENDING');
         const mill = mills.find((m) => m.id === expenseData.mill_id);
         const newCustId = mill?.customer_id || '';
         if (selectedCustomerId !== newCustId) {
@@ -492,6 +538,7 @@ export function ExpenseFormDrawer() {
       } else if (!isEdit) {
         setSelectedCustomerId('');
         setSelectedMachineId('');
+        setSelectedStatus('PENDING');
         reset({
           expense_type: 'MILL',
           technician_ids: [],
@@ -553,6 +600,20 @@ export function ExpenseFormDrawer() {
     setValue('expense_items', updated, { shouldValidate: true });
   };
 
+  const handleUpdateStatusAlone = async (statusToApply?: string) => {
+    const statusVal = statusToApply || selectedStatus;
+    if (!selectedId || !statusVal) return;
+    try {
+      setIsUpdatingStatusAlone(true);
+      await updateExpense({ id: selectedId, status: statusVal });
+      setSelectedStatus(statusVal);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    } finally {
+      setIsUpdatingStatusAlone(false);
+    }
+  };
+
   const onSubmit: SubmitHandler<ExpenseFormValues> = async (data) => {
     try {
       const payload: any = {
@@ -569,11 +630,8 @@ export function ExpenseFormDrawer() {
         })),
       };
 
-      if (statusToSet) {
-        payload.status = statusToSet;
-      }
-
       if (isEdit) {
+        payload.status = selectedStatus;
         await updateExpense({ id: selectedId, ...payload });
       } else {
         await createExpense(payload);
@@ -670,9 +728,85 @@ export function ExpenseFormDrawer() {
             </div>
           ) : (
             <form id="expense-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
+              {/* Expense Status Management Card (Edit Mode) */}
+              {isEdit && (
+                <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-5 shadow-sm space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Shield size={14} className="text-primary/70" />
+                      Expense Status
+                    </Label>
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border uppercase tracking-wider",
+                      getStatusColors(selectedStatus)
+                    )}>
+                      <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", getStatusDotBg(selectedStatus))} />
+                      {getStatusLabel(selectedStatus)}
+                    </span>
+                  </div>
+
+                  {/* 4 Status Option Pills */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {EXPENSE_STATUS_OPTIONS.map((opt) => {
+                      const isSelected = selectedStatus === opt.value;
+                      const Icon = opt.icon;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setSelectedStatus(opt.value)}
+                          className={cn(
+                            "flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+                            isSelected
+                              ? opt.activeClasses
+                              : "bg-gray-50/70 dark:bg-white/5 border-gray-200/70 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"
+                          )}
+                        >
+                          <Icon size={14} className={isSelected ? "text-white" : opt.iconColor} />
+                          <span>{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Update Status Alone Button */}
+                  <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                      {selectedStatus !== expenseData?.status
+                        ? `Ready to update status to "${getStatusLabel(selectedStatus)}".`
+                        : "Select any status above to update it alone."}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isUpdatingStatusAlone || isSubmitting || selectedStatus === expenseData?.status}
+                      onClick={() => handleUpdateStatusAlone(selectedStatus)}
+                      className={cn(
+                        "h-9 px-4 rounded-xl text-xs font-bold text-white shadow-md transition-all duration-200 shrink-0 flex items-center gap-1.5",
+                        selectedStatus !== expenseData?.status
+                          ? "bg-primary hover:bg-primary/90 shadow-primary/20"
+                          : "bg-gray-300 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-70"
+                      )}
+                    >
+                      {isUpdatingStatusAlone ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Updating Status...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Update Status Alone
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Expense Type Select Card */}
               <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-xl p-5 space-y-3">
-                <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                   <Tag size={14} className="text-primary/70" />
                   Expense Type *
                 </Label>
@@ -701,7 +835,7 @@ export function ExpenseFormDrawer() {
                 <div className="space-y-4">
                   {/* Select Service Engineers */}
                   <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Users size={14} className="text-primary/70" />
                       Select Service Engineers *
                     </Label>
@@ -909,7 +1043,7 @@ export function ExpenseFormDrawer() {
                     <>
                       {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
                       <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                        <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                           <Cpu size={14} className="text-primary/70" />
                           Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                         </Label>
@@ -1007,7 +1141,7 @@ export function ExpenseFormDrawer() {
                       {/* Customer Dropdown */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                          <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                             <Users size={14} className="text-primary/70" />
                             Customer (Optional)
                           </Label>
@@ -1067,7 +1201,7 @@ export function ExpenseFormDrawer() {
                       {/* Mill Name */}
                       <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                          <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                             <Building2 size={14} className="text-primary/70" />
                             Select Mill (Optional)
                           </Label>
@@ -1137,7 +1271,7 @@ export function ExpenseFormDrawer() {
                       {selectedMillId && (
                         <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
                           <div className="flex items-center justify-between mb-1.5">
-                            <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                            <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                               <Cpu size={14} className="text-primary/70" />
                               Select Machine (REF NO / Frame No)
                             </Label>
@@ -1249,7 +1383,7 @@ export function ExpenseFormDrawer() {
                   {/* Others — only for non-MILL expense types */}
                   {expenseType === 'OTHERS' && (
                     <div className="space-y-2" data-error={errors.others ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Tag size={14} className="text-primary/70" />
                         Others
                       </Label>
@@ -1264,7 +1398,7 @@ export function ExpenseFormDrawer() {
 
                   {/* Place */}
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
                       Place {expenseType === 'OTHERS' && '*'}
                     </Label>
@@ -1281,7 +1415,7 @@ export function ExpenseFormDrawer() {
               {/* Section 3 - Date */}
               <SectionToggle section={sections[2]} isOpen={!!openSections[3]} onToggle={toggleSection}>
                 <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <CalendarDays size={14} className="text-primary/70" />
                     Date *
                   </Label>
@@ -1306,7 +1440,7 @@ export function ExpenseFormDrawer() {
 
                   {/* Section Header + quick-add button */}
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Tag size={14} className="text-primary/70" />
                       Expense Categories *
                     </Label>
@@ -1377,7 +1511,7 @@ export function ExpenseFormDrawer() {
                           {/* ── Category dropdown + delete button ── */}
                           <div className="flex items-start gap-3">
                             <div className="flex-1 space-y-1.5">
-                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-1.5">
+                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
                                 <Tag size={12} className="text-primary/70" />
                                 Category *
                               </Label>
@@ -1446,7 +1580,7 @@ export function ExpenseFormDrawer() {
                           {/* ── Amount + Remarks ── */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                 <DollarSign size={14} className="text-primary/70" />
                                 Amount (₹) *
                               </Label>
@@ -1474,7 +1608,7 @@ export function ExpenseFormDrawer() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                 <FileText size={14} className="text-primary/70" />
                                 Remarks
                               </Label>
@@ -1503,7 +1637,7 @@ export function ExpenseFormDrawer() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Receipt Images */}
                             <div className="space-y-2">
-                              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                 <ImageIcon size={14} className="text-primary/70" />
                                 Receipt Images
                               </Label>
@@ -1560,7 +1694,7 @@ export function ExpenseFormDrawer() {
                             <div className="space-y-4">
                               {/* Admin Expense Amount */}
                               <div className="space-y-2">
-                                <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                   <DollarSign size={14} className="text-primary/70" />
                                   Admin Expense Amount (₹)
                                 </Label>
@@ -1582,7 +1716,7 @@ export function ExpenseFormDrawer() {
 
                               {/* Admin Remarks */}
                               <div className="space-y-2">
-                                <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                                   <FileText size={14} className="text-primary/70" />
                                   Admin Remarks
                                 </Label>
@@ -1632,91 +1766,34 @@ export function ExpenseFormDrawer() {
 
         <SheetFooter className="px-6 py-4 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900 z-10">
           <div className="flex flex-col gap-3 w-full">
-            {isEdit && (expenseData?.status === "COMPLETED" || expenseData?.status === "CANCELLED") ? (
-              <div className="flex items-center justify-between gap-3 w-full">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Status:</span>
-                  <span className={cn(
-                    "inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold border uppercase tracking-wider",
-                    getStatusColors(expenseData.status)
-                  )}>
-                    {getStatusLabel(expenseData.status)}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeFormDrawer}
-                  className="w-32 h-11 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
-                >
-                  Close
-                </Button>
-              </div>
-            ) : (
-              <>
-                {isEdit && (
-                  <div className="flex gap-3 w-full">
-                    <Button
-                      type="submit"
-                      form="expense-report-form"
-                      onClick={() => setStatusToSet("COMPLETED")}
-                      disabled={isSubmitting}
-                      className="flex-1 h-11 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/10 flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting && statusToSet === "COMPLETED" ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4" />
-                      )}
-                      Approve
-                    </Button>
-                    <Button
-                      type="submit"
-                      form="expense-report-form"
-                      onClick={() => setStatusToSet("CANCELLED")}
-                      disabled={isSubmitting}
-                      className="flex-1 h-11 rounded-xl text-sm font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/10 flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting && statusToSet === "CANCELLED" ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <XCircle className="w-4 h-4" />
-                      )}
-                      Reject
-                    </Button>
-                  </div>
+            <div className="flex gap-3 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeFormDrawer}
+                className="flex-1 h-11 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="expense-report-form"
+                disabled={isSubmitting || isUpdatingStatusAlone}
+                className="flex-1 h-11 rounded-xl text-sm font-bold bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/20"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {isEdit ? 'Save Changes' : 'Create Expense'}
+                  </>
                 )}
-                <div className="flex gap-3 w-full">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={closeFormDrawer}
-                    className="flex-1 h-11 rounded-xl text-sm font-semibold border-gray-200 dark:border-white/10 text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    form="expense-report-form"
-                    onClick={() => setStatusToSet(undefined)}
-                    disabled={isSubmitting}
-                    className="flex-1 h-11 rounded-xl text-sm font-bold bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/20"
-                  >
-                    {isSubmitting && !statusToSet ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        {isEdit ? 'Save Changes' : 'Create Expense'}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
+              </Button>
+            </div>
           </div>
         </SheetFooter>
 

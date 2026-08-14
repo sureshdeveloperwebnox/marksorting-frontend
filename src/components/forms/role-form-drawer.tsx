@@ -215,37 +215,37 @@ export function RoleFormDrawer() {
               <form id="role-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {/* Role Name */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Shield size={14} className="text-primary/70" />
                     Role Name
                   </Label>
                   <Input
                     {...register('name')}
                     placeholder="Enter role name (e.g., Manager)"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                   />
-                  {errors.name && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.name.message}</p>}
+                  {errors.name && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.name.message}</p>}
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <FileText size={14} className="text-primary/70" />
                     Description
                   </Label>
                   <Textarea
                     {...register('description')}
                     placeholder="Describe the role responsibilities (Optional)"
-                    className="min-h-[80px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold resize-none"
+                    className="min-h-[80px] bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium resize-none"
                   />
-                  {errors.description && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.description.message}</p>}
+                  {errors.description && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.description.message}</p>}
                 </div>
               </form>
 
               {/* Permissions Section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Check size={14} className="text-primary/70" />
                     Module Permissions
                     <span className="ml-1 text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">

@@ -36,6 +36,10 @@ import {
   ChevronDown,
   ChevronRight,
   PlusCircle,
+  Shield,
+  RotateCcw,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -195,7 +199,7 @@ function SectionToggle({
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <section.icon size={16} className="text-primary" />
           </div>
-          <span className="font-bold text-sm text-gray-800 dark:text-gray-200">
+          <span className="font-black text-sm text-gray-900 dark:text-white tracking-tight">
             {section.id}. {section.title}
           </span>
         </div>
@@ -233,9 +237,72 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-[11px] text-rose-500 font-bold ml-1">{message}</p> : null;
 }
 
+const getStatusColors = (status?: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING": return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
+    case "IN_PROGRESS": return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30";
+    case "COMPLETED": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+    case "CANCELLED": return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30";
+    default: return "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30";
+  }
+};
+
+const getStatusDotBg = (status?: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING": return "bg-amber-500";
+    case "IN_PROGRESS": return "bg-blue-500";
+    case "COMPLETED": return "bg-emerald-500";
+    case "CANCELLED": return "bg-rose-500";
+    default: return "bg-gray-400";
+  }
+};
+
+const getStatusLabel = (status?: string) => {
+  switch (status?.toUpperCase()) {
+    case "PENDING": return "Pending";
+    case "IN_PROGRESS": return "Work In Progress";
+    case "COMPLETED": return "Completed";
+    case "CANCELLED": return "Cancelled";
+    default: return status || "";
+  }
+};
+
+const SERVICE_REPORT_STATUS_OPTIONS = [
+  {
+    value: "PENDING",
+    label: "Pending",
+    icon: Clock,
+    iconColor: "text-amber-500",
+    activeClasses: "bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 font-bold",
+  },
+  {
+    value: "IN_PROGRESS",
+    label: "In Progress",
+    icon: RotateCcw,
+    iconColor: "text-blue-500",
+    activeClasses: "bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-500/20 font-bold",
+  },
+  {
+    value: "COMPLETED",
+    label: "Completed",
+    icon: CheckCircle2,
+    iconColor: "text-emerald-500",
+    activeClasses: "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-500/20 font-bold",
+  },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    icon: XCircle,
+    iconColor: "text-rose-500",
+    activeClasses: "bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-500/20 font-bold",
+  },
+];
+
 export function ServiceReportFormDrawer() {
   const { isFormDrawerOpen, closeFormDrawer, selectedId } = useServiceReportStore();
   const isEdit = !!selectedId;
+  const [selectedStatus, setSelectedStatus] = React.useState<string>('PENDING');
+  const [isUpdatingStatusAlone, setIsUpdatingStatusAlone] = React.useState(false);
 
   const { data: reportData, isLoading: reportLoading } = useServiceReport(selectedId);
   const { data: categoriesData } = useServiceCategories({ skip: 0, take: 500 });
@@ -500,6 +567,7 @@ export function ServiceReportFormDrawer() {
       initializedFormKeyRef.current = null;
       setSelectedCustomerId('');
       setSelectedMachineId('');
+      setSelectedStatus('PENDING');
       return;
     }
 
@@ -512,6 +580,7 @@ export function ServiceReportFormDrawer() {
 
     if (isFormDrawerOpen) {
       if (isEdit && reportData) {
+        setSelectedStatus(reportData.status || 'PENDING');
         const mill = mills.find((m) => m.id === reportData.mill_id);
         setSelectedCustomerId(mill?.customer_id || '');
         reset({
@@ -555,6 +624,7 @@ export function ServiceReportFormDrawer() {
       } else if (!isEdit) {
         setSelectedCustomerId('');
         setSelectedMachineId('');
+        setSelectedStatus('PENDING');
         reset({
           service_category_id: '',
           technician_ids: [],
@@ -787,6 +857,26 @@ export function ServiceReportFormDrawer() {
     }
   };
 
+  const handleSelectStatus = (newStatus: string) => {
+    setSelectedStatus(newStatus);
+    setValue('status', newStatus, { shouldValidate: true });
+  };
+
+  const handleUpdateStatusAlone = async (statusToApply?: string) => {
+    const statusVal = statusToApply || selectedStatus;
+    if (!selectedId || !statusVal) return;
+    try {
+      setIsUpdatingStatusAlone(true);
+      await updateReport({ id: selectedId, status: statusVal });
+      setSelectedStatus(statusVal);
+      setValue('status', statusVal, { shouldValidate: true });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    } finally {
+      setIsUpdatingStatusAlone(false);
+    }
+  };
+
   const isLoading = isEdit && reportLoading;
   const isSubmitting = isCreating || isUpdating || isUploading;
 
@@ -951,10 +1041,86 @@ export function ServiceReportFormDrawer() {
             </div>
           ) : (
             <form id="service-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-3 min-w-0">
+              {/* Work Status Management Card (Edit Mode) */}
+              {isEdit && (
+                <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Shield size={14} className="text-primary/70" />
+                      Work Status
+                    </Label>
+                    <span className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border uppercase tracking-wider",
+                      getStatusColors(selectedStatus)
+                    )}>
+                      <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", getStatusDotBg(selectedStatus))} />
+                      {getStatusLabel(selectedStatus)}
+                    </span>
+                  </div>
+
+                  {/* Status Option Pills */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {SERVICE_REPORT_STATUS_OPTIONS.map((opt) => {
+                      const isSelected = selectedStatus === opt.value;
+                      const Icon = opt.icon;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleSelectStatus(opt.value)}
+                          className={cn(
+                            "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+                            isSelected
+                              ? opt.activeClasses
+                              : "bg-gray-50/70 dark:bg-white/5 border-gray-200/70 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"
+                          )}
+                        >
+                          <Icon size={14} className={isSelected ? "text-white" : opt.iconColor} />
+                          <span>{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Quick Update Status Alone Button */}
+                  <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                      {selectedStatus !== reportData?.status
+                        ? `Ready to update status to "${getStatusLabel(selectedStatus)}".`
+                        : "Select any status above to update it alone."}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isUpdatingStatusAlone || isSubmitting || selectedStatus === reportData?.status}
+                      onClick={() => handleUpdateStatusAlone(selectedStatus)}
+                      className={cn(
+                        "h-8 px-3.5 rounded-xl text-xs font-bold text-white shadow-md transition-all duration-200 shrink-0 flex items-center gap-1.5",
+                        selectedStatus !== reportData?.status
+                          ? "bg-primary hover:bg-primary/90 shadow-primary/20"
+                          : "bg-gray-300 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-70"
+                      )}
+                    >
+                      {isUpdatingStatusAlone ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Updating Status...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Update Status Alone
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Section 1 - General Information */}
               <SectionToggle section={sections[0]} isOpen={!!openSections[1]} onToggle={toggleSection}>
                   <div className="space-y-2" data-error={errors.service_category_id ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Tag size={14} className="text-primary/70" />
                       Service Category
                     </Label>
@@ -985,7 +1151,7 @@ export function ServiceReportFormDrawer() {
               {/* Section 2 - Service Engineer Details */}
               <SectionToggle section={sections[1]} isOpen={!!openSections[2]} onToggle={toggleSection}>
                 <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
-                  <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                     <Users size={14} className="text-primary/70" />
                     Service Engineers
                   </Label>
@@ -1009,7 +1175,7 @@ export function ServiceReportFormDrawer() {
                 <div className="space-y-4">
                   {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
                   <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
                       Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                     </Label>
@@ -1032,7 +1198,7 @@ export function ServiceReportFormDrawer() {
                           <div className="divide-y divide-gray-100 dark:divide-white/5">
                             {serviceBased.length > 0 && (
                               <div>
-                                <div className="px-3 py-1.5 text-[10px] font-semibold text-primary bg-primary/5 dark:bg-primary/10 tracking-wider uppercase select-none">
+                                <div className="px-3 py-1.5 text-[10px] font-black text-primary bg-primary/5 dark:bg-primary/10 tracking-wider uppercase select-none">
                                   Service-Based Machines
                                 </div>
                                 {serviceBased.map((m: any) => (
@@ -1122,7 +1288,7 @@ export function ServiceReportFormDrawer() {
                   {/* Customer Dropdown */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Users size={14} className="text-primary/70" />
                         Customer
                       </Label>
@@ -1184,7 +1350,7 @@ export function ServiceReportFormDrawer() {
                   {/* Mill Dropdown */}
                   <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Building2 size={14} className="text-primary/70" />
                         Mill
                       </Label>
@@ -1256,7 +1422,7 @@ export function ServiceReportFormDrawer() {
                   {selectedMillId && (
                     <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
                       <div className="flex items-center justify-between mb-1.5">
-                        <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                           <Cpu size={14} className="text-primary/70" />
                           Select Machine (REF NO / Frame No)
                         </Label>
@@ -1379,7 +1545,7 @@ export function ServiceReportFormDrawer() {
                   )}
 
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
                       Place
                     </Label>
@@ -1393,7 +1559,7 @@ export function ServiceReportFormDrawer() {
 
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Mail size={14} className="text-primary/70" />
                       Mill Email ID
                     </Label>
@@ -1411,7 +1577,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[3]} isOpen={!!openSections[4]} onToggle={toggleSection}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <CalendarDays size={14} className="text-primary/70" />
                       Visit Date
                     </Label>
@@ -1430,7 +1596,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.call_registered_date ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Calendar size={14} className="text-primary/70" />
                       Call Registered Date
                     </Label>
@@ -1455,7 +1621,7 @@ export function ServiceReportFormDrawer() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.machine_model ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Cpu size={14} className="text-primary/70" />
                         Machine Model
                       </Label>
@@ -1468,7 +1634,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.serial_or_frame_no ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Tag size={14} className="text-primary/70" />
                         Serial No / Frame No
                       </Label>
@@ -1483,7 +1649,7 @@ export function ServiceReportFormDrawer() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
                         Mfg Date
                       </Label>
@@ -1502,7 +1668,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
                         Installation Date
                       </Label>
@@ -1521,7 +1687,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.authorized_person ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Users size={14} className="text-primary/70" />
                         Authorized Person
                       </Label>
@@ -1536,7 +1702,7 @@ export function ServiceReportFormDrawer() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.authorized_person_phone ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Phone size={14} className="text-primary/70" />
                         Authorized Person Contact No
                       </Label>
@@ -1562,7 +1728,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[5]} isOpen={!!openSections[6]} onToggle={toggleSection}>
                 <div className="space-y-4">
                   <div className="space-y-2" data-error={errors.nature_of_complaint ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Nature of Complaint
                     </Label>
@@ -1575,7 +1741,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Problem Observed
                     </Label>
@@ -1588,7 +1754,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.action_taken ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Wrench size={14} className="text-primary/70" />
                       Action Taken
                     </Label>
@@ -1606,7 +1772,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[6]} isOpen={!!openSections[7]} onToggle={toggleSection}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Package size={14} className="text-primary/70" />
                       Commodity
                     </Label>
@@ -1618,7 +1784,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Contamination
                     </Label>
@@ -1630,7 +1796,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Output Capacity/Hour
                     </Label>
@@ -1642,7 +1808,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Rejection Ratio
                     </Label>
@@ -1654,7 +1820,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Purity
                     </Label>
@@ -1666,7 +1832,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
                       No of Programs Set
                     </Label>
@@ -1686,7 +1852,7 @@ export function ServiceReportFormDrawer() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.ac_provided ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         AC Provided
                       </Label>
@@ -1710,7 +1876,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.auto_drain_valve_working ? 'true' : undefined}>
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         Auto Drain Valve Working
                       </Label>
@@ -1735,7 +1901,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Compressor Details
                     </Label>
@@ -1747,7 +1913,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Air Drier Details
                     </Label>
@@ -1760,7 +1926,7 @@ export function ServiceReportFormDrawer() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Line Filter Condition
                       </Label>
@@ -1772,7 +1938,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Machine Filter Condition
                       </Label>
@@ -1790,7 +1956,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[8]} isOpen={!!openSections[9]} onToggle={toggleSection}>
                 <div className="space-y-6">
                   <div className="space-y-2" data-error={errors.status ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Tag size={14} className="text-primary/70" />
                       Work Status
                     </Label>
@@ -1816,7 +1982,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.engineer_remarks ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Pen size={14} className="text-primary/70" />
                       Engineer Remarks
                     </Label>
@@ -1829,7 +1995,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.engineer_signature ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Pen size={14} className="text-primary/70" />
                       Engineer Signature
                     </Label>
@@ -1844,7 +2010,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Customer Remarks
                     </Label>
@@ -1857,7 +2023,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.customer_signature ? 'true' : undefined}>
-                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                       <Pen size={14} className="text-primary/70" />
                       Customer Signature
                     </Label>

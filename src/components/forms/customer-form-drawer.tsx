@@ -135,39 +135,39 @@ export function CustomerFormDrawer() {
 
                                 {/* Customer Name */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                                         <User size={14} className="text-primary/70" />
                                         Customer Name
                                     </Label>
                                     <Input
                                         {...register('name')}
                                         placeholder="Enter customer name"
-                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                                     />
                                     {errors.name && (
-                                        <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.name.message}</p>
+                                        <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.name.message}</p>
                                     )}
                                 </div>
 
                                 {/* Email */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                                         <Mail size={14} className="text-primary/70" />
                                         Email Address
                                     </Label>
                                     <Input
                                         {...register('email')}
                                         placeholder="customer@example.com (Optional)"
-                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                                     />
                                     {errors.email && (
-                                        <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.email.message}</p>
+                                        <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.email.message}</p>
                                     )}
                                 </div>
 
                                 {/* Phone */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                                         <Phone size={14} className="text-primary/70" />
                                         Contact No.
                                     </Label>
@@ -184,29 +184,29 @@ export function CustomerFormDrawer() {
                                         )}
                                     />
                                     {errors.phone && (
-                                        <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.phone.message}</p>
+                                        <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.phone.message}</p>
                                     )}
                                 </div>
 
                                 {/* Address */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                                         <MapPin size={14} className="text-primary/70" />
                                         Address
                                     </Label>
                                     <Input
                                         {...register('address')}
                                         placeholder="Enter complete address (Optional)"
-                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                                        className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
                                     />
                                     {errors.address && (
-                                        <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.address.message}</p>
+                                        <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.address.message}</p>
                                     )}
                                 </div>
 
                                 {/* Status */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                                         <RefreshCcw size={14} className="text-primary/70" />
                                         Customer Status
                                     </Label>
@@ -218,12 +218,12 @@ export function CustomerFormDrawer() {
                                             { value: 'INACTIVE', label: 'Inactive' }
                                         ]}
                                     >
-                                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                                            <SelectItem value="ACTIVE" className="font-bold py-3 text-emerald-500">Active</SelectItem>
-                                            <SelectItem value="INACTIVE" className="font-bold py-3 text-amber-500">Inactive</SelectItem>
+                                            <SelectItem value="ACTIVE" className="font-medium py-3 text-emerald-500">Active</SelectItem>
+                                            <SelectItem value="INACTIVE" className="font-medium py-3 text-amber-500">Inactive</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

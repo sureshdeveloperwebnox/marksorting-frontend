@@ -130,7 +130,7 @@ export function MaterialFormDrawer({
           <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide pb-24 space-y-6">
             {/* Material Name */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                 <Package size={14} className="text-primary/70" />
                 Material Name <span className="text-rose-500 font-black">*</span>
               </Label>
@@ -146,7 +146,7 @@ export function MaterialFormDrawer({
 
             {/* UOM (Unit of Measurement) */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                 <Ruler size={14} className="text-primary/70" />
                 UOM (Unit of Measurement)
               </Label>
@@ -173,7 +173,7 @@ export function MaterialFormDrawer({
 
             {/* Status */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                 <CheckCircle2 size={14} className="text-primary/70" />
                 Status
               </Label>
@@ -196,7 +196,7 @@ export function MaterialFormDrawer({
 
             {/* Description / Remarks */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold text-primary uppercase tracking-widest flex items-center gap-2">
+              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
                 <FileText size={14} className="text-primary/70" />
                 Description / Notes
               </Label>
