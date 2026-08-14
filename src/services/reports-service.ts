@@ -13,6 +13,7 @@ export interface ReportsServiceReport {
     report_number: string;
     place: string;
     visit_date: string;
+    created_at?: string;
     nature_of_complaint: string;
     status: string;
     mill: { id: string; name: string };
@@ -25,6 +26,7 @@ export interface ReportsInstallationReport {
     report_number: string;
     place: string;
     visit_date: string;
+    created_at?: string;
     machine_model: string;
     serial_or_frame_no: string;
     status: string;

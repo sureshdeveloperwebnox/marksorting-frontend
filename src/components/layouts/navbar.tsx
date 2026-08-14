@@ -199,9 +199,24 @@ const navItems: NavItem[] = [
   {
     label: 'Stores',
     icon: StoreIcon,
-    href: '/stores',
     module: 'stores',
     action: 'view',
+    subItems: [
+      {
+        label: 'Store Management',
+        href: '/stores',
+        icon: StoreIcon,
+        module: 'stores',
+        action: 'view',
+      },
+      {
+        label: 'Material List',
+        href: '/stores/materials',
+        icon: StoreIcon,
+        module: 'stores',
+        action: 'view',
+      },
+    ],
   },
   {
     label: 'Reports',
@@ -329,8 +344,8 @@ function DropdownNavItem({
         className={cn(
           'relative flex items-center gap-1 px-1.5 min-[1360px]:px-2 min-[1600px]:px-2.5 py-2 text-[11px] min-[1360px]:text-xs min-[1600px]:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group select-none',
           isGroupActive
-            ? 'text-primary'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+            ? 'text-primary font-bold bg-primary/5 dark:bg-primary/10'
+            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
         )}
       >
         {item.label}
@@ -341,19 +356,6 @@ function DropdownNavItem({
             isOpen && 'rotate-180'
           )}
         />
-        {/* Active pill background */}
-        {isGroupActive && (
-          <motion.span
-            layoutId="navbar-active-pill"
-            className="absolute inset-0 bg-primary/8 dark:bg-primary/15 rounded-lg"
-            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-          />
-        )}
-        {/* Hover / active underline */}
-        <span className={cn(
-          'absolute bottom-0 left-2 min-[1360px]:left-3 right-2 min-[1360px]:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
-          isGroupActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
-        )} />
       </button>
 
       <AnimatePresence>
@@ -610,22 +612,11 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
                   className={cn(
                     'relative flex items-center gap-1 px-1.5 min-[1360px]:px-2 min-[1600px]:px-2.5 py-2 text-[11px] min-[1360px]:text-xs min-[1600px]:text-sm font-semibold rounded-lg transition-all duration-200 whitespace-nowrap group',
                     active
-                      ? 'text-primary'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+                      ? 'text-primary font-bold bg-primary/5 dark:bg-primary/10'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
                   )}
                 >
                   {item.label}
-                  {active && (
-                    <motion.span
-                      layoutId="navbar-active-pill"
-                      className="absolute inset-0 bg-primary/8 dark:bg-primary/15 rounded-lg"
-                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                    />
-                  )}
-                  <span className={cn(
-                    'absolute bottom-0 left-1 min-[1360px]:left-2 min-[1600px]:left-3 right-1 min-[1360px]:right-2 min-[1600px]:right-3 h-[2px] rounded-full bg-primary transition-all duration-300',
-                    active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
-                  )} />
                 </Link>
               );
             });

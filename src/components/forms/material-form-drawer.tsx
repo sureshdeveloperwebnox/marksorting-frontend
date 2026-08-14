@@ -114,7 +114,7 @@ export function MaterialFormDrawer({
             </div>
             <div>
               <SheetTitle className="text-xl">
-                {isEdit ? "Edit Material Master" : "Add Material Master"}
+                {isEdit ? "Edit Material" : "Add Material"}
               </SheetTitle>
               <SheetDescription>
                 {isEdit

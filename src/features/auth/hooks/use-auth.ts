@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
+import { useLayoutStore } from '@/store/layout-store';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -36,6 +37,7 @@ export function useAuth() {
       const decoded = decodeJwt(access_token);
       const expiresAt = decoded?.exp ? decoded.exp * 1000 : null;
       setAuth(user, expiresAt);
+      useLayoutStore.getState().setLayoutType('navbar');
       toast.success('Account created! Welcome to Marksorting.');
       router.push('/dashboard');
     },
@@ -54,6 +56,7 @@ export function useAuth() {
       const decoded = decodeJwt(access_token);
       const expiresAt = decoded?.exp ? decoded.exp * 1000 : null;
       setAuth(user, expiresAt);
+      useLayoutStore.getState().setLayoutType('navbar');
       toast.success('Welcome back!');
       router.push('/dashboard');
     },

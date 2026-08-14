@@ -613,10 +613,19 @@ export default function ReportsPage() {
             ),
         },
         {
+            accessorKey: "created_at",
+            header: "Created Date",
+            cell: ({ row }) => (
+                <span className="text-gray-500 dark:text-gray-400">
+                    {row.original.created_at ? format(new Date(row.original.created_at), "dd-MM-yyyy") : "—"}
+                </span>
+            ),
+        },
+        {
             accessorKey: "visit_date",
             header: "Visit Date",
             cell: ({ row }) => (
-                <span className="text-gray-500 dark:text-gray-400">
+                <span className="text-gray-700 dark:text-gray-300 font-semibold">
                     {row.original.visit_date ? format(new Date(row.original.visit_date), "dd-MM-yyyy") : "—"}
                 </span>
             ),
@@ -683,10 +692,19 @@ export default function ReportsPage() {
             ),
         },
         {
+            accessorKey: "created_at",
+            header: "Created Date",
+            cell: ({ row }) => (
+                <span className="text-gray-500 dark:text-gray-400">
+                    {row.original.created_at ? format(new Date(row.original.created_at), "dd-MM-yyyy") : "—"}
+                </span>
+            ),
+        },
+        {
             accessorKey: "visit_date",
             header: "Visit Date",
             cell: ({ row }) => (
-                <span className="text-gray-500 dark:text-gray-400">
+                <span className="text-gray-700 dark:text-gray-300 font-semibold">
                     {row.original.visit_date ? format(new Date(row.original.visit_date), "dd-MM-yyyy") : "—"}
                 </span>
             ),

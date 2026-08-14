@@ -195,7 +195,7 @@ const items: SidebarItem[] = [
         action: 'view',
       },
       {
-        label: 'Material Master',
+        label: 'Material List',
         href: '/stores/materials',
         icon: StoreIcon,
         module: 'stores',

@@ -75,7 +75,7 @@ export default function MaterialsPage() {
             </div>
             <div>
               <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                Material Master
+                Material List
               </h1>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                 Manage material names, units of measurement (UOM), and auto-populated return items
