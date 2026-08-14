@@ -348,6 +348,7 @@ export function ExpenseFormDrawer() {
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
+  const [selectedMillObj, setSelectedMillObj] = React.useState<any>(null);
   const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true });
   const [activeUploadIndex, setActiveUploadIndex] = React.useState<number | null>(null);
   const [reportTypeRadio, setReportTypeRadio] = React.useState<'none' | 'service' | 'installation'>('none');
@@ -437,11 +438,18 @@ export function ExpenseFormDrawer() {
 
 
   const filteredMills = React.useMemo(() => {
-    if (!selectedCustomerId) {
-      return mills.filter((m) => m.id === selectedMillId);
+    let baseMills = mills;
+    if (selectedMillObj) {
+      const exists = baseMills.some((m) => m.id === selectedMillObj.id);
+      if (!exists) {
+        baseMills = [selectedMillObj, ...baseMills];
+      }
     }
-    return mills.filter((m) => m.customer_id === selectedCustomerId || m.id === selectedMillId);
-  }, [mills, selectedCustomerId, selectedMillId]);
+    if (!selectedCustomerId) {
+      return baseMills;
+    }
+    return baseMills.filter((m) => m.customer_id === selectedCustomerId || m.id === selectedMillId);
+  }, [mills, selectedCustomerId, selectedMillId, selectedMillObj]);
 
   // Autofill details based on selected Mill
   React.useEffect(() => {
@@ -1071,6 +1079,9 @@ export function ExpenseFormDrawer() {
                                     // Set mill_id and auto-resolve customer
                                     if (m.mill_id) {
                                       setValue('mill_id', m.mill_id);
+                                      if (m.mill) {
+                                        setSelectedMillObj(m.mill);
+                                      }
                                       // Use customer_id from API response first, then fallback to local lookup
                                       const millCustomerId = m.mill?.customer_id;
                                       if (millCustomerId) {
@@ -1079,6 +1090,8 @@ export function ExpenseFormDrawer() {
                                         const localMill = mills.find(millItem => millItem.id === m.mill_id);
                                         if (localMill?.customer_id) {
                                           setSelectedCustomerId(localMill.customer_id);
+                                        } else {
+                                          setSelectedCustomerId('');
                                         }
                                       }
                                     }
@@ -1239,11 +1252,11 @@ export function ExpenseFormDrawer() {
                             <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
                               {watch('mill_id') ? (
                                 <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                  {mills.find((m) => m.id === watch('mill_id'))?.name ?? 'Unknown Mill'}
+                                  {mills.find((m) => m.id === watch('mill_id'))?.name ?? (selectedMillObj?.id === watch('mill_id') ? selectedMillObj?.name : null) ?? 'Unknown Mill'}
                                 </span>
                               ) : (
                                 <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                                  {selectedCustomerId ? 'Select mill' : 'Select a customer first (Optional)'}
+                                  Select mill
                                 </span>
                               )}
                             </SelectTrigger>
@@ -1256,7 +1269,7 @@ export function ExpenseFormDrawer() {
                                 ))
                               ) : (
                                 <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
-                                  {selectedCustomerId ? "No mills found for this customer" : "Please select a customer first"}
+                                  No mills found
                                 </SelectItem>
                               )}
                             </SelectContent>

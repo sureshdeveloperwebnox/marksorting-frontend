@@ -129,6 +129,7 @@ export function TicketFormDrawer() {
 
     // Controlled machine selection state
     const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
+    const [selectedMillObj, setSelectedMillObj] = React.useState<any>(null);
 
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -316,6 +317,9 @@ export function TicketFormDrawer() {
                                                     type="button"
                                                     onClick={() => {
                                                         if (m.mill_id) {
+                                                            if (m.mill) {
+                                                                setSelectedMillObj(m.mill);
+                                                            }
                                                             const millCustomerId = m.mill?.customer_id;
                                                             if (millCustomerId) {
                                                                 setForm((f) => ({ ...f, customer_id: millCustomerId || "", mill_id: m.mill_id || "" }));
@@ -324,7 +328,7 @@ export function TicketFormDrawer() {
                                                                 if (localMill?.customer_id) {
                                                                     setForm((f) => ({ ...f, customer_id: localMill.customer_id || "", mill_id: m.mill_id || "" }));
                                                                 } else {
-                                                                    setForm((f) => ({ ...f, mill_id: m.mill_id || "" }));
+                                                                    setForm((f) => ({ ...f, customer_id: "", mill_id: m.mill_id || "" }));
                                                                 }
                                                             }
                                                         }
@@ -452,11 +456,17 @@ export function TicketFormDrawer() {
                                         <option value="">
                                             {isLoadingMills ? "Loading mills..." : "Select Mill (Optional)..."}
                                         </option>
-                                        {mills.map((mill) => (
-                                            <option key={mill.id} value={mill.id} className="bg-white dark:bg-gray-900">
-                                                {mill.name}
-                                            </option>
-                                        ))}
+                                        {(() => {
+                                             let allMills = mills;
+                                             if (selectedMillObj && !allMills.some((m) => m.id === selectedMillObj.id)) {
+                                                 allMills = [selectedMillObj, ...allMills];
+                                             }
+                                             return allMills.map((mill) => (
+                                                 <option key={mill.id} value={mill.id} className="bg-white dark:bg-gray-900">
+                                                     {mill.name}
+                                                 </option>
+                                             ));
+                                         })()}
                                     </select>
                                 </div>
                             )}
