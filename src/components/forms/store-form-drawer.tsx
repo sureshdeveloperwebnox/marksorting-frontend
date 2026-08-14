@@ -48,7 +48,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 
 const storeSchema = z.object({
   service_engineer_id: z.string().min(1, 'Service Engineer is required'),
-  customer_id: z.string().min(1, 'Customer is required'),
+  customer_id: z.string().optional().or(z.literal('')),
   material_ids: z.array(z.string()).min(1, 'At least one material must be selected'),
   material_quantities: z
     .array(
@@ -608,6 +608,7 @@ export function StoreFormDrawer() {
 
     const payload = {
       ...data,
+      customer_id: data.customer_id || undefined,
       remarks: finalRemarks || undefined,
       barcode: data.barcode || undefined,
       provider_name: data.provider_name || undefined,
@@ -803,7 +804,7 @@ export function StoreFormDrawer() {
                     <div className="flex items-center justify-between">
                       <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                         <Users size={15} strokeWidth={2.5} className="text-primary" />
-                        Customer Selection
+                        Customer Selection (Optional)
                       </Label>
                       <button
                         type="button"
@@ -830,7 +831,7 @@ export function StoreFormDrawer() {
                       control={control}
                       render={({ field }) => (
                         <CustomerSearchSelect
-                          value={field.value}
+                          value={field.value || ''}
                           onChange={field.onChange}
                         />
                       )}
