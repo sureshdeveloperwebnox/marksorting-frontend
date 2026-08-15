@@ -560,6 +560,31 @@ export function StoreFormDrawer() {
     toast.success('Unit barcodes auto-generated!');
   };
 
+  const onInvalid = (errors: any) => {
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length === 0) return;
+
+    const firstKey = errorKeys[0];
+    const targetElement =
+      document.querySelector(`[data-field="${firstKey}"]`) ||
+      document.getElementById(`field-${firstKey}`) ||
+      document.querySelector(`[name="${firstKey}"]`) ||
+      document.querySelector('.text-rose-500');
+
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const focusable = targetElement.querySelector<HTMLElement>(
+        'input:not([disabled]), select:not([disabled]), button:not([disabled]), textarea:not([disabled])'
+      );
+      if (focusable) {
+        setTimeout(() => focusable.focus({ preventScroll: true }), 150);
+      }
+    }
+
+    const firstMessage = errors[firstKey]?.message || 'Please fill in all mandatory fields';
+    toast.error(`Mandatory field missing: ${firstMessage}`);
+  };
+
   const onSubmit: SubmitHandler<StoreFormValues> = async (data) => {
     // Validate that all dynamic unit fields are filled
     const missingMap: Record<string, boolean> = {};
@@ -579,6 +604,17 @@ export function StoreFormDrawer() {
     if (hasMissingUnit) {
       setExpandedMaterials((prev) => ({ ...prev, ...missingMap }));
       toast.error('All dynamic unit fields (Unit 1, Unit 2, etc.) are mandatory! Please fill in all unit codes.');
+
+      const firstMissingMatId = Object.keys(missingMap)[0];
+      if (firstMissingMatId) {
+        setTimeout(() => {
+          const el = document.querySelector(`[data-material-id="${firstMissingMatId}"]`) ||
+                     document.querySelector(`[data-field="material_ids"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+      }
       return;
     }
 
@@ -655,11 +691,11 @@ export function StoreFormDrawer() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
-            <form id="store-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form id="store-form" onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-5">
               <div className="space-y-4">
                 
                 {/* Service Engineer Selection */}
-                <div className="space-y-2">
+                <div data-field="service_engineer_id" className="space-y-2">
                   <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     <Wrench size={15} strokeWidth={2.5} className="text-primary" />
                     Service Engineer
@@ -800,7 +836,7 @@ export function StoreFormDrawer() {
                   </div>
 
                   {/* Customer Selection */}
-                  <div className="space-y-2">
+                  <div data-field="customer_id" className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                         <Users size={15} strokeWidth={2.5} className="text-primary" />
@@ -1014,7 +1050,7 @@ export function StoreFormDrawer() {
                   )}
 
                   {/* Warranty Status (Moved directly below Machine) */}
-                  <div className="space-y-2">
+                  <div data-field="warranty_status" className="space-y-2">
                     <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                       <ShieldAlert size={15} strokeWidth={2.5} className="text-primary" />
                       Warranty Status
@@ -1043,7 +1079,7 @@ export function StoreFormDrawer() {
                   </div>
 
                   {/* Service Type Dropdown (New Field) */}
-                  <div className="space-y-2">
+                  <div data-field="service_type" className="space-y-2">
                     <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                       <Wrench size={15} strokeWidth={2.5} className="text-primary" />
                       Service Type
@@ -1074,7 +1110,7 @@ export function StoreFormDrawer() {
                   </div>
 
                   {/* Return Status */}
-                  <div className="space-y-2">
+                  <div data-field="return_status" className="space-y-2">
                     <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                       <Clock size={15} strokeWidth={2.5} className="text-primary" />
                       Return Status
@@ -1193,7 +1229,7 @@ export function StoreFormDrawer() {
                     </div>
                   </div>
                           {/* Material Selection */}
-                <div className="space-y-2">
+                <div data-field="material_ids" className="space-y-2">
                   <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     <Package size={15} strokeWidth={2.5} className="text-primary" />
                     Material Selection
@@ -1476,7 +1512,7 @@ export function StoreFormDrawer() {
                 </div>
 
                 {/* Quantity */}
-                <div className="space-y-2">
+                <div data-field="quantity" className="space-y-2">
                   <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     <Hash size={15} strokeWidth={2.5} className="text-primary" />
                     Total Quantity (Auto-Calculated)
@@ -1493,7 +1529,7 @@ export function StoreFormDrawer() {
                 </div>
 
                 {/* Frame Number */}
-                <div className="space-y-2">
+                <div data-field="frame_number" className="space-y-2">
                   <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     <Hash size={15} strokeWidth={2.5} className="text-primary" />
                     Frame Number
@@ -1507,7 +1543,7 @@ export function StoreFormDrawer() {
                 </div>
 
                 {/* Provider Name */}
-                <div className="space-y-2">
+                <div data-field="provider_name" className="space-y-2">
                   <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     <Users size={15} strokeWidth={2.5} className="text-primary" />
                     Shipment Provider (Optional)
@@ -1521,7 +1557,7 @@ export function StoreFormDrawer() {
                 </div>
 
                 {/* Invoice/Receipt Number */}
-                <div className="space-y-2">
+                <div data-field="invoice_number" className="space-y-2">
                   <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     <Hash size={15} strokeWidth={2.5} className="text-primary" />
                     Shipment Number (Optional)
@@ -1535,7 +1571,7 @@ export function StoreFormDrawer() {
                 </div>
 
                 {/* Remarks */}
-                <div className="space-y-2">
+                <div data-field="remarks" className="space-y-2">
                   <Label className="text-[13px] font-black text-primary uppercase tracking-wider flex items-center gap-2">
                     Remarks (Optional)
                   </Label>
