@@ -421,23 +421,37 @@ export default function StoresPage() {
               if (allMats.length === 0) return <span className="text-gray-400 text-xs">No barcode data available.</span>;
               return (
                 <div className="w-full space-y-4">
-                  {/* Courier details */}
-                  {(viewStoreData.provider_name || viewStoreData.invoice_number) && (
-                    <div className="flex flex-wrap gap-4 mb-2">
-                      {viewStoreData.provider_name && (
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Courier Service</span>
-                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.provider_name}</span>
-                        </div>
-                      )}
-                      {viewStoreData.invoice_number && (
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Tracking ID</span>
-                          <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.invoice_number}</span>
-                        </div>
-                      )}
+                  {/* Courier & Service Type / Acknowledgement details */}
+                  <div className="flex flex-wrap items-center gap-6 mb-3 p-3 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl">
+                    {viewStoreData.provider_name ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Courier Service</span>
+                        <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.provider_name}</span>
+                      </div>
+                    ) : null}
+                    {viewStoreData.invoice_number ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Tracking ID</span>
+                        <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.invoice_number}</span>
+                      </div>
+                    ) : null}
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Service Type / Acknowledgement</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs font-extrabold py-0.5 px-2.5 rounded-lg border",
+                            serviceType.toLowerCase() === 'acknowledgement'
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                              : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                          )}
+                        >
+                          {serviceType.toLowerCase() === 'acknowledgement' ? '✓ Acknowledgement' : '🔄 Replacement'}
+                        </Badge>
+                      </div>
                     </div>
-                  )}
+                  </div>
                   {allMats.map((m) => {
                     const serials = fullSerialMap[m.material.name] || [];
                     if (serials.length === 0) return null;
