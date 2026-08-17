@@ -128,7 +128,11 @@ const serviceReportSchema = z.object({
   authorized_person_phone: z
     .string()
     .optional()
-    .refine((val) => !val || isValidPhoneNumber(val), {
+    .refine((val) => {
+      if (!val) return true;
+      const normalized = normalizePhoneNumber(val);
+      return isValidPhoneNumber(normalized || val) || (val.replace(/\D/g, '').length >= 7 && val.replace(/\D/g, '').length <= 15);
+    }, {
       message: 'Please enter a valid phone number with country code',
     })
     .or(z.literal('')),
@@ -240,8 +244,9 @@ function FieldError({ message }: { message?: string }) {
 const getStatusColors = (status?: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30";
-    case "IN_PROGRESS": return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30";
     case "COMPLETED": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+    case "NON_SUCCEED":
+    case "NON-SUCCEED":
     case "CANCELLED": return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30";
     default: return "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/30";
   }
@@ -250,8 +255,9 @@ const getStatusColors = (status?: string) => {
 const getStatusDotBg = (status?: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "bg-amber-500";
-    case "IN_PROGRESS": return "bg-blue-500";
     case "COMPLETED": return "bg-emerald-500";
+    case "NON_SUCCEED":
+    case "NON-SUCCEED":
     case "CANCELLED": return "bg-rose-500";
     default: return "bg-gray-400";
   }
@@ -260,9 +266,10 @@ const getStatusDotBg = (status?: string) => {
 const getStatusLabel = (status?: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "Pending";
-    case "IN_PROGRESS": return "Work In Progress";
-    case "COMPLETED": return "Completed";
-    case "CANCELLED": return "Cancelled";
+    case "COMPLETED": return "Complete";
+    case "NON_SUCCEED":
+    case "NON-SUCCEED":
+    case "CANCELLED": return "Non-succeed";
     default: return status || "";
   }
 };
@@ -276,22 +283,15 @@ const SERVICE_REPORT_STATUS_OPTIONS = [
     activeClasses: "bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20 font-bold",
   },
   {
-    value: "IN_PROGRESS",
-    label: "In Progress",
-    icon: RotateCcw,
-    iconColor: "text-blue-500",
-    activeClasses: "bg-blue-600 text-white border-blue-700 shadow-md shadow-blue-500/20 font-bold",
-  },
-  {
     value: "COMPLETED",
-    label: "Completed",
+    label: "Complete",
     icon: CheckCircle2,
     iconColor: "text-emerald-500",
     activeClasses: "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-500/20 font-bold",
   },
   {
-    value: "CANCELLED",
-    label: "Cancelled",
+    value: "NON_SUCCEED",
+    label: "Non-succeed",
     icon: XCircle,
     iconColor: "text-rose-500",
     activeClasses: "bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-500/20 font-bold",
@@ -601,7 +601,7 @@ export function ServiceReportFormDrawer() {
           technician_ids: reportData.technicians?.map((t: any) => t.technician.id) || [],
           mill_id: reportData.mill_id,
           place: reportData.place,
-          mill_whatsapp_number: reportData.mill_whatsapp_number,
+          mill_whatsapp_number: normalizePhoneNumber(reportData.mill_whatsapp_number) || '',
           mill_email: reportData.mill_email || '',
           visit_date: reportData.visit_date?.split('T')[0] || '',
           visit_time: reportData.visit_time || '',
@@ -611,7 +611,7 @@ export function ServiceReportFormDrawer() {
           machine_installation_date: reportData.machine_installation_date?.split('T')[0] || '',
           serial_or_frame_no: reportData.serial_or_frame_no,
           authorized_person: reportData.authorized_person,
-          authorized_person_phone: reportData.authorized_person_phone || '',
+          authorized_person_phone: normalizePhoneNumber(reportData.authorized_person_phone) || '',
           previous_visit_engineer: reportData.previous_visit_engineer || '',
           nature_of_complaint: reportData.nature_of_complaint,
           problem_observed: reportData.problem_observed || '',
@@ -1072,7 +1072,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   {/* Status Option Pills */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {SERVICE_REPORT_STATUS_OPTIONS.map((opt) => {
                       const isSelected = selectedStatus === opt.value;
                       const Icon = opt.icon;
@@ -1978,8 +1978,8 @@ export function ServiceReportFormDrawer() {
                       value={watch('status')}
                       items={[
                         { value: 'PENDING', label: 'Pending' },
-                        { value: 'COMPLETED', label: 'Completed' },
-                        { value: 'CANCELLED', label: 'Cancelled' }
+                        { value: 'COMPLETED', label: 'Complete' },
+                        { value: 'NON_SUCCEED', label: 'Non-succeed' }
                       ]}
                     >
                       <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
@@ -1987,8 +1987,8 @@ export function ServiceReportFormDrawer() {
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                         <SelectItem value="PENDING" className="font-bold py-3 text-amber-500">Pending</SelectItem>
-                        <SelectItem value="COMPLETED" className="font-bold py-3 text-emerald-500">Completed</SelectItem>
-                        <SelectItem value="CANCELLED" className="font-bold py-3 text-rose-500">Cancelled</SelectItem>
+                        <SelectItem value="COMPLETED" className="font-bold py-3 text-emerald-500">Complete</SelectItem>
+                        <SelectItem value="NON_SUCCEED" className="font-bold py-3 text-rose-500">Non-succeed</SelectItem>
                       </SelectContent>
                     </Select>
                     <FieldError message={errors.status?.message} />

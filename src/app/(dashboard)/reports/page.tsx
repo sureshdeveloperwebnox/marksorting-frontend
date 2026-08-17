@@ -66,6 +66,8 @@ const getStatusColors = (status: string) => {
             return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500/20 dark:border-blue-400/20";
         case "COMPLETED":
             return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-400/20";
+        case "NON_SUCCEED":
+        case "NON-SUCCEED":
         case "CANCELLED":
             return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20 dark:border-rose-400/20";
         default:
@@ -81,6 +83,8 @@ const getStatusDotColors = (status: string) => {
             return "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]";
         case "COMPLETED":
             return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+        case "NON_SUCCEED":
+        case "NON-SUCCEED":
         case "CANCELLED":
             return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
         default:
@@ -98,7 +102,14 @@ const getStatusLabel = (status: string, tab: string) => {
             default: return status || "";
         }
     }
-    return status?.replace("_", " ") || "";
+    switch (status?.toUpperCase()) {
+        case "PENDING": return "Pending";
+        case "COMPLETED": return "Complete";
+        case "NON_SUCCEED":
+        case "NON-SUCCEED":
+        case "CANCELLED": return "Non-succeed";
+        default: return status?.replace("_", " ") || "";
+    }
 };
 
 /* ─── Stats Card Component ─────────────────────────────────────── */
@@ -357,9 +368,8 @@ export default function ReportsPage() {
                 : [
                     { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
                     { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
-                    { value: "IN_PROGRESS", label: "In Progress", iconColor: "bg-blue-500", animatePulse: true },
-                    { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500" },
-                    { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500" },
+                    { value: "COMPLETED", label: "Complete", iconColor: "bg-emerald-500" },
+                    { value: "NON_SUCCEED", label: "Non-succeed", iconColor: "bg-rose-500" },
                   ],
         };
 

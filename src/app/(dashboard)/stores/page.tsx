@@ -636,7 +636,6 @@ export default function StoresPage() {
       options: [
         { value: "ALL", label: "All Warranty" },
         { value: "Non Warranty", label: "Non Warranty", iconColor: "bg-rose-500" },
-        { value: "Supplementary", label: "Supplementary", iconColor: "bg-blue-500" },
         { value: "AMC With Spare", label: "AMC With Spare", iconColor: "bg-emerald-500" },
         { value: "AMC Without Spare", label: "AMC Without Spare", iconColor: "bg-amber-500" },
       ],
@@ -958,33 +957,26 @@ export default function StoresPage() {
                   { value: "NOT_RETURNED", label: "Not Returned", count: notReturnedData?.total || 0, color: "rose", icon: <AlertTriangle size={14} /> },
                 ]}
                 activeValue={
-                  returnFilter === "Pending" && !inflowFilter
+                  returnFilter === "Pending"
                     ? "PENDING"
-                    : returnFilter === "In Progress" && !inflowFilter
+                    : returnFilter === "In Progress"
                       ? "IN_PROGRESS"
-                      : returnFilter === "Returned" && !inflowFilter
+                      : returnFilter === "Returned"
                         ? "RETURNED"
-                        : returnFilter === "Not Returned" && !inflowFilter
+                        : returnFilter === "Not Returned"
                           ? "NOT_RETURNED"
-                          : inflowFilter === "" && returnFilter === ""
-                            ? "ALL"
-                            : ""
+                          : "ALL"
                 }
                 onChange={(value) => {
                   if (value === "ALL") {
-                    setInflowFilter("");
                     setReturnFilter("");
                   } else if (value === "PENDING") {
-                    setInflowFilter("");
                     setReturnFilter("Pending");
                   } else if (value === "IN_PROGRESS") {
-                    setInflowFilter("");
                     setReturnFilter("In Progress");
                   } else if (value === "RETURNED") {
-                    setInflowFilter("");
                     setReturnFilter("Returned");
                   } else if (value === "NOT_RETURNED") {
-                    setInflowFilter("");
                     setReturnFilter("Not Returned");
                   }
                 }}

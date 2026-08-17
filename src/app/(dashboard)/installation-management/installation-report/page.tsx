@@ -84,8 +84,9 @@ import { useSearchParams } from "next/navigation";
 const getStatusColors = (status: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "bg-amber-500/5 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500 dark:border-amber-400";
-    case "IN_PROGRESS": return "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500 dark:border-blue-400";
     case "COMPLETED": return "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500 dark:border-emerald-400";
+    case "NON_SUCCEED":
+    case "NON-SUCCEED":
     case "CANCELLED": return "bg-rose-500/5 dark:bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500 dark:border-rose-400";
     default: return "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500 dark:border-gray-400";
   }
@@ -94,8 +95,9 @@ const getStatusColors = (status: string) => {
 const getStatusDotColors = (status: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
-    case "IN_PROGRESS": return "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]";
     case "COMPLETED": return "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+    case "NON_SUCCEED":
+    case "NON-SUCCEED":
     case "CANCELLED": return "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]";
     default: return "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
   }
@@ -104,9 +106,10 @@ const getStatusDotColors = (status: string) => {
 const getStatusLabel = (status: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "Pending";
-    case "IN_PROGRESS": return "Work In Progress";
-    case "COMPLETED": return "Completed";
-    case "CANCELLED": return "Cancelled";
+    case "COMPLETED": return "Complete";
+    case "NON_SUCCEED":
+    case "NON-SUCCEED":
+    case "CANCELLED": return "Non-succeed";
     default: return status || "—";
   }
 };
@@ -284,10 +287,10 @@ export default function InstallationReportPage() {
     search: search || undefined,
   });
 
-  const { data: cancelledData, isFetching: isFetchingCancelled, refetch: refetchCancelled } = useInstallationReports({
+  const { data: nonSucceedData, isFetching: isFetchingNonSucceed, refetch: refetchNonSucceed } = useInstallationReports({
     skip: 0,
     take: 1,
-    status: "CANCELLED",
+    status: "NON_SUCCEED",
     technicianId: technicianFilter || undefined,
     customerId: customerFilter || undefined,
     millId: millFilter || undefined,
@@ -296,7 +299,7 @@ export default function InstallationReportPage() {
     search: search || undefined,
   });
 
-  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingCancelled;
+  const isRefreshing = isFetching || isFetchingTotal || isFetchingCompleted || isFetchingPending || isFetchingNonSucceed;
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -304,7 +307,7 @@ export default function InstallationReportPage() {
       refetchTotal(),
       refetchCompleted(),
       refetchPending(),
-      refetchCancelled(),
+      refetchNonSucceed(),
     ]);
   };
 
@@ -694,8 +697,8 @@ export default function InstallationReportPage() {
       options: [
         { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
         { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
-        { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500", animatePulse: true },
-        { value: "CANCELLED", label: "Cancelled", iconColor: "bg-rose-500", animatePulse: true },
+        { value: "COMPLETED", label: "Complete", iconColor: "bg-emerald-500", animatePulse: true },
+        { value: "NON_SUCCEED", label: "Non-succeed", iconColor: "bg-rose-500", animatePulse: true },
       ],
     },
     {
@@ -962,8 +965,8 @@ export default function InstallationReportPage() {
                 tabs={[
                   { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
                   { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                  { value: "CANCELLED", label: "Cancelled", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+                  { value: "COMPLETED", label: "Complete", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "NON_SUCCEED", label: "Non-succeed", count: nonSucceedData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
                 ]}
                 activeValue={statusFilter || ""}
                 onChange={(value) => setStatusFilter(value)}

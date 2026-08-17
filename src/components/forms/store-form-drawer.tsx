@@ -12,7 +12,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert, Barcode, Plus, PlusCircle, Cpu, Building2, ChevronDown, ChevronUp, Check, Edit3, Sparkles } from 'lucide-react';
+import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert, Barcode, Plus, PlusCircle, Cpu, Building2, ChevronDown, ChevronUp, Check, Edit3, Sparkles, ArrowRight, ListOrdered } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -106,15 +106,40 @@ const storeSchema = z.object({
 const mapMachineWarrantyToStore = (allWarranty?: string | null): string => {
   if (!allWarranty) return 'Non Warranty';
   const val = allWarranty.trim();
-  if (val === 'Under Warranty') return 'Supplementary';
   if (val === 'Under AMC') return 'AMC With Spare';
   if (val === 'Non Warranty') return 'Non Warranty';
   if (val === 'Expired') return 'Non Warranty';
   
-  if (['Non Warranty', 'Supplementary', 'AMC With Spare', 'AMC Without Spare'].includes(val)) {
+  if (['Non Warranty', 'AMC With Spare', 'AMC Without Spare'].includes(val)) {
     return val;
   }
   return 'Non Warranty';
+};
+
+const generateContinuousBarcodes = (startCode: string, count: number): string[] => {
+  if (!startCode || count <= 0) return [];
+  const trimmed = startCode.trim();
+  const match = trimmed.match(/^(.*?)(\d+)$/);
+
+  if (!match) {
+    return Array.from({ length: count }, (_, i) => `${trimmed}-${i + 1}`);
+  }
+
+  const prefix = match[1];
+  const numStr = match[2];
+  const padLen = numStr.length;
+  const startNum = parseInt(numStr, 10);
+
+  return Array.from({ length: count }, (_, i) => {
+    const currentNum = startNum + i;
+    return `${prefix}${String(currentNum).padStart(padLen, '0')}`;
+  });
+};
+
+const calculateEndBarcode = (startCode: string, count: number): string => {
+  if (!startCode || count <= 0) return '';
+  const seq = generateContinuousBarcodes(startCode, count);
+  return seq[seq.length - 1] || '';
 };
 
 const extractCleanRemarks = (remarks?: string | null): string => {
@@ -232,6 +257,8 @@ export function StoreFormDrawer() {
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [selectedMillId, setSelectedMillId] = React.useState<string>('');
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
+  const [barcodeRanges, setBarcodeRanges] = React.useState<Record<string, { start: string; end: string }>>({});
+  const [showAllUnitsMap, setShowAllUnitsMap] = React.useState<Record<string, boolean>>({});
 
   // Dialog states for Quick Registration
   const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
@@ -490,7 +517,7 @@ export function StoreFormDrawer() {
 
   // Automatically update the main quantity field as sum of material quantities
   const totalQuantity = React.useMemo(() => {
-    return materialQuantitiesWatch.reduce((sum, q) => sum + q.quantity, 0);
+    return materialQuantitiesWatch.reduce((sum, q) => sum + (Number(q.quantity) || 0), 0);
   }, [materialQuantitiesWatch]);
 
   React.useEffect(() => {
@@ -516,6 +543,29 @@ export function StoreFormDrawer() {
     // Allow alphabets, numbers, and special characters up to 8 characters max limit
     const val = value.slice(0, 8);
     const currentQuantities = watch('material_quantities') || [];
+    
+    // If user edits Unit 1 barcode directly, automatically update the whole continuous sequence from unit 1
+    if (unitIdx === 0 && val.trim()) {
+      const targetItem = currentQuantities.find((q) => q.material_id === materialId);
+      const count = Number(targetItem?.quantity) || 1;
+      const sequence = generateContinuousBarcodes(val, count);
+      const endVal = sequence[sequence.length - 1] || '';
+      
+      setBarcodeRanges((prev) => ({
+        ...prev,
+        [materialId]: { start: val, end: endVal },
+      }));
+
+      const nextQuantities = currentQuantities.map((q) => {
+        if (q.material_id === materialId) {
+          return { ...q, serial_numbers: sequence };
+        }
+        return q;
+      });
+      setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
+      return;
+    }
+
     const nextQuantities = currentQuantities.map((q) => {
       if (q.material_id === materialId) {
         const serials = [...(q.serial_numbers || [])];
@@ -534,30 +584,92 @@ export function StoreFormDrawer() {
     const currentQuantities = watch('material_quantities') || [];
     const allExistingBarcodes = new Set<string>();
     currentQuantities.forEach((q) => {
-      q.serial_numbers?.forEach((s) => {
-        if (s && s.trim()) allExistingBarcodes.add(s.trim().toUpperCase());
-      });
+      if (q.material_id !== materialId) {
+        q.serial_numbers?.forEach((s) => {
+          if (s && s.trim()) allExistingBarcodes.add(s.trim().toUpperCase());
+        });
+      }
     });
 
     const nextQuantities = currentQuantities.map((q) => {
       if (q.material_id === materialId) {
-        const serials = [...(q.serial_numbers || [])];
-        for (let u = 0; u < q.quantity; u++) {
-          if (!serials[u] || !serials[u].trim()) {
-            let candidate = '';
-            do {
-              candidate = Math.floor(10000000 + Math.random() * 90000000).toString();
-            } while (allExistingBarcodes.has(candidate));
-            allExistingBarcodes.add(candidate);
-            serials[u] = candidate;
-          }
+        const qty = Number(q.quantity) || 1;
+        // Generate a random 8-digit starting base number
+        let startNum = Math.floor(10000000 + Math.random() * (90000000 - qty - 100));
+        let candidateStart = startNum.toString();
+        let sequence = generateContinuousBarcodes(candidateStart, qty);
+
+        // Ensure none of the generated continuous sequence conflicts with existing barcodes in other materials
+        let attempts = 0;
+        while (sequence.some((code) => allExistingBarcodes.has(code.toUpperCase())) && attempts < 100) {
+          startNum = Math.floor(10000000 + Math.random() * (90000000 - qty - 100));
+          candidateStart = startNum.toString();
+          sequence = generateContinuousBarcodes(candidateStart, qty);
+          attempts++;
         }
-        return { ...q, serial_numbers: serials };
+
+        const endCode = sequence[sequence.length - 1] || '';
+        setBarcodeRanges((prev) => ({
+          ...prev,
+          [materialId]: { start: candidateStart, end: endCode },
+        }));
+
+        return { ...q, serial_numbers: sequence };
+      }
+      return q;
+    });
+
+    setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
+    toast.success('Continuous unit barcodes auto-generated!');
+  };
+
+  const handleStartBarcodeChange = (materialId: string, startVal: string, count: number) => {
+    const endVal = calculateEndBarcode(startVal, count);
+    setBarcodeRanges((prev) => ({
+      ...prev,
+      [materialId]: { start: startVal, end: endVal },
+    }));
+
+    if (startVal.trim()) {
+      const sequence = generateContinuousBarcodes(startVal, count);
+      const currentQuantities = watch('material_quantities') || [];
+      const nextQuantities = currentQuantities.map((q) => {
+        if (q.material_id === materialId) {
+          return { ...q, serial_numbers: sequence };
+        }
+        return q;
+      });
+      setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
+    }
+  };
+
+  const handleEndBarcodeChange = (materialId: string, endVal: string) => {
+    setBarcodeRanges((prev) => ({
+      ...prev,
+      [materialId]: { start: prev[materialId]?.start || '', end: endVal },
+    }));
+  };
+
+  const applyContinuousRange = (materialId: string, startVal: string, count: number) => {
+    if (!startVal.trim()) {
+      toast.error('Please enter a Starting Barcode code first!');
+      return;
+    }
+    const sequence = generateContinuousBarcodes(startVal, count);
+    const endCode = sequence[sequence.length - 1] || '';
+    const currentQuantities = watch('material_quantities') || [];
+    const nextQuantities = currentQuantities.map((q) => {
+      if (q.material_id === materialId) {
+        return { ...q, serial_numbers: sequence };
       }
       return q;
     });
     setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
-    toast.success('Unit barcodes auto-generated!');
+    setBarcodeRanges((prev) => ({
+      ...prev,
+      [materialId]: { start: startVal, end: endCode },
+    }));
+    toast.success(`Generated ${count} continuous barcodes: ${startVal} → ${endCode}`);
   };
 
   const onSubmit: SubmitHandler<StoreFormValues> = async (data) => {
@@ -1032,7 +1144,6 @@ export function StoreFormDrawer() {
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                             <SelectItem value="Non Warranty" className="font-bold py-3 text-rose-500">Non Warranty</SelectItem>
-                            <SelectItem value="Supplementary" className="font-bold py-3 text-blue-500">Supplementary</SelectItem>
                             <SelectItem value="AMC With Spare" className="font-bold py-3 text-emerald-500">AMC With Spare</SelectItem>
                             <SelectItem value="AMC Without Spare" className="font-bold py-3 text-amber-500">AMC Without Spare</SelectItem>
                           </SelectContent>
@@ -1285,25 +1396,51 @@ export function StoreFormDrawer() {
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">QTY:</span>
                                   <Input
-                                    type="number"
-                                    min="1"
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    placeholder="1"
                                     className="w-16 h-8 bg-gray-50 dark:bg-white/5 border-none rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 font-bold text-right text-xs"
-                                    value={item.quantity}
+                                    value={item.quantity === undefined || item.quantity === null ? '' : item.quantity}
                                     onChange={(e) => {
-                                      const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                      const rawVal = e.target.value.replace(/\D/g, '');
+                                      const val = rawVal === '' ? ('' as any) : parseInt(rawVal, 10);
+                                      const targetQty = typeof val === 'number' && val > 0 ? val : 1;
                                       const currentSerials = item.serial_numbers || [];
-                                      let newSerials = [...currentSerials];
-                                      if (val > currentSerials.length) {
-                                        for (let i = currentSerials.length; i < val; i++) {
-                                          newSerials.push('');
-                                        }
+                                      const startCode = barcodeRanges[item.material_id]?.start || currentSerials[0] || '';
+                                      
+                                      let newSerials: string[];
+                                      if (startCode.trim()) {
+                                        newSerials = generateContinuousBarcodes(startCode, targetQty);
+                                        const endCode = newSerials[newSerials.length - 1] || '';
+                                        setBarcodeRanges((prev) => ({
+                                          ...prev,
+                                          [item.material_id]: { start: startCode, end: endCode },
+                                        }));
                                       } else {
-                                        newSerials = newSerials.slice(0, val);
+                                        newSerials = [...currentSerials];
+                                        if (targetQty > currentSerials.length) {
+                                          for (let i = currentSerials.length; i < targetQty; i++) {
+                                            newSerials.push('');
+                                          }
+                                        } else {
+                                          newSerials = newSerials.slice(0, targetQty);
+                                        }
                                       }
                                       const nextQuantities = materialQuantitiesWatch.map((q, idx) =>
                                         idx === index ? { ...q, quantity: val, serial_numbers: newSerials } : q
                                       );
                                       setValue('material_quantities', nextQuantities, { shouldDirty: true });
+                                    }}
+                                    onBlur={() => {
+                                      if (!item.quantity || Number(item.quantity) < 1) {
+                                        const startCode = barcodeRanges[item.material_id]?.start || item.serial_numbers?.[0] || '';
+                                        const newSerials = startCode.trim() ? generateContinuousBarcodes(startCode, 1) : [''];
+                                        const nextQuantities = materialQuantitiesWatch.map((q, idx) =>
+                                          idx === index ? { ...q, quantity: 1, serial_numbers: newSerials } : q
+                                        );
+                                        setValue('material_quantities', nextQuantities, { shouldDirty: true });
+                                      }
                                     }}
                                   />
                                 </div>
@@ -1311,67 +1448,173 @@ export function StoreFormDrawer() {
                             </div>
 
                             {/* Dynamic Input Fields (Appears ONLY after clicking the dropdown button) */}
-                            {isExpanded && (
-                              <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-2 animate-in fade-in-0 duration-200">
-                                <div className="flex items-center justify-between flex-wrap gap-2">
-                                  <span className="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-                                    <Hash size={12} className="text-primary" />
-                                    Unit Barcodes ({item.quantity} {item.quantity === 1 ? 'required code' : 'required codes'})
-                                    <span className="text-rose-500 font-black">*</span>
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleAutoGenerateBarcodes(item.material_id)}
-                                      className="h-6 px-2 text-[10px] font-black rounded-lg border-primary/30 text-primary hover:bg-primary/10 transition-all gap-1 shadow-xs"
-                                    >
-                                      <Sparkles size={10} />
-                                      Auto-Generate
-                                    </Button>
-                                    <span className="text-[10px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-200/50 dark:border-rose-500/20">
-                                      Mandatory (Max 8 Chars)
+                            {isExpanded && (() => {
+                              const qty = Number(item.quantity) || 1;
+                              const currentStart = barcodeRanges[item.material_id]?.start ?? (item.serial_numbers?.[0] || '');
+                              const currentEnd = barcodeRanges[item.material_id]?.end ?? (calculateEndBarcode(currentStart, qty) || (item.serial_numbers?.[qty - 1] || ''));
+                              const isAllFilled = qty > 0 && Array.from({ length: qty }).every((_, u) => !!item.serial_numbers?.[u]?.trim());
+                              const isShowAllUnits = showAllUnitsMap[item.material_id] ?? (qty <= 8);
+
+                              return (
+                                <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-3 animate-in fade-in-0 duration-200">
+                                  {/* Header bar */}
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <span className="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                                      <Hash size={12} className="text-primary" />
+                                      Unit Barcodes ({qty} {qty === 1 ? 'required code' : 'required codes'})
+                                      <span className="text-rose-500 font-black">*</span>
                                     </span>
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleAutoGenerateBarcodes(item.material_id)}
+                                        className="h-6 px-2 text-[10px] font-black rounded-lg border-primary/30 text-primary hover:bg-primary/10 transition-all gap-1 shadow-xs"
+                                      >
+                                        <Sparkles size={10} />
+                                        Auto-Generate Random
+                                      </Button>
+                                      <span className="text-[10px] font-bold text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-200/50 dark:border-rose-500/20">
+                                        Mandatory (Max 8 Chars)
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                  {Array.from({ length: item.quantity }).map((_, unitIdx) => {
-                                    const val = item.serial_numbers?.[unitIdx] || '';
-                                    const isMissing = !val.trim();
-
-                                    return (
-                                      <div key={unitIdx} className="space-y-1.5">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-[11px] font-black text-gray-800 dark:text-gray-200">
-                                            Unit {unitIdx + 1} Barcode <span className="text-rose-500 font-black">*</span>
-                                          </span>
-                                          {isMissing ? (
-                                            <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
-                                          ) : (
-                                            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">{val.length}/8 Chars</span>
-                                          )}
+                                  {/* Continuous Starting & Ending Codes Generator Card */}
+                                  <div className="p-3.5 bg-gradient-to-r from-primary/5 via-primary/[0.08] to-primary/5 dark:from-primary/10 dark:via-primary/15 dark:to-primary/10 rounded-2xl border border-primary/25 space-y-2.5 shadow-xs">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                                          <ListOrdered size={14} strokeWidth={2.5} />
                                         </div>
+                                        <div>
+                                          <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider block">
+                                            Continuous Barcode Range
+                                          </span>
+                                          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                                            Enter Starting code to auto-populate continuous sequence for all {qty} units
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {isAllFilled && currentStart && currentEnd && (
+                                        <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
+                                          <Check size={11} strokeWidth={3} />
+                                          Sequence: {currentStart} → {currentEnd} ({qty} units)
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end pt-1">
+                                      <div className="sm:col-span-5 space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                          Starting Code *
+                                        </label>
                                         <Input
                                           type="text"
                                           maxLength={8}
-                                          placeholder={`Enter barcode (e.g. BC-7000${unitIdx + 1})`}
-                                          value={val}
-                                          onChange={(e) => handleSerialNumberChange(item.material_id, unitIdx, e.target.value)}
-                                          className={cn(
-                                            "h-10 rounded-xl font-mono font-bold text-xs transition-all tracking-wider",
-                                            isMissing
-                                              ? "bg-rose-50/50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-gray-900 dark:text-white"
-                                              : "bg-emerald-50/30 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 text-gray-900 dark:text-white"
-                                          )}
+                                          placeholder="e.g. BC-70001 or 10001"
+                                          value={currentStart}
+                                          onChange={(e) => handleStartBarcodeChange(item.material_id, e.target.value, qty)}
+                                          className="h-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl font-mono font-bold text-xs tracking-wider focus-visible:ring-2 focus-visible:ring-primary/20 shadow-xs"
                                         />
                                       </div>
-                                    );
-                                  })}
+
+                                      <div className="hidden sm:flex sm:col-span-1 justify-center items-center pb-2.5 text-primary/60">
+                                        <ArrowRight size={18} strokeWidth={2.5} />
+                                      </div>
+
+                                      <div className="sm:col-span-4 space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                          Ending Code (Auto-Calculated)
+                                        </label>
+                                        <Input
+                                          type="text"
+                                          maxLength={8}
+                                          placeholder="e.g. BC-70050"
+                                          value={currentEnd}
+                                          onChange={(e) => handleEndBarcodeChange(item.material_id, e.target.value)}
+                                          className="h-10 bg-gray-50/70 dark:bg-gray-900/60 border border-gray-200 dark:border-white/10 rounded-xl font-mono font-bold text-xs tracking-wider text-gray-700 dark:text-gray-300"
+                                        />
+                                      </div>
+
+                                      <div className="sm:col-span-2">
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          onClick={() => applyContinuousRange(item.material_id, currentStart, qty)}
+                                          className="w-full h-10 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-white gap-1.5 shadow-sm transition-all cursor-pointer"
+                                        >
+                                          <Sparkles size={13} />
+                                          Apply Range
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Individual Unit Fields Section */}
+                                  <div className="space-y-2 pt-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Individual Unit Barcodes ({qty} Units)
+                                      </span>
+                                      {qty > 8 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowAllUnitsMap((prev) => ({ ...prev, [item.material_id]: !isShowAllUnits }))}
+                                          className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                                        >
+                                          {isShowAllUnits ? (
+                                            <>Collapse Individual Units <ChevronUp size={12} /></>
+                                          ) : (
+                                            <>View / Edit All {qty} Units <ChevronDown size={12} /></>
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {isShowAllUnits && (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                        {Array.from({ length: qty }).map((_, unitIdx) => {
+                                          const val = item.serial_numbers?.[unitIdx] || '';
+                                          const isMissing = !val.trim();
+
+                                          return (
+                                            <div key={unitIdx} className="space-y-1.5">
+                                              <div className="flex items-center justify-between">
+                                                <span className="text-[11px] font-black text-gray-800 dark:text-gray-200">
+                                                  Unit {unitIdx + 1} Barcode <span className="text-rose-500 font-black">*</span>
+                                                </span>
+                                                {isMissing ? (
+                                                  <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
+                                                ) : (
+                                                  <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">{val.length}/8 Chars</span>
+                                                )}
+                                              </div>
+                                              <Input
+                                                type="text"
+                                                maxLength={8}
+                                                placeholder={`Enter barcode (e.g. BC-7000${unitIdx + 1})`}
+                                                value={val}
+                                                onChange={(e) => handleSerialNumberChange(item.material_id, unitIdx, e.target.value)}
+                                                className={cn(
+                                                  "h-10 rounded-xl font-mono font-bold text-xs transition-all tracking-wider",
+                                                  isMissing
+                                                    ? "bg-rose-50/50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-gray-900 dark:text-white"
+                                                    : "bg-emerald-50/30 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 text-gray-900 dark:text-white"
+                                                )}
+                                              />
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         );
                       })}
@@ -1482,7 +1725,7 @@ export function StoreFormDrawer() {
                     Total Quantity (Auto-Calculated)
                   </Label>
                   <Input
-                    type="number"
+                    type="text"
                     readOnly
                     disabled
                     placeholder="Total quantity"

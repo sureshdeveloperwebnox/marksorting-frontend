@@ -73,83 +73,59 @@ CustomInput.displayName = "CustomInput";
 export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
   ({ value, onChange, placeholder = "Enter phone number", className, disabled, defaultCountry = "IN" }, ref) => {
     const [selectedCountry, setSelectedCountry] = React.useState<string>(defaultCountry);
-    const [error, setError] = React.useState<string>("");
-    const [isProcessing, setIsProcessing] = React.useState(false);
 
-    // Detect country from existing phone number
+    // Normalize value if it lacks country code
+    const formattedValue = React.useMemo(() => {
+      if (!value) return "";
+      if (value.startsWith("+")) return value;
+      return normalizePhoneNumber(value, selectedCountry || defaultCountry);
+    }, [value, selectedCountry, defaultCountry]);
+
+    // Detect country from existing phone number or sync if value is un-normalized
     React.useEffect(() => {
-      if (value && value.startsWith('+')) {
-        try {
-          const parsed = parsePhoneNumberFromString(value);
-          if (parsed && parsed.country) {
-            setSelectedCountry(parsed.country);
-          }
-        } catch (e) {
-          console.log("Could not detect country from phone number:", e);
-        }
-      }
-    }, [value]);
-
-    // Force validation on mount and when value changes externally
-    React.useEffect(() => {
-      if (value && !isProcessing) {
-        validateAndTruncate(value);
-      }
-    }, [value, selectedCountry]);
-
-    const validateAndTruncate = (phone: string) => {
-      setIsProcessing(true);
-      
-      if (!phone) {
-        setError("");
-        setIsProcessing(false);
-        return;
-      }
-
-      try {
-        const callingCode = getCountryCallingCode(selectedCountry as any);
-        const prefix = `+${callingCode}`;
-        const cleanPhone = phone.replace(/\s/g, "");
-        
-        if (cleanPhone.startsWith(prefix)) {
-          const nationalNumber = cleanPhone.slice(prefix.length).replace(/\D/g, "");
-          const maxLen = COUNTRY_MAX_LENGTHS[selectedCountry] || 15;
-          
-          if (nationalNumber.length > maxLen) {
-            const truncatedNational = nationalNumber.slice(0, maxLen);
-            const correctedPhone = `${prefix}${truncatedNational}`;
-            setError(`Invalid phone number: Maximum ${maxLen} digits allowed for ${selectedCountry}`);
-            
-            // Force the corrected value
-            setTimeout(() => {
-              onChange(correctedPhone);
-              setIsProcessing(false);
-            }, 0);
-            return;
-          } else {
-            setError("");
+      if (value) {
+        if (value.startsWith('+')) {
+          try {
+            const parsed = parsePhoneNumberFromString(value);
+            if (parsed && parsed.country) {
+              setSelectedCountry(parsed.country);
+            }
+          } catch (e) {
+            console.log("Could not detect country from phone number:", e);
           }
         } else {
-          setError("Invalid country code");
+          // If value is missing '+', normalize it and update parent form
+          const normalized = normalizePhoneNumber(value, selectedCountry || defaultCountry);
+          if (normalized && normalized !== value) {
+            onChange(normalized);
+          }
         }
-      } catch (e) {
-        setError("Invalid phone number format");
       }
-      
-      setIsProcessing(false);
-    };
+    }, [value, selectedCountry, defaultCountry, onChange]);
 
     // Handle phone number input
     const handlePhoneChange = (val: string) => {
       if (!val) {
         onChange("");
-        setError("");
         return;
       }
 
       // Remove any non-digit characters except + and spaces
-      const cleanVal = val.replace(/[^0-9+\s]/g, "");
-      
+      let cleanVal = val.replace(/[^0-9+\s]/g, "");
+
+      try {
+        const callingCode = getCountryCallingCode((selectedCountry || defaultCountry) as any);
+        const prefix = `+${callingCode}`;
+
+        if (cleanVal.startsWith(prefix)) {
+          const nationalNumber = cleanVal.slice(prefix.length).replace(/\D/g, "");
+          const maxLen = COUNTRY_MAX_LENGTHS[selectedCountry || defaultCountry] || 15;
+          if (nationalNumber.length > maxLen) {
+            cleanVal = `${prefix}${nationalNumber.slice(0, maxLen)}`;
+          }
+        }
+      } catch (e) {}
+
       onChange(cleanVal);
     };
 
@@ -158,7 +134,7 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
         <PhoneInputWithCountry
           ref={ref}
           placeholder={placeholder}
-          value={value as Value}
+          value={(formattedValue || "") as Value}
           onChange={(val) => handlePhoneChange(val || "")}
           onCountryChange={(country) => {
             if (country) {
@@ -172,11 +148,6 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
           countryCallingCodeEditable={false}
           defaultCountry={defaultCountry}
         />
-        {error && (
-          <p className="text-[11px] text-rose-500 font-bold ml-1 mt-1">
-            {error}
-          </p>
-        )}
       </div>
     );
   }
