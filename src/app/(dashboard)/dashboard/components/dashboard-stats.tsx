@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ClipboardList, Wrench, Receipt, CreditCard, Users } from 'lucide-react';
+import { ClipboardList, Wrench, Receipt, CreditCard, Users, RotateCcw, Store, Package } from 'lucide-react';
 import { StatCard, StatCardVariant } from '@/components/dashboard/stat-card';
 
 const iconMap: Record<string, any> = {
@@ -10,11 +10,15 @@ const iconMap: Record<string, any> = {
   'TOTAL EXPENSES': Receipt,
   'TOTAL REVENUE': CreditCard,
   'TOTAL CUSTOMERS': Users,
+  'STORE RETURNS': RotateCcw,
+  'STORE RETURN': RotateCcw,
+  'TOTAL STORE RETURNS': RotateCcw,
+  'STORE MANAGEMENT': Store,
 };
 
 interface DashboardStatsProps {
   stats?: Array<{
-    id: 'customers' | 'installations' | 'services' | 'expenses' | 'revenue';
+    id: 'customers' | 'installations' | 'services' | 'expenses' | 'revenue' | 'stores' | string;
     title: string;
     value: string;
     change: string;
@@ -22,6 +26,7 @@ interface DashboardStatsProps {
     variant: StatCardVariant;
     subtitle: string;
     sparklineData?: number[];
+    href?: string;
   }>;
   // Kept for backward compatibility to avoid type errors during refactoring
   activeId?: string;
@@ -60,6 +65,7 @@ export function DashboardStats({ stats = [] }: DashboardStatsProps) {
             icon={IconComponent}
             sparklineData={sparkData}
             delay={idx * 0.08}
+            href={stat.href}
           />
         );
       })}

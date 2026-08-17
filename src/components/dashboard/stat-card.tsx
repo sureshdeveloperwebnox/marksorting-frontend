@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { SparklineChart } from './sparkline-chart';
 
@@ -13,12 +14,14 @@ export interface StatCardProps {
   value: string;
   change: string;
   trend: 'up' | 'down' | 'neutral';
-  icon: LucideIcon;
+  icon: LucideIcon | React.ComponentType<any>;
   variant: StatCardVariant;
   sparklineData?: number[];
   subtitle?: string;
   className?: string;
   delay?: number;
+  href?: string;
+  onClick?: () => void;
 }
 
 const colorConfig: Record<
@@ -108,8 +111,28 @@ export const StatCard = memo(function StatCard({
   subtitle = 'vs last month',
   className,
   delay = 0,
+  href,
+  onClick,
 }: StatCardProps) {
+  const router = useRouter();
   const config = colorConfig[variant] || colorConfig.blue;
+
+  const isClickable = Boolean(href || onClick);
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (href) {
+      router.push(href);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      handleClick();
+    }
+  };
 
   return (
     <motion.div
@@ -117,10 +140,15 @@ export const StatCard = memo(function StatCard({
       variants={cardVariants}
       initial="hidden"
       animate="show"
-      whileHover={{ y: -3, scale: 1.015, boxShadow: '0 12px 30px rgba(0,0,0,0.04)' }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      whileHover={isClickable ? { y: -4, scale: 1.02, boxShadow: '0 16px 36px rgba(0,0,0,0.06)' } : { y: -3, scale: 1.015, boxShadow: '0 12px 30px rgba(0,0,0,0.04)' }}
+      whileTap={isClickable ? { scale: 0.98 } : undefined}
+      onClick={isClickable ? handleClick : undefined}
+      onKeyDown={isClickable ? handleKeyDown : undefined}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
       className={cn(
-        'relative overflow-hidden rounded-[24px] border border-zinc-100 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.015)] dark:border-zinc-800/80 dark:bg-zinc-950/80 transition-all duration-300 group min-h-[145px] flex flex-col justify-between',
+        'relative overflow-hidden rounded-[24px] border border-zinc-100 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.015)] dark:border-zinc-800/80 dark:bg-zinc-950/80 transition-all duration-300 group min-h-[145px] flex flex-col justify-between select-none',
+        isClickable && 'cursor-pointer hover:border-primary/40 dark:hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20',
         className
       )}
     >

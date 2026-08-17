@@ -2,7 +2,7 @@ import api from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export interface DashboardStat {
-  id: 'customers' | 'installations' | 'services' | 'expenses';
+  id: 'customers' | 'installations' | 'services' | 'expenses' | 'stores' | 'store_returns' | string;
   title: string;
   value: string;
   change: string;

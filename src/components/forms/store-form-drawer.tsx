@@ -106,11 +106,12 @@ const storeSchema = z.object({
 const mapMachineWarrantyToStore = (allWarranty?: string | null): string => {
   if (!allWarranty) return 'Non Warranty';
   const val = allWarranty.trim();
+  if (val === 'Under Warranty' || val === 'Warranty' || val === 'Under Warrenty') return 'Warranty';
   if (val === 'Under AMC') return 'AMC With Spare';
   if (val === 'Non Warranty') return 'Non Warranty';
   if (val === 'Expired') return 'Non Warranty';
   
-  if (['Non Warranty', 'AMC With Spare', 'AMC Without Spare'].includes(val)) {
+  if (['Warranty', 'Non Warranty', 'AMC With Spare', 'AMC Without Spare'].includes(val)) {
     return val;
   }
   return 'Non Warranty';
@@ -1179,8 +1180,9 @@ export function StoreFormDrawer() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                            <SelectItem value="Warranty" className="font-bold py-3 text-emerald-600 dark:text-emerald-400">Warranty</SelectItem>
                             <SelectItem value="Non Warranty" className="font-bold py-3 text-rose-500">Non Warranty</SelectItem>
-                            <SelectItem value="AMC With Spare" className="font-bold py-3 text-emerald-500">AMC With Spare</SelectItem>
+                            <SelectItem value="AMC With Spare" className="font-bold py-3 text-teal-500">AMC With Spare</SelectItem>
                             <SelectItem value="AMC Without Spare" className="font-bold py-3 text-amber-500">AMC Without Spare</SelectItem>
                           </SelectContent>
                         </Select>
