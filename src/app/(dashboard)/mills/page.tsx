@@ -26,7 +26,11 @@ import {
   Users,
   Wrench,
   HardHat,
+  CheckCircle2,
+  Clock,
+  XCircle,
 } from "lucide-react";
+import { TableTabs } from "@/components/ui/table-tabs";
 import { ViewDetailsDrawer, ViewDrawerAction } from "@/components/ui/view-details-drawer";
 import { useMill } from "@/services/mill-service";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
@@ -132,10 +136,15 @@ export default function MillsPage() {
     customer_id: customerFilter || undefined,
   });
 
-  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useMills({ skip: 0, take: 1 });
-  const { data: activeData, refetch: refetchActive, isFetching: isFetchingActive } = useMills({ skip: 0, take: 1, status: "ACTIVE" });
-  const { data: inactiveData, refetch: refetchInactive, isFetching: isFetchingInactive } = useMills({ skip: 0, take: 1, status: "INACTIVE" });
-  const { data: closedData, refetch: refetchClosed, isFetching: isFetchingClosed } = useMills({ skip: 0, take: 1, status: "CLOSED" });
+  const sharedCountFilters = {
+    search: search || undefined,
+    customer_id: customerFilter || undefined,
+  };
+
+  const { data: totalData, refetch: refetchTotal, isFetching: isFetchingTotal } = useMills({ skip: 0, take: 1, ...sharedCountFilters });
+  const { data: activeData, refetch: refetchActive, isFetching: isFetchingActive } = useMills({ skip: 0, take: 1, ...sharedCountFilters, status: "ACTIVE" });
+  const { data: inactiveData, refetch: refetchInactive, isFetching: isFetchingInactive } = useMills({ skip: 0, take: 1, ...sharedCountFilters, status: "INACTIVE" });
+  const { data: closedData, refetch: refetchClosed, isFetching: isFetchingClosed } = useMills({ skip: 0, take: 1, ...sharedCountFilters, status: "CLOSED" });
 
   const isRefreshing = isFetching || isFetchingTotal || isFetchingActive || isFetchingInactive || isFetchingClosed;
 
@@ -545,40 +554,17 @@ export default function MillsPage() {
           </div>
 
           {/* Status Tabs */}
-          <div className="px-6 pt-4 pb-0 border-b border-gray-100 dark:border-white/5 bg-gray-50/10 dark:bg-white/[0.01]">
-            <div className="flex gap-2 pb-3 overflow-x-auto scrollbar-none">
-              {[
-                { value: "", label: "All Mills", count: totalData?.total, color: "text-primary bg-primary/10 border-primary/20", dotColor: "bg-primary" },
-                { value: "ACTIVE", label: "Active", count: activeData?.total, color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20", dotColor: "bg-emerald-500" },
-                { value: "INACTIVE", label: "Inactive", count: inactiveData?.total, color: "text-amber-500 bg-amber-500/10 border-amber-500/20", dotColor: "bg-amber-500" },
-                { value: "CLOSED", label: "Closed", count: closedData?.total, color: "text-rose-500 bg-rose-500/10 border-rose-500/20", dotColor: "bg-rose-500" },
-              ].map((tab) => {
-                const isActive = statusFilter === tab.value;
-                return (
-                  <button
-                    key={tab.value}
-                    onClick={() => setStatusFilter(tab.value)}
-                    className={cn(
-                      "relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 border",
-                      isActive
-                        ? `${tab.color} shadow-sm scale-105`
-                        : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 border-transparent"
-                    )}
-                  >
-                    <span className={cn("w-1.5 h-1.5 rounded-full", tab.dotColor, isActive ? "animate-pulse" : "")} />
-                    <span>{tab.label}</span>
-                    <span className={cn(
-                      "px-1.5 py-0.5 rounded-md text-[10px] font-black leading-none",
-                      isActive
-                        ? "bg-current/15"
-                        : "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400"
-                    )}>
-                      {tab.count ?? 0}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+            <TableTabs
+              tabs={[
+                { value: "", label: "All Mills", count: totalData?.total || 0, color: "primary", icon: <Building2 size={14} /> },
+                { value: "ACTIVE", label: "Active", count: activeData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                { value: "INACTIVE", label: "Inactive", count: inactiveData?.total || 0, color: "amber", icon: <Clock size={14} /> },
+                { value: "CLOSED", label: "Closed", count: closedData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+              ]}
+              activeValue={statusFilter || ""}
+              onChange={(value) => setStatusFilter(value)}
+            />
           </div>
 
           {/* Table */}
