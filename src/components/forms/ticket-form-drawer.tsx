@@ -207,10 +207,6 @@ export function TicketFormDrawer() {
             toast.error("Please select a Service Engineer");
             return;
         }
-        if (!form.customer_id) {
-            toast.error("Please select a Customer");
-            return;
-        }
         if (!form.subject.trim()) {
             toast.error("Please enter a Subject");
             return;
@@ -222,6 +218,7 @@ export function TicketFormDrawer() {
 
         const payload = {
             ...form,
+            customer_id: form.customer_id || null,
             mill_id: form.mill_id || null,
         };
 
@@ -242,7 +239,7 @@ export function TicketFormDrawer() {
     const isPending = createMutation.isPending || updateMutation.isPending;
     const technicians = techniciansData?.technicians || [];
     const customers = customersData?.customers || [];
-    const mills = selectedCustomerId ? millsData?.mills || [] : [];
+    const mills = millsData?.mills || [];
 
     return (
         <Sheet open={isFormDrawerOpen} onOpenChange={(open) => !open && closeFormDrawer()}>
@@ -405,16 +402,15 @@ export function TicketFormDrawer() {
                                     </button>
                                 </div>
                                 <select
-                                    required
                                     value={form.customer_id}
                                     onChange={(e) => {
                                         const customerId = e.target.value;
-                                        setForm((f) => ({ ...f, customer_id: customerId, mill_id: "" }));
+                                        setForm((f) => ({ ...f, customer_id: customerId }));
                                     }}
                                     className="w-full h-12 px-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                                 >
-                                    <option value="" disabled>
-                                        {isLoadingCustomers ? "Loading customers..." : "Select Customer..."}
+                                    <option value="">
+                                        {isLoadingCustomers ? "Loading customers..." : "Select Customer (Optional)..."}
                                     </option>
                                     {customers.map((customer) => (
                                         <option key={customer.id} value={customer.id} className="bg-white dark:bg-gray-900">
@@ -424,52 +420,63 @@ export function TicketFormDrawer() {
                                 </select>
                             </div>
 
-                            {selectedCustomerId && (
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-primary/70">Mill</label>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-primary/70">Mill</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (selectedCustomerId) {
                                                 setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
                                                 setExistingCustomerId(selectedCustomerId);
-                                                setQuickMillName('');
-                                                setQuickPhone('');
-                                                setQuickAddress('');
-                                                setQuickPlace('');
-                                                setQuickState('');
-                                                setQuickRefNo('');
-                                                setIsMillNameManuallyEdited(false);
-                                                setIsQuickCreateOpen(true);
-                                            }}
-                                            className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer border-none bg-transparent p-0"
-                                        >
-                                            <PlusCircle size={12} />
-                                            Quick Add Mill
-                                        </button>
-                                    </div>
-                                    <select
-                                        value={form.mill_id}
-                                        onChange={(e) => setForm((f) => ({ ...f, mill_id: e.target.value }))}
-                                        className="w-full h-12 px-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                                            } else {
+                                                setQuickCustomerName('');
+                                                setExistingCustomerId(null);
+                                            }
+                                            setQuickMillName('');
+                                            setQuickPhone('');
+                                            setQuickAddress('');
+                                            setQuickPlace('');
+                                            setQuickState('');
+                                            setQuickRefNo('');
+                                            setIsMillNameManuallyEdited(false);
+                                            setIsQuickCreateOpen(true);
+                                        }}
+                                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer border-none bg-transparent p-0"
                                     >
-                                        <option value="">
-                                            {isLoadingMills ? "Loading mills..." : "Select Mill (Optional)..."}
-                                        </option>
-                                        {(() => {
-                                             let allMills = mills;
-                                             if (selectedMillObj && !allMills.some((m) => m.id === selectedMillObj.id)) {
-                                                 allMills = [selectedMillObj, ...allMills];
-                                             }
-                                             return allMills.map((mill) => (
-                                                 <option key={mill.id} value={mill.id} className="bg-white dark:bg-gray-900">
-                                                     {mill.name}
-                                                 </option>
-                                             ));
-                                         })()}
-                                    </select>
+                                        <PlusCircle size={12} />
+                                        {selectedCustomerId ? "Quick Add Mill" : "Quick Register Customer & Mill"}
+                                    </button>
                                 </div>
-                            )}
+                                <select
+                                    value={form.mill_id}
+                                    onChange={(e) => {
+                                        const millId = e.target.value;
+                                        const selectedMill = (millsData?.mills || []).find((m) => m.id === millId) || (selectedMillObj?.id === millId ? selectedMillObj : null);
+                                        setForm((f) => ({
+                                            ...f,
+                                            mill_id: millId,
+                                            customer_id: f.customer_id || selectedMill?.customer_id || "",
+                                        }));
+                                    }}
+                                    className="w-full h-12 px-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                                >
+                                    <option value="">
+                                        {isLoadingMills ? "Loading mills..." : "Select Mill (Optional)..."}
+                                    </option>
+                                    {(() => {
+                                         let allMills = mills;
+                                         if (selectedMillObj && !allMills.some((m) => m.id === selectedMillObj.id)) {
+                                             allMills = [selectedMillObj, ...allMills];
+                                         }
+                                         return allMills.map((mill) => (
+                                             <option key={mill.id} value={mill.id} className="bg-white dark:bg-gray-900">
+                                                 {mill.name}{mill.place ? ` (${mill.place})` : ''}
+                                             </option>
+                                         ));
+                                     })()}
+                                </select>
+                            </div>
 
                             {form.mill_id && (
                                 <div className="space-y-1.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">

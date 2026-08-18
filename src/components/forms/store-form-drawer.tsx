@@ -508,6 +508,14 @@ export function StoreFormDrawer() {
       .filter(id => !filtered.some(q => q.material_id === id))
       .map(id => ({ material_id: id, quantity: 1, stock_type: 'Inflow', serial_numbers: [''] }));
     
+    if (newItems.length > 0) {
+      const newlyAddedExp: Record<string, boolean> = {};
+      newItems.forEach(item => {
+        newlyAddedExp[item.material_id] = true;
+      });
+      setExpandedMaterials(prev => ({ ...prev, ...newlyAddedExp }));
+    }
+
     const nextQuantities = [...filtered, ...newItems];
     
     // Only update if there's an actual difference to avoid infinite loop
@@ -673,15 +681,58 @@ export function StoreFormDrawer() {
     toast.success(`Generated ${count} continuous barcodes: ${startVal} → ${endCode}`);
   };
 
+  const extractFirstErrorMessage = (errObj: any): { message: string; fieldName: string } => {
+    if (!errObj) return { message: 'Please fill in all mandatory fields', fieldName: '' };
+    if (typeof errObj.message === 'string' && errObj.message.trim()) {
+      return { message: errObj.message, fieldName: '' };
+    }
+    if (Array.isArray(errObj)) {
+      for (let i = 0; i < errObj.length; i++) {
+        if (errObj[i]) {
+          const res = extractFirstErrorMessage(errObj[i]);
+          if (res.message && res.message !== 'Please fill in all mandatory fields') {
+            return { message: res.message, fieldName: 'material_ids' };
+          }
+        }
+      }
+    }
+    if (typeof errObj === 'object') {
+      for (const key of Object.keys(errObj)) {
+        if (errObj[key]) {
+          const res = extractFirstErrorMessage(errObj[key]);
+          if (res.message && res.message !== 'Please fill in all mandatory fields') {
+            return { message: res.message, fieldName: key };
+          }
+        }
+      }
+    }
+    return { message: 'Please fill in all mandatory fields', fieldName: '' };
+  };
+
   const onInvalid = (errors: any) => {
     const errorKeys = Object.keys(errors);
     if (errorKeys.length === 0) return;
 
-    const firstKey = errorKeys[0];
+    // Auto-expand any materials that have errors in material_quantities
+    if (errors.material_quantities) {
+      const currentQuantities = watch('material_quantities') || [];
+      const expandMap: Record<string, boolean> = {};
+      if (Array.isArray(errors.material_quantities)) {
+        errors.material_quantities.forEach((itemErr: any, idx: number) => {
+          if (itemErr && currentQuantities[idx]?.material_id) {
+            expandMap[currentQuantities[idx].material_id] = true;
+          }
+        });
+      }
+      setExpandedMaterials((prev) => ({ ...prev, ...expandMap }));
+    }
+
+    const { message, fieldName } = extractFirstErrorMessage(errors);
+    const targetKey = fieldName || errorKeys[0];
     const targetElement =
-      document.querySelector(`[data-field="${firstKey}"]`) ||
-      document.getElementById(`field-${firstKey}`) ||
-      document.querySelector(`[name="${firstKey}"]`) ||
+      document.querySelector(`[data-field="${targetKey}"]`) ||
+      document.getElementById(`field-${targetKey}`) ||
+      document.querySelector(`[name="${targetKey}"]`) ||
       document.querySelector('.text-rose-500');
 
     if (targetElement) {
@@ -694,8 +745,7 @@ export function StoreFormDrawer() {
       }
     }
 
-    const firstMessage = errors[firstKey]?.message || 'Please fill in all mandatory fields';
-    toast.error(`Mandatory field missing: ${firstMessage}`);
+    toast.error(`Mandatory field missing: ${message}`);
   };
 
   const onSubmit: SubmitHandler<StoreFormValues> = async (data) => {
@@ -1399,6 +1449,25 @@ export function StoreFormDrawer() {
                                 <span className="text-xs font-black text-gray-800 dark:text-gray-200 truncate">
                                   {matName}
                                 </span>
+                                {!isExpanded && (() => {
+                                  const qty = Number(item.quantity) || 1;
+                                  const filledCount = item.serial_numbers?.filter((s) => s && s.trim()).length || 0;
+                                  const isAllFilled = qty > 0 && filledCount === qty;
+                                  return (
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedMaterials((prev) => ({ ...prev, [item.material_id]: true }))}
+                                      className={cn(
+                                        "text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer shrink-0",
+                                        isAllFilled
+                                          ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
+                                          : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 animate-pulse"
+                                      )}
+                                    >
+                                      {isAllFilled ? `${filledCount}/${qty} Barcodes Set` : `Barcodes Required (${filledCount}/${qty})`}
+                                    </button>
+                                  );
+                                })()}
                               </div>
 
                               <div className="flex items-center gap-3 flex-shrink-0">
