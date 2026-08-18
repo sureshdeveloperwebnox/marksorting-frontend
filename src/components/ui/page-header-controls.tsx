@@ -56,6 +56,9 @@ export interface PageHeaderControlsProps {
     /** Optional extra controls rendered between the Refresh button and the Search input */
     renderExtraControls?: () => React.ReactNode;
 
+    /** Optional date range control slot rendered between Search and Filter */
+    dateRangePicker?: React.ReactNode;
+
     className?: string;
 }
 
@@ -71,6 +74,7 @@ export function PageHeaderControls({
     onRefresh,
     isRefreshing = false,
     renderExtraControls,
+    dateRangePicker,
     className,
 }: PageHeaderControlsProps) {
     return (
@@ -117,6 +121,9 @@ export function PageHeaderControls({
                     )}
                 />
             </div>
+
+            {/* ── Date Range Picker ── */}
+            {dateRangePicker}
 
             {/* ── Filter ── */}
             {onFilterClick && (

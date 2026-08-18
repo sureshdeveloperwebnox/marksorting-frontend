@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, Settings } from 'lucide-react';
 import { DashboardCard } from '@/components/dashboard/dashboard-card';
 import { cn } from '@/lib/utils';
+import { useDashboardFilterStore } from '@/store/dashboard-filter-store';
+import useInstallationReportStore from '@/store/useInstallationReportStore';
 
 export interface InstallationListItem {
   id: string;
@@ -20,10 +22,16 @@ interface RecentInstallationsListProps {
 
 export function RecentInstallationsList({ data = [] }: RecentInstallationsListProps) {
   const router = useRouter();
+  const { dateRange } = useDashboardFilterStore();
 
-  // Handle click to view all installations
+  // Handle click to view all installations with active dashboard date filter applied
   const handleViewAll = () => {
-    router.push('/installation-management/installation-report');
+    const sDate = dateRange.startDate || '';
+    const eDate = dateRange.endDate || '';
+    const query = sDate && eDate ? `?dateFrom=${encodeURIComponent(sDate)}&dateTo=${encodeURIComponent(eDate)}` : '';
+    useInstallationReportStore.getState().setDateFrom(sDate);
+    useInstallationReportStore.getState().setDateTo(eDate);
+    router.push(`/installation-management/installation-report${query}`);
   };
 
   const getStatusBadgeClass = (status: string) => {

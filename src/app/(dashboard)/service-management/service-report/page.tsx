@@ -68,6 +68,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
+import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
 import { ServiceReportFormDrawer } from "@/components/forms/service-report-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { useServiceCategories } from "@/services/service-category-service";
@@ -106,7 +107,7 @@ const getStatusDotColors = (status: string) => {
 const getStatusLabel = (status: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "Pending";
-    case "COMPLETED": return "Complete";
+    case "COMPLETED": return "Completed";
     case "NON_SUCCEED":
     case "NON-SUCCEED":
     case "CANCELLED": return "Non-succeed";
@@ -223,14 +224,26 @@ export default function ServiceReportPage() {
   });
   const mills = millsData?.mills || [];
 
-  // Apply millId from URL query param (set when navigating from the Mill Details drawer)
+  // Apply filters from URL query param (set when navigating from Dashboard or other views)
   const searchParams = useSearchParams();
   React.useEffect(() => {
     const millId = searchParams.get("millId");
     if (millId) {
       setMillFilter(millId);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const qDateFrom = searchParams.get("dateFrom");
+    if (qDateFrom) {
+      setDateFrom(qDateFrom);
+    }
+    const qDateTo = searchParams.get("dateTo");
+    if (qDateTo) {
+      setDateTo(qDateTo);
+    }
+    const qStatus = searchParams.get("status");
+    if (qStatus) {
+      setStatusFilter(qStatus);
+    }
+  }, [searchParams, setMillFilter, setDateFrom, setDateTo, setStatusFilter]);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -682,6 +695,17 @@ export default function ServiceReportPage() {
     ];
   }, [viewReportData]);
 
+  const dateRangeValue: DateRangeValue = React.useMemo(() => ({
+    startDate: dateFrom || "",
+    endDate: dateTo || "",
+    label: dateFrom && dateTo ? "Custom Range" : "",
+  }), [dateFrom, dateTo]);
+
+  const handleDateRangeChange = (val: DateRangeValue) => {
+    setDateFrom(val.startDate || "");
+    setDateTo(val.endDate || "");
+  };
+
   const activeFilterCount = [statusFilter, categoryFilter, technicianFilter, customerFilter, millFilter, dateFrom, dateTo].filter(Boolean).length;
 
   /* ── Filter fields ── */
@@ -692,7 +716,7 @@ export default function ServiceReportPage() {
       options: [
         { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
         { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
-        { value: "COMPLETED", label: "Complete", iconColor: "bg-emerald-500", animatePulse: true },
+        { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500", animatePulse: true },
         { value: "NON_SUCCEED", label: "Non-succeed", iconColor: "bg-rose-500", animatePulse: true },
       ],
     },
@@ -927,6 +951,13 @@ export default function ServiceReportPage() {
                 searchValue={localSearch}
                 onSearchChange={setLocalSearch}
                 searchPlaceholder="Search reports..."
+                dateRangePicker={
+                  <DateRangePicker
+                    value={dateRangeValue}
+                    onChange={handleDateRangeChange}
+                    align="auto"
+                  />
+                }
                 onFilterClick={() => setIsFilterDrawerOpen(true)}
                 activeFiltersCount={activeFilterCount}
                 addLabel="New Service"
@@ -972,7 +1003,7 @@ export default function ServiceReportPage() {
                 tabs={[
                   { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
                   { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                  { value: "COMPLETED", label: "Complete", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
                   { value: "NON_SUCCEED", label: "Non-succeed", count: nonSucceedData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
                 ]}
                 activeValue={statusFilter || ""}

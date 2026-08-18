@@ -47,12 +47,14 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
+import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
 import { StoreFormDrawer } from "@/components/forms/store-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 import { TableTabs } from "@/components/ui/table-tabs";
 import { MobileSimulationModal } from "@/components/modals/MobileSimulationModal";
 import { Smartphone } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -150,6 +152,23 @@ export default function StoresPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
   const [isSimulationOpen, setIsSimulationOpen] = React.useState(false);
+
+  // Apply filters from URL query param (set when navigating from Dashboard or other views)
+  const searchParams = useSearchParams();
+  React.useEffect(() => {
+    const qDateFrom = searchParams.get("dateFrom");
+    if (qDateFrom) {
+      setDateFrom(qDateFrom);
+    }
+    const qDateTo = searchParams.get("dateTo");
+    if (qDateTo) {
+      setDateTo(qDateTo);
+    }
+    const qReturnStatus = searchParams.get("return_status");
+    if (qReturnStatus) {
+      setReturnFilter(qReturnStatus);
+    }
+  }, [searchParams, setDateFrom, setDateTo, setReturnFilter]);
 
   // Debounce search
   React.useEffect(() => {
@@ -686,6 +705,17 @@ export default function StoresPage() {
     },
   ], [techniciansData, customersData]);
 
+  const dateRangeValue: DateRangeValue = React.useMemo(() => ({
+    startDate: dateFrom || "",
+    endDate: dateTo || "",
+    label: dateFrom && dateTo ? "Custom Range" : "",
+  }), [dateFrom, dateTo]);
+
+  const handleDateRangeChange = (val: DateRangeValue) => {
+    setDateFrom(val.startDate || "");
+    setDateTo(val.endDate || "");
+  };
+
   const activeFiltersCount = [
     serviceEngineerFilter,
     customerFilter,
@@ -951,6 +981,13 @@ export default function StoresPage() {
                   searchValue={localSearch}
                   onSearchChange={setLocalSearch}
                   searchPlaceholder="Search store records..."
+                  dateRangePicker={
+                    <DateRangePicker
+                      value={dateRangeValue}
+                      onChange={handleDateRangeChange}
+                      align="auto"
+                    />
+                  }
                   onFilterClick={() => setIsFilterDrawerOpen(true)}
                   activeFiltersCount={activeFiltersCount}
                   addLabel="Add Record"

@@ -34,6 +34,8 @@ interface DateRangePickerProps {
   value: DateRangeValue;
   onChange: (value: DateRangeValue) => void;
   className?: string;
+  wrapperClassName?: string;
+  placeholder?: string;
   disabled?: boolean;
   align?: 'start' | 'end' | 'auto';
 }
@@ -42,6 +44,8 @@ export function DateRangePicker({
   value,
   onChange,
   className,
+  wrapperClassName,
+  placeholder = 'Select dates',
   disabled = false,
   align = 'auto',
 }: DateRangePickerProps) {
@@ -340,7 +344,7 @@ export function DateRangePicker({
   };
 
   const formattedDisplayRange = React.useMemo(() => {
-    if (!parsedStart || !parsedEnd) return 'Select dates';
+    if (!parsedStart || !parsedEnd) return placeholder || 'Select dates';
     
     if (value.label && value.label !== 'Custom Range') {
       return value.label;
@@ -349,10 +353,10 @@ export function DateRangePicker({
     const startStr = format(parsedStart, 'dd MMM yyyy');
     const endStr = format(parsedEnd, 'dd MMM yyyy');
     return `${startStr} - ${endStr}`;
-  }, [parsedStart, parsedEnd, value.label]);
+  }, [parsedStart, parsedEnd, value.label, placeholder]);
 
   return (
-    <div className="w-full">
+    <div className={cn("w-auto", wrapperClassName)}>
       <button
         ref={triggerRef}
         type="button"

@@ -104,7 +104,7 @@ const getStatusLabel = (status: string, tab: string) => {
     }
     switch (status?.toUpperCase()) {
         case "PENDING": return "Pending";
-        case "COMPLETED": return "Complete";
+        case "COMPLETED": return "Completed";
         case "NON_SUCCEED":
         case "NON-SUCCEED":
         case "CANCELLED": return "Non-succeed";
@@ -368,7 +368,7 @@ export default function ReportsPage() {
                 : [
                     { value: "ALL", label: "All Statuses", iconColor: "bg-gray-400 dark:bg-gray-500" },
                     { value: "PENDING", label: "Pending", iconColor: "bg-amber-500", animatePulse: true },
-                    { value: "COMPLETED", label: "Complete", iconColor: "bg-emerald-500" },
+                    { value: "COMPLETED", label: "Completed", iconColor: "bg-emerald-500" },
                     { value: "NON_SUCCEED", label: "Non-succeed", iconColor: "bg-rose-500" },
                   ],
         };

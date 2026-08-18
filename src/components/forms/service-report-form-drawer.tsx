@@ -266,7 +266,7 @@ const getStatusDotBg = (status?: string) => {
 const getStatusLabel = (status?: string) => {
   switch (status?.toUpperCase()) {
     case "PENDING": return "Pending";
-    case "COMPLETED": return "Complete";
+    case "COMPLETED": return "Completed";
     case "NON_SUCCEED":
     case "NON-SUCCEED":
     case "CANCELLED": return "Non-succeed";
@@ -284,7 +284,7 @@ const SERVICE_REPORT_STATUS_OPTIONS = [
   },
   {
     value: "COMPLETED",
-    label: "Complete",
+    label: "Completed",
     icon: CheckCircle2,
     iconColor: "text-emerald-500",
     activeClasses: "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-500/20 font-bold",

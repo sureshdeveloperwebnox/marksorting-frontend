@@ -27,6 +27,7 @@ interface DashboardStatsProps {
     subtitle: string;
     sparklineData?: number[];
     href?: string;
+    onClick?: () => void;
   }>;
   // Kept for backward compatibility to avoid type errors during refactoring
   activeId?: string;
@@ -66,6 +67,7 @@ export function DashboardStats({ stats = [] }: DashboardStatsProps) {
             sparklineData={sparkData}
             delay={idx * 0.08}
             href={stat.href}
+            onClick={stat.onClick}
           />
         );
       })}

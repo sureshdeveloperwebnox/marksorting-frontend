@@ -2,9 +2,14 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useDashboard } from '@/services/dashboard-service';
 import { useStores } from '@/services/store-service';
 import { useDashboardFilterStore } from '@/store/dashboard-filter-store';
+import useServiceReportStore from '@/store/useServiceReportStore';
+import useInstallationReportStore from '@/store/useInstallationReportStore';
+import useExpenseStore from '@/store/useExpenseStore';
+import { useStoreItemStore } from '@/store/useStoreItemStore';
 import { DashboardGreeting } from './components/dashboard-greeting';
 import { DashboardStats } from './components/dashboard-stats';
 import { CombinedTrendChart } from './components/combined-trend-chart';
@@ -33,6 +38,7 @@ const fallbackInstallations = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { dateRange } = useDashboardFilterStore();
   const { data, isLoading } = useDashboard(dateRange.startDate, dateRange.endDate);
   const { data: storesData } = useStores({ skip: 0, take: 1 });
@@ -41,6 +47,32 @@ export default function DashboardPage() {
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleStatCardClick = (id: 'services' | 'installations' | 'expenses' | 'stores') => {
+    const sDate = dateRange.startDate || '';
+    const eDate = dateRange.endDate || '';
+    const query = sDate && eDate ? `?dateFrom=${encodeURIComponent(sDate)}&dateTo=${encodeURIComponent(eDate)}` : '';
+
+    if (id === 'services') {
+      useServiceReportStore.getState().setDateFrom(sDate);
+      useServiceReportStore.getState().setDateTo(eDate);
+      router.push(`/service-management/service-report${query}`);
+    } else if (id === 'installations') {
+      useInstallationReportStore.getState().setDateFrom(sDate);
+      useInstallationReportStore.getState().setDateTo(eDate);
+      router.push(`/installation-management/installation-report${query}`);
+    } else if (id === 'expenses') {
+      useExpenseStore.getState().setDateFrom(sDate);
+      useExpenseStore.getState().setDateTo(eDate);
+      useExpenseStore.getState().setExpenseDateFrom(sDate);
+      useExpenseStore.getState().setExpenseDateTo(eDate);
+      router.push(`/expense/expenses${query}`);
+    } else if (id === 'stores') {
+      useStoreItemStore.getState().setDateFrom(sDate);
+      useStoreItemStore.getState().setDateTo(eDate);
+      router.push(`/stores${query}`);
+    }
+  };
 
   if (isLoading || !data || !mounted) {
     return <DashboardSkeleton />;
@@ -60,6 +92,10 @@ export default function DashboardPage() {
   const expensesAmount = expensesStat ? parseFloat(expensesStat.value.replace(/[^0-9.]/g, '')) || 0 : 0;
   const storesCount = storesData?.total ?? (storesStat ? parseInt(storesStat.value.replace(/[^0-9]/g, '')) || 0 : 0);
 
+  const sDate = dateRange.startDate || '';
+  const eDate = dateRange.endDate || '';
+  const query = sDate && eDate ? `?dateFrom=${encodeURIComponent(sDate)}&dateTo=${encodeURIComponent(eDate)}` : '';
+
   // Map stats dynamically using backend provided data (falling back if not present)
   const mappedStats = [
     {
@@ -71,7 +107,8 @@ export default function DashboardPage() {
       variant: 'emerald' as const,
       subtitle: servicesStat?.subtitle || 'vs last month',
       sparklineData: [20, 25, 15, 30, 25, 45, 30, 55, 45, 60],
-      href: '/service-management/service-report',
+      href: `/service-management/service-report${query}`,
+      onClick: () => handleStatCardClick('services'),
     },
     {
       id: 'installations' as const,
@@ -82,7 +119,8 @@ export default function DashboardPage() {
       variant: 'rose' as const,
       subtitle: installationsStat?.subtitle || 'vs last month',
       sparklineData: [15, 20, 10, 25, 20, 35, 25, 45, 40, 55],
-      href: '/installation-management/installation-report',
+      href: `/installation-management/installation-report${query}`,
+      onClick: () => handleStatCardClick('installations'),
     },
     {
       id: 'expenses' as const,
@@ -93,7 +131,8 @@ export default function DashboardPage() {
       variant: 'orange' as const,
       subtitle: expensesStat?.subtitle || 'vs last month',
       sparklineData: [30, 25, 40, 35, 50, 45, 60, 55, 70, 65],
-      href: '/expense/expenses',
+      href: `/expense/expenses${query}`,
+      onClick: () => handleStatCardClick('expenses'),
     },
     {
       id: 'stores' as const,
@@ -104,7 +143,8 @@ export default function DashboardPage() {
       variant: 'blue' as const,
       subtitle: storesStat?.subtitle || 'total records',
       sparklineData: [25, 30, 20, 35, 30, 50, 40, 60, 50, 75],
-      href: '/stores',
+      href: `/stores${query}`,
+      onClick: () => handleStatCardClick('stores'),
     }
   ];
 

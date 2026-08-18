@@ -56,10 +56,12 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
+import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
 import { ExpenseFormDrawer } from "@/components/forms/expense-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
 import { TableTabs } from "@/components/ui/table-tabs";
+import { useSearchParams } from "next/navigation";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -134,6 +136,25 @@ export default function ExpensesPage() {
 
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
   const technicians = techniciansData?.technicians || [];
+
+  // Apply filters from URL query param (set when navigating from Dashboard or other views)
+  const searchParams = useSearchParams();
+  React.useEffect(() => {
+    const qDateFrom = searchParams.get("dateFrom");
+    if (qDateFrom) {
+      setDateFrom(qDateFrom);
+      setExpenseDateFrom(qDateFrom);
+    }
+    const qDateTo = searchParams.get("dateTo");
+    if (qDateTo) {
+      setDateTo(qDateTo);
+      setExpenseDateTo(qDateTo);
+    }
+    const qStatus = searchParams.get("status");
+    if (qStatus) {
+      setStatusFilter(qStatus);
+    }
+  }, [searchParams, setDateFrom, setDateTo, setExpenseDateFrom, setExpenseDateTo, setStatusFilter]);
 
   React.useEffect(() => {
     const t = setTimeout(() => setSearch(localSearch), 350);
@@ -547,6 +568,19 @@ export default function ExpensesPage() {
     ];
   }, [viewExpenseData]);
 
+  const dateRangeValue: DateRangeValue = React.useMemo(() => ({
+    startDate: expenseDateFrom || dateFrom || "",
+    endDate: expenseDateTo || dateTo || "",
+    label: (expenseDateFrom && expenseDateTo) || (dateFrom && dateTo) ? "Custom Range" : "",
+  }), [expenseDateFrom, expenseDateTo, dateFrom, dateTo]);
+
+  const handleDateRangeChange = (val: DateRangeValue) => {
+    setDateFrom(val.startDate || "");
+    setDateTo(val.endDate || "");
+    setExpenseDateFrom(val.startDate || "");
+    setExpenseDateTo(val.endDate || "");
+  };
+
   const activeFilterCount = [statusFilter, technicianFilter, dateFrom, dateTo, createdDateFrom, createdDateTo, expenseDateFrom, expenseDateTo].filter(Boolean).length;
 
   /* ── Filter fields ── */
@@ -824,6 +858,13 @@ export default function ExpensesPage() {
                 searchValue={localSearch}
                 onSearchChange={setLocalSearch}
                 searchPlaceholder="Search expenses..."
+                dateRangePicker={
+                  <DateRangePicker
+                    value={dateRangeValue}
+                    onChange={handleDateRangeChange}
+                    align="auto"
+                  />
+                }
                 onFilterClick={() => setIsFilterDrawerOpen(true)}
                 activeFiltersCount={activeFilterCount}
                 addLabel="New Expense"
