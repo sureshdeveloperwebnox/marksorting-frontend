@@ -267,11 +267,14 @@ export function DatePicker({
         ref={triggerRef}
         type="button"
         disabled={disabled}
+        data-filled={Boolean(value)}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full h-11 px-4 rounded-xl flex items-center justify-between text-left text-sm transition-all outline-hidden border border-transparent select-none cursor-pointer",
-          "bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/8 text-gray-800 dark:text-gray-200 font-medium shadow-sm",
-          isOpen && "ring-2 ring-primary/20 bg-white dark:bg-gray-900 border-primary/20",
+          "w-full h-11 px-4 rounded-xl flex items-center justify-between text-left text-sm transition-all outline-hidden select-none cursor-pointer",
+          value
+            ? "bg-primary/[0.035] dark:bg-primary/[0.08] border-2 border-gray-900 dark:border-white text-gray-900 dark:text-white font-bold shadow-sm"
+            : "bg-gray-50/50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10 text-gray-800 dark:text-gray-200 font-medium",
+          isOpen && "ring-2 ring-primary/20 bg-white dark:bg-gray-900 border-primary/30",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none",
           className
         )}

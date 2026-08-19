@@ -140,6 +140,36 @@
   textarea::placeholder {
     font-weight: 400 !important;
   }
+
+  /* Universal styling for filled vs unfilled input fields across all modules */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
+  textarea:not(:placeholder-shown),
+  [data-filled="true"] {
+    background-color: rgba(234, 88, 12, 0.035) !important;
+    border: 2px solid rgb(17, 24, 39) !important;
+    color: rgb(17, 24, 39) !important;
+  }
+
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
+  .dark textarea:not(:placeholder-shown),
+  .dark [data-filled="true"] {
+    background-color: rgba(234, 88, 12, 0.08) !important;
+    border: 2px solid rgb(243, 244, 246) !important;
+    color: rgb(249, 250, 251) !important;
+  }
+
+  /* Empty / Unfilled state styling */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
+  textarea:placeholder-shown,
+  [data-filled="false"] {
+    border: 1.5px solid rgba(209, 213, 219, 0.85) !important;
+  }
+
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
+  .dark textarea:placeholder-shown,
+  .dark [data-filled="false"] {
+    border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+  }
 }
 
 /* Custom styles for react-phone-number-input */

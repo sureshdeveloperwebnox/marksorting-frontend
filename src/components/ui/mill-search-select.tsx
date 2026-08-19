@@ -71,13 +71,13 @@ export function MillSearchSelect({
       <button
         type="button"
         disabled={disabled}
+        data-filled={Boolean(displayName)}
         onClick={() => !disabled && setOpen((v) => !v)}
         className={cn(
-          'w-full h-10 px-3 text-left',
-          'bg-gray-50/50 dark:bg-white/5 rounded-xl border border-transparent',
-          'outline-none focus:ring-2 focus:ring-primary/20',
-          'transition-all duration-200',
-          'flex items-center justify-between gap-2',
+          'w-full h-10 px-3 text-left rounded-xl outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 flex items-center justify-between gap-2',
+          displayName
+            ? 'bg-primary/[0.035] dark:bg-primary/[0.08] border-2 border-gray-900 dark:border-white shadow-sm'
+            : 'bg-gray-50/50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10',
           disabled && 'opacity-50 cursor-not-allowed'
         )}
       >
