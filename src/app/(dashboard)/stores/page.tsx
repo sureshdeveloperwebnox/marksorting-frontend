@@ -13,6 +13,7 @@ import {
   Edit,
   Trash2,
   Loader2,
+  Check,
   Store as StoreIcon,
   CheckCircle2,
   Clock,
@@ -46,6 +47,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
 import { StoreFormDrawer } from "@/components/forms/store-form-drawer";
@@ -152,6 +154,11 @@ export default function StoresPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
   const [isSimulationOpen, setIsSimulationOpen] = React.useState(false);
+  const [localServiceType, setLocalServiceType] = React.useState<string>("Acknowledgement");
+  const [pendingServiceType, setPendingServiceType] = React.useState<string>("Acknowledgement");
+  const [isSavingServiceType, setIsSavingServiceType] = React.useState(false);
+  const [pendingReturnStatus, setPendingReturnStatus] = React.useState<string>("Pending");
+  const [isSavingReturnStatus, setIsSavingReturnStatus] = React.useState(false);
 
   // Apply filters from URL query param (set when navigating from Dashboard or other views)
   const searchParams = useSearchParams();
@@ -313,13 +320,130 @@ export default function StoresPage() {
     return cleaned || "—";
   };
 
+  const handleServiceTypeChange = async (newType: string) => {
+    if (!selectedViewStoreId || !viewStoreData) return;
+    setIsSavingServiceType(true);
+    setLocalServiceType(newType);
+    setPendingServiceType(newType);
+    try {
+      await updateStoreMutation.mutateAsync({
+        id: selectedViewStoreId,
+        service_type: newType,
+        remarks: viewStoreData.remarks || '',
+      });
+      await handleRefresh();
+      toast.success(`Service type updated to "${newType}"`);
+    } catch {
+      const revert = parseServiceTypeFromRemarks(viewStoreData.remarks);
+      setLocalServiceType(revert);
+      setPendingServiceType(revert);
+    } finally {
+      setIsSavingServiceType(false);
+    }
+  };
+
+  // Sync localServiceType when viewStoreData changes
+  React.useEffect(() => {
+    if (viewStoreData) {
+      const st = parseServiceTypeFromRemarks(viewStoreData.remarks);
+      setLocalServiceType(st);
+      setPendingServiceType(st);
+      setPendingReturnStatus(viewStoreData.return_status || 'Pending');
+    }
+  }, [viewStoreData]);
+
+  const handleReturnStatusChange = async (newStatus: string) => {
+    if (!selectedViewStoreId || !viewStoreData) return;
+    setIsSavingReturnStatus(true);
+    try {
+      await updateStoreMutation.mutateAsync({
+        id: selectedViewStoreId,
+        return_status: newStatus,
+      });
+      setPendingReturnStatus(newStatus);
+      await handleRefresh();
+      toast.success(`Return status updated to "${newStatus}"`);
+    } catch {
+      setPendingReturnStatus(viewStoreData.return_status || 'Pending');
+    } finally {
+      setIsSavingReturnStatus(false);
+    }
+  };
+
   const viewSections = React.useMemo(() => {
     if (!viewStoreData) return [];
 
     const serialMap = parseSerialMapFromRemarks(viewStoreData.remarks);
     const cleanRemarks = extractCleanRemarks(viewStoreData.remarks);
+    const currentServiceType = parseServiceTypeFromRemarks(viewStoreData.remarks);
+    const isReturnStatusEditable = viewStoreData.return_status === "In Progress";
 
     return [
+      {
+        title: "Status Actions",
+        items: [
+          {
+            label: "Return Status",
+            value: isReturnStatusEditable ? (
+              <div className="flex items-center gap-2">
+                <Select
+                  value={pendingReturnStatus}
+                  onValueChange={(val) => val && setPendingReturnStatus(val)}
+                >
+                  <SelectTrigger className="h-8 w-44 text-xs font-bold bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-primary/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-gray-100 shadow-xl z-[9999]">
+                    <SelectItem value="In Progress" className="font-bold py-2 text-xs text-blue-500">In Progress</SelectItem>
+                    <SelectItem value="Returned" className="font-bold py-2 text-xs text-emerald-500">Returned</SelectItem>
+                    <SelectItem value="Not Returned" className="font-bold py-2 text-xs text-rose-500">Not Returned</SelectItem>
+                  </SelectContent>
+                </Select>
+                {pendingReturnStatus !== viewStoreData.return_status && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleReturnStatusChange(pendingReturnStatus)}
+                    disabled={isSavingReturnStatus}
+                    className="h-8 px-3 rounded-lg text-xs font-bold bg-primary hover:bg-primary/90 text-white shadow-sm gap-1"
+                  >
+                    {isSavingReturnStatus ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check size={12} strokeWidth={3} />}
+                    Submit
+                  </Button>
+                )}
+                {isSavingReturnStatus && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <div className={cn("w-2 h-2 rounded-full", getReturnDotColors(viewStoreData.return_status))} />
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                    getReturnColors(viewStoreData.return_status)
+                  )}
+                >
+                  {viewStoreData.return_status}
+                </Badge>
+              </div>
+            ),
+            icon: Clock,
+          },
+          {
+            label: "Service Type (Shared by Engineer)",
+            value: (
+              <span className={cn(
+                "font-semibold text-xs",
+                currentServiceType === 'Replacement'
+                  ? "text-blue-500 dark:text-blue-400"
+                  : "text-emerald-500 dark:text-emerald-400"
+              )}>
+                {currentServiceType}
+              </span>
+            ),
+            icon: Wrench,
+          },
+        ],
+      },
       {
         title: "People & Ownership",
         items: [
@@ -332,6 +456,106 @@ export default function StoresPage() {
             label: "Customer",
             value: viewStoreData.customer?.name || "—",
             icon: Users,
+          },
+        ],
+      },
+      {
+        title: "Record Status",
+        items: [
+          {
+            label: "Warranty Status",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  getWarrantyColors(viewStoreData.warranty_status)
+                )}
+              >
+                {viewStoreData.warranty_status}
+              </Badge>
+            ),
+            icon: ShieldAlert,
+          },
+          {
+            label: "Stock Status",
+            value: (
+              <div className="flex items-center gap-1.5">
+                <div className={cn("w-2 h-2 rounded-full", getInflowDotColors(viewStoreData.inflow_status))} />
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                    getInflowColors(viewStoreData.inflow_status)
+                  )}
+                >
+                  {viewStoreData.inflow_status}
+                </Badge>
+              </div>
+            ),
+            icon: StoreIcon,
+          },
+          {
+            label: "Stock Type",
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  viewStoreData.stock_type === "From Store"
+                    ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                )}
+              >
+                {viewStoreData.stock_type || "Inflow"}
+              </Badge>
+            ),
+            icon: Package,
+          },
+          {
+            label: "Service Type",
+            value: viewStoreData.return_status === "In Progress" ? (
+              <div className="flex items-center gap-2">
+                <Select
+                  value={pendingServiceType}
+                  onValueChange={(val) => val && setPendingServiceType(val)}
+                >
+                  <SelectTrigger className="h-8 w-44 text-xs font-bold bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-primary/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-gray-100 shadow-xl z-[9999]">
+                    <SelectItem value="Acknowledgement" className="font-bold py-2 text-xs text-emerald-600 dark:text-emerald-400">
+                      Acknowledgement
+                    </SelectItem>
+                    <SelectItem value="Replacement" className="font-bold py-2 text-xs text-blue-600 dark:text-blue-400">
+                      Replacement
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {pendingServiceType !== localServiceType && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleServiceTypeChange(pendingServiceType)}
+                    disabled={isSavingServiceType}
+                    className="h-8 px-3 rounded-lg text-xs font-bold bg-primary hover:bg-primary/90 text-white shadow-sm gap-1"
+                  >
+                    {isSavingServiceType ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check size={12} strokeWidth={3} />}
+                    Submit
+                  </Button>
+                )}
+                {isSavingServiceType && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+              </div>
+            ) : (
+              <span className={cn(
+                "font-semibold text-xs",
+                currentServiceType === 'Replacement'
+                  ? "text-blue-500 dark:text-blue-400"
+                  : "text-emerald-500 dark:text-emerald-400"
+              )}>
+                {currentServiceType}
+              </span>
+            ),
+            icon: Wrench,
           },
         ],
       },
@@ -456,7 +680,7 @@ export default function StoresPage() {
                       </div>
                     ) : null}
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Service Type / Acknowledgement</span>
+                      <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Service Type</span>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <Badge
                           variant="outline"
@@ -532,79 +756,6 @@ export default function StoresPage() {
         ],
       }] : []),
       {
-        title: "Status & Warranties",
-        items: [
-          {
-            label: "Warranty Status",
-            value: (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-                  getWarrantyColors(viewStoreData.warranty_status)
-                )}
-              >
-                {viewStoreData.warranty_status}
-              </Badge>
-            ),
-            icon: ShieldAlert,
-          },
-          {
-            label: "Return Status",
-            value: (
-              <div className="flex items-center gap-1.5">
-                <div className={cn("w-2 h-2 rounded-full", getReturnDotColors(viewStoreData.return_status))} />
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-                    getReturnColors(viewStoreData.return_status)
-                  )}
-                >
-                  {viewStoreData.return_status}
-                </Badge>
-              </div>
-            ),
-            icon: Clock,
-          },
-          {
-            label: "Stock Status",
-            value: (
-              <div className="flex items-center gap-1.5">
-                <div className={cn("w-2 h-2 rounded-full", getInflowDotColors(viewStoreData.inflow_status))} />
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-                    getInflowColors(viewStoreData.inflow_status)
-                  )}
-                >
-                  {viewStoreData.inflow_status}
-                </Badge>
-              </div>
-            ),
-            icon: StoreIcon,
-          },
-          {
-            label: "Stock Type",
-            value: (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-                  viewStoreData.stock_type === "From Store"
-                    ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
-                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                )}
-              >
-                {viewStoreData.stock_type || "Inflow"}
-              </Badge>
-            ),
-            icon: Package,
-          },
-        ],
-      },
-      {
         title: "Metadata",
         items: [
           {
@@ -624,7 +775,7 @@ export default function StoresPage() {
         ],
       },
     ];
-  }, [viewStoreData]);
+  }, [viewStoreData, localServiceType, pendingServiceType, isSavingServiceType, pendingReturnStatus, isSavingReturnStatus]);
 
   const confirmDelete = async () => {
     if (!deleteId) return;
@@ -788,6 +939,26 @@ export default function StoresPage() {
         return (
           <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", getWarrantyColors(val))}>
             {val}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "service_type",
+      header: "Service Type",
+      cell: ({ row }) => {
+        const serviceType = parseServiceTypeFromRemarks(row.original.remarks);
+        return (
+          <Badge
+            variant="outline"
+            className={cn(
+              "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+              serviceType === 'Replacement'
+                ? "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500/20"
+                : "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20"
+            )}
+          >
+            {serviceType}
           </Badge>
         );
       },

@@ -39,6 +39,7 @@ export interface Store {
   return_status: string;
   inflow_status: string;
   stock_type?: string;
+  service_type?: string;
   barcode?: string;
   provider_name?: string;
   invoice_number?: string;
@@ -220,9 +221,20 @@ export const useUpdateStore = () => {
     },
     onSuccess: (response: any) => {
       const updatedStore = response?.after || response;
-      queryClient.invalidateQueries({ queryKey: ["stores"] });
       if (updatedStore?.id) {
         queryClient.setQueryData(["store", updatedStore.id], updatedStore);
+        queryClient.setQueriesData<StoresResponse>({ queryKey: ["stores"] }, (oldData) => {
+          if (!oldData || !Array.isArray(oldData.stores)) return oldData;
+          return {
+            ...oldData,
+            stores: oldData.stores.map((s) => (s.id === updatedStore.id ? { ...s, ...updatedStore } : s)),
+          };
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["stores"], refetchType: "all" });
+      queryClient.refetchQueries({ queryKey: ["stores"] });
+      if (updatedStore?.id) {
+        queryClient.invalidateQueries({ queryKey: ["store", updatedStore.id] });
       }
       toast.success("Store record updated successfully");
     },
