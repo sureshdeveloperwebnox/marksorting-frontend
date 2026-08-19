@@ -94,8 +94,8 @@ export function MaterialMultiSelect({
         className={cn(
           'w-full min-h-[44px] px-3 py-2 text-left cursor-pointer rounded-xl outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 flex items-start gap-2 flex-wrap',
           selectedMaterials.length > 0
-            ? 'bg-primary/[0.035] dark:bg-primary/[0.08] border-2 border-gray-900 dark:border-white shadow-sm'
-            : 'bg-gray-50/50 dark:bg-white/5 border border-gray-200/80 dark:border-white/10',
+            ? 'bg-white dark:bg-[#18181b] border-2 border-gray-900 dark:border-white shadow-sm'
+            : 'bg-primary/[0.025] dark:bg-primary/[0.05] border-2 border-primary dark:border-primary',
           disabled && 'opacity-50 cursor-not-allowed pointer-events-none'
         )}
       >

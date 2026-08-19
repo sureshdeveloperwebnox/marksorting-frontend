@@ -132,71 +132,6 @@ const getExpenseSchema = (isServiceEngineer: boolean) => z.object({
 
 type ExpenseFormValues = z.infer<ReturnType<typeof getExpenseSchema>>;
 
-interface ExpenseSection {
-  id: number;
-  title: string;
-  icon: React.ComponentType<any>;
-}
-
-function SectionToggle({
-  section,
-  isOpen,
-  onToggle,
-  children,
-}: {
-  section: ExpenseSection;
-  isOpen: boolean;
-  onToggle: (id: number) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border border-gray-100 dark:border-white/5 rounded-xl bg-white dark:bg-gray-950">
-      <button
-        type="button"
-        onClick={() => onToggle(section.id)}
-        className={cn(
-          "w-full flex items-center justify-between px-5 py-4 bg-gray-50/50 dark:bg-white/5 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors",
-          isOpen ? "rounded-t-xl" : "rounded-xl"
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <section.icon size={16} className="text-primary" />
-          </div>
-          <span className="font-bold text-sm text-gray-800 dark:text-gray-200">
-            {section.id}. {section.title}
-          </span>
-        </div>
-        {isOpen ? (
-          <ChevronDown size={18} className="text-gray-400" />
-        ) : (
-          <ChevronRight size={18} className="text-gray-400" />
-        )}
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-            animate={{
-              height: 'auto',
-              opacity: 1,
-              transitionEnd: { overflow: 'visible' },
-            }}
-            exit={{
-              height: 0,
-              opacity: 0,
-              overflow: 'hidden',
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="px-5 pb-5 pt-4 space-y-4">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-[11px] text-rose-500 font-bold ml-1">{message}</p> : null;
 }
@@ -339,15 +274,9 @@ export function ExpenseFormDrawer() {
     };
   }, [eligibilityData]);
 
-  const sections = React.useMemo<ExpenseSection[]>(() => [
-    { id: 1, title: expenseType === 'MILL' ? 'Engineer & Mill Details' : 'Engineer & Other Details', icon: Users },
-    { id: 2, title: 'Expense Info & Receipts', icon: DollarSign },
-  ], [expenseType]);
-
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
   const [selectedMillObj, setSelectedMillObj] = React.useState<any>(null);
-  const [openSections, setOpenSections] = React.useState<Record<number, boolean>>({ 1: true, 2: true });
   const [activeUploadIndex, setActiveUploadIndex] = React.useState<number | null>(null);
   const [reportTypeRadio, setReportTypeRadio] = React.useState<'none' | 'service' | 'installation'>('none');
 
@@ -430,10 +359,6 @@ export function ExpenseFormDrawer() {
     ).slice(0, 5);
   }, [quickCustomerName, customers, existingCustomerId]);
 
-  const toggleSection = (id: number) => {
-    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
 
   const filteredMills = React.useMemo(() => {
     let baseMills = mills;
@@ -487,7 +412,6 @@ export function ExpenseFormDrawer() {
     if (isEdit && !expenseData) return;
 
     initializedFormKeyRef.current = formKey;
-    setOpenSections({ 1: true, 2: false, 3: false, 4: true });
 
     if (isFormDrawerOpen) {
       if (isEdit && expenseData) {
@@ -651,32 +575,7 @@ export function ExpenseFormDrawer() {
   const isLoading = isEdit && expenseLoading;
   const isSubmitting = isCreating || isUpdating || isUploading;
 
-  const fieldToSectionMap: Record<string, number> = {
-    technician_ids: 1,
-    mill_id: 1,
-    place: 1,
-    others: 1,
-    visit_date: 1,
-    visit_time: 1,
-    expense_items: 2,
-  };
-
   const scrollToFirstError = (errors: any) => {
-    const sectionsToOpen: Record<number, boolean> = {};
-    Object.keys(errors).forEach((fieldName) => {
-      const sectionId = fieldToSectionMap[fieldName];
-      if (sectionId) {
-        sectionsToOpen[sectionId] = true;
-      }
-    });
-
-    if (Object.keys(sectionsToOpen).length > 0) {
-      setOpenSections((prev) => ({
-        ...prev,
-        ...sectionsToOpen,
-      }));
-    }
-
     const fieldLabelMap: Record<string, string> = {
       technician_ids: 'Service Engineers',
       mill_id: 'Mill Name',
@@ -732,116 +631,91 @@ export function ExpenseFormDrawer() {
             <div className="flex items-center justify-center h-full min-h-[300px]">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : (
-            <form id="expense-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
+          ) : (            <form id="expense-report-form" ref={formRef} onSubmit={handleSubmit(onSubmit, scrollToFirstError)} className="space-y-4">
               {/* Expense Status Management Card (Edit Mode) */}
               {isEdit && (
-                <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-5 shadow-sm space-y-3.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-3.5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-primary uppercase tracking-widest">
                       <Shield size={14} className="text-primary/70" />
-                      Expense Status
-                    </Label>
-                    <span className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border uppercase tracking-wider",
-                      getStatusColors(selectedStatus)
-                    )}>
-                      <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", getStatusDotBg(selectedStatus))} />
-                      {getStatusLabel(selectedStatus)}
-                    </span>
+                      Status:
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {EXPENSE_STATUS_OPTIONS.map((opt) => {
+                        const isSelected = selectedStatus === opt.value;
+                        const Icon = opt.icon;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setSelectedStatus(opt.value)}
+                            className={cn(
+                              "flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-xs font-bold transition-all select-none cursor-pointer",
+                              isSelected
+                                ? opt.activeClasses
+                                : "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-100"
+                            )}
+                          >
+                            <Icon size={12} className={isSelected ? "text-white" : opt.iconColor} />
+                            <span>{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-
-                  {/* 4 Status Option Pills */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {EXPENSE_STATUS_OPTIONS.map((opt) => {
-                      const isSelected = selectedStatus === opt.value;
-                      const Icon = opt.icon;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setSelectedStatus(opt.value)}
-                          className={cn(
-                            "flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all duration-200 cursor-pointer select-none",
-                            isSelected
-                              ? opt.activeClasses
-                              : "bg-gray-50/70 dark:bg-white/5 border-gray-200/70 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"
-                          )}
-                        >
-                          <Icon size={14} className={isSelected ? "text-white" : opt.iconColor} />
-                          <span>{opt.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Quick Update Status Alone Button */}
-                  <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
-                      {selectedStatus !== expenseData?.status
-                        ? `Ready to update status to "${getStatusLabel(selectedStatus)}".`
-                        : "Select any status above to update it alone."}
-                    </p>
+                  {selectedStatus !== expenseData?.status && (
                     <Button
                       type="button"
                       size="sm"
-                      disabled={isUpdatingStatusAlone || isSubmitting || selectedStatus === expenseData?.status}
+                      disabled={isUpdatingStatusAlone || isSubmitting}
                       onClick={() => handleUpdateStatusAlone(selectedStatus)}
-                      className={cn(
-                        "h-9 px-4 rounded-xl text-xs font-bold text-white shadow-md transition-all duration-200 shrink-0 flex items-center gap-1.5",
-                        selectedStatus !== expenseData?.status
-                          ? "bg-primary hover:bg-primary/90 shadow-primary/20"
-                          : "bg-gray-300 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-70"
-                      )}
+                      className="h-8 px-3 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary/90 shadow-sm shrink-0 flex items-center gap-1"
                     >
-                      {isUpdatingStatusAlone ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Updating Status...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Update Status Alone
-                        </>
-                      )}
+                      {isUpdatingStatusAlone ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 size={12} />}
+                      Update Status
                     </Button>
-                  </div>
+                  )}
                 </div>
               )}
-              {/* Top Configuration Card: Expense Type + Expense Date in a Responsive 2-Column Grid */}
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-5 shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Expense Type Select */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Tag size={14} className="text-primary/70" />
+
+              {/* SECTION 1: TRIP, ENGINEERS & LOCATION DETAILS (4-Column Layout) */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-4 shadow-sm space-y-3.5">
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-2.5">
+                  <div className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <MapPin size={14} className="text-primary/70" />
+                    1. Trip & Location Details
+                  </div>
+                </div>
+
+                {/* Row 1 (4 Columns): Expense Type, Expense Date, Visit Time, Place */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-start">
+                  {/* 1. Expense Type */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                      <Tag size={12} className="text-primary/70" />
                       Expense Type *
                     </Label>
                     <Controller
                       name="expense_type"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                            <SelectValue placeholder="Select Expense Type" />
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                            <SelectValue placeholder="Expense Type" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                            <SelectItem value="MILL" className="font-bold py-3">Mill / Machine Expense</SelectItem>
-                            <SelectItem value="OTHERS" className="font-bold py-3">Others (Travel, Hotel, Food, etc.)</SelectItem>
+                            <SelectItem value="MILL" className="font-bold py-2.5">Mill / Machine Expense</SelectItem>
+                            <SelectItem value="OTHERS" className="font-bold py-2.5">Others (Travel, Food, etc.)</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
                     />
                   </div>
 
-                  {/* Expense Date */}
-                  <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <CalendarDays size={14} className="text-primary/70" />
+                  {/* 2. Expense Date */}
+                  <div className="space-y-1.5" data-error={errors.visit_date ? 'true' : undefined}>
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                      <CalendarDays size={12} className="text-primary/70" />
                       Expense Date *
                     </Label>
                     <Controller
@@ -851,642 +725,563 @@ export function ExpenseFormDrawer() {
                         <DatePicker
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Select expense date"
+                          placeholder="Select date"
                         />
                       )}
                     />
                     <FieldError message={errors.visit_date?.message} />
                   </div>
-                </div>
-              </div>
 
-              {/* Section 1 - Engineer & Mill / Place Details */}
-              <SectionToggle section={sections[0]} isOpen={!!openSections[1]} onToggle={toggleSection}>
-                <div className="space-y-4">
-                  {/* Row 1: 2-Column Grid for Engineers & Report Association */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                    {/* Select Service Engineers */}
-                    <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Users size={14} className="text-primary/70" />
-                        Select Service Engineers *
-                      </Label>
-                      <Controller
-                        name="technician_ids"
-                        control={control}
-                        render={({ field }) => (
-                          <TechnicianMultiSelect
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Select engineers..."
-                          />
-                        )}
-                      />
-                      <FieldError message={errors.technician_ids?.message} />
-                    </div>
-
-                    {/* Report Association */}
-                    {(isServiceEngineer || (selectedTechnicianIds && selectedTechnicianIds.length > 0)) && (
-                      <div className="space-y-2.5 p-3.5 bg-orange-50/50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
-                        <Label className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-widest flex items-center gap-2">
-                          <FileText size={14} className="text-orange-500" />
-                          Report Association {isServiceEngineer ? '*' : '(Optional)'}
-                        </Label>
-
-                        {/* Admin: show hint when no engineer selected yet */}
-                        {!isServiceEngineer && !primaryTechId ? (
-                          <div className="flex items-center gap-2 text-xs text-orange-400 font-bold p-2 bg-orange-50 dark:bg-orange-950/30 rounded-xl">
-                            <FileText size={12} />
-                            Select an engineer above to load reports.
-                          </div>
-                        ) : eligibilityLoading ? (
-                          <div className="flex items-center gap-2 text-xs text-gray-400 font-bold p-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                            Fetching reports...
-                          </div>
-                        ) : (
-                          <div className="space-y-2.5">
-                            {/* Radio Selection Buttons */}
-                            <div className="flex flex-wrap gap-2">
-                              {!isServiceEngineer && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setReportTypeRadio('none');
-                                    setValue('service_report_id', '');
-                                    setValue('installation_report_id', '');
-                                  }}
-                                  className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 select-none cursor-pointer",
-                                    reportTypeRadio === 'none'
-                                      ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400"
-                                      : "border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500"
-                                  )}
-                                >
-                                  <X size={12} />
-                                  None
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setReportTypeRadio('service');
-                                  setValue('service_report_id', '');
-                                  setValue('installation_report_id', '');
-                                }}
-                                className={cn(
-                                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 select-none cursor-pointer",
-                                  reportTypeRadio === 'service'
-                                    ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400"
-                                    : "border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500"
-                                )}
-                              >
-                                <span className="text-sm">📋</span>
-                                Service Report
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setReportTypeRadio('installation');
-                                  setValue('service_report_id', '');
-                                  setValue('installation_report_id', '');
-                                }}
-                                className={cn(
-                                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 select-none cursor-pointer",
-                                  reportTypeRadio === 'installation'
-                                    ? "bg-orange-500/10 border-orange-500/30 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400"
-                                    : "border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500"
-                                )}
-                              >
-                                <span className="text-sm">🔧</span>
-                                Installation Report
-                              </button>
-                            </div>
-
-                            {/* Render Select Dropdown depending on Radio selection */}
-                            {reportTypeRadio !== 'none' && (
-                              <Select
-                                value={
-                                  reportTypeRadio === 'service'
-                                    ? watch('service_report_id') || ''
-                                    : watch('installation_report_id') || ''
-                                }
-                                onValueChange={(val) => {
-                                  if (!val || val === 'no_reports') {
-                                    setValue('service_report_id', '');
-                                    setValue('installation_report_id', '');
-                                    return;
-                                  }
-
-                                  if (reportTypeRadio === 'service') {
-                                    setValue('service_report_id', val);
-                                    setValue('installation_report_id', '');
-                                    const report = eligibleReports.serviceReports.find((r) => r.id === val);
-                                    if (report) {
-                                      if (report.mill_id) {
-                                        setValue('mill_id', report.mill_id);
-                                        const mill = mills.find((m) => m.id === report.mill_id);
-                                        if (mill?.customer_id) setSelectedCustomerId(mill.customer_id);
-                                      }
-                                      if (report.place) setValue('place', report.place);
-                                      if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
-                                      toast.success('Service report details prefilled!');
-                                    }
-                                  } else if (reportTypeRadio === 'installation') {
-                                    setValue('service_report_id', '');
-                                    setValue('installation_report_id', val);
-                                    const report = eligibleReports.installationReports.find((r) => r.id === val);
-                                    if (report) {
-                                      if (report.mill_id) {
-                                        setValue('mill_id', report.mill_id);
-                                        const mill = mills.find((m) => m.id === report.mill_id);
-                                        if (mill?.customer_id) setSelectedCustomerId(mill.customer_id);
-                                      }
-                                      if (report.place) setValue('place', report.place);
-                                      if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
-                                      toast.success('Installation report details prefilled!');
-                                    }
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="h-10 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                                  {reportTypeRadio === 'service' && watch('service_report_id') ? (
-                                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                      SR: {eligibleReports.serviceReports.find((r) => r.id === watch('service_report_id'))?.report_number ?? 'Service Report'}
-                                    </span>
-                                  ) : reportTypeRadio === 'installation' && watch('installation_report_id') ? (
-                                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                      IR: {eligibleReports.installationReports.find((r) => r.id === watch('installation_report_id'))?.report_number ?? 'Installation Report'}
-                                    </span>
-                                  ) : (
-                                    <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                                      {reportTypeRadio === 'service'
-                                        ? 'Select an eligible service report...'
-                                        : 'Select an eligible installation report...'}
-                                    </span>
-                                  )}
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-64 overflow-y-auto">
-                                  {reportTypeRadio === 'service' ? (
-                                    eligibleReports.serviceReports.length > 0 ? (
-                                      eligibleReports.serviceReports.map((r) => (
-                                        <SelectItem key={r.id} value={r.id} className="font-bold py-2.5">
-                                          <div className="flex flex-col gap-0.5">
-                                            <span className="text-sm">SR: {r.report_number}</span>
-                                            <span className="text-[11px] font-medium text-gray-400">
-                                              {r.mill_name}{r.visit_date ? ` · ${new Date(r.visit_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
-                                            </span>
-                                          </div>
-                                        </SelectItem>
-                                      ))
-                                    ) : (
-                                      <SelectItem value="no_reports" disabled className="py-3 text-gray-400 font-bold">
-                                        No unlinked service reports found
-                                      </SelectItem>
-                                    )
-                                  ) : (
-                                    eligibleReports.installationReports.length > 0 ? (
-                                      eligibleReports.installationReports.map((r) => (
-                                        <SelectItem key={r.id} value={r.id} className="font-bold py-2.5">
-                                          <div className="flex flex-col gap-0.5">
-                                            <span className="text-sm">IR: {r.report_number}</span>
-                                            <span className="text-[11px] font-medium text-gray-400">
-                                              {r.mill_name}{r.visit_date ? ` · ${new Date(r.visit_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
-                                            </span>
-                                          </div>
-                                        </SelectItem>
-                                      ))
-                                    ) : (
-                                      <SelectItem value="no_reports" disabled className="py-3 text-gray-400 font-bold">
-                                        No unlinked installation reports found
-                                      </SelectItem>
-                                    )
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </div>
-                        )}
-                        <FieldError message={errors.service_report_id?.message || errors.installation_report_id?.message} />
-                      </div>
-                    )}
+                  {/* 3. Visit Time */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                      <Clock size={12} className="text-primary/70" />
+                      Time (Optional)
+                    </Label>
+                    <Controller
+                      name="visit_time"
+                      control={control}
+                      render={({ field }) => (
+                        <TimePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select time"
+                        />
+                      )}
+                    />
                   </div>
 
-                  {expenseType === 'MILL' ? (
-                    <>
-                      {/* Search Machine by Ref No / Frame No / Customer / Mill directly (Full width search banner) */}
-                      <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                          <Cpu size={14} className="text-primary/70" />
-                          Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
-                        </Label>
-                        <Input
-                          value={machineSearchQuery}
-                          onChange={(e) => setMachineSearchQuery(e.target.value)}
-                          placeholder="Type REF NO, Frame No, Customer or Mill to search..."
-                          className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
+                  {/* 4. Place / Location */}
+                  <div className="space-y-1.5" data-error={errors.place ? 'true' : undefined}>
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                      <MapPin size={12} className="text-primary/70" />
+                      Place / Location {expenseType === 'OTHERS' ? '*' : '(Optional)'}
+                    </Label>
+                    <Input
+                      {...register('place')}
+                      placeholder="e.g. Coimbatore"
+                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
+                    />
+                    <FieldError message={errors.place?.message} />
+                  </div>
+                </div>
+
+                {/* Row 2 (4 Columns): Service Engineers (2 cols) + Report Association (2 cols) */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-3.5 items-start">
+                  {/* Engineers (2 cols) */}
+                  <div className="lg:col-span-2 space-y-1.5" data-error={errors.technician_ids ? 'true' : undefined}>
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                      <Users size={12} className="text-primary/70" />
+                      Select Service Engineers *
+                    </Label>
+                    <Controller
+                      name="technician_ids"
+                      control={control}
+                      render={({ field }) => (
+                        <TechnicianMultiSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select engineers..."
                         />
+                      )}
+                    />
+                    <FieldError message={errors.technician_ids?.message} />
+                  </div>
 
-                        {/* Search Results List */}
-                        {machineSearchQuery.trim().length >= 2 && (
-                          <div className="mt-2 bg-white dark:bg-gray-950 rounded-xl border border-gray-100 dark:border-white/5 divide-y divide-gray-100 dark:divide-white/5 max-h-48 overflow-y-auto shadow-lg z-20 relative">
-                            {searchMasterMillsLoading ? (
-                              <div className="p-3 text-xs text-gray-400 font-bold flex items-center gap-2">
-                                <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                                Searching...
-                              </div>
-                            ) : searchedMasterMills.length > 0 ? (
-                              searchedMasterMills.map((m) => (
-                                <button
-                                  key={m.id}
-                                  type="button"
-                                  onClick={() => {
-                                    if (m.mill_id) {
-                                      setValue('mill_id', m.mill_id);
-                                      if (m.mill) {
-                                        setSelectedMillObj(m.mill);
-                                      }
-                                      const millCustomerId = m.mill?.customer_id;
-                                      if (millCustomerId) {
-                                        setSelectedCustomerId(millCustomerId);
-                                      } else {
-                                        const localMill = mills.find(millItem => millItem.id === m.mill_id);
-                                        if (localMill?.customer_id) {
-                                          setSelectedCustomerId(localMill.customer_id);
-                                        } else {
-                                          setSelectedCustomerId('');
-                                        }
-                                      }
-                                    }
-                                    const placeToUse = m.place || m.mill?.place;
-                                    if (placeToUse) {
-                                      setValue('place', placeToUse);
-                                    }
-                                    setSelectedMachineId(m.id);
-                                    setMachineSearchQuery('');
-                                    toast.success('Machine details prefilled! Verify and adjust as needed.');
-                                  }}
-                                  className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-1 cursor-pointer group"
-                                >
-                                  <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
-                                    {m.mill?.customer?.name ? `${m.mill.customer.name} — ` : ''}{m.mill?.name || 'Unknown Mill'}
-                                  </div>
-                                  <div className="text-gray-400 font-medium">
-                                    {[
-                                      (m.ref_no || m.mill?.ref_no) ? `Ref: ${m.ref_no || m.mill?.ref_no}` : null,
-                                      m.frame_no ? `Frame: ${m.frame_no}` : null,
-                                      m.mc_model ? `Model: ${m.mc_model}` : null,
-                                      (m.place || m.mill?.place) ? `Place: ${m.place || m.mill?.place}` : null,
-                                    ]
-                                      .filter(Boolean)
-                                      .join(' | ')}
-                                  </div>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="p-3 text-xs text-gray-400 font-bold flex flex-col gap-2">
-                                <span>No matching machines found</span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setQuickCustomerName('');
-                                    setQuickMillName('');
-                                    setQuickPhone('');
-                                    setQuickAddress('');
-                                    setQuickPlace('');
-                                    setQuickState('');
-                                    setQuickRefNo(machineSearchQuery);
-                                    setExistingCustomerId(null);
-                                    setIsMillNameManuallyEdited(false);
-                                    setIsQuickCreateOpen(true);
-                                    setMachineSearchQuery('');
-                                  }}
-                                  className="w-fit text-left text-primary hover:underline flex items-center gap-1 cursor-pointer font-black border-none bg-transparent p-0"
-                                >
-                                  <PlusCircle size={12} />
-                                  Quick Register Customer & Mill
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Row 2: 2-Column Grid for Customer & Mill Selection */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Customer Dropdown */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                              <Users size={14} className="text-primary/70" />
-                              Customer (Optional)
-                            </Label>
+                  {/* Report Association (2 cols) */}
+                  <div className="lg:col-span-2 space-y-1.5">
+                    <div className="p-3 bg-orange-50/40 dark:bg-orange-950/20 rounded-xl border border-orange-100 dark:border-orange-900/30 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[11px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <FileText size={12} className="text-orange-500" />
+                          Report Association {isServiceEngineer ? '*' : '(Optional)'}
+                        </Label>
+                        <div className="flex items-center gap-1">
+                          {!isServiceEngineer && (
                             <button
                               type="button"
                               onClick={() => {
-                                setQuickCustomerName('');
-                                setQuickMillName('');
-                                setQuickPhone('');
-                                setQuickAddress('');
-                                setQuickPlace('');
-                                setQuickState('');
-                                setQuickRefNo('');
-                                setExistingCustomerId(null);
-                                setIsMillNameManuallyEdited(false);
-                                setIsQuickCreateOpen(true);
+                                setReportTypeRadio('none');
+                                setValue('service_report_id', '');
+                                setValue('installation_report_id', '');
                               }}
-                              className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                              className={cn(
+                                "px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer",
+                                reportTypeRadio === 'none'
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-white/80 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-white"
+                              )}
                             >
-                              <PlusCircle size={12} />
-                              Quick Register
+                              None
                             </button>
-                          </div>
-                          {customers.length > 0 ? (
-                            <Select
-                              onValueChange={(val) => {
-                                setSelectedCustomerId(val === 'all_clear' ? '' : val || '');
-                                setValue('mill_id', '');
-                                setValue('place', '');
-                              }}
-                              value={selectedCustomerId || ''}
-                              items={customers.map((c) => ({ value: c.id, label: c.name }))}
-                            >
-                              <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                                {selectedCustomerId ? (
-                                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                    {customers.find((c) => c.id === selectedCustomerId)?.name ?? 'Unknown Customer'}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select customer</span>
-                                )}
-                              </SelectTrigger>
-                              <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
-                                <SelectItem value="all_clear" className="font-bold py-3 text-gray-400">Clear Customer Filter</SelectItem>
-                                {customers.map((cust) => (
-                                  <SelectItem key={cust.id} value={cust.id} className="font-bold py-3">
-                                    {cust.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Skeleton className="h-11 rounded-xl w-full" />
                           )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReportTypeRadio('service');
+                              setValue('service_report_id', '');
+                              setValue('installation_report_id', '');
+                            }}
+                            className={cn(
+                              "px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer",
+                              reportTypeRadio === 'service'
+                                ? "bg-orange-500 text-white"
+                                : "bg-white/80 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-white"
+                            )}
+                          >
+                            Service Report
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReportTypeRadio('installation');
+                              setValue('service_report_id', '');
+                              setValue('installation_report_id', '');
+                            }}
+                            className={cn(
+                              "px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer",
+                              reportTypeRadio === 'installation'
+                                ? "bg-orange-500 text-white"
+                                : "bg-white/80 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-white"
+                            )}
+                          >
+                            Installation Report
+                          </button>
                         </div>
+                      </div>
 
-                        {/* Mill Name */}
-                        <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                              <Building2 size={14} className="text-primary/70" />
-                              Select Mill (Optional)
-                            </Label>
-                            {selectedCustomerId && (
+                      {reportTypeRadio !== 'none' && (
+                        <Select
+                          value={
+                            reportTypeRadio === 'service'
+                              ? watch('service_report_id') || ''
+                              : watch('installation_report_id') || ''
+                          }
+                          onValueChange={(val) => {
+                            if (!val || val === 'no_reports') {
+                              setValue('service_report_id', '');
+                              setValue('installation_report_id', '');
+                              return;
+                            }
+                            if (reportTypeRadio === 'service') {
+                              setValue('service_report_id', val);
+                              setValue('installation_report_id', '');
+                              const report = eligibleReports.serviceReports.find((r) => r.id === val);
+                              if (report) {
+                                if (report.mill_id) {
+                                  setValue('mill_id', report.mill_id);
+                                  const mill = mills.find((m) => m.id === report.mill_id);
+                                  if (mill?.customer_id) setSelectedCustomerId(mill.customer_id);
+                                }
+                                if (report.place) setValue('place', report.place);
+                                if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
+                                toast.success('Service report details prefilled!');
+                              }
+                            } else {
+                              setValue('service_report_id', '');
+                              setValue('installation_report_id', val);
+                              const report = eligibleReports.installationReports.find((r) => r.id === val);
+                              if (report) {
+                                if (report.mill_id) {
+                                  setValue('mill_id', report.mill_id);
+                                  const mill = mills.find((m) => m.id === report.mill_id);
+                                  if (mill?.customer_id) setSelectedCustomerId(mill.customer_id);
+                                }
+                                if (report.place) setValue('place', report.place);
+                                if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
+                                toast.success('Installation report details prefilled!');
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-9 bg-white dark:bg-gray-900 border-none rounded-lg focus:ring-2 focus:ring-primary/20 font-bold text-xs">
+                            {reportTypeRadio === 'service' && watch('service_report_id') ? (
+                              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                                SR: {eligibleReports.serviceReports.find((r) => r.id === watch('service_report_id'))?.report_number ?? 'Service Report'}
+                              </span>
+                            ) : reportTypeRadio === 'installation' && watch('installation_report_id') ? (
+                              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                                IR: {eligibleReports.installationReports.find((r) => r.id === watch('installation_report_id'))?.report_number ?? 'Installation Report'}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600 text-xs font-medium">
+                                {reportTypeRadio === 'service' ? 'Select service report...' : 'Select installation report...'}
+                              </span>
+                            )}
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
+                            {reportTypeRadio === 'service' ? (
+                              eligibleReports.serviceReports.length > 0 ? (
+                                eligibleReports.serviceReports.map((r) => (
+                                  <SelectItem key={r.id} value={r.id} className="font-bold py-2">
+                                    <span className="text-xs font-bold">SR: {r.report_number} ({r.mill_name})</span>
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no_reports" disabled className="py-2 text-xs text-gray-400 font-bold">
+                                  No unlinked service reports found
+                                </SelectItem>
+                              )
+                            ) : (
+                              eligibleReports.installationReports.length > 0 ? (
+                                eligibleReports.installationReports.map((r) => (
+                                  <SelectItem key={r.id} value={r.id} className="font-bold py-2">
+                                    <span className="text-xs font-bold">IR: {r.report_number} ({r.mill_name})</span>
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no_reports" disabled className="py-2 text-xs text-gray-400 font-bold">
+                                  No unlinked installation reports found
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <FieldError message={errors.service_report_id?.message || errors.installation_report_id?.message} />
+                  </div>
+                </div>
+
+                {/* Row 3: If MILL mode, 4-Column Grid for Search Machine, Customer, Mill, Machine */}
+                {expenseType === 'MILL' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 items-start">
+                    {/* Column 1: Search Machine Prefill */}
+                    <div className="space-y-1.5 relative">
+                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                        <Cpu size={12} className="text-primary/70" />
+                        Quick Prefill Search
+                      </Label>
+                      <Input
+                        value={machineSearchQuery}
+                        onChange={(e) => setMachineSearchQuery(e.target.value)}
+                        placeholder="Search REF / Mill..."
+                        className="h-10 bg-primary/5 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-xs"
+                      />
+                      {machineSearchQuery.trim().length >= 2 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-950 rounded-xl border border-gray-100 dark:border-white/5 divide-y divide-gray-100 dark:divide-white/5 max-h-48 overflow-y-auto shadow-2xl z-30">
+                          {searchMasterMillsLoading ? (
+                            <div className="p-2.5 text-xs text-gray-400 font-bold flex items-center gap-2">
+                              <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                              Searching...
+                            </div>
+                          ) : searchedMasterMills.length > 0 ? (
+                            searchedMasterMills.map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => {
+                                  if (m.mill_id) {
+                                    setValue('mill_id', m.mill_id);
+                                    if (m.mill) setSelectedMillObj(m.mill);
+                                    const millCustomerId = m.mill?.customer_id;
+                                    if (millCustomerId) {
+                                      setSelectedCustomerId(millCustomerId);
+                                    } else {
+                                      const localMill = mills.find(millItem => millItem.id === m.mill_id);
+                                      setSelectedCustomerId(localMill?.customer_id || '');
+                                    }
+                                  }
+                                  const placeToUse = m.place || m.mill?.place;
+                                  if (placeToUse) setValue('place', placeToUse);
+                                  setSelectedMachineId(m.id);
+                                  setMachineSearchQuery('');
+                                  toast.success('Machine details prefilled!');
+                                }}
+                                className="w-full text-left p-2.5 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-xs flex flex-col gap-0.5 cursor-pointer group"
+                              >
+                                <div className="font-bold text-gray-800 dark:text-gray-200 group-hover:text-primary transition-colors">
+                                  {m.mill?.customer?.name ? `${m.mill.customer.name} — ` : ''}{m.mill?.name || 'Unknown Mill'}
+                                </div>
+                                <div className="text-[11px] text-gray-400 font-medium">
+                                  {[m.ref_no ? `Ref: ${m.ref_no}` : null, m.mc_model ? `Model: ${m.mc_model}` : null, m.place ? `Place: ${m.place}` : null].filter(Boolean).join(' | ')}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-2.5 text-xs text-gray-400 font-bold flex flex-col gap-1.5">
+                              <span>No matching machines found</span>
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
-                                  setExistingCustomerId(selectedCustomerId);
+                                  setQuickCustomerName('');
                                   setQuickMillName('');
                                   setQuickPhone('');
                                   setQuickAddress('');
                                   setQuickPlace('');
                                   setQuickState('');
-                                  setQuickRefNo('');
+                                  setQuickRefNo(machineSearchQuery);
+                                  setExistingCustomerId(null);
                                   setIsMillNameManuallyEdited(false);
                                   setIsQuickCreateOpen(true);
+                                  setMachineSearchQuery('');
                                 }}
-                                className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                                className="text-left text-primary hover:underline flex items-center gap-1 cursor-pointer font-bold border-none bg-transparent p-0"
                               >
-                                <PlusCircle size={12} />
-                                Quick Add Mill
-                              </button>
-                            )}
-                          </div>
-                          {mills.length > 0 ? (
-                            <Select
-                              onValueChange={(val) => {
-                                setValue('mill_id', val || '');
-                                setValue('place', '');
-                              }}
-                              value={watch('mill_id') || ''}
-                              items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
-                            >
-                              <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                                {watch('mill_id') ? (
-                                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                    {mills.find((m) => m.id === watch('mill_id'))?.name ?? (selectedMillObj?.id === watch('mill_id') ? selectedMillObj?.name : null) ?? 'Unknown Mill'}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                                    Select mill
-                                  </span>
-                                )}
-                              </SelectTrigger>
-                              <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                                {filteredMills.length > 0 ? (
-                                  filteredMills.map((mill) => (
-                                    <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
-                                      {mill.name}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
-                                    No mills found
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Skeleton className="h-11 rounded-xl w-full" />
-                          )}
-                          <FieldError message={errors.mill_id?.message} />
-                        </div>
-                      </div>
-
-                      {/* Row 3: 2-Column Grid for Machine & Place */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Machine / Installation Record Dropdown */}
-                        {selectedMillId ? (
-                          <div className="space-y-2 bg-primary/5 p-3.5 rounded-2xl border border-primary/10">
-                            <div className="flex items-center justify-between mb-1">
-                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                                <Cpu size={14} className="text-primary/70" />
-                                Select Machine (REF NO / Frame No)
-                              </Label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setQuickInvoiceNo('');
-                                  setQuickInvoiceDate('');
-                                  setQuickMasterMillRefNo('');
-                                  setQuickMcModel('');
-                                  setQuickFrameNo('');
-                                  setQuickInstallationDate('');
-                                  setQuickWarrantyYears(1);
-                                  setQuickWarrantyMonths(0);
-                                  setQuickWarrantyType('Non Warranty');
-                                  setIsQuickMasterMillOpen(true);
-                                }}
-                                className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                              >
-                                <PlusCircle size={12} />
-                                Add Machine
+                                <PlusCircle size={11} />
+                                Quick Register
                               </button>
                             </div>
-                            {masterMillsLoading ? (
-                              <Skeleton className="h-11 rounded-xl w-full" />
-                            ) : (
-                              <Select
-                                value={selectedMachineId || ''}
-                                onValueChange={(val) => {
-                                  if (val === 'clear') {
-                                    setSelectedMachineId('');
-                                    return;
-                                  }
-                                  const m = masterMills.find((rec) => rec.id === val);
-                                  if (m) {
-                                    const placeToUse = m.place || m.mill?.place;
-                                    if (placeToUse) setValue('place', placeToUse);
-                                    setSelectedMachineId(m.id);
-                                    toast.success('Machine details prefilled! Verify and adjust as needed.');
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="h-11 bg-white dark:bg-gray-900 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                                  {selectedMachineId ? (
-                                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                      {(() => {
-                                        const m = masterMills.find((rec) => rec.id === selectedMachineId);
-                                        if (!m) return 'Unknown Machine';
-                                        const displayRef = m.ref_no || m.mill?.ref_no;
-                                        const parts = [
-                                          displayRef ? `Ref: ${displayRef}` : null,
-                                          m.frame_no ? `Frame: ${m.frame_no}` : null,
-                                          m.mc_model ? `Model: ${m.mc_model}` : null,
-                                        ].filter(Boolean);
-                                        return (
-                                          parts.join(' | ') ||
-                                          (m.invoice_no ? `Invoice: ${m.invoice_no}` : null) ||
-                                          (m.mill?.name ? `${m.mill.name} — Record` : null) ||
-                                          'Machine Record'
-                                        );
-                                      })()}
-                                    </span>
-                                  ) : (
-                                    <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                                      Select machine record to prefill...
-                                    </span>
-                                  )}
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                                  <SelectItem value="clear" className="font-bold py-3 text-gray-400">
-                                    Clear Selection
-                                  </SelectItem>
-                                  {masterMills.map((m, idx) => {
-                                    const displayRef = m.ref_no || m.mill?.ref_no;
-                                    const parts = [
-                                      displayRef ? `Ref: ${displayRef}` : null,
-                                      m.frame_no ? `Frame: ${m.frame_no}` : null,
-                                      m.mc_model ? `Model: ${m.mc_model}` : null,
-                                    ].filter(Boolean);
-                                    const label =
-                                      parts.join(' | ') ||
-                                      (m.invoice_no ? `Invoice: ${m.invoice_no}` : null) ||
-                                      (m.mill?.name ? `${m.mill.name} — Record ${idx + 1}` : null) ||
-                                      `Machine Record ${idx + 1}`;
-                                    return (
-                                      <SelectItem key={m.id} value={m.id} className="font-bold py-3">
-                                        {label}
-                                      </SelectItem>
-                                    );
-                                  })}
-                                  {masterMills.length === 0 && (
-                                    <SelectItem value="no_records" disabled className="py-3 text-gray-400 font-bold">
-                                      No master mill records found for this mill
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
-                            <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                              <MapPin size={14} className="text-primary/70" />
-                              Place / Location
-                            </Label>
-                            <Input
-                              {...register('place')}
-                              placeholder="Enter place/location"
-                              className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                            />
-                            <FieldError message={errors.place?.message} />
-                          </div>
-                        )}
-
-                        {/* Place when Mill is selected */}
-                        {selectedMillId && (
-                          <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
-                            <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                              <MapPin size={14} className="text-primary/70" />
-                              Place / Location
-                            </Label>
-                            <Input
-                              {...register('place')}
-                              placeholder="Enter place/location"
-                              className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                            />
-                            <FieldError message={errors.place?.message} />
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    /* OTHERS: 2-Column Grid for Others Description and Place */
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Others */}
-                      <div className="space-y-2" data-error={errors.others ? 'true' : undefined}>
-                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                          <Tag size={14} className="text-primary/70" />
-                          Others Description
-                        </Label>
-                        <Input
-                          {...register('others')}
-                          placeholder="e.g. Supplier Name or Hotel Description"
-                          className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                        />
-                        <FieldError message={errors.others?.message} />
-                      </div>
-
-                      {/* Place */}
-                      <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
-                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                          <MapPin size={14} className="text-primary/70" />
-                          Place *
-                        </Label>
-                        <Input
-                          {...register('place')}
-                          placeholder="Enter place/location"
-                          className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
-                        />
-                        <FieldError message={errors.place?.message} />
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </SectionToggle>
 
-              {/* Section 2 - Expense Info & Receipts */}
-              <SectionToggle section={sections[1]} isOpen={!!openSections[2]} onToggle={toggleSection}>
-                <div className="space-y-4" data-error={errors.expense_items ? 'true' : undefined}>
+                    {/* Column 2: Customer (Optional) */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                          <Users size={12} className="text-primary/70" />
+                          Customer
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickCustomerName('');
+                            setQuickMillName('');
+                            setQuickPhone('');
+                            setQuickAddress('');
+                            setQuickPlace('');
+                            setQuickState('');
+                            setQuickRefNo('');
+                            setExistingCustomerId(null);
+                            setIsMillNameManuallyEdited(false);
+                            setIsQuickCreateOpen(true);
+                          }}
+                          className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <PlusCircle size={10} />
+                          + Register
+                        </button>
+                      </div>
+                      {customers.length > 0 ? (
+                        <Select
+                          onValueChange={(val) => {
+                            setSelectedCustomerId(val === 'all_clear' ? '' : val || '');
+                            setValue('mill_id', '');
+                            setValue('place', '');
+                          }}
+                          value={selectedCustomerId || ''}
+                          items={customers.map((c) => ({ value: c.id, label: c.name }))}
+                        >
+                          <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-xs">
+                            {selectedCustomerId ? (
+                              <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                {customers.find((c) => c.id === selectedCustomerId)?.name ?? 'Unknown'}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600 text-xs font-medium">Select customer</span>
+                            )}
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
+                            <SelectItem value="all_clear" className="font-bold py-2 text-xs text-gray-400">Clear Customer Filter</SelectItem>
+                            {customers.map((cust) => (
+                              <SelectItem key={cust.id} value={cust.id} className="font-bold py-2 text-xs">
+                                {cust.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Skeleton className="h-10 rounded-xl w-full" />
+                      )}
+                    </div>
 
-                  {/* Section Header + quick-add button */}
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Tag size={14} className="text-primary/70" />
-                      Expense Categories *
+                    {/* Column 3: Mill Name * */}
+                    <div className="space-y-1.5" data-error={errors.mill_id ? 'true' : undefined}>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                          <Building2 size={12} className="text-primary/70" />
+                          Mill Name *
+                        </Label>
+                        {selectedCustomerId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickCustomerName(customers.find(c => c.id === selectedCustomerId)?.name || '');
+                              setExistingCustomerId(selectedCustomerId);
+                              setQuickMillName('');
+                              setQuickPhone('');
+                              setQuickAddress('');
+                              setQuickPlace('');
+                              setQuickState('');
+                              setQuickRefNo('');
+                              setIsMillNameManuallyEdited(false);
+                              setIsQuickCreateOpen(true);
+                            }}
+                            className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <PlusCircle size={10} />
+                            + Add Mill
+                          </button>
+                        )}
+                      </div>
+                      {mills.length > 0 ? (
+                        <Select
+                          onValueChange={(val) => {
+                            setValue('mill_id', val || '');
+                            setValue('place', '');
+                          }}
+                          value={watch('mill_id') || ''}
+                          items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
+                        >
+                          <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-xs">
+                            {watch('mill_id') ? (
+                              <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                {mills.find((m) => m.id === watch('mill_id'))?.name ?? (selectedMillObj?.id === watch('mill_id') ? selectedMillObj?.name : null) ?? 'Unknown Mill'}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600 text-xs font-medium">
+                                Select mill
+                              </span>
+                            )}
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
+                            {filteredMills.length > 0 ? (
+                              filteredMills.map((mill) => (
+                                <SelectItem key={mill.id} value={mill.id} className="font-bold py-2 text-xs">
+                                  {mill.name}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="no_mills" disabled className="py-2 text-xs text-gray-400 font-bold">
+                                No mills found
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Skeleton className="h-10 rounded-xl w-full" />
+                      )}
+                      <FieldError message={errors.mill_id?.message} />
+                    </div>
+
+                    {/* Column 4: Select Machine (REF / Frame No) */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                          <Cpu size={12} className="text-primary/70" />
+                          Machine Record
+                        </Label>
+                        {selectedMillId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickInvoiceNo('');
+                              setQuickInvoiceDate('');
+                              setQuickMasterMillRefNo('');
+                              setQuickMcModel('');
+                              setQuickFrameNo('');
+                              setQuickInstallationDate('');
+                              setQuickWarrantyYears(1);
+                              setQuickWarrantyMonths(0);
+                              setQuickWarrantyType('Non Warranty');
+                              setIsQuickMasterMillOpen(true);
+                            }}
+                            className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <PlusCircle size={10} />
+                            + Machine
+                          </button>
+                        )}
+                      </div>
+                      {masterMillsLoading ? (
+                        <Skeleton className="h-10 rounded-xl w-full" />
+                      ) : (
+                        <Select
+                          value={selectedMachineId || ''}
+                          onValueChange={(val) => {
+                            if (val === 'clear') {
+                              setSelectedMachineId('');
+                              return;
+                            }
+                            const m = masterMills.find((rec) => rec.id === val);
+                            if (m) {
+                              const placeToUse = m.place || m.mill?.place;
+                              if (placeToUse) setValue('place', placeToUse);
+                              setSelectedMachineId(m.id);
+                              toast.success('Machine details prefilled!');
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-xs">
+                            {selectedMachineId ? (
+                              <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                {(() => {
+                                  const m = masterMills.find((rec) => rec.id === selectedMachineId);
+                                  if (!m) return 'Unknown Machine';
+                                  const displayRef = m.ref_no || m.mill?.ref_no;
+                                  const parts = [
+                                    displayRef ? `Ref: ${displayRef}` : null,
+                                    m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                    m.mc_model ? `Model: ${m.mc_model}` : null,
+                                  ].filter(Boolean);
+                                  return parts.join(' | ') || 'Machine Record';
+                                })()}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600 text-xs font-medium">
+                                {selectedMillId ? 'Select machine...' : 'Select mill first'}
+                              </span>
+                            )}
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
+                            <SelectItem value="clear" className="font-bold py-2 text-xs text-gray-400">
+                              Clear Selection
+                            </SelectItem>
+                            {masterMills.map((m, idx) => {
+                              const displayRef = m.ref_no || m.mill?.ref_no;
+                              const parts = [
+                                displayRef ? `Ref: ${displayRef}` : null,
+                                m.frame_no ? `Frame: ${m.frame_no}` : null,
+                                m.mc_model ? `Model: ${m.mc_model}` : null,
+                              ].filter(Boolean);
+                              const label = parts.join(' | ') || `Machine Record ${idx + 1}`;
+                              return (
+                                <SelectItem key={m.id} value={m.id} className="font-bold py-2 text-xs">
+                                  {label}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* OTHERS mode - Full Width Remarks */
+                  <div className="space-y-1.5" data-error={errors.others ? 'true' : undefined}>
+                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                      <Tag size={12} className="text-primary/70" />
+                      Others Description / Purpose
                     </Label>
+                    <Input
+                      {...register('others')}
+                      placeholder="e.g. Supplier visit, hotel stay description, local conveyance, etc."
+                      className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-xs"
+                    />
+                    <FieldError message={errors.others?.message} />
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 2: ITEMIZED EXPENSE CATEGORIES & RECEIPTS (Compact Single-Page Table Grid) */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-4 shadow-sm space-y-3" data-error={errors.expense_items ? 'true' : undefined}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 dark:border-white/5 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
+                      <Tag size={14} className="text-primary/70" />
+                      2. Expense Categories & Receipts
+                    </div>
+                    <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[11px] font-extrabold">
+                      {(watch('expense_items') || []).length} items
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs font-black text-gray-800 dark:text-gray-200">
+                      Total: <span className="text-primary font-black">₹{((watch('expense_items') || []).reduce((acc, it) => acc + (Number(it.amount) || 0), 0)).toLocaleString('en-IN')}</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -1496,39 +1291,41 @@ export function ExpenseFormDrawer() {
                           { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', admin_remarks: '', expense_images: [] },
                         ], { shouldValidate: false });
                       }}
-                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer bg-primary/5 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-colors"
                     >
                       <PlusCircle size={12} />
                       Add Category
                     </button>
                   </div>
+                </div>
 
-                  {/* Array-level validation error */}
-                  {typeof errors.expense_items?.message === 'string' && (
-                    <FieldError message={errors.expense_items.message} />
-                  )}
+                {/* Array validation error */}
+                {typeof errors.expense_items?.message === 'string' && (
+                  <FieldError message={errors.expense_items.message} />
+                )}
 
-                  {/* Empty state */}
-                  {(watch('expense_items') || []).length === 0 && (
-                    <div className="flex flex-col items-center justify-center gap-3 py-10 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl text-gray-400">
-                      <Tag size={28} className="opacity-30" />
-                      <p className="text-sm font-semibold">No expense categories added yet</p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setValue('expense_items', [
-                            { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', admin_remarks: '', expense_images: [] },
-                          ], { shouldValidate: false })
-                        }
-                        className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline cursor-pointer"
-                      >
-                        <PlusCircle size={14} />
-                        Add First Category
-                      </button>
-                    </div>
-                  )}
+                {/* Empty State */}
+                {(watch('expense_items') || []).length === 0 && (
+                  <div className="flex flex-col items-center justify-center gap-2 py-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl text-gray-400">
+                    <Tag size={24} className="opacity-30" />
+                    <p className="text-xs font-bold">No expense categories added yet</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setValue('expense_items', [
+                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', admin_remarks: '', expense_images: [] },
+                        ], { shouldValidate: false })
+                      }
+                      className="flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer"
+                    >
+                      <PlusCircle size={12} />
+                      Add First Category
+                    </button>
+                  </div>
+                )}
 
-                  {/* Per-item compact cards */}
+                {/* Compact Itemized List */}
+                <div className="space-y-2.5">
                   <AnimatePresence>
                     {(watch('expense_items') || []).map((item, index) => {
                       const itemErrors = (errors.expense_items as any)?.[index];
@@ -1544,18 +1341,18 @@ export function ExpenseFormDrawer() {
                       return (
                         <motion.div
                           key={index}
-                          initial={{ opacity: 0, y: 10 }}
+                          initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.18 }}
-                          className="border border-gray-100 dark:border-white/5 rounded-2xl p-4 space-y-3.5 bg-white dark:bg-gray-950/60 shadow-sm"
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{ duration: 0.15 }}
+                          className="border border-gray-100 dark:border-white/5 rounded-xl p-3 bg-gray-50/40 dark:bg-gray-950/40 hover:border-primary/20 transition-all space-y-2.5"
                         >
-                          {/* Row 1: 3-Column Grid (Category, Amount, Remarks) + Delete Button */}
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-                            {/* Category Select - 5 cols */}
-                            <div className="md:col-span-5 space-y-1.5">
-                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                <Tag size={12} className="text-primary/70" />
+                          {/* Row 1 (4-Column Layout): Category (4 cols), Amount (2 cols), Remarks (5 cols), Action/Delete (1 col) */}
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start">
+                            {/* Category Select - 4 cols */}
+                            <div className="md:col-span-4 space-y-1">
+                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1">
+                                <Tag size={11} className="text-primary/70" />
                                 Category *
                               </Label>
                               <Select
@@ -1566,50 +1363,35 @@ export function ExpenseFormDrawer() {
                                   setValue('expense_items', updated, { shouldValidate: true });
                                 }}
                               >
-                                <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
+                                <SelectTrigger className="h-9 bg-white dark:bg-gray-900 border-none rounded-lg focus:ring-2 focus:ring-primary/20 font-bold text-xs">
                                   {chosenCat ? (
-                                    <span className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-200">
-                                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                                    <span className="flex items-center gap-1.5 text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                      <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[9px] shrink-0">
                                         {chosenCat.name.charAt(0).toUpperCase()}
                                       </div>
                                       {chosenCat.name}
                                     </span>
                                   ) : (
-                                    <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                                    <span className="text-gray-400 dark:text-gray-600 text-xs font-medium">
                                       {categoriesLoading ? 'Loading…' : 'Select category…'}
                                     </span>
                                   )}
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-60 overflow-y-auto">
-                                  {categoriesLoading ? (
-                                    <SelectItem value="__loading" disabled className="py-3 text-gray-400 font-bold">
-                                      Loading categories…
+                                <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
+                                  {availableCategories.map((c) => (
+                                    <SelectItem key={c.id} value={c.id} className="font-bold py-2 text-xs">
+                                      {c.name}
                                     </SelectItem>
-                                  ) : availableCategories.length === 0 ? (
-                                    <SelectItem value="__empty" disabled className="py-3 text-gray-400 font-bold">
-                                      All categories already selected
-                                    </SelectItem>
-                                  ) : (
-                                    availableCategories.map((c) => (
-                                      <SelectItem key={c.id} value={c.id} className="font-bold py-3">
-                                        <span className="flex items-center gap-2">
-                                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] flex-shrink-0">
-                                            {c.name.charAt(0).toUpperCase()}
-                                          </div>
-                                          {c.name}
-                                        </span>
-                                      </SelectItem>
-                                    ))
-                                  )}
+                                  ))}
                                 </SelectContent>
                               </Select>
                               <FieldError message={itemErrors?.expense_category_id?.message} />
                             </div>
 
-                            {/* Amount - 3 cols */}
-                            <div className="md:col-span-3 space-y-1.5">
-                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                <DollarSign size={12} className="text-primary/70" />
+                            {/* Amount - 2 cols */}
+                            <div className="md:col-span-2 space-y-1">
+                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1">
+                                <DollarSign size={11} className="text-primary/70" />
                                 Amount (₹) *
                               </Label>
                               <Input
@@ -1623,22 +1405,20 @@ export function ExpenseFormDrawer() {
                                   updated[index].amount = val;
                                   setValue('expense_items', updated, { shouldValidate: true });
                                 }}
-                                placeholder="Amount"
+                                placeholder="0"
                                 readOnly={isEdit}
                                 className={cn(
-                                  "h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm",
-                                  isEdit
-                                    ? "cursor-default opacity-70 select-none focus-visible:ring-0"
-                                    : "focus-visible:ring-2 focus-visible:ring-primary/20"
+                                  "h-9 bg-white dark:bg-gray-900 border-none rounded-lg font-bold text-xs",
+                                  isEdit ? "cursor-default opacity-70 select-none focus-visible:ring-0" : "focus-visible:ring-2 focus-visible:ring-primary/20"
                                 )}
                               />
                               <FieldError message={itemErrors?.amount?.message} />
                             </div>
 
-                            {/* Remarks - 3 cols */}
-                            <div className="md:col-span-3 space-y-1.5">
-                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                <FileText size={12} className="text-primary/70" />
+                            {/* Remarks - 5 cols */}
+                            <div className="md:col-span-5 space-y-1">
+                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1">
+                                <FileText size={11} className="text-primary/70" />
                                 Remarks
                               </Label>
                               <Input
@@ -1649,19 +1429,17 @@ export function ExpenseFormDrawer() {
                                   updated[index].remarks = e.target.value;
                                   setValue('expense_items', updated, { shouldValidate: true });
                                 }}
-                                placeholder="Remarks…"
+                                placeholder="Remarks / notes…"
                                 readOnly={isEdit}
                                 className={cn(
-                                  "h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none",
-                                  isEdit
-                                    ? "cursor-default opacity-70 select-none focus-visible:ring-0"
-                                    : "focus-visible:ring-2 focus-visible:ring-primary/20"
+                                  "h-9 bg-white dark:bg-gray-900 border-none rounded-lg font-bold text-xs",
+                                  isEdit ? "cursor-default opacity-70 select-none focus-visible:ring-0" : "focus-visible:ring-2 focus-visible:ring-primary/20"
                                 )}
                               />
                             </div>
 
-                            {/* Delete row - 1 col */}
-                            <div className="md:col-span-1 flex justify-end md:justify-center pt-1 md:pt-7">
+                            {/* Delete Button - 1 col */}
+                            <div className="md:col-span-1 flex justify-end md:justify-center pt-1 md:pt-5">
                               <button
                                 type="button"
                                 title="Remove this category"
@@ -1669,138 +1447,107 @@ export function ExpenseFormDrawer() {
                                   const current = watch('expense_items') || [];
                                   setValue('expense_items', current.filter((_, i) => i !== index), { shouldValidate: true });
                                 }}
-                                className="p-2 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
                               >
-                                <X size={16} />
+                                <X size={15} />
                               </button>
                             </div>
                           </div>
 
-                          {/* Row 2: 2-Column Grid for Receipts & Admin Adjustments */}
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-3 border-t border-gray-100 dark:border-white/5 items-start">
-                            {/* Receipt Images - 6 cols */}
-                            <div className="md:col-span-6 space-y-2">
-                              <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                                <ImageIcon size={14} className="text-primary/70" />
-                                Receipt Images
-                              </Label>
-                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-                                {(item.expense_images || []).map((img, imgIdx) => {
-                                  const src =
-                                    img.startsWith('http') || img.startsWith('data:')
-                                      ? img
-                                      : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
-                                  return (
-                                    <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 dark:border-white/10 group">
-                                      <img src={src} alt={`Receipt ${imgIdx}`} className="w-full h-full object-cover" />
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveItemImage(index, imgIdx)}
-                                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
-                                      >
-                                        <X size={11} />
-                                      </button>
-                                    </div>
-                                  );
-                                })}
+                          {/* Row 2: Compact Receipts Strip & Admin Details */}
+                          <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            {/* Receipts Thumbnail Strip */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                                <ImageIcon size={11} /> Receipts:
+                              </span>
+                              {(item.expense_images || []).map((img, imgIdx) => {
+                                const src = img.startsWith('http') || img.startsWith('data:')
+                                  ? img
+                                  : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
+                                return (
+                                  <div key={imgIdx} className="relative w-8 h-8 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 group">
+                                    <img src={src} alt={`Receipt ${imgIdx}`} className="w-full h-full object-cover" />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveItemImage(index, imgIdx)}
+                                      className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
 
-                                <label className={cn(
-                                  'relative aspect-square border-2 border-dashed border-gray-200 dark:border-white/10 rounded-xl hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-1.5 bg-gray-50/50 dark:bg-white/5 text-gray-500 hover:text-primary cursor-pointer',
-                                  isUploading && activeUploadIndex === index && 'pointer-events-none opacity-60'
-                                )}>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    className="hidden"
+                              <label className={cn(
+                                'h-8 px-2.5 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-primary text-gray-500 hover:text-primary transition-colors flex items-center gap-1.5 bg-white dark:bg-gray-900 text-[11px] font-bold cursor-pointer',
+                                isUploading && activeUploadIndex === index && 'pointer-events-none opacity-60'
+                              )}>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    setActiveUploadIndex(index);
+                                    handleItemImageUpload(index, e);
+                                  }}
+                                />
+                                {isUploading && activeUploadIndex === index ? (
+                                  <div className="flex items-center gap-1">
+                                    <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                                    <span>{uploadProgress}%</span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <UploadCloud size={13} />
+                                    <span>+ Receipt</span>
+                                  </>
+                                )}
+                              </label>
+                            </div>
+
+                            {/* Admin Adjustments (if admin role) */}
+                            {!isServiceEngineer && (
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Admin ₹:</span>
+                                  <Input
+                                    type="number"
+                                    step="1"
+                                    value={item.admin_amount || ''}
                                     onChange={(e) => {
-                                      setActiveUploadIndex(index);
-                                      handleItemImageUpload(index, e);
+                                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                      const updated = [...(watch('expense_items') || [])];
+                                      updated[index].admin_amount = val;
+                                      setValue('expense_items', updated, { shouldValidate: true });
                                     }}
+                                    placeholder="0"
+                                    className="h-7 w-20 bg-white dark:bg-gray-900 border-none rounded-md font-bold text-xs"
                                   />
-                                  {isUploading && activeUploadIndex === index ? (
-                                    <div className="flex flex-col items-center gap-1">
-                                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                                      <span className="text-[9px] font-bold text-gray-700 dark:text-gray-300">{uploadProgress}%</span>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <UploadCloud size={18} />
-                                      <span className="text-[9px] font-bold">Add Receipt</span>
-                                    </>
-                                  )}
-                                </label>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Note:</span>
+                                  <Input
+                                    value={item.admin_remarks || ''}
+                                    onChange={(e) => {
+                                      const updated = [...(watch('expense_items') || [])];
+                                      updated[index].admin_remarks = e.target.value;
+                                      setValue('expense_items', updated, { shouldValidate: true });
+                                    }}
+                                    placeholder="Admin note…"
+                                    className="h-7 w-32 bg-white dark:bg-gray-900 border-none rounded-md font-bold text-xs"
+                                  />
+                                </div>
                               </div>
-                            </div>
-
-                            {/* Admin Adjustment Fields - 6 cols */}
-                            <div className="md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {/* Admin Expense Amount */}
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                  <DollarSign size={12} className="text-primary/70" />
-                                  Admin Amount (₹)
-                                </Label>
-                                <Input
-                                  type="number"
-                                  step="1"
-                                  value={item.admin_amount || ''}
-                                  onChange={(e) => {
-                                    const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                    const updated = [...(watch('expense_items') || [])];
-                                    updated[index].admin_amount = val;
-                                    setValue('expense_items', updated, { shouldValidate: true });
-                                  }}
-                                  placeholder="Admin amount"
-                                  className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold text-sm"
-                                  disabled={isServiceEngineer}
-                                />
-                              </div>
-
-                              {/* Admin Remarks */}
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1.5">
-                                  <FileText size={12} className="text-primary/70" />
-                                  Admin Remarks
-                                </Label>
-                                <Input
-                                  value={item.admin_remarks || ''}
-                                  onChange={(e) => {
-                                    const updated = [...(watch('expense_items') || [])];
-                                    updated[index].admin_remarks = e.target.value;
-                                    setValue('expense_items', updated, { shouldValidate: true });
-                                  }}
-                                  placeholder={isServiceEngineer ? "No admin remarks" : "Admin remarks…"}
-                                  className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-50"
-                                  disabled={isServiceEngineer}
-                                />
-                              </div>
-                            </div>
+                            )}
                           </div>
                         </motion.div>
                       );
                     })}
                   </AnimatePresence>
-
-                  {/* "Add Another Category" */}
-                  {(watch('expense_items') || []).length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const current = watch('expense_items') || [];
-                        setValue('expense_items', [
-                          ...current,
-                          { expense_category_id: '', amount: 0, admin_amount: 0, remarks: '', admin_remarks: '', expense_images: [] },
-                        ], { shouldValidate: false });
-                      }}
-                      className="w-full flex items-center justify-center gap-2 h-11 border-2 border-dashed border-primary/30 hover:border-primary/60 text-primary hover:bg-primary/5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                    >
-                      <PlusCircle size={14} />
-                      Add Another Category
-                    </button>
-                  )}
                 </div>
-              </SectionToggle>
+              </div>
             </form>
           )}
         </div>

@@ -141,34 +141,87 @@
     font-weight: 400 !important;
   }
 
-  /* Universal styling for filled vs unfilled input fields across all modules */
-  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
-  textarea:not(:placeholder-shown),
-  [data-filled="true"] {
-    background-color: rgba(234, 88, 12, 0.035) !important;
+  /* ==========================================================================
+     Universal styling for FILLED vs UNFILLED state across all modules, forms & drawers
+     ========================================================================== */
+
+  /* FILLED State: Dark Black outline when field has value */
+  input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
+  textarea:not([data-slot="bare-input"]):not(:placeholder-shown),
+  [data-slot="select-trigger"]:not([data-placeholder]):not([data-slot="bare-input"]),
+  [data-slot="select-trigger"][data-filled="true"],
+  [data-filled="true"],
+  button[data-filled="true"],
+  div[data-filled="true"],
+  .phone-input-wrapper:has(input:not(:placeholder-shown)) input {
+    background-color: #ffffff !important;
     border: 2px solid rgb(17, 24, 39) !important;
     color: rgb(17, 24, 39) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
   }
 
-  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
-  .dark textarea:not(:placeholder-shown),
-  .dark [data-filled="true"] {
-    background-color: rgba(234, 88, 12, 0.08) !important;
+  .dark input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
+  .dark textarea:not([data-slot="bare-input"]):not(:placeholder-shown),
+  .dark [data-slot="select-trigger"]:not([data-placeholder]):not([data-slot="bare-input"]),
+  .dark [data-slot="select-trigger"][data-filled="true"],
+  .dark [data-filled="true"],
+  .dark button[data-filled="true"],
+  .dark div[data-filled="true"],
+  .dark .phone-input-wrapper:has(input:not(:placeholder-shown)) input {
+    background-color: rgb(24, 24, 27) !important;
     border: 2px solid rgb(243, 244, 246) !important;
     color: rgb(249, 250, 251) !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2) !important;
   }
 
-  /* Empty / Unfilled state styling */
-  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
-  textarea:placeholder-shown,
-  [data-filled="false"] {
-    border: 1.5px solid rgba(209, 213, 219, 0.85) !important;
+  /* UNFILLED / EMPTY State: Dark Orange Primary color outline when field is empty */
+  input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
+  textarea:not([data-slot="bare-input"]):placeholder-shown,
+  [data-slot="select-trigger"][data-placeholder],
+  [data-slot="select-trigger"][data-filled="false"],
+  [data-filled="false"],
+  button[data-filled="false"],
+  div[data-filled="false"],
+  .phone-input-wrapper:has(input:placeholder-shown) input {
+    border: 2px solid rgb(234, 88, 12) !important;
+    background-color: rgba(234, 88, 12, 0.025) !important;
+    font-weight: 500;
   }
 
-  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
-  .dark textarea:placeholder-shown,
-  .dark [data-filled="false"] {
-    border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+  .dark input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
+  .dark textarea:not([data-slot="bare-input"]):placeholder-shown,
+  .dark [data-slot="select-trigger"][data-placeholder],
+  .dark [data-slot="select-trigger"][data-filled="false"],
+  .dark [data-filled="false"],
+  .dark button[data-filled="false"],
+  .dark div[data-filled="false"],
+  .dark .phone-input-wrapper:has(input:placeholder-shown) input {
+    border: 2px solid rgb(249, 115, 22) !important;
+    background-color: rgba(249, 115, 22, 0.05) !important;
+    font-weight: 500;
+  }
+
+  /* Clean browser autofill styling across browsers */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-text-fill-color: currentColor !important;
+    caret-color: currentColor !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover, 
+  .dark input:-webkit-autofill:focus, 
+  .dark input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 }
 

@@ -55,16 +55,17 @@ export function ForgotPasswordForm() {
               <Label className="text-xs font-semibold text-gray-700 dark:text-gray-300 ml-1">
                 Registered Email
               </Label>
-              <div className="flex items-center w-full rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/10 transition-all overflow-hidden h-14 group">
+              <div className="flex items-center w-full rounded-2xl border border-gray-200 dark:border-white/15 bg-white dark:bg-[#18181b] focus-within:border-[#ff6b00] dark:focus-within:border-[#ff6b00] focus-within:ring-2 focus-within:ring-[#ff6b00]/15 transition-all overflow-hidden h-14 group shadow-sm">
                 <div className="w-12 h-full flex items-center justify-center border-r border-gray-200/80 dark:border-white/10 text-gray-400 group-focus-within:text-[#ff6b00] transition-colors bg-gray-50/50 dark:bg-white/5 shrink-0">
                   <Mail size={18} />
                 </div>
                 <input 
                   id="email"
                   type="email" 
+                  data-slot="bare-input"
                   {...form.register('email')} 
                   placeholder="Enter your email address" 
-                  className="flex-1 h-full px-4 bg-transparent border-0 outline-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
+                  className="flex-1 h-full px-4 bg-transparent border-none outline-none ring-0 shadow-none text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400/80 placeholder:font-normal focus:ring-0 focus:outline-none"
                 />
               </div>
               {form.formState.errors.email && (
