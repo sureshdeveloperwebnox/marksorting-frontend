@@ -154,9 +154,6 @@ export default function StoresPage() {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [localSearch, setLocalSearch] = React.useState(search);
   const [isSimulationOpen, setIsSimulationOpen] = React.useState(false);
-  const [localServiceType, setLocalServiceType] = React.useState<string>("Acknowledgement");
-  const [pendingServiceType, setPendingServiceType] = React.useState<string>("Acknowledgement");
-  const [isSavingServiceType, setIsSavingServiceType] = React.useState(false);
   const [pendingReturnStatus, setPendingReturnStatus] = React.useState<string>("Pending");
   const [isSavingReturnStatus, setIsSavingReturnStatus] = React.useState(false);
 
@@ -320,34 +317,9 @@ export default function StoresPage() {
     return cleaned || "—";
   };
 
-  const handleServiceTypeChange = async (newType: string) => {
-    if (!selectedViewStoreId || !viewStoreData) return;
-    setIsSavingServiceType(true);
-    setLocalServiceType(newType);
-    setPendingServiceType(newType);
-    try {
-      await updateStoreMutation.mutateAsync({
-        id: selectedViewStoreId,
-        service_type: newType,
-        remarks: viewStoreData.remarks || '',
-      });
-      await handleRefresh();
-      toast.success(`Service type updated to "${newType}"`);
-    } catch {
-      const revert = parseServiceTypeFromRemarks(viewStoreData.remarks);
-      setLocalServiceType(revert);
-      setPendingServiceType(revert);
-    } finally {
-      setIsSavingServiceType(false);
-    }
-  };
-
-  // Sync localServiceType when viewStoreData changes
+  // Sync pendingReturnStatus when viewStoreData changes
   React.useEffect(() => {
     if (viewStoreData) {
-      const st = parseServiceTypeFromRemarks(viewStoreData.remarks);
-      setLocalServiceType(st);
-      setPendingServiceType(st);
       setPendingReturnStatus(viewStoreData.return_status || 'Pending');
     }
   }, [viewStoreData]);
@@ -514,46 +486,18 @@ export default function StoresPage() {
           },
           {
             label: "Service Type",
-            value: viewStoreData.return_status === "In Progress" ? (
-              <div className="flex items-center gap-2">
-                <Select
-                  value={pendingServiceType}
-                  onValueChange={(val) => val && setPendingServiceType(val)}
-                >
-                  <SelectTrigger className="h-8 w-44 text-xs font-bold bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-primary/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-gray-100 shadow-xl z-[9999]">
-                    <SelectItem value="Acknowledgement" className="font-bold py-2 text-xs text-emerald-600 dark:text-emerald-400">
-                      Acknowledgement
-                    </SelectItem>
-                    <SelectItem value="Replacement" className="font-bold py-2 text-xs text-blue-600 dark:text-blue-400">
-                      Replacement
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {pendingServiceType !== localServiceType && (
-                  <Button
-                    size="sm"
-                    onClick={() => handleServiceTypeChange(pendingServiceType)}
-                    disabled={isSavingServiceType}
-                    className="h-8 px-3 rounded-lg text-xs font-bold bg-primary hover:bg-primary/90 text-white shadow-sm gap-1"
-                  >
-                    {isSavingServiceType ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check size={12} strokeWidth={3} />}
-                    Submit
-                  </Button>
+            value: (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
+                  currentServiceType === 'Replacement'
+                    ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                 )}
-                {isSavingServiceType && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
-              </div>
-            ) : (
-              <span className={cn(
-                "font-semibold text-xs",
-                currentServiceType === 'Replacement'
-                  ? "text-blue-500 dark:text-blue-400"
-                  : "text-emerald-500 dark:text-emerald-400"
-              )}>
+              >
                 {currentServiceType}
-              </span>
+              </Badge>
             ),
             icon: Wrench,
           },
@@ -775,7 +719,7 @@ export default function StoresPage() {
         ],
       },
     ];
-  }, [viewStoreData, localServiceType, pendingServiceType, isSavingServiceType, pendingReturnStatus, isSavingReturnStatus]);
+  }, [viewStoreData, pendingReturnStatus, isSavingReturnStatus]);
 
   const confirmDelete = async () => {
     if (!deleteId) return;
