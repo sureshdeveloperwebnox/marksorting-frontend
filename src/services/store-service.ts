@@ -25,9 +25,13 @@ export interface Store {
   id: string;
   store_number?: string;
   ref_no?: string;
+  mc_model?: string;
   mill?: {
     id: string;
     name: string;
+    ref_no?: string;
+    place?: string;
+    address?: string;
   };
   service_engineer_id: string;
   service_engineer: {

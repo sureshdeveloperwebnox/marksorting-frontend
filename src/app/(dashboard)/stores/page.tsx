@@ -28,6 +28,9 @@ import {
   Info,
   RefreshCw,
   Truck,
+  Building2,
+  MapPin,
+  Cpu,
 } from "lucide-react";
 import { PageHeaderActions, PageFilterToolbar } from "@/components/ui/page-header-controls";
 import {
@@ -593,17 +596,37 @@ export default function StoresPage() {
         ],
       },
       {
-        title: "People & Ownership",
+        title: "Customer & Mill Information",
         items: [
-          {
-            label: "Service Engineer",
-            value: viewStoreData.service_engineer?.full_name || "—",
-            icon: Wrench,
-          },
           {
             label: "Customer",
             value: viewStoreData.customer?.name || "—",
             icon: Users,
+          },
+          {
+            label: "Mill Name",
+            value: viewStoreData.mill?.name || "—",
+            icon: Building2,
+          },
+          {
+            label: "Mill Ref No",
+            value: viewStoreData.ref_no || viewStoreData.mill?.ref_no || "—",
+            icon: Hash,
+          },
+          ...(viewStoreData.mill?.place ? [{
+            label: "Mill Location / Place",
+            value: viewStoreData.mill.place,
+            icon: MapPin,
+          }] : []),
+          ...(viewStoreData.mc_model ? [{
+            label: "Machine Model",
+            value: viewStoreData.mc_model,
+            icon: Cpu,
+          }] : []),
+          {
+            label: "Service Engineer",
+            value: viewStoreData.service_engineer?.full_name || "—",
+            icon: Wrench,
           },
         ],
       },
