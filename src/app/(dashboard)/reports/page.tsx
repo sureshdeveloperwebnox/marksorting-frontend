@@ -891,15 +891,6 @@ export default function ReportsPage() {
             ),
         },
         {
-            accessorKey: "installation_date",
-            header: "Installation Date",
-            cell: ({ row }) => (
-                <span className="text-gray-500 dark:text-gray-400">
-                    {row.original.installation_date ? format(new Date(row.original.installation_date), "dd-MM-yyyy") : "—"}
-                </span>
-            ),
-        },
-        {
             accessorKey: "all_warranty",
             header: "Warranty / AMC",
             cell: ({ row }) => {
