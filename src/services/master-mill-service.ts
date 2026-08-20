@@ -150,12 +150,31 @@ export const useUpdateMasterMill = () => {
       return data;
     },
     onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ['master-mills'] });
-      queryClient.invalidateQueries({ queryKey: ['master-mills-stats'] });
       const record = updated?.after || updated;
       if (record?.id) {
+        // Immediately update any cached master-mills lists for instant UI reflection
+        queryClient.setQueriesData({ queryKey: ['master-mills'] }, (old: any) => {
+          if (!old) return old;
+          if (Array.isArray(old)) {
+            return old.map((item: any) =>
+              item.id === record.id ? { ...item, ...record } : item,
+            );
+          }
+          if (old.masterMills && Array.isArray(old.masterMills)) {
+            return {
+              ...old,
+              masterMills: old.masterMills.map((item: any) =>
+                item.id === record.id ? { ...item, ...record } : item,
+              ),
+            };
+          }
+          return old;
+        });
+
         queryClient.setQueryData(['master-mill', record.id], record);
       }
+      queryClient.invalidateQueries({ queryKey: ['master-mills'] });
+      queryClient.invalidateQueries({ queryKey: ['master-mills-stats'] });
       toast.success('Master record updated successfully');
     },
     onError: (error: any) => {

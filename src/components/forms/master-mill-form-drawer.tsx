@@ -375,8 +375,8 @@ export function MasterMillFormDrawer() {
     try {
       let customerId = existingCustomerId;
 
-      // 1. Create the customer if not already selected/existing
-      if (!customerId) {
+      // 1. Create the customer if name is provided and not already selected/existing
+      if (!customerId && quickCustomerName && quickCustomerName.trim()) {
         // Double check if a customer with the exact name already exists
         const exactMatch = customers.find(
           (c) => c.name.toLowerCase().trim() === quickCustomerName.toLowerCase().trim()
@@ -385,7 +385,7 @@ export function MasterMillFormDrawer() {
           customerId = exactMatch.id;
         } else {
           const newCustomer = await createCustomerMutation.mutateAsync({
-            name: quickCustomerName,
+            name: quickCustomerName.trim(),
             phone: quickPhone || undefined,
             address: quickAddress || undefined,
             status: 'ACTIVE',
@@ -394,11 +394,11 @@ export function MasterMillFormDrawer() {
         }
       }
 
-      // 2. Create the mill linked to the customer
+      // 2. Create the mill (customer_id is optional)
       const newMill = await createMillMutation.mutateAsync({
-        name: quickMillName,
-        ref_no: quickRefNo || undefined,
-        customer_id: customerId,
+        name: quickMillName.trim(),
+        ref_no: quickRefNo?.trim() || undefined,
+        customer_id: customerId || undefined,
         phone: quickPhone || undefined,
         address: quickAddress || undefined,
         place: quickPlace || undefined,
@@ -481,13 +481,30 @@ export function MasterMillFormDrawer() {
       ...data,
       warranty_months: totalMonths,
       warranty_years: Math.floor(totalMonths / 12),
-      mill_id: data.mill_id || undefined,
-      invoice_date: data.invoice_date || undefined,
-      installation_date: data.installation_date || undefined,
-      warranty_start_date: data.warranty_start_date || undefined,
-      warranty_closing_date: data.warranty_closing_date || undefined,
-      amc_starting_date: data.amc_starting_date || undefined,
-      amc_closing_date: data.amc_closing_date || undefined,
+      invoice_no: data.invoice_no?.trim() || '',
+      mill_id: data.mill_id || null,
+      ref_no: data.ref_no?.trim() || null,
+      address: data.address?.trim() || null,
+      place: data.place?.trim() || null,
+      state: data.state || null,
+      phone_no: data.phone_no || null,
+      mc_model: data.mc_model?.trim() || null,
+      frame_no: data.frame_no?.trim() || null,
+      invoice_date: data.invoice_date || null,
+      installation_date: data.installation_date || null,
+      warranty_start_date: data.warranty_start_date || null,
+      warranty_closing_date: data.warranty_closing_date || null,
+      amc_starting_date: data.amc_starting_date || null,
+      amc_period:
+        data.amc_period !== undefined && data.amc_period !== null && !isNaN(Number(data.amc_period))
+          ? Number(data.amc_period)
+          : null,
+      amc_particular: data.amc_particular || null,
+      amc_closing_date: data.amc_closing_date || null,
+      amc_amount:
+        data.amc_amount !== undefined && data.amc_amount !== null && !isNaN(Number(data.amc_amount))
+          ? Number(data.amc_amount)
+          : null,
     };
     try {
       if (isEdit) {
@@ -1051,7 +1068,7 @@ export function MasterMillFormDrawer() {
           {/* Customer Name */}
           <div className="space-y-1">
             <div className="flex justify-between items-center">
-              <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Customer Name *</Label>
+              <Label className="text-[10px] font-bold text-primary uppercase tracking-widest">Customer Name</Label>
               {existingCustomerId && (
                 <button
                   type="button"
@@ -1076,7 +1093,7 @@ export function MasterMillFormDrawer() {
                 }
               }}
               disabled={!!existingCustomerId}
-              placeholder="e.g. Seva Mandir" 
+              placeholder="e.g. Seva Mandir (optional)" 
               className={cn(
                 "h-9 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl font-bold text-xs",
                 existingCustomerId && "opacity-75 bg-blue-500/5 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
@@ -1202,7 +1219,7 @@ export function MasterMillFormDrawer() {
           <Button
             type="button"
             onClick={handleQuickCreateSubmit}
-            disabled={isQuickRegistering || !quickCustomerName || !quickMillName}
+            disabled={isQuickRegistering || !quickMillName?.trim()}
             className="rounded-lg h-9 text-xs bg-primary hover:bg-primary/95 text-white font-black shadow-lg shadow-primary/20 gap-1.5"
           >
             {isQuickRegistering ? (
