@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { BulkUploadDialog } from "@/components/modals/BulkUploadDialog";
 import type { ColumnConfig } from "@/types/bulk-upload";
-import { PageHeaderControls } from "@/components/ui/page-header-controls";
+import { PageHeaderActions, PageFilterToolbar } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -716,15 +716,7 @@ export default function MasterMillsPage() {
                 </p>
               </div>
 
-              <PageHeaderControls
-                searchValue={localSearch}
-                onSearchChange={setLocalSearch}
-                searchPlaceholder="Search invoice, mill, model..."
-                onFilterClick={() => setIsFilterDrawerOpen(true)}
-                activeFiltersCount={activeFiltersCount}
-                addLabel="Add Record"
-                addIcon={<FileText size={15} />}
-                onAddClick={() => openFormDrawer()}
+              <PageHeaderActions
                 onRefresh={handleRefresh}
                 isRefreshing={isRefreshing}
                 renderExtraControls={() => (
@@ -732,7 +724,7 @@ export default function MasterMillsPage() {
                     type="button"
                     onClick={() => setDialogOpen(true)}
                     className={cn(
-                      "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
+                      "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer shrink-0",
                       "bg-transparent border border-gray-200 dark:border-white/10",
                       "text-gray-600 dark:text-gray-400",
                       "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10"
@@ -742,11 +734,14 @@ export default function MasterMillsPage() {
                     Upload Excel
                   </button>
                 )}
+                addLabel="Add Record"
+                addIcon={<FileText size={15} />}
+                onAddClick={() => openFormDrawer()}
               />
             </div>
 
-            {/* Warranty Status Tabs */}
-            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+            {/* Warranty Status Tabs & Filter Toolbar (Row 2) */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
               <TableTabs
                 layoutId="warranty-tab"
                 tabs={[
@@ -757,6 +752,14 @@ export default function MasterMillsPage() {
                 ]}
                 activeValue={warrantyFilter || ""}
                 onChange={(value) => setWarrantyFilter(value)}
+              />
+
+              <PageFilterToolbar
+                searchValue={localSearch}
+                onSearchChange={setLocalSearch}
+                searchPlaceholder="Search invoice, mill, model..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFiltersCount}
               />
             </div>
 

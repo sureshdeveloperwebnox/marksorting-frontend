@@ -74,7 +74,7 @@ import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-pick
 import { InstallationReportFormDrawer } from "@/components/forms/installation-report-form-drawer";
 import { RouteGuard } from "@/components/guards/route-guard";
 import { ViewDetailsDrawer } from "@/components/ui/view-details-drawer";
-import { PageHeaderControls } from "@/components/ui/page-header-controls";
+import { PageHeaderActions, PageFilterToolbar } from "@/components/ui/page-header-controls";
 import { TableTabs } from "@/components/ui/table-tabs";
 import { useCustomers } from "@/services/customer-service";
 import { useMills } from "@/services/mill-service";
@@ -937,7 +937,58 @@ export default function InstallationReportPage() {
                 </p>
               </div>
 
-              <PageHeaderControls
+              <PageHeaderActions
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+                renderExtraControls={() => (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBulkDeleteOpen(true)}
+                      className={cn(
+                        "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer shrink-0",
+                        "bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400",
+                        "hover:bg-rose-500/20 hover:border-rose-500/30",
+                      )}
+                    >
+                      <Trash2 size={14} />
+                      Bulk Delete Old
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkUploadOpen(true)}
+                      className={cn(
+                        "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer shrink-0",
+                        "bg-transparent border border-gray-200 dark:border-white/10",
+                        "text-gray-600 dark:text-gray-400",
+                        "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                      )}
+                    >
+                      <Upload size={14} />
+                      Upload Excel
+                    </button>
+                  </div>
+                )}
+                addLabel="New Installation"
+                addIcon={<FileText size={15} />}
+                onAddClick={() => openFormDrawer()}
+              />
+            </div>
+
+            {/* Reusable Table Tabs & Filter Toolbar (Row 2) */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+              <TableTabs
+                tabs={[
+                  { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                  { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
+                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "NON_SUCCEED", label: "Non-succeed", count: nonSucceedData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+                ]}
+                activeValue={statusFilter || ""}
+                onChange={(value) => setStatusFilter(value)}
+              />
+
+              <PageFilterToolbar
                 searchValue={localSearch}
                 onSearchChange={setLocalSearch}
                 searchPlaceholder="Search installations..."
@@ -953,54 +1004,6 @@ export default function InstallationReportPage() {
                   setIsFilterDrawerOpen(true);
                 }}
                 activeFiltersCount={activeFilterCount}
-                addLabel="New Installation"
-                addIcon={<FileText size={15} />}
-                onAddClick={() => openFormDrawer()}
-                onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
-                renderExtraControls={() => (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setBulkDeleteOpen(true)}
-                      className={cn(
-                        "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
-                        "bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400",
-                        "hover:bg-rose-500/20 hover:border-rose-500/30",
-                      )}
-                    >
-                      <Trash2 size={14} />
-                      Bulk Delete Old
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBulkUploadOpen(true)}
-                      className={cn(
-                        "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200",
-                        "bg-transparent border border-gray-200 dark:border-white/10",
-                        "text-gray-600 dark:text-gray-400",
-                        "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
-                      )}
-                    >
-                      <Upload size={14} />
-                      Upload Excel
-                    </button>
-                  </div>
-                )}
-              />
-            </div>
-
-            {/* Reusable Table Tabs */}
-            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
-              <TableTabs
-                tabs={[
-                  { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
-                  { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                  { value: "COMPLETED", label: "Completed", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                  { value: "NON_SUCCEED", label: "Non-succeed", count: nonSucceedData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
-                ]}
-                activeValue={statusFilter || ""}
-                onChange={(value) => setStatusFilter(value)}
               />
             </div>
 

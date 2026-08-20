@@ -29,7 +29,7 @@ import {
   RefreshCw,
   Truck,
 } from "lucide-react";
-import { PageHeaderControls } from "@/components/ui/page-header-controls";
+import { PageHeaderActions, PageFilterToolbar } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1322,39 +1322,27 @@ export default function StoresPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  onClick={() => setIsSimulationOpen(true)}
-                  variant="outline"
-                  className="h-9 px-4 rounded-xl font-bold text-sm border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 gap-2 transition-all shadow-sm"
-                >
-                  <Smartphone size={15} />
-                  Simulation
-                </Button>
-                <PageHeaderControls
-                  searchValue={localSearch}
-                  onSearchChange={setLocalSearch}
-                  searchPlaceholder="Search store records..."
-                  dateRangePicker={
-                    <DateRangePicker
-                      value={dateRangeValue}
-                      onChange={handleDateRangeChange}
-                      align="auto"
-                    />
-                  }
-                  onFilterClick={() => setIsFilterDrawerOpen(true)}
-                  activeFiltersCount={activeFiltersCount}
-                  addLabel="Add Record"
-                  addIcon={<StoreIcon size={15} />}
-                  onAddClick={() => openFormDrawer()}
-                  onRefresh={handleRefresh}
-                  isRefreshing={isRefreshing}
-                />
-              </div>
+              <PageHeaderActions
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+                renderExtraControls={() => (
+                  <Button
+                    onClick={() => setIsSimulationOpen(true)}
+                    variant="outline"
+                    className="h-10 px-4 rounded-xl font-bold text-sm border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50 gap-2 transition-all shadow-xs cursor-pointer shrink-0"
+                  >
+                    <Smartphone size={15} />
+                    Simulation
+                  </Button>
+                )}
+                addLabel="Add Record"
+                addIcon={<StoreIcon size={15} />}
+                onAddClick={() => openFormDrawer()}
+              />
             </div>
 
-            {/* Reusable Table Tabs */}
-            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+            {/* Reusable Table Tabs & Filter Toolbar (Row 2) */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
               <TableTabs
                 tabs={[
                   { value: "ALL", label: "All", count: totalData?.total || 0, color: "primary", icon: <Package size={14} /> },
@@ -1387,6 +1375,21 @@ export default function StoresPage() {
                     setReturnFilter("Not Returned");
                   }
                 }}
+              />
+
+              <PageFilterToolbar
+                searchValue={localSearch}
+                onSearchChange={setLocalSearch}
+                searchPlaceholder="Search store records..."
+                dateRangePicker={
+                  <DateRangePicker
+                    value={dateRangeValue}
+                    onChange={handleDateRangeChange}
+                    align="auto"
+                  />
+                }
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFiltersCount}
               />
             </div>
 

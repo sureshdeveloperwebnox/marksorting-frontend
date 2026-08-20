@@ -36,7 +36,7 @@ import {
   XCircle,
   Tag,
 } from "lucide-react";
-import { PageHeaderControls } from "@/components/ui/page-header-controls";
+import { PageHeaderActions, PageFilterToolbar } from "@/components/ui/page-header-controls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -866,7 +866,30 @@ export default function ExpensesPage() {
                 </p>
               </div>
 
-              <PageHeaderControls
+              <PageHeaderActions
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
+                addLabel="New Expense"
+                addIcon={<DollarSign size={15} />}
+                onAddClick={() => openFormDrawer()}
+              />
+            </div>
+
+            {/* Reusable Table Tabs & Filter Toolbar (Row 2) */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+              <TableTabs
+                tabs={[
+                  { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
+                  { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
+                  { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
+                  { value: "COMPLETED", label: "Approved", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
+                  { value: "CANCELLED", label: "Rejected", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
+                ]}
+                activeValue={statusFilter || ""}
+                onChange={(value) => setStatusFilter(value)}
+              />
+
+              <PageFilterToolbar
                 searchValue={localSearch}
                 onSearchChange={setLocalSearch}
                 searchPlaceholder="Search expenses..."
@@ -879,26 +902,6 @@ export default function ExpensesPage() {
                 }
                 onFilterClick={() => setIsFilterDrawerOpen(true)}
                 activeFiltersCount={activeFilterCount}
-                addLabel="New Expense"
-                addIcon={<DollarSign size={15} />}
-                onAddClick={() => openFormDrawer()}
-                onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
-              />
-            </div>
-
-            {/* Reusable Table Tabs */}
-            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
-              <TableTabs
-                tabs={[
-                  { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <ClipboardCheck size={14} /> },
-                  { value: "PENDING", label: "Pending", count: pendingData?.total || 0, color: "amber", icon: <AlertTriangle size={14} /> },
-                  { value: "IN_PROGRESS", label: "In Progress", count: inProgressData?.total || 0, color: "blue", icon: <Clock size={14} /> },
-                  { value: "COMPLETED", label: "Approved", count: completedData?.total || 0, color: "emerald", icon: <CheckCircle2 size={14} /> },
-                  { value: "CANCELLED", label: "Rejected", count: cancelledData?.total || 0, color: "rose", icon: <XCircle size={14} /> },
-                ]}
-                activeValue={statusFilter || ""}
-                onChange={(value) => setStatusFilter(value)}
               />
             </div>
 

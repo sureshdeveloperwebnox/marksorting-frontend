@@ -24,7 +24,7 @@ import {
   ShieldAlert,
   History,
 } from "lucide-react";
-import { PageHeaderControls } from "@/components/ui/page-header-controls";
+import { PageHeaderActions, PageFilterToolbar } from "@/components/ui/page-header-controls";
 
 import {
   Dialog,
@@ -399,22 +399,17 @@ export default function TicketsPage() {
                 </p>
               </div>
 
-              <PageHeaderControls
-                searchValue={localSearch}
-                onSearchChange={setLocalSearch}
-                searchPlaceholder="Search tickets..."
-                onFilterClick={() => setIsFilterDrawerOpen(true)}
-                activeFiltersCount={activeFilterCount}
+              <PageHeaderActions
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
                 addLabel="New Ticket"
                 addIcon={<Ticket size={15} />}
                 onAddClick={() => openFormDrawer()}
-                onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
               />
             </div>
 
-            {/* Reusable Table Tabs */}
-            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03]">
+            {/* Reusable Table Tabs & Filter Toolbar (Row 2) */}
+            <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/20 dark:bg-black/[0.03] flex flex-col xl:flex-row xl:items-center justify-between gap-3">
               <TableTabs
                 tabs={[
                   { value: "", label: "All", count: totalData?.total || 0, color: "primary", icon: <Ticket size={14} /> },
@@ -425,6 +420,14 @@ export default function TicketsPage() {
                 ]}
                 activeValue={statusFilter || ""}
                 onChange={(value) => setStatusFilter(value)}
+              />
+
+              <PageFilterToolbar
+                searchValue={localSearch}
+                onSearchChange={setLocalSearch}
+                searchPlaceholder="Search tickets..."
+                onFilterClick={() => setIsFilterDrawerOpen(true)}
+                activeFiltersCount={activeFilterCount}
               />
             </div>
 
