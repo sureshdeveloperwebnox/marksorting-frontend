@@ -42,7 +42,7 @@ import {
 } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -52,10 +52,16 @@ import { NotificationsDrawer } from '@/components/notifications/notifications-dr
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 import { EditProfileDrawer } from '@/components/forms/edit-profile-drawer';
-import { useSocket } from '@/providers/socket-provider';
+import { useSocket, AppNotification } from '@/providers/socket-provider';
 import { format } from 'date-fns';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDashboardFilterStore } from '@/store/dashboard-filter-store';
+import {
+  NotificationScope,
+  resolveScopeFromPath,
+  filterNotificationsByScope,
+  getUnreadCountForScope,
+} from '@/utils/notification-scope';
 
 /* ─── Nav data types ─────────────────────────────────────────── */
 
@@ -429,6 +435,22 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
 
   useEffect(() => { setMounted(true); }, []);
 
+  const currentRouteScope = useMemo(() => resolveScopeFromPath(pathname), [pathname]);
+
+  // Contextual unread count for navbar bell icon based on current active tab / route
+  const contextualUnreadCount = useMemo(() => {
+    return getUnreadCountForScope(notifications, currentRouteScope);
+  }, [notifications, currentRouteScope]);
+
+  // In-memory filtered notifications for the popover (always contextual to active route)
+  const popoverNotifications = useMemo(() => {
+    return filterNotificationsByScope(notifications, currentRouteScope);
+  }, [notifications, currentRouteScope]);
+
+  const popoverUnreadCount = useMemo(() => {
+    return popoverNotifications.filter((n: AppNotification) => n.status === 'UNREAD').length;
+  }, [popoverNotifications]);
+
   const prefetchRoute = (href: string) => {
     if (href !== pathname) {
       router.prefetch(href);
@@ -693,9 +715,9 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
               aria-label="Notifications"
             >
               <NotificationBellIcon size={17} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-primary rounded-full ring-2 ring-white dark:ring-gray-900 flex items-center justify-center text-[9px] font-bold text-white">
-                  {unreadCount > 99 ? '99+' : unreadCount}
+              {contextualUnreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-primary rounded-full ring-2 ring-white dark:ring-gray-900 flex items-center justify-center text-[9px] font-bold text-white shadow-xs">
+                  {contextualUnreadCount > 99 ? '99+' : contextualUnreadCount}
                 </span>
               )}
             </motion.button>
@@ -706,38 +728,51 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.96 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl shadow-black/8 z-50 overflow-hidden"
+                  className="absolute right-0 mt-2 w-80 sm:w-88 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl shadow-black/10 z-50 overflow-hidden"
                 >
                   {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/10">
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                      Notifications {unreadCount > 0 && <span className="ml-1 text-primary">({unreadCount})</span>}
-                    </p>
-                    {unreadCount > 0 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                        Notifications
+                      </p>
+                      {popoverUnreadCount > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          {popoverUnreadCount}
+                        </span>
+                      )}
+                    </div>
+                    {popoverUnreadCount > 0 && (
                       <button
-                        onClick={() => markAllAsRead()}
-                        className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                        onClick={() => {
+                          const unreadInView = popoverNotifications.filter((n: AppNotification) => n.status === 'UNREAD');
+                          unreadInView.forEach((n: AppNotification) => markAsRead(n.id));
+                        }}
+                        className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors flex-shrink-0"
                       >
-                        Mark all read
+                        Mark in view read
                       </button>
                     )}
                   </div>
 
                   {/* List */}
-                  <div className="flex flex-col max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10 scrollbar-track-transparent">
-                    {notifications.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-10 text-center">
-                        <NotificationsIcon size={28} className="text-gray-300 dark:text-gray-600 mb-2" />
-                        <p className="text-sm text-gray-400 dark:text-gray-500">No notifications yet</p>
+                  <div className="flex flex-col max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10 scrollbar-track-transparent divide-y divide-gray-50 dark:divide-white/5">
+                    {popoverNotifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                        <NotificationsIcon size={26} className="text-gray-300 dark:text-gray-600 mb-2" />
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                          No notifications yet
+                        </p>
                       </div>
                     ) : (
-                      notifications.map((n) => {
+                      popoverNotifications.map((n: AppNotification) => {
                         const dotColor =
                           n.type === 'SERVICE_REPORT' ? 'bg-blue-500' :
                             n.type === 'INSTALLATION' ? 'bg-indigo-500' :
                               n.type === 'EXPENSE' ? 'bg-amber-500' :
-                                n.type === 'TICKET' ? 'bg-rose-500' :
-                                  'bg-primary';
+                                n.type === 'STORE' ? 'bg-emerald-500' :
+                                  n.type === 'TICKET' ? 'bg-rose-500' :
+                                    'bg-primary';
                         return (
                           <button
                             key={n.id}
@@ -774,7 +809,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
                   <div className="border-t border-gray-100 dark:border-white/10">
                     <button
                       onClick={() => { setNotifOpen(false); setNotifDrawerOpen(true); }}
-                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors w-full"
+                      className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors w-full cursor-pointer"
                     >
                       View all notifications
                       <ArrowRight size={12} />
@@ -790,6 +825,7 @@ export function Navbar({ isSidebarLayout = false }: { isSidebarLayout?: boolean 
             open={notifDrawerOpen}
             onOpenChange={setNotifDrawerOpen}
             onMarkAllRead={markAllAsRead}
+            initialScope={currentRouteScope}
           />
 
           {/* Divider */}
