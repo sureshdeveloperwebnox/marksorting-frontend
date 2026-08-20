@@ -23,6 +23,11 @@ export interface StoreMaterialRelation {
 
 export interface Store {
   id: string;
+  ref_no?: string;
+  mill?: {
+    id: string;
+    name: string;
+  };
   service_engineer_id: string;
   service_engineer: {
     id: string;

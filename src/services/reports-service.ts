@@ -106,6 +106,8 @@ export interface ReportsStoreMaterial {
 
 export interface ReportsStore {
     id: string;
+    ref_no?: string;
+    mill?: { id: string; name: string };
     service_engineer?: { id: string; full_name: string };
     customer?: { id: string; name: string };
     materials: ReportsStoreMaterial[];

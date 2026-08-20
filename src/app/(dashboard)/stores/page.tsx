@@ -1085,6 +1085,15 @@ export default function StoresPage() {
   /* ── Table columns ── */
   const columns: ColumnDef<Store>[] = [
     {
+      accessorKey: "ref_no",
+      header: "Ref No",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-semibold text-gray-900 dark:text-white">
+          {row.original.ref_no || "—"}
+        </span>
+      ),
+    },
+    {
       accessorKey: "service_engineer.full_name",
       header: "Service Engineer",
       cell: ({ row }) => (
@@ -1094,12 +1103,17 @@ export default function StoresPage() {
       ),
     },
     {
-      accessorKey: "customer.name",
-      header: "Customer",
+      accessorKey: "mill.name",
+      header: "Mill / Customer",
       cell: ({ row }) => (
-        <span className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
-          {row.original.customer?.name || "—"}
-        </span>
+        <div className="flex flex-col">
+          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+            {row.original.mill?.name || row.original.customer?.name || "—"}
+          </span>
+          {row.original.customer?.name && row.original.mill?.name && row.original.customer.name !== row.original.mill.name && (
+            <span className="text-xs text-gray-400">{row.original.customer.name}</span>
+          )}
+        </div>
       ),
     },
     {

@@ -975,11 +975,20 @@ export default function ReportsPage() {
     // 5. Stores Log Columns
     const storeColumns: ColumnDef<ReportsStore>[] = [
         {
-            accessorKey: "service_engineer.full_name",
-            header: "Service Engineer",
+            accessorKey: "ref_no",
+            header: "Ref No",
             cell: ({ row }) => (
-                <span className="font-semibold text-gray-900 dark:text-white">
-                    {row.original.service_engineer?.full_name || "—"}
+                <span className="font-mono text-xs font-semibold text-gray-900 dark:text-white">
+                    {row.original.ref_no || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "mill.name",
+            header: "Mill Name",
+            cell: ({ row }) => (
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    {row.original.mill?.name || "—"}
                 </span>
             ),
         },
@@ -988,7 +997,25 @@ export default function ReportsPage() {
             header: "Customer",
             cell: ({ row }) => (
                 <span className="font-semibold text-gray-800 dark:text-gray-200">
-                    {row.original.customer?.name || "—"}
+                    {row.original.customer?.name || row.original.mill?.name || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "frame_number",
+            header: "Frame No",
+            cell: ({ row }) => (
+                <span className="font-mono text-xs text-gray-600 dark:text-gray-400 font-semibold">
+                    {row.original.frame_number || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "service_engineer.full_name",
+            header: "Service Engineer",
+            cell: ({ row }) => (
+                <span className="font-semibold text-gray-900 dark:text-white">
+                    {row.original.service_engineer?.full_name || "—"}
                 </span>
             ),
         },
