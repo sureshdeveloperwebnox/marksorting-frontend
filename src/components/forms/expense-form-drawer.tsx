@@ -1852,7 +1852,7 @@ export function ExpenseFormDrawer() {
           <DialogContent className="sm:max-w-[480px] bg-white dark:bg-gray-955 rounded-2xl border border-gray-100 dark:border-white/5">
             <DialogHeader>
               <DialogTitle className="text-lg font-black text-gray-800 dark:text-gray-200">
-                Register Machine (Master Mill Record)
+                Register Master Record
               </DialogTitle>
               <DialogDescription className="text-xs text-gray-400">
                 Add a new machine installation/service record for the selected mill:

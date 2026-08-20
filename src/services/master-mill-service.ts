@@ -134,10 +134,10 @@ export const useCreateMasterMill = () => {
       queryClient.invalidateQueries({ queryKey: ['master-mills'] });
       queryClient.invalidateQueries({ queryKey: ['master-mills-stats'] });
       queryClient.setQueryData(['master-mill', newRecord.id], newRecord);
-      toast.success('Master mill record created successfully');
+      toast.success('Master record created successfully');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create master mill record');
+      toast.error(error.response?.data?.message || 'Failed to create master record');
     },
   });
 };
@@ -156,10 +156,10 @@ export const useUpdateMasterMill = () => {
       if (record?.id) {
         queryClient.setQueryData(['master-mill', record.id], record);
       }
-      toast.success('Master mill record updated successfully');
+      toast.success('Master record updated successfully');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update master mill record');
+      toast.error(error.response?.data?.message || 'Failed to update master record');
     },
   });
 };
@@ -187,7 +187,7 @@ export const useDeleteMasterMill = () => {
       if (context?.previous) {
         queryClient.setQueryData(['master-mills'], context.previous);
       }
-      toast.error('Failed to delete master mill record');
+      toast.error('Failed to delete master record');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['master-mills'] });

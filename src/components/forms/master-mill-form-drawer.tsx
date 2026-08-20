@@ -519,7 +519,7 @@ export function MasterMillFormDrawer() {
               </div>
               <div>
                 <SheetTitle className="text-xl">
-                  {isEdit ? 'Edit Master Mill Record' : 'Add Master Mill Record'}
+                  {isEdit ? 'Edit Master Record' : 'Add Master Record'}
                 </SheetTitle>
                 <SheetDescription>
                   {isEdit
@@ -1032,7 +1032,7 @@ export function MasterMillFormDrawer() {
             Quick Register Customer &amp; Mill
           </DialogTitle>
           <DialogDescription className="text-xs text-gray-500 font-bold">
-            Register a new customer and mill to link with this Master Mill record.
+            Register a new customer and mill to link with this Master record.
           </DialogDescription>
         </DialogHeader>
 

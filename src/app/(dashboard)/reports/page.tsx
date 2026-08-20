@@ -1092,7 +1092,7 @@ export default function ReportsPage() {
                         { id: "services", label: "Service List", icon: Wrench },
                         { id: "installations", label: "Installation List", icon: Factory },
                         { id: "expenses", label: "Expenses", icon: Receipt },
-                        { id: "master-mills", label: "Master Mills", icon: Building },
+                        { id: "master-mills", label: "Masters", icon: Building },
                         { id: "stores", label: "Stores", icon: Package },
                     ].map((tab) => {
                         const Icon = tab.icon;
@@ -1415,7 +1415,7 @@ export default function ReportsPage() {
                                 : activeTab === "expenses"
                                 ? "expenses"
                                 : activeTab === "master-mills"
-                                ? "master mills"
+                                ? "masters"
                                 : "store logs"
                         }
                         pagination={pagination}

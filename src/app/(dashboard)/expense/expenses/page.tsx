@@ -756,12 +756,24 @@ export default function ExpensesPage() {
     },
     {
       accessorKey: "visit_date",
-      header: "Date",
+      header: "Expense Date",
       cell: ({ row }) => (
         <div className="flex items-center gap-1.5">
           <Calendar size={13} className="text-gray-400" />
           <span className="text-gray-500 dark:text-gray-400 font-medium text-sm">
             {row.original.visit_date ? format(new Date(row.original.visit_date), "MMM dd, yyyy") : "—"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "created_at",
+      header: "Created Date",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1.5">
+          <Clock size={13} className="text-gray-400" />
+          <span className="text-gray-500 dark:text-gray-400 font-medium text-sm">
+            {row.original.created_at ? format(new Date(row.original.created_at), "MMM dd, yyyy") : "—"}
           </span>
         </div>
       ),

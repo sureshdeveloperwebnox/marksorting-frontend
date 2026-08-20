@@ -144,7 +144,7 @@ export function ExportReportDrawer({
                 : activeTab === "expenses"
                 ? "Expenses"
                 : activeTab === "master-mills"
-                ? "Master Mills"
+                ? "Masters"
                 : "Stores Log"}
             </span>
           </div>

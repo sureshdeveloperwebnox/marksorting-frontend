@@ -422,7 +422,7 @@ export default function MasterMillsPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success("Master mill record deleted successfully");
+      toast.success("Master record deleted successfully");
     } catch {
       /* handled in mutation */
     } finally {
@@ -706,7 +706,7 @@ export default function MasterMillsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 pb-5 border-b border-gray-100 dark:border-white/5">
               <div>
                 <h1 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
-                  Master Mills{" "}
+                  Masters{" "}
                   <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
                     Registry
                   </span>
@@ -847,13 +847,13 @@ export default function MasterMillsPage() {
           }}
           title={
             viewMillData
-              ? `Master Mill: ${viewMillData.invoice_no}`
-              : "Master Mill Details"
+              ? `Master Record: ${viewMillData.invoice_no}`
+              : "Master Details"
           }
           description={
             viewMillData
               ? `${viewMillData.mill?.name || viewMillData.mc_model || "—"} · ${formatDateSafe(viewMillData.invoice_date)}`
-              : "Loading master mill details..."
+              : "Loading master details..."
           }
           icon={<Building2 size={22} />}
           isLoading={isViewMillLoading}
@@ -875,7 +875,7 @@ export default function MasterMillsPage() {
                 Confirm Deletion
               </DialogTitle>
               <DialogDescription className="text-center text-gray-500 font-bold">
-                This will permanently remove this master mill record from the
+                This will permanently remove this master record from the
                 system. This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
