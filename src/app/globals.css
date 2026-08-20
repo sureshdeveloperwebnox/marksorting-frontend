@@ -145,7 +145,7 @@
      Universal styling for FILLED vs UNFILLED state across all modules, forms & drawers
      ========================================================================== */
 
-  /* FILLED State: Dark Black outline when field has value */
+  /* FILLED State: Crisp neutral outline when field has value */
   input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
   textarea:not([data-slot="bare-input"]):not(:placeholder-shown),
   [data-slot="select-trigger"]:not([data-placeholder]):not([data-slot="bare-input"]),
@@ -155,10 +155,10 @@
   div[data-filled="true"],
   .phone-input-wrapper:has(input:not(:placeholder-shown)) input {
     background-color: #ffffff !important;
-    border: 2px solid rgb(17, 24, 39) !important;
+    border: 1.5px solid rgb(156, 163, 175) !important;
     color: rgb(17, 24, 39) !important;
-    font-weight: 600 !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
   }
 
   .dark input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not(:placeholder-shown),
@@ -170,13 +170,13 @@
   .dark div[data-filled="true"],
   .dark .phone-input-wrapper:has(input:not(:placeholder-shown)) input {
     background-color: rgb(24, 24, 27) !important;
-    border: 2px solid rgb(243, 244, 246) !important;
+    border: 1.5px solid rgb(75, 85, 99) !important;
     color: rgb(249, 250, 251) !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2) !important;
   }
 
-  /* UNFILLED / EMPTY State: Dark Orange Primary color outline when field is empty */
+  /* UNFILLED / EMPTY State: Clean subtle warm outline when field is empty */
   input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
   textarea:not([data-slot="bare-input"]):placeholder-shown,
   [data-slot="select-trigger"][data-placeholder],
@@ -185,9 +185,9 @@
   button[data-filled="false"],
   div[data-filled="false"],
   .phone-input-wrapper:has(input:placeholder-shown) input {
-    border: 2px solid rgb(234, 88, 12) !important;
-    background-color: rgba(234, 88, 12, 0.025) !important;
-    font-weight: 500;
+    border: 1.5px solid rgba(234, 88, 12, 0.4) !important;
+    background-color: rgba(234, 88, 12, 0.015) !important;
+    font-weight: 400;
   }
 
   .dark input:not([data-slot="bare-input"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):placeholder-shown,
@@ -198,9 +198,9 @@
   .dark button[data-filled="false"],
   .dark div[data-filled="false"],
   .dark .phone-input-wrapper:has(input:placeholder-shown) input {
-    border: 2px solid rgb(249, 115, 22) !important;
-    background-color: rgba(249, 115, 22, 0.05) !important;
-    font-weight: 500;
+    border: 1.5px solid rgba(249, 115, 22, 0.45) !important;
+    background-color: rgba(249, 115, 22, 0.03) !important;
+    font-weight: 400;
   }
 
   /* Clean browser autofill styling across browsers */
@@ -416,22 +416,30 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Universal Field Titles / Labels & Modal Titles Boldness
+   Universal Field Titles / Labels & Modal Titles Clean Weight
    ───────────────────────────────────────────────────────────── */
 [data-slot="sheet-title"],
 [data-slot="dialog-title"],
 .sheet-title,
 .dialog-title {
-  font-weight: 900 !important;
-  letter-spacing: -0.02em;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
 }
 
 label,
 [data-slot="label"],
 .field-label,
 .form-label {
-  font-weight: 900 !important;
-  letter-spacing: 0.05em;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  color: rgb(55, 65, 81);
+}
+
+.dark label,
+.dark [data-slot="label"],
+.dark .field-label,
+.dark .form-label {
+  color: rgb(229, 231, 235);
 }
 
 /* ─────────────────────────────────────────────────────────────

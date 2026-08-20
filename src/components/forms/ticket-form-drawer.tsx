@@ -288,7 +288,7 @@ export function TicketFormDrawer() {
 
                             {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
                             <div className="space-y-1.5 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                                <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                                <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                                     <Cpu size={14} className="text-primary/70" />
                                     Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                                 </Label>

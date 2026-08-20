@@ -1058,7 +1058,7 @@ export function ServiceReportFormDrawer() {
               {isEdit && (
                 <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl p-4 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Shield size={14} className="text-primary/70" />
                       Work Status
                     </Label>
@@ -1133,7 +1133,7 @@ export function ServiceReportFormDrawer() {
               {/* Section 1 - General Information */}
               <SectionToggle section={sections[0]} isOpen={!!openSections[1]} onToggle={toggleSection}>
                   <div className="space-y-2" data-error={errors.service_category_id ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Tag size={14} className="text-primary/70" />
                       Service Category
                     </Label>
@@ -1164,7 +1164,7 @@ export function ServiceReportFormDrawer() {
               {/* Section 2 - Service Engineer Details */}
               <SectionToggle section={sections[1]} isOpen={!!openSections[2]} onToggle={toggleSection}>
                 <div className="space-y-2" data-error={errors.technician_ids ? 'true' : undefined}>
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <Users size={14} className="text-primary/70" />
                     Service Engineers
                   </Label>
@@ -1188,7 +1188,7 @@ export function ServiceReportFormDrawer() {
                 <div className="space-y-4">
                   {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
                   <div className="space-y-2 p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
                       Search Machine to Prefill (REF NO / Frame No / Customer / Mill)
                     </Label>
@@ -1301,7 +1301,7 @@ export function ServiceReportFormDrawer() {
                   {/* Customer Dropdown */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Users size={14} className="text-primary/70" />
                         Customer
                       </Label>
@@ -1363,7 +1363,7 @@ export function ServiceReportFormDrawer() {
                   {/* Mill Dropdown */}
                   <div className="space-y-2" data-error={errors.mill_id ? 'true' : undefined}>
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Building2 size={14} className="text-primary/70" />
                         Mill
                       </Label>
@@ -1435,7 +1435,7 @@ export function ServiceReportFormDrawer() {
                   {selectedMillId && (
                     <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
                       <div className="flex items-center justify-between mb-1.5">
-                        <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                           <Cpu size={14} className="text-primary/70" />
                           Select Machine (REF NO / Frame No)
                         </Label>
@@ -1558,7 +1558,7 @@ export function ServiceReportFormDrawer() {
                   )}
 
                   <div className="space-y-2" data-error={errors.place ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <MapPin size={14} className="text-primary/70" />
                       Place
                     </Label>
@@ -1572,7 +1572,7 @@ export function ServiceReportFormDrawer() {
 
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Mail size={14} className="text-primary/70" />
                       Mill Email ID
                     </Label>
@@ -1590,7 +1590,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[3]} isOpen={!!openSections[4]} onToggle={toggleSection}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2" data-error={errors.visit_date ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <CalendarDays size={14} className="text-primary/70" />
                       Visit Date
                     </Label>
@@ -1609,7 +1609,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.call_registered_date ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Calendar size={14} className="text-primary/70" />
                       Call Registered Date
                     </Label>
@@ -1634,7 +1634,7 @@ export function ServiceReportFormDrawer() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.machine_model ? 'true' : undefined}>
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Cpu size={14} className="text-primary/70" />
                         Machine Model
                       </Label>
@@ -1647,7 +1647,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.serial_or_frame_no ? 'true' : undefined}>
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Tag size={14} className="text-primary/70" />
                         Serial No / Frame No
                       </Label>
@@ -1662,7 +1662,7 @@ export function ServiceReportFormDrawer() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
                         Mfg Date
                       </Label>
@@ -1681,7 +1681,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <CalendarDays size={14} className="text-primary/70" />
                         Installation Date
                       </Label>
@@ -1700,7 +1700,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.authorized_person ? 'true' : undefined}>
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Users size={14} className="text-primary/70" />
                         Authorized Person
                       </Label>
@@ -1715,7 +1715,7 @@ export function ServiceReportFormDrawer() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.authorized_person_phone ? 'true' : undefined}>
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Phone size={14} className="text-primary/70" />
                         Authorized Person Contact No
                       </Label>
@@ -1741,7 +1741,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[5]} isOpen={!!openSections[6]} onToggle={toggleSection}>
                 <div className="space-y-4">
                   <div className="space-y-2" data-error={errors.nature_of_complaint ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Nature of Complaint
                     </Label>
@@ -1754,7 +1754,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Problem Observed
                     </Label>
@@ -1767,7 +1767,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.action_taken ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Wrench size={14} className="text-primary/70" />
                       Action Taken
                     </Label>
@@ -1785,7 +1785,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[6]} isOpen={!!openSections[7]} onToggle={toggleSection}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Package size={14} className="text-primary/70" />
                       Commodity
                     </Label>
@@ -1797,7 +1797,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Contamination
                     </Label>
@@ -1809,7 +1809,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Output Capacity/Hour
                     </Label>
@@ -1821,7 +1821,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Rejection Ratio
                     </Label>
@@ -1833,7 +1833,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Gauge size={14} className="text-primary/70" />
                       Purity
                     </Label>
@@ -1845,7 +1845,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Cpu size={14} className="text-primary/70" />
                       No of Programs Set
                     </Label>
@@ -1865,7 +1865,7 @@ export function ServiceReportFormDrawer() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2" data-error={errors.ac_provided ? 'true' : undefined}>
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         AC Provided
                       </Label>
@@ -1889,7 +1889,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2" data-error={errors.auto_drain_valve_working ? 'true' : undefined}>
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Wind size={14} className="text-primary/70" />
                         Auto Drain Valve Working
                       </Label>
@@ -1914,7 +1914,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Compressor Details
                     </Label>
@@ -1926,7 +1926,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Air Drier Details
                     </Label>
@@ -1939,7 +1939,7 @@ export function ServiceReportFormDrawer() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Line Filter Condition
                       </Label>
@@ -1951,7 +1951,7 @@ export function ServiceReportFormDrawer() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <FileText size={14} className="text-primary/70" />
                         Machine Filter Condition
                       </Label>
@@ -1969,7 +1969,7 @@ export function ServiceReportFormDrawer() {
               <SectionToggle section={sections[8]} isOpen={!!openSections[9]} onToggle={toggleSection}>
                 <div className="space-y-6">
                   <div className="space-y-2" data-error={errors.status ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Tag size={14} className="text-primary/70" />
                       Work Status
                     </Label>
@@ -1995,7 +1995,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.engineer_remarks ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Pen size={14} className="text-primary/70" />
                       Engineer Remarks
                     </Label>
@@ -2008,7 +2008,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.engineer_signature ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Pen size={14} className="text-primary/70" />
                       Engineer Signature
                     </Label>
@@ -2023,7 +2023,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <FileText size={14} className="text-primary/70" />
                       Customer Remarks
                     </Label>
@@ -2036,7 +2036,7 @@ export function ServiceReportFormDrawer() {
                   </div>
 
                   <div className="space-y-2" data-error={errors.customer_signature ? 'true' : undefined}>
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Pen size={14} className="text-primary/70" />
                       Customer Signature
                     </Label>

@@ -127,7 +127,7 @@ export function ServiceCategoryFormDrawer() {
                             <div className="space-y-4">
                                 {/* Category Name Field */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                                         <Tag size={14} className="text-primary/70" />
                                         Category Name
                                         <span className="text-rose-500">*</span>
@@ -142,7 +142,7 @@ export function ServiceCategoryFormDrawer() {
 
                                 {/* Description Field */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                                         <AlignLeft size={14} className="text-primary/70" />
                                         Description
                                         <span className="text-gray-400 font-normal normal-case tracking-normal text-[11px]">(Optional)</span>
@@ -157,7 +157,7 @@ export function ServiceCategoryFormDrawer() {
 
                                 {/* Status Field */}
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                                         <RefreshCcw size={14} className="text-primary/70" />
                                         Category Status
                                     </Label>

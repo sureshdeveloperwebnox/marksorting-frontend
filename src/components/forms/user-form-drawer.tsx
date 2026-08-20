@@ -191,7 +191,7 @@ export function UserFormDrawer() {
                 {/* Images Upload Option */}
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100 dark:border-white/5">
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest">Profile Photo</Label>
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Profile Photo</Label>
                     <ImageUpload
                       value={watch('profile_image')}
                       previewUrl={isEdit ? userData?.profile_image_url : undefined}
@@ -201,7 +201,7 @@ export function UserFormDrawer() {
                     />
                   </div>
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest">Cover Photo</Label>
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Cover Photo</Label>
                     <ImageUpload
                       value={watch('background_image')}
                       previewUrl={isEdit ? userData?.background_image_url : undefined}
@@ -214,7 +214,7 @@ export function UserFormDrawer() {
 
                 {/* Full Name Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <UserIcon size={14} className="text-primary/70" />
                     Full Name
                   </Label>
@@ -228,7 +228,7 @@ export function UserFormDrawer() {
 
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <Mail size={14} className="text-primary/70" />
                     Email Address
                   </Label>
@@ -243,7 +243,7 @@ export function UserFormDrawer() {
                 {/* Password Field */}
                 {!isEdit && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Lock size={14} className="text-primary/70" />
                       Password
                     </Label>
@@ -268,7 +268,7 @@ export function UserFormDrawer() {
 
                 {isEdit && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <Lock size={14} className="text-primary/70" />
                       Password
                     </Label>
@@ -293,7 +293,7 @@ export function UserFormDrawer() {
 
                 {/* Phone Number Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <Phone size={14} className="text-primary/70" />
                     Phone Number
                   </Label>
@@ -318,7 +318,7 @@ export function UserFormDrawer() {
 
                 {/* Role Selection */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <Globe size={14} className="text-primary/70" />
                     User Role
                   </Label>
@@ -351,7 +351,7 @@ export function UserFormDrawer() {
 
                 {/* Account Status */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <RefreshCcw size={14} className="text-primary/70" />
                     Account Status
                   </Label>

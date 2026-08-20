@@ -68,18 +68,18 @@ export function ViewDetailsDrawer({
       <SheetContent side="right">
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3.5">
             {icon && (
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-lg shadow-primary/20">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white shadow-md shadow-primary/15 shrink-0">
                 {icon}
               </div>
             )}
             <div>
-              <SheetTitle className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+              <SheetTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
                 {title}
               </SheetTitle>
               {description && (
-                <SheetDescription className="text-xs text-gray-400 dark:text-gray-500 font-bold mt-0.5">
+                <SheetDescription className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
                   {description}
                 </SheetDescription>
               )}
@@ -109,7 +109,7 @@ export function ViewDetailsDrawer({
             sections.map((section, secIdx) => (
               <div key={secIdx} className="space-y-2.5">
                 {section.title && (
-                  <h3 className="text-xs font-black uppercase tracking-wider text-primary/80 dark:text-primary/70 ml-0.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary/90 dark:text-primary/80 ml-0.5">
                     {section.title}
                   </h3>
                 )}
@@ -122,13 +122,13 @@ export function ViewDetailsDrawer({
                         item.fullWidth ? "col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-4" : "col-span-1"
                       )}
                     >
-                      <span className="text-[11px] font-bold tracking-wider uppercase text-gray-400 dark:text-gray-500 flex items-center gap-1.5 select-none">
+                      <span className="text-[11px] font-medium tracking-wide uppercase text-gray-500 dark:text-gray-400 flex items-center gap-1.5 select-none">
                         {item.icon && (
                           <item.icon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
                         )}
                         {item.label}
                       </span>
-                      <div className="text-sm font-bold text-gray-900 dark:text-white break-words">
+                      <div className="text-sm font-semibold text-gray-800 dark:text-gray-100 break-words">
                         {item.value || <span className="text-gray-400 dark:text-gray-600 font-medium">—</span>}
                       </div>
                     </div>

@@ -734,11 +734,11 @@ export default function StoresPage() {
                             <Package size={15} className="text-primary" />
                           </div>
                           <div>
-                            <span className="text-sm font-black text-gray-900 dark:text-white truncate block">
+                            <span className="text-sm font-bold text-gray-900 dark:text-white truncate block">
                               {m.material.name}
                             </span>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                              Material Details & Inventory Breakdown
+                            <span className="text-[10px] text-gray-400 font-medium tracking-wide">
+                              Material Details &amp; Inventory Breakdown
                             </span>
                           </div>
                         </div>
@@ -746,7 +746,7 @@ export default function StoresPage() {
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[10px] font-extrabold py-0.5 px-2.5 rounded-lg uppercase",
+                              "text-[10px] font-semibold py-0.5 px-2 rounded-md uppercase",
                               m.stock_type === "From Store"
                                 ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
                                 : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
@@ -756,7 +756,7 @@ export default function StoresPage() {
                           </Badge>
                           <Badge
                             variant="outline"
-                            className="text-xs font-black py-0.5 px-2.5 bg-primary/10 border-primary/20 text-primary rounded-lg"
+                            className="text-xs font-semibold py-0.5 px-2 bg-primary/10 border-primary/20 text-primary rounded-md"
                           >
                             QTY: {totalQty}
                           </Badge>
@@ -766,24 +766,24 @@ export default function StoresPage() {
                       {/* Quantity Status Breakdown Bar */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-white dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-white/5 text-[11px]">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase text-gray-400">Total Units</span>
-                          <span className="font-black text-gray-800 dark:text-gray-200 mt-0.5">{totalQty} Units Total</span>
+                          <span className="text-[10px] font-semibold uppercase text-gray-400">Total Units</span>
+                          <span className="font-semibold text-gray-800 dark:text-gray-200 mt-0.5">{totalQty} Units Total</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase text-amber-500">Used / Unused</span>
-                          <span className="font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                          <span className="text-[10px] font-semibold uppercase text-amber-500">Used / Unused</span>
+                          <span className="font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
                             {usedQty} Used · {unusedQty} Unused
                           </span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase text-blue-500">Return Status</span>
-                          <span className="font-black text-blue-600 dark:text-blue-400 mt-0.5">
+                          <span className="text-[10px] font-semibold uppercase text-blue-500">Return Status</span>
+                          <span className="font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
                             {returnedQty} Returned · {notReturnedQty} Not Ret
                           </span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black uppercase text-emerald-500">Admin Acknowledge Status</span>
-                          <span className="font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          <span className="text-[10px] font-semibold uppercase text-emerald-500">Admin Acknowledge Status</span>
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
                             {admAckQty} Acknowledged · {admPendingQty} Pending
                           </span>
                         </div>
@@ -792,13 +792,13 @@ export default function StoresPage() {
                       {/* Quick Bulk Admin Acknowledge Action if pending units exist */}
                       {usedQty > 0 && admPendingQty > 0 && (
                         <div className="flex items-center justify-between p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-900/30">
-                          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                             {admPendingQty} used {admPendingQty === 1 ? 'unit is' : 'units are'} pending admin acknowledgment
                           </span>
                           <button
                             type="button"
                             onClick={() => handleMaterialAdminAckAll(m.material.name, "Acknowledged")}
-                            className="text-[10px] font-black uppercase px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all shadow-sm shadow-emerald-500/20 flex items-center gap-1.5"
+                            className="text-[10px] font-semibold px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                           >
                             ✓ Acknowledge All ({admPendingQty})
                           </button>
@@ -807,7 +807,7 @@ export default function StoresPage() {
 
                       {/* Units list */}
                       {units.length > 0 && (
-                        <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-white/5">
+                        <div className="space-y-2.5 pt-2 border-t border-gray-100 dark:border-white/5">
                           {units.map((unit, sIdx) => {
                             const isUsed = unit.used;
                             const admAck = unit.admin_ack || 'Pending';
@@ -818,9 +818,9 @@ export default function StoresPage() {
                               <div
                                 key={sIdx}
                                 className={cn(
-                                  "p-3.5 rounded-2xl border transition-all space-y-3",
+                                  "p-3 rounded-xl border transition-all space-y-2.5",
                                   isUsed
-                                    ? "bg-amber-50/30 dark:bg-amber-950/15 border-amber-200/60 dark:border-amber-900/30 shadow-sm"
+                                    ? "bg-amber-50/25 dark:bg-amber-950/10 border-amber-200/50 dark:border-amber-900/20"
                                     : "bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5"
                                 )}
                               >
@@ -829,11 +829,11 @@ export default function StoresPage() {
                                   <div className="flex items-center gap-2.5">
                                     <Badge
                                       variant="outline"
-                                      className="text-[10px] font-black uppercase px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md shrink-0"
+                                      className="text-[10px] font-semibold px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md shrink-0"
                                     >
                                       Unit {sIdx + 1}
                                     </Badge>
-                                    <div className="flex items-center gap-1.5 font-mono text-sm font-black text-gray-900 dark:text-white">
+                                    <div className="flex items-center gap-1.5 font-mono text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
                                       <Barcode size={15} className="text-primary/70 shrink-0" />
                                       <span>{unit.barcode}</span>
                                     </div>
@@ -843,14 +843,14 @@ export default function StoresPage() {
                                     {isUsed ? (
                                       <Badge
                                         variant="outline"
-                                        className="text-[10px] font-black uppercase px-2.5 py-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 rounded-lg"
+                                        className="text-[10px] font-semibold px-2 py-0.5 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-300/40 rounded-md"
                                       >
-                                        ⚠ Used Material
+                                        Used Material
                                       </Badge>
                                     ) : (
                                       <Badge
                                         variant="outline"
-                                        className="text-[10px] font-black uppercase px-2.5 py-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 rounded-lg"
+                                        className="text-[10px] font-semibold px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-300/40 rounded-md"
                                       >
                                         ✓ New Product Return (Unused)
                                       </Badge>
@@ -860,20 +860,20 @@ export default function StoresPage() {
 
                                 {/* Status Details Bar (Shown only when Used) */}
                                 {isUsed && (
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-amber-200/40 dark:border-amber-900/20">
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2.5 border-t border-amber-200/30 dark:border-amber-900/20">
                                     {/* Return Status */}
-                                    <div className="flex flex-col gap-1.5 p-3 bg-white/90 dark:bg-gray-900/70 rounded-xl border border-amber-100 dark:border-white/5">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
+                                      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                         Return Status
                                       </span>
                                       <div>
                                         <Badge
                                           variant="outline"
                                           className={cn(
-                                            "text-xs font-black uppercase px-3 py-1 rounded-lg border w-fit inline-flex items-center gap-1",
+                                            "text-xs font-semibold px-2.5 py-0.5 rounded-md border w-fit inline-flex items-center gap-1",
                                             retStatus === "Returned"
-                                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50 shadow-sm"
-                                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300 border-rose-300/50 shadow-sm"
+                                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50"
+                                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300 border-rose-300/50"
                                           )}
                                         >
                                           {retStatus === "Returned" ? "✓ Returned" : "✕ Not Returned"}
@@ -882,18 +882,18 @@ export default function StoresPage() {
                                     </div>
 
                                     {/* Engineer Acknowledge Status */}
-                                    <div className="flex flex-col gap-1.5 p-3 bg-white/90 dark:bg-gray-900/70 rounded-xl border border-amber-100 dark:border-white/5">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
+                                      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                         Engineer Acknowledge Status
                                       </span>
                                       <div>
                                         <Badge
                                           variant="outline"
                                           className={cn(
-                                            "text-xs font-black uppercase px-3 py-1 rounded-lg border w-fit inline-flex items-center gap-1",
+                                            "text-xs font-semibold px-2.5 py-0.5 rounded-md border w-fit inline-flex items-center gap-1",
                                             engAck === "Acknowledged"
-                                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50 shadow-sm"
-                                              : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300/50 shadow-sm"
+                                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50"
+                                              : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300/50"
                                           )}
                                         >
                                           {engAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}
@@ -902,8 +902,8 @@ export default function StoresPage() {
                                     </div>
 
                                     {/* Admin Acknowledge Status */}
-                                    <div className="flex flex-col gap-1.5 p-3 bg-white/90 dark:bg-gray-900/70 rounded-xl border border-amber-100 dark:border-white/5">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
+                                      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                         Admin Acknowledge Status
                                       </span>
                                       <Select
@@ -916,19 +916,19 @@ export default function StoresPage() {
                                       >
                                         <SelectTrigger
                                           className={cn(
-                                            "h-8 w-full px-3 text-xs font-black uppercase rounded-lg border focus:ring-2 focus:ring-primary/20",
+                                            "h-7.5 w-full px-2.5 text-xs font-semibold rounded-md border focus:ring-2 focus:ring-primary/20 cursor-pointer",
                                             admAck === "Acknowledged"
-                                              ? "bg-emerald-500 text-white border-emerald-600 shadow-sm shadow-emerald-500/20"
-                                              : "bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/20"
+                                              ? "bg-emerald-500 text-white border-emerald-600"
+                                              : "bg-amber-500 text-white border-amber-600"
                                           )}
                                         >
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-2xl z-[9999]">
-                                          <SelectItem value="Acknowledged" className="font-bold py-2 text-xs text-emerald-600 cursor-pointer">
+                                          <SelectItem value="Acknowledged" className="font-semibold py-1.5 text-xs text-emerald-600 cursor-pointer">
                                             ✓ Acknowledged
                                           </SelectItem>
-                                          <SelectItem value="Pending" className="font-bold py-2 text-xs text-amber-600 cursor-pointer">
+                                          <SelectItem value="Pending" className="font-semibold py-1.5 text-xs text-amber-600 cursor-pointer">
                                             ⏳ Pending
                                           </SelectItem>
                                         </SelectContent>
