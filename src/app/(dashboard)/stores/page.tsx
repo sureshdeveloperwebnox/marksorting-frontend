@@ -611,6 +611,15 @@ export default function StoresPage() {
         title: "Record Status",
         items: [
           {
+            label: "Store ID",
+            value: (
+              <span className="font-mono font-bold text-xs text-primary dark:text-primary-foreground">
+                {viewStoreData.store_number || "—"}
+              </span>
+            ),
+            icon: Hash,
+          },
+          {
             label: "Warranty Status",
             value: (
               <Badge
@@ -1085,6 +1094,15 @@ export default function StoresPage() {
   /* ── Table columns ── */
   const columns: ColumnDef<Store>[] = [
     {
+      accessorKey: "store_number",
+      header: "Store ID",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-bold text-primary dark:text-primary-foreground tracking-tight">
+          {row.original.store_number || "—"}
+        </span>
+      ),
+    },
+    {
       accessorKey: "ref_no",
       header: "Ref No",
       cell: ({ row }) => (
@@ -1462,7 +1480,7 @@ export default function StoresPage() {
         <ViewDetailsDrawer
           isOpen={isViewDrawerOpen}
           onClose={closeViewDrawer}
-          title="Store Record Details"
+          title={viewStoreData?.store_number ? `Store #${viewStoreData.store_number}` : "Store Record Details"}
           description="Detailed view of the registered stores inventory record."
           icon={<StoreIcon size={24} />}
           isLoading={isViewStoreLoading}

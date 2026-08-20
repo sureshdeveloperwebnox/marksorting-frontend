@@ -1096,9 +1096,16 @@ export function StoreFormDrawer() {
               <Store size={24} />
             </div>
             <div>
-              <SheetTitle className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-                {isEdit ? 'Edit Store Record' : 'Add Store Record'}
-              </SheetTitle>
+              <div className="flex items-center gap-2">
+                <SheetTitle className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                  {isEdit ? 'Edit Store Record' : 'Add Store Record'}
+                </SheetTitle>
+                {isEdit && storeData?.store_number && (
+                  <Badge variant="outline" className="font-mono text-xs font-bold px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md">
+                    #{storeData.store_number}
+                  </Badge>
+                )}
+              </div>
               <SheetDescription className="text-sm font-bold text-gray-500 mt-0.5">
                 {isEdit ? 'Update details of the store item.' : 'Register a new item in the stores inventory.'}
               </SheetDescription>

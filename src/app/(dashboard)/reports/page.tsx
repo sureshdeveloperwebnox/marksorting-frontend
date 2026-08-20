@@ -975,6 +975,15 @@ export default function ReportsPage() {
     // 5. Stores Log Columns
     const storeColumns: ColumnDef<ReportsStore>[] = [
         {
+            accessorKey: "store_number",
+            header: "Store ID",
+            cell: ({ row }) => (
+                <span className="font-mono text-xs font-bold text-primary dark:text-primary-foreground tracking-tight">
+                    {row.original.store_number || "—"}
+                </span>
+            ),
+        },
+        {
             accessorKey: "ref_no",
             header: "Ref No",
             cell: ({ row }) => (
@@ -1063,15 +1072,6 @@ export default function ReportsPage() {
                     </Badge>
                 );
             },
-        },
-        {
-            accessorKey: "inflow_status",
-            header: "Stock Status",
-            cell: ({ row }) => (
-                <Badge variant="outline" className="bg-gray-50/50 dark:bg-white/5 border-gray-200 dark:border-white/5 text-gray-500 dark:text-gray-400 py-0.5">
-                    {row.original.inflow_status || "—"}
-                </Badge>
-            ),
         },
         {
             accessorKey: "barcode",
