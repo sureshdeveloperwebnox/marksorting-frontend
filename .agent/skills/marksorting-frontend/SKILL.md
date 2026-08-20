@@ -83,7 +83,7 @@ All global state MUST be managed in lightweight Zustand stores:
 8. **`useExpenseStore.ts`**: Expense category selections, status filters (`PENDING`, `APPROVED`), upload receipt modal state.
 9. **`useServiceReportStore.ts`**: Multi-step service report form state, compressor readings, air dryer values.
 10. **`useInstallationReportStore.ts`**: Machine installation certificate form state, warranty dates, ground values.
-11. **`useStoreItemStore.ts`**: Store return lists, inflow status, material barcode tracking.
+11. **`useStoreItemStore.ts`**: Store return lists, inflow status, material barcode tracking, quantity summary breakdowns, per-unit return and engineer/admin acknowledge status, and bulk acknowledge actions.
 
 ---
 
