@@ -12,6 +12,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Store, Loader2, Save, Users, Wrench, Package, Hash, Clock, ShieldAlert, Barcode, Plus, PlusCircle, Cpu, Building2, ChevronDown, ChevronUp, Check, Edit3, Sparkles, ArrowRight, ListOrdered } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -158,9 +159,42 @@ const extractCleanRemarks = (remarks?: string | null): string => {
   return cleaned;
 };
 
-const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, string[]> => {
+export interface MaterialUnitStatus {
+  barcode: string;
+  used?: boolean;
+  return_status?: 'Returned' | 'Not Returned';
+  engineer_ack?: 'Acknowledged' | 'Pending';
+  admin_ack?: 'Acknowledged' | 'Pending';
+}
+
+const splitSerialsString = (str: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let depth = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '(') depth++;
+    if (char === ')') depth--;
+    if (char === ',' && depth === 0) {
+      if (current.trim()) result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) result.push(current.trim());
+  return result;
+};
+
+const cleanBarcodeString = (str: string): string => {
+  return str.replace(/\(.*?\)/g, '').trim();
+};
+
+const parseFullSerialMapFromRemarks = (
+  remarks?: string | null
+): Record<string, MaterialUnitStatus[]> => {
   if (!remarks) return {};
-  const map: Record<string, string[]> = {};
+  const map: Record<string, MaterialUnitStatus[]> = {};
   const serialNosIdx = remarks.indexOf('Serial Nos:');
   if (serialNosIdx === -1) return {};
 
@@ -179,10 +213,78 @@ const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, stri
       const serialsStr = part.substring(colIdx + 1).trim();
       const bracketMatch = serialsStr.match(/\[(.*?)\]/);
       if (bracketMatch && bracketMatch[1]) {
-        const serials = bracketMatch[1].split(',').map((s) => s.trim().replace(/\s*\(USED\)/gi, '')).filter(Boolean);
+        const rawSerials = splitSerialsString(bracketMatch[1]);
+        const serials: MaterialUnitStatus[] = rawSerials
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((s) => {
+            const used = /\(USED/i.test(s) || /USED/i.test(s);
+            const isNotReturned = /NOT_RETURNED|RET:Not Returned|Not Returned/i.test(s);
+            const engAckMatch = s.match(/ENG_ACK:(Acknowledged|Pending)/i);
+            const admAckMatch = s.match(/ADM_ACK:(Acknowledged|Pending)/i);
+            const barcode = cleanBarcodeString(s);
+
+            return {
+              barcode,
+              used,
+              return_status: isNotReturned ? ('Not Returned' as const) : ('Returned' as const),
+              engineer_ack: engAckMatch ? (engAckMatch[1] as 'Acknowledged' | 'Pending') : 'Acknowledged',
+              admin_ack: admAckMatch ? (admAckMatch[1] as 'Acknowledged' | 'Pending') : (used ? 'Pending' : 'Acknowledged'),
+            };
+          })
+          .filter((s) => s.barcode);
         map[matName] = serials;
       }
     }
+  });
+  return map;
+};
+
+const serializeSerialMapToRemarks = (
+  existingRemarks: string | null | undefined,
+  updatedMap: Record<string, MaterialUnitStatus[]>,
+  serviceType: string
+): string => {
+  const cleanRemarks = extractCleanRemarks(existingRemarks);
+  const serialSummaries: string[] = [];
+
+  Object.entries(updatedMap).forEach(([matName, items]) => {
+    if (items.length > 0) {
+      const itemStrs = items.map((it) => {
+        if (!it.used && it.return_status === 'Returned' && it.engineer_ack === 'Acknowledged' && it.admin_ack === 'Acknowledged') {
+          return it.barcode;
+        }
+        const tags: string[] = [];
+        if (it.used) tags.push('USED');
+        if (it.return_status) {
+          tags.push(`RET:${it.return_status}`);
+        }
+        if (it.engineer_ack) tags.push(`ENG_ACK:${it.engineer_ack}`);
+        if (it.admin_ack) tags.push(`ADM_ACK:${it.admin_ack}`);
+        return `${it.barcode} (${tags.join('; ')})`;
+      });
+      serialSummaries.push(`${matName}: [${itemStrs.join(', ')}]`);
+    }
+  });
+
+  const extraParts: string[] = [];
+  if (serialSummaries.length > 0) {
+    extraParts.push(`Serial Nos: ${serialSummaries.join(' | ')}`);
+  }
+  if (serviceType) {
+    extraParts.push(`Service Type: ${serviceType}`);
+  }
+
+  const extraText = extraParts.join(' | ');
+  return cleanRemarks !== '—' && cleanRemarks ? `${cleanRemarks} (${extraText})` : `(${extraText})`;
+};
+
+const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, string[]> => {
+  if (!remarks) return {};
+  const fullMap = parseFullSerialMapFromRemarks(remarks);
+  const map: Record<string, string[]> = {};
+  Object.entries(fullMap).forEach(([matName, units]) => {
+    map[matName] = units.map((u) => u.barcode);
   });
   return map;
 };
@@ -260,6 +362,7 @@ export function StoreFormDrawer() {
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
   const [barcodeRanges, setBarcodeRanges] = React.useState<Record<string, { start: string; end: string }>>({});
   const [showAllUnitsMap, setShowAllUnitsMap] = React.useState<Record<string, boolean>>({});
+  const [unitStatusMap, setUnitStatusMap] = React.useState<Record<string, MaterialUnitStatus[]>>({});
 
   // Dialog states for Quick Registration
   const [isQuickCreateOpen, setIsQuickCreateOpen] = React.useState(false);
@@ -346,18 +449,14 @@ export function StoreFormDrawer() {
   // Selected Machine object for displaying Warranty & AMC details
   const selectedMachine = React.useMemo(() => {
     if (selectedMachineId) {
-      const found =
-        searchedMasterMills.find((m) => m.id === selectedMachineId) ||
-        masterMills.find((m) => m.id === selectedMachineId) ||
-        frameMasterMills.find((m) => m.id === selectedMachineId);
-      if (found) return found;
+      const direct = searchedMasterMills.find((m) => m.id === selectedMachineId) || masterMills.find((m) => m.id === selectedMachineId);
+      if (direct) return direct;
     }
-    if (currentFrameNumber) {
-      const found =
-        searchedMasterMills.find((m) => m.frame_no === currentFrameNumber) ||
-        masterMills.find((m) => m.frame_no === currentFrameNumber) ||
-        frameMasterMills.find((m) => m.frame_no === currentFrameNumber);
-      if (found) return found;
+    if (currentFrameNumber && currentFrameNumber.trim()) {
+      const match = frameMasterMills.find((m) => m.frame_no?.toLowerCase() === currentFrameNumber.toLowerCase().trim()) ||
+                    searchedMasterMills.find((m) => m.frame_no?.toLowerCase() === currentFrameNumber.toLowerCase().trim()) ||
+                    masterMills.find((m) => m.frame_no?.toLowerCase() === currentFrameNumber.toLowerCase().trim());
+      if (match) return match;
     }
     return null;
   }, [selectedMachineId, currentFrameNumber, searchedMasterMills, masterMills, frameMasterMills]);
@@ -424,13 +523,26 @@ export function StoreFormDrawer() {
   React.useEffect(() => {
     if (isFormDrawerOpen) {
       if (isEdit && storeData) {
-        const serialMap = parseSerialMapFromRemarks(storeData.remarks);
+        const fullMap = parseFullSerialMapFromRemarks(storeData.remarks);
+        const newUnitStatusMap: Record<string, MaterialUnitStatus[]> = {};
 
         const initialQuantities = storeData.materials.map((m) => {
           const matName = m.material.name;
-          const serials = serialMap[matName] || [];
+          const unitStatuses = fullMap[matName] || [];
           const qty = m.quantity || 1;
-          const fullSerials = Array.from({ length: qty }).map((_, idx) => serials[idx] || '');
+          const fullSerials = Array.from({ length: qty }).map((_, idx) => unitStatuses[idx]?.barcode || '');
+
+          newUnitStatusMap[m.material.id] = Array.from({ length: qty }).map((_, idx) => {
+            const existing = unitStatuses[idx];
+            return {
+              barcode: existing?.barcode || '',
+              used: existing?.used || false,
+              return_status: existing?.return_status || (existing?.used ? 'Returned' : undefined),
+              engineer_ack: existing?.engineer_ack || (existing?.used ? 'Acknowledged' : undefined),
+              admin_ack: existing?.admin_ack || (existing?.used ? 'Pending' : undefined),
+            };
+          });
+
           return {
             material_id: m.material.id,
             quantity: qty,
@@ -438,6 +550,8 @@ export function StoreFormDrawer() {
             serial_numbers: fullSerials,
           };
         });
+
+        setUnitStatusMap(newUnitStatusMap);
 
         // Expand all material cards so user sees pre-filled barcodes / serial numbers immediately
         const initialExpanded: Record<string, boolean> = {};
@@ -469,6 +583,7 @@ export function StoreFormDrawer() {
           setDebouncedSearchQuery(storeData.frame_number);
         }
       } else if (!isEdit) {
+        setUnitStatusMap({});
         reset({
           service_engineer_id: '',
           customer_id: '',
@@ -572,6 +687,15 @@ export function StoreFormDrawer() {
         return q;
       });
       setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
+
+      setUnitStatusMap((prev) => {
+        const currentList = prev[materialId] || [];
+        const nextList = Array.from({ length: count }).map((_, i) => ({
+          ...(currentList[i] || {}),
+          barcode: sequence[i] || '',
+        }));
+        return { ...prev, [materialId]: nextList };
+      });
       return;
     }
 
@@ -587,6 +711,119 @@ export function StoreFormDrawer() {
       return q;
     });
     setValue('material_quantities', nextQuantities, { shouldDirty: true, shouldValidate: true });
+
+    setUnitStatusMap((prev) => {
+      const currentList = prev[materialId] || [];
+      const nextList = [...currentList];
+      const existing = nextList[unitIdx] || {};
+      nextList[unitIdx] = {
+        ...existing,
+        barcode: val,
+      };
+      return { ...prev, [materialId]: nextList };
+    });
+  };
+
+  const handleUnitUsedToggle = (materialId: string, unitIdx: number) => {
+    setUnitStatusMap((prev) => {
+      const currentList = prev[materialId] || [];
+      const currentItem = currentList[unitIdx] || { barcode: '' };
+      const nextUsed = !currentItem.used;
+      const updatedList = [...currentList];
+      updatedList[unitIdx] = {
+        ...currentItem,
+        used: nextUsed,
+        return_status: nextUsed ? (currentItem.return_status || 'Returned') : undefined,
+        engineer_ack: nextUsed ? (currentItem.engineer_ack || 'Acknowledged') : undefined,
+        admin_ack: nextUsed ? (currentItem.admin_ack || 'Pending') : undefined,
+      };
+      return { ...prev, [materialId]: updatedList };
+    });
+  };
+
+  const handleUnitReturnStatusChange = (
+    materialId: string,
+    unitIdx: number,
+    status: 'Returned' | 'Not Returned'
+  ) => {
+    setUnitStatusMap((prev) => {
+      const currentList = prev[materialId] || [];
+      const currentItem = currentList[unitIdx] || { barcode: '' };
+      const updatedList = [...currentList];
+      updatedList[unitIdx] = {
+        ...currentItem,
+        return_status: status,
+      };
+      return { ...prev, [materialId]: updatedList };
+    });
+  };
+
+  const handleUnitEngineerAckChange = (
+    materialId: string,
+    unitIdx: number,
+    ack: 'Acknowledged' | 'Pending'
+  ) => {
+    setUnitStatusMap((prev) => {
+      const currentList = prev[materialId] || [];
+      const currentItem = currentList[unitIdx] || { barcode: '' };
+      const updatedList = [...currentList];
+      updatedList[unitIdx] = {
+        ...currentItem,
+        engineer_ack: ack,
+      };
+      return { ...prev, [materialId]: updatedList };
+    });
+  };
+
+  const handleUnitAdminAckChange = (
+    materialId: string,
+    unitIdx: number,
+    ack: 'Acknowledged' | 'Pending'
+  ) => {
+    setUnitStatusMap((prev) => {
+      const currentList = prev[materialId] || [];
+      const currentItem = currentList[unitIdx] || { barcode: '' };
+      const updatedList = [...currentList];
+      updatedList[unitIdx] = {
+        ...currentItem,
+        admin_ack: ack,
+      };
+      return { ...prev, [materialId]: updatedList };
+    });
+  };
+
+  const handleUnitUsedSet = (
+    materialId: string,
+    unitIdx: number,
+    isUsed: boolean
+  ) => {
+    setUnitStatusMap((prev) => {
+      const currentList = prev[materialId] || [];
+      const currentItem = currentList[unitIdx] || { barcode: '' };
+      const updatedList = [...currentList];
+      updatedList[unitIdx] = {
+        ...currentItem,
+        used: isUsed,
+        return_status: currentItem.return_status || 'Returned',
+        engineer_ack: currentItem.engineer_ack || 'Acknowledged',
+        admin_ack: isUsed ? (currentItem.admin_ack || 'Pending') : 'Acknowledged',
+      };
+      return { ...prev, [materialId]: updatedList };
+    });
+  };
+
+  const handleMaterialAdminAckAllInForm = (
+    materialId: string,
+    ack: 'Acknowledged' | 'Pending'
+  ) => {
+    setUnitStatusMap((prev) => {
+      const currentList = prev[materialId] || [];
+      const updatedList = currentList.map((u) =>
+        u.used ? { ...u, admin_ack: ack } : u
+      );
+      return { ...prev, [materialId]: updatedList };
+    });
+    toast.success(`All used units updated to "${ack}"`);
   };
 
   const handleAutoGenerateBarcodes = (materialId: string) => {
@@ -622,6 +859,15 @@ export function StoreFormDrawer() {
           ...prev,
           [materialId]: { start: candidateStart, end: endCode },
         }));
+
+        setUnitStatusMap((prevMap) => {
+          const currentList = prevMap[materialId] || [];
+          const nextList = Array.from({ length: qty }).map((_, i) => ({
+            ...(currentList[i] || {}),
+            barcode: sequence[i] || '',
+          }));
+          return { ...prevMap, [materialId]: nextList };
+        });
 
         return { ...q, serial_numbers: sequence };
       }
@@ -678,6 +924,14 @@ export function StoreFormDrawer() {
       ...prev,
       [materialId]: { start: startVal, end: endCode },
     }));
+    setUnitStatusMap((prevMap) => {
+      const currentList = prevMap[materialId] || [];
+      const nextList = Array.from({ length: count }).map((_, i) => ({
+        ...(currentList[i] || {}),
+        barcode: sequence[i] || '',
+      }));
+      return { ...prevMap, [materialId]: nextList };
+    });
     toast.success(`Generated ${count} continuous barcodes: ${startVal} → ${endCode}`);
   };
 
@@ -781,29 +1035,34 @@ export function StoreFormDrawer() {
       return;
     }
 
-    const serialSummaries: string[] = [];
+    const fullUpdatedMap: Record<string, MaterialUnitStatus[]> = {};
+
     data.material_quantities?.forEach((mq) => {
       const mat = allMaterials.find((m) => m.id === mq.material_id);
       const matName = mat ? mat.name : 'Material';
-      const enteredSerials = mq.serial_numbers?.filter((s) => s.trim() !== '') || [];
-      if (enteredSerials.length > 0) {
-        serialSummaries.push(`${matName}: [${enteredSerials.join(', ')}]`);
-      }
+      const unitStatuses = unitStatusMap[mq.material_id] || [];
+      const enteredSerials = mq.serial_numbers || [];
+
+      fullUpdatedMap[matName] = Array.from({ length: mq.quantity })
+        .map((_, idx) => {
+          const rawBarcode = enteredSerials[idx]?.trim() || '';
+          const st = unitStatuses[idx];
+          return {
+            barcode: rawBarcode,
+            used: st?.used || false,
+            return_status: st?.used ? (st?.return_status || 'Returned') : undefined,
+            engineer_ack: st?.used ? (st?.engineer_ack || 'Acknowledged') : undefined,
+            admin_ack: st?.used ? (st?.admin_ack || 'Pending') : undefined,
+          };
+        })
+        .filter((u) => u.barcode);
     });
 
-    let cleanRemarksInput = extractCleanRemarks(data.remarks);
-    let finalRemarks = cleanRemarksInput;
-    const extraParts: string[] = [];
-    if (serialSummaries.length > 0) {
-      extraParts.push(`Serial Nos: ${serialSummaries.join(' | ')}`);
-    }
-    if (data.service_type) {
-      extraParts.push(`Service Type: ${data.service_type}`);
-    }
-    if (extraParts.length > 0) {
-      const extraText = extraParts.join(' | ');
-      finalRemarks = finalRemarks ? `${finalRemarks} (${extraText})` : `(${extraText})`;
-    }
+    const finalRemarks = serializeSerialMapToRemarks(
+      data.remarks,
+      fullUpdatedMap,
+      data.service_type || 'Acknowledgement'
+    );
 
     const payload = {
       ...data,
@@ -1499,6 +1758,18 @@ export function StoreFormDrawer() {
                                   </Select>
                                 </div>
 
+                                {/* Material Header Breakdown Badges */}
+                                {isEdit && (
+                                   <div className="hidden sm:flex items-center gap-1 text-[10px] font-semibold">
+                                     <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                       {(unitStatusMap[item.material_id] || []).filter((u) => u.used).length} Used
+                                     </span>
+                                     <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                       {Math.max(0, (Number(item.quantity) || 1) - (unitStatusMap[item.material_id] || []).filter((u) => u.used).length)} Unused
+                                     </span>
+                                   </div>
+                                )}
+
                                 {/* QTY counter input */}
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">QTY:</span>
@@ -1562,8 +1833,63 @@ export function StoreFormDrawer() {
                               const isAllFilled = qty > 0 && Array.from({ length: qty }).every((_, u) => !!item.serial_numbers?.[u]?.trim());
                               const isShowAllUnits = showAllUnitsMap[item.material_id] ?? (qty <= 8);
 
+                              const units = unitStatusMap[item.material_id] || [];
+                              const totalQty = qty;
+                              const usedQty = units.filter((u) => u.used).length;
+                              const unusedQty = Math.max(0, totalQty - usedQty);
+                              const returnedQty = units.filter((u) => u.used && u.return_status === 'Returned').length;
+                              const notReturnedQty = units.filter((u) => u.used && u.return_status === 'Not Returned').length;
+                              const admAckQty = units.filter((u) => u.used && u.admin_ack === 'Acknowledged').length;
+                              const admPendingQty = units.filter((u) => u.used && u.admin_ack === 'Pending').length;
+
                               return (
                                 <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-3 animate-in fade-in-0 duration-200">
+                                  {/* Quantity Status Breakdown Bar (Matching View Page) */}
+                                  {isEdit && (
+                                    <div className="space-y-2.5">
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-white dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-white/5 text-[11px]">
+                                        <div className="flex flex-col">
+                                          <span className="text-[10px] font-semibold uppercase text-gray-400">Total Units</span>
+                                          <span className="font-semibold text-gray-800 dark:text-gray-200 mt-0.5">{totalQty} Units Total</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="text-[10px] font-semibold uppercase text-amber-500">Used / Unused</span>
+                                          <span className="font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
+                                            {usedQty} Used · {unusedQty} Unused
+                                          </span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="text-[10px] font-semibold uppercase text-blue-500">Return Status</span>
+                                          <span className="font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
+                                            {returnedQty} Returned · {notReturnedQty} Not Ret
+                                          </span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="text-[10px] font-semibold uppercase text-emerald-500">Admin Acknowledge Status</span>
+                                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                            {admAckQty} Acknowledged · {admPendingQty} Pending
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Quick Bulk Admin Acknowledge Action if pending units exist */}
+                                      {usedQty > 0 && admPendingQty > 0 && (
+                                        <div className="flex items-center justify-between p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-900/30">
+                                          <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                                            {admPendingQty} used {admPendingQty === 1 ? 'unit is' : 'units are'} pending admin acknowledgment
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleMaterialAdminAckAllInForm(item.material_id, "Acknowledged")}
+                                            className="text-[10px] font-semibold px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                                          >
+                                            ✓ Acknowledge All ({admPendingQty})
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
                                   {/* Header bar */}
                                   <div className="flex items-center justify-between flex-wrap gap-2">
                                     <span className="text-[11px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -1683,41 +2009,216 @@ export function StoreFormDrawer() {
                                     </div>
 
                                     {isShowAllUnits && (
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                        {Array.from({ length: qty }).map((_, unitIdx) => {
-                                          const val = item.serial_numbers?.[unitIdx] || '';
-                                          const isMissing = !val.trim();
+                                       <div className="grid grid-cols-1 gap-3 pt-1">
+                                         {Array.from({ length: qty }).map((_, unitIdx) => {
+                                           const val = item.serial_numbers?.[unitIdx] || '';
+                                           const isMissing = !val.trim();
+                                           const unitStatus = unitStatusMap[item.material_id]?.[unitIdx];
+                                           const isUsed = !!unitStatus?.used;
+                                           const retStatus = unitStatus?.return_status || 'Returned';
+                                           const engAck = unitStatus?.engineer_ack || 'Acknowledged';
+                                           const admAck = unitStatus?.admin_ack || 'Pending';
 
-                                          return (
-                                            <div key={unitIdx} className="space-y-1.5">
-                                              <div className="flex items-center justify-between">
-                                                <span className="text-[11px] font-black text-gray-800 dark:text-gray-200">
-                                                  Unit {unitIdx + 1} Barcode <span className="text-rose-500 font-black">*</span>
-                                                </span>
-                                                {isMissing ? (
-                                                  <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">Required</span>
-                                                ) : (
-                                                  <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider">{val.length}/8 Chars</span>
+                                           return (
+                                             <div
+                                               key={unitIdx}
+                                               className={cn(
+                                                 "p-3.5 rounded-xl border transition-all space-y-2.5",
+                                                 isUsed
+                                                   ? "bg-amber-50/25 dark:bg-amber-950/15 border-amber-200/50 dark:border-amber-900/30"
+                                                   : "bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10"
+                                               )}
+                                             >
+                                               {/* Unit Header: Unit Badge + Barcode Length & Status Toggle */}
+                                               <div className="flex flex-wrap items-center justify-between gap-2">
+                                                 <div className="flex items-center gap-2">
+                                                   <Badge
+                                                     variant="outline"
+                                                     className="text-[10px] font-semibold px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md shrink-0"
+                                                   >
+                                                     Unit {unitIdx + 1}
+                                                   </Badge>
+                                                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                                     Barcode <span className="text-rose-500 font-bold">*</span>
+                                                   </span>
+                                                 </div>
+
+                                                 <div className="flex items-center gap-2">
+                                                   {isMissing ? (
+                                                     <span className="text-[9px] font-semibold text-rose-500 uppercase tracking-wider">Required</span>
+                                                   ) : (
+                                                     <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400">{val.length}/8 Chars</span>
+                                                   )}
+
+                                                   {/* Status Pill Toggle */}
+                                                   {isEdit ? (
+                                                     <button
+                                                       type="button"
+                                                       onClick={() => handleUnitUsedToggle(item.material_id, unitIdx)}
+                                                       title="Click to toggle Used / Unused"
+                                                       className={cn(
+                                                         "text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all cursor-pointer flex items-center gap-1",
+                                                         isUsed
+                                                           ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-300/60 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                                                           : "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-300/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
+                                                       )}
+                                                     >
+                                                       {isUsed ? "Used Material" : "✓ New Product Return (Unused)"}
+                                                     </button>
+                                                   ) : (
+                                                     <Badge
+                                                       variant="outline"
+                                                       className="text-[10px] font-semibold px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border-emerald-300/40 rounded-md"
+                                                     >
+                                                       ✓ New Product Return
+                                                     </Badge>
+                                                   )}
+                                                 </div>
+                                               </div>
+
+                                               {/* Barcode Input */}
+                                               <Input
+                                                 type="text"
+                                                 maxLength={8}
+                                                 placeholder={`Enter barcode (e.g. BC-7000${unitIdx + 1})`}
+                                                 value={val}
+                                                 onChange={(e) => handleSerialNumberChange(item.material_id, unitIdx, e.target.value)}
+                                                 className={cn(
+                                                   "h-9.5 rounded-lg font-mono font-semibold text-xs transition-all tracking-wider",
+                                                   isMissing
+                                                     ? "bg-rose-50/50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-gray-900 dark:text-white"
+                                                     : "bg-gray-50/60 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+                                                 )}
+                                               />
+
+                                                {/* Status Controls Bar (Shown for All Units in Edit Mode) */}
+                                                {isEdit && (
+                                                  <div className={cn(
+                                                    "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 pt-3 border-t",
+                                                    isUsed ? "border-amber-200/40 dark:border-amber-900/20" : "border-gray-100 dark:border-white/5"
+                                                  )}>
+                                                    {/* Material Usage Status */}
+                                                    <div className={cn(
+                                                      "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
+                                                      isUsed
+                                                        ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
+                                                        : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
+                                                    )}>
+                                                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">
+                                                        Material Usage
+                                                      </span>
+                                                      <Select
+                                                        value={isUsed ? "used" : "unused"}
+                                                        onValueChange={(val) => handleUnitUsedSet(item.material_id, unitIdx, val === "used")}
+                                                      >
+                                                        <SelectTrigger className={cn(
+                                                          "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
+                                                          isUsed
+                                                            ? "bg-amber-50 text-amber-700 border-amber-300/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                                            : "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                        )}>
+                                                          <span className="truncate">{isUsed ? "⚡ Used Material" : "✓ Unused (New Return)"}</span>
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
+                                                          <SelectItem value="unused" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Unused (New Return)</SelectItem>
+                                                          <SelectItem value="used" className="font-semibold text-xs text-amber-600 cursor-pointer">⚡ Used Material</SelectItem>
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
+
+                                                    {/* Return Status */}
+                                                    <div className={cn(
+                                                      "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
+                                                      isUsed
+                                                        ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
+                                                        : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
+                                                    )}>
+                                                      <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 truncate">
+                                                        Return Status
+                                                      </span>
+                                                      <Select
+                                                        value={retStatus}
+                                                        onValueChange={(val) => val && handleUnitReturnStatusChange(item.material_id, unitIdx, val as any)}
+                                                      >
+                                                        <SelectTrigger className={cn(
+                                                          "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
+                                                          retStatus === "Returned"
+                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                            : "bg-rose-50 text-rose-700 border-rose-300/60 dark:bg-rose-950/30 dark:text-rose-300"
+                                                        )}>
+                                                          <span className="truncate">{retStatus === "Returned" ? "✓ Returned" : "✕ Not Returned"}</span>
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
+                                                          <SelectItem value="Returned" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Returned</SelectItem>
+                                                          <SelectItem value="Not Returned" className="font-semibold text-xs text-rose-600 cursor-pointer">✕ Not Returned</SelectItem>
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
+
+                                                    {/* Engineer Acknowledge Status */}
+                                                    <div className={cn(
+                                                      "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
+                                                      isUsed
+                                                        ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
+                                                        : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
+                                                    )}>
+                                                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">
+                                                        Engineer Acknowledgement
+                                                      </span>
+                                                      <Select
+                                                        value={engAck}
+                                                        onValueChange={(val) => val && handleUnitEngineerAckChange(item.material_id, unitIdx, val as any)}
+                                                      >
+                                                        <SelectTrigger className={cn(
+                                                          "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
+                                                          engAck === "Acknowledged"
+                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                            : "bg-amber-50 text-amber-700 border-amber-300/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                                        )}>
+                                                          <span className="truncate">{engAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}</span>
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
+                                                          <SelectItem value="Acknowledged" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Acknowledged</SelectItem>
+                                                          <SelectItem value="Pending" className="font-semibold text-xs text-amber-600 cursor-pointer">⏳ Pending</SelectItem>
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
+
+                                                    {/* Admin Acknowledge Status */}
+                                                    <div className={cn(
+                                                      "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
+                                                      isUsed
+                                                        ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
+                                                        : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
+                                                    )}>
+                                                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">
+                                                        Admin Acknowledgement
+                                                      </span>
+                                                      <Select
+                                                        value={admAck}
+                                                        onValueChange={(val) => val && handleUnitAdminAckChange(item.material_id, unitIdx, val as any)}
+                                                      >
+                                                        <SelectTrigger className={cn(
+                                                          "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
+                                                          admAck === "Acknowledged"
+                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                            : "bg-amber-50 text-amber-700 border-amber-300/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                                        )}>
+                                                          <span className="truncate">{admAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}</span>
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
+                                                          <SelectItem value="Acknowledged" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Acknowledged</SelectItem>
+                                                          <SelectItem value="Pending" className="font-semibold text-xs text-amber-600 cursor-pointer">⏳ Pending</SelectItem>
+                                                        </SelectContent>
+                                                      </Select>
+                                                    </div>
+                                                  </div>
                                                 )}
-                                              </div>
-                                              <Input
-                                                type="text"
-                                                maxLength={8}
-                                                placeholder={`Enter barcode (e.g. BC-7000${unitIdx + 1})`}
-                                                value={val}
-                                                onChange={(e) => handleSerialNumberChange(item.material_id, unitIdx, e.target.value)}
-                                                className={cn(
-                                                  "h-10 rounded-xl font-mono font-bold text-xs transition-all tracking-wider",
-                                                  isMissing
-                                                    ? "bg-rose-50/50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/40 text-gray-900 dark:text-white"
-                                                    : "bg-emerald-50/30 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 text-gray-900 dark:text-white"
-                                                )}
-                                              />
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
+                                             </div>
+                                           );
+                                         })}
+                                       </div>
+                                     )}
                                   </div>
                                 </div>
                               );
