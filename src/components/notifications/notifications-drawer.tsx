@@ -135,29 +135,29 @@ function DrawerPagination({ page, totalPages, isFetching, onPageChange }: Pagina
   };
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 sm:px-8 border-t border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950 flex-shrink-0">
+    <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:px-8 border-t border-gray-100 dark:border-white/10 bg-white dark:bg-gray-950 flex-shrink-0 gap-2">
       {/* Left: info */}
-      <span className="text-xs text-gray-400 font-medium">
+      <span className="text-[11px] sm:text-xs text-gray-400 font-medium whitespace-nowrap">
         Page <span className="font-bold text-gray-700 dark:text-gray-200">{page + 1}</span>
         {' '}of{' '}
         <span className="font-bold text-gray-700 dark:text-gray-200">{totalPages}</span>
       </span>
 
       {/* Center: page numbers */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 sm:gap-1.5">
         {/* Prev */}
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 0 || isFetching}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Previous page"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={15} />
         </button>
 
         {getPageNumbers().map((p, idx) =>
           p === '...' ? (
-            <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400">
+            <span key={`ellipsis-${idx}`} className="w-6 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-xs text-gray-400">
               …
             </span>
           ) : (
@@ -166,7 +166,7 @@ function DrawerPagination({ page, totalPages, isFetching, onPageChange }: Pagina
               onClick={() => onPageChange(p as number)}
               disabled={isFetching}
               className={cn(
-                'w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all',
+                'w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all',
                 p === page
                   ? 'bg-primary text-white shadow-sm shadow-primary/30'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-40',
@@ -182,19 +182,19 @@ function DrawerPagination({ page, totalPages, isFetching, onPageChange }: Pagina
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages - 1 || isFetching}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Next page"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={15} />
         </button>
       </div>
 
       {/* Right: fetching indicator */}
-      <div className="w-16 flex justify-end">
+      <div className="w-12 sm:w-16 flex justify-end">
         {isFetching && (
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-primary">
-            <Loader2 size={13} className="animate-spin" />
-            <span>Updating…</span>
+          <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-primary">
+            <Loader2 size={12} className="animate-spin" />
+            <span className="hidden sm:inline">Updating…</span>
           </span>
         )}
       </div>
@@ -312,28 +312,28 @@ export function NotificationsDrawer({
         className="w-full max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col"
       >
         {/* ── Header ── */}
-        <SheetHeader className="flex-row items-center justify-between px-6 pt-6 pb-4 sm:px-8 border-b border-gray-100 dark:border-white/10 gap-4 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <SheetHeader className="flex-row items-start sm:items-center justify-between px-4 py-4 sm:px-6 sm:py-5 md:px-8 border-b border-gray-100 dark:border-white/10 gap-3 flex-shrink-0 pr-12 sm:pr-14">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Bell size={18} className="text-primary" />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <SheetTitle className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <SheetTitle className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight whitespace-nowrap">
                   Notifications
                 </SheetTitle>
                 {unreadCount > 0 && (
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 whitespace-nowrap">
                     {unreadCount} unread
                   </span>
                 )}
                 {activeScope !== 'ALL' && (
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-primary text-white shadow-xs">
+                  <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-md bg-primary text-white shadow-xs whitespace-nowrap">
                     {getScopeLabel(activeScope)}
                   </span>
                 )}
               </div>
-              <SheetDescription className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <SheetDescription className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                 {total} total notification{total !== 1 ? 's' : ''} {activeScope !== 'ALL' ? `in ${getScopeLabel(activeScope)}` : ''}
               </SheetDescription>
             </div>
@@ -343,20 +343,20 @@ export function NotificationsDrawer({
             <button
               onClick={() => markAllRead.mutate()}
               disabled={markAllRead.isPending}
-              className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors disabled:opacity-50 mr-8 px-3 py-1.5 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10"
+              className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary hover:text-primary/80 transition-colors disabled:opacity-50 whitespace-nowrap flex-shrink-0 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer"
             >
               {markAllRead.isPending
-                ? <Loader2 size={13} className="animate-spin" />
-                : <CheckCheck size={14} />}
-              Mark all read
+                ? <Loader2 size={12} className="animate-spin" />
+                : <CheckCheck size={13} />}
+              <span className="whitespace-nowrap">Mark all read</span>
             </button>
           )}
         </SheetHeader>
 
         {/* ── Modern Segmented Filter Controls ── */}
-        <div className="px-6 py-3.5 sm:px-8 border-b border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-white/[0.02] flex flex-col gap-3 flex-shrink-0">
+        <div className="px-4 py-3 sm:px-6 sm:py-3.5 md:px-8 border-b border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-white/[0.02] flex flex-col gap-2.5 sm:gap-3 flex-shrink-0">
           {/* Module scope segmented pill container */}
-          <div className="flex items-center gap-1.5 p-1 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
             {MODULE_OPTIONS.map((opt) => {
               const Icon = opt.icon;
               const isActive = activeScope === opt.id;
@@ -365,13 +365,13 @@ export function NotificationsDrawer({
                   key={opt.id}
                   onClick={() => handleScopeChange(opt.id)}
                   className={cn(
-                    'flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 whitespace-nowrap flex-shrink-0 cursor-pointer',
+                    'flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold rounded-lg transition-all duration-150 whitespace-nowrap flex-shrink-0 cursor-pointer',
                     isActive
                       ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs font-bold ring-1 ring-black/5 dark:ring-white/10 scale-[1.01]'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/5'
                   )}
                 >
-                  <Icon size={13} className={cn(isActive ? 'text-primary' : 'text-gray-400 dark:text-gray-500')} />
+                  <Icon size={13} className={cn(isActive ? 'text-primary' : 'text-gray-400 dark:text-gray-500', 'flex-shrink-0')} />
                   <span>{opt.label}</span>
                 </button>
               );
@@ -379,8 +379,8 @@ export function NotificationsDrawer({
           </div>
 
           {/* Date range filter picker & Reset button */}
-          <div className="flex items-center justify-between gap-3 overflow-x-auto scrollbar-none pt-0.5">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 pt-0.5">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <DateRangePicker
                 value={
                   dateRange || {
@@ -392,7 +392,7 @@ export function NotificationsDrawer({
                 onChange={handleDateRangeChange}
                 placeholder="Select Date Range"
                 className={cn(
-                  'h-8 text-xs px-3 py-1 rounded-lg border transition-all duration-150 font-medium cursor-pointer shadow-2xs',
+                  'h-7.5 sm:h-8 text-[11px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-lg border transition-all duration-150 font-medium cursor-pointer shadow-2xs',
                   dateRange?.startDate && dateRange?.endDate
                     ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
                     : 'border-gray-200/90 dark:border-white/10 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-gray-300 dark:hover:border-white/20'
@@ -404,7 +404,7 @@ export function NotificationsDrawer({
                   className="p-1 rounded-md text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                   title="Clear date filter"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               )}
             </div>
@@ -412,7 +412,7 @@ export function NotificationsDrawer({
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors ml-auto flex-shrink-0 px-3 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-transparent hover:border-rose-200 dark:hover:border-rose-800/30 cursor-pointer"
+                className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-rose-500 hover:text-rose-600 transition-colors ml-auto flex-shrink-0 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-transparent hover:border-rose-200 dark:hover:border-rose-800/30 cursor-pointer whitespace-nowrap"
               >
                 <RotateCcw size={12} /> Reset Filters
               </button>
@@ -460,7 +460,7 @@ export function NotificationsDrawer({
                 key={n.id}
                 onClick={() => n.status === 'UNREAD' && markRead.mutate(n.id)}
                 className={cn(
-                  'flex items-start gap-4 px-6 py-4.5 sm:px-8 w-full text-left transition-colors group',
+                  'flex items-start gap-3 sm:gap-4 px-4 py-3.5 sm:px-6 sm:py-4 md:px-8 md:py-4.5 w-full text-left transition-colors group cursor-pointer',
                   n.status === 'UNREAD'
                     ? 'bg-primary/[0.04] dark:bg-primary/[0.08] hover:bg-primary/[0.08] dark:hover:bg-primary/[0.12]'
                     : 'hover:bg-gray-50/80 dark:hover:bg-white/[0.03]',
@@ -468,15 +468,15 @@ export function NotificationsDrawer({
               >
                 <span
                   className={cn(
-                    'w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 transition-transform group-hover:scale-125',
+                    'w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full mt-1.5 flex-shrink-0 transition-transform group-hover:scale-125',
                     TYPE_DOT[n.type] ?? 'bg-primary',
                   )}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3 mb-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 mb-1">
                     <p
                       className={cn(
-                        'text-sm sm:text-base leading-snug flex-1 min-w-0 truncate',
+                        'text-xs sm:text-sm md:text-base leading-snug flex-1 min-w-0 break-words',
                         n.status === 'UNREAD'
                           ? 'font-bold text-gray-900 dark:text-white'
                           : 'font-semibold text-gray-700 dark:text-gray-300',
@@ -486,22 +486,22 @@ export function NotificationsDrawer({
                     </p>
                     <span
                       className={cn(
-                        'shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full border',
+                        'self-start sm:self-auto shrink-0 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 rounded-full border whitespace-nowrap',
                         TYPE_BADGE[n.type] ?? 'bg-primary/10 text-primary border-primary/20',
                       )}
                     >
                       {TYPE_LABEL[n.type] ?? n.type}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  <p className="text-[11px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed break-words">
                     {n.message}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                  <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1">
                     {format(new Date(n.created_at), 'h:mm a, MMM d, yyyy')}
                   </p>
                 </div>
                 {n.status === 'READ' && (
-                  <Check size={14} className="text-gray-300 dark:text-gray-600 mt-1 flex-shrink-0" />
+                  <Check size={14} className="text-gray-300 dark:text-gray-600 mt-1 flex-shrink-0 hidden sm:block" />
                 )}
               </button>
             ))
