@@ -84,16 +84,25 @@ All global state MUST be managed in lightweight Zustand stores:
 9. **`useServiceReportStore.ts`**: Multi-step service report form state, compressor readings, air dryer values.
 10. **`useInstallationReportStore.ts`**: Machine installation certificate form state, warranty dates, ground values.
 11. **`useStoreItemStore.ts`**: Store return lists, inflow status, material barcode tracking, quantity summary breakdowns, per-unit return and engineer/admin acknowledge status, and bulk acknowledge actions.
+12. **`useReportsStore.ts`**: Active report tabs (`services`, `installations`, `expenses`, `master-mills`, `stores`, `mills`), date range filters, pagination, export modal states, and dynamic metric summaries.
 
 ---
 
-## 3. Data Fetching & Axios Interceptor ([src/lib/api.ts](file:///d:/Office/marksorting/marksorting-frontend/src/lib/api.ts))
+## 3. Two-Tier Header & Filter Toolbar Architecture ([src/components/common](file:///d:/Office/marksorting/marksorting-frontend/src/components/common))
+
+To ensure pixel-perfect UI alignment and clean separation of concerns, pages use the standard two-tier header pattern:
+1. **`PageHeaderActions`**: Top-level page header containing the title, description, primary CTA buttons (e.g. `Add Record`, `New Ticket`), refresh triggers, and bulk action buttons.
+2. **`PageFilterToolbar`**: Second-row filter toolbar hosting the search input, interactive date range pickers, status tab badges, and filter drawer triggers.
+
+---
+
+## 4. Data Fetching & Axios Interceptor ([src/lib/api.ts](file:///d:/Office/marksorting/marksorting-frontend/src/lib/api.ts))
 
 All API calls use the custom Axios instance in `api.ts` which automatically intercepts `401 Unauthorized` responses and refreshes tokens via `/auth/refresh`.
 
 ---
 
-## 4. Frontend RBAC & Permission Wrappers
+## 5. Frontend RBAC & Permission Wrappers
 
 Enforce granular 69 permissions across the UI:
 
@@ -118,7 +127,8 @@ if (can('approve', 'expenses')) {
 
 ---
 
-## 5. Design System Tokens (Tailwind CSS v4)
+## 6. Design System Tokens (Tailwind CSS v4)
 
 - **Dark Mode First Theme**: Backgrounds (`bg-slate-950`, `bg-slate-900`), borders (`border-slate-800`), glassmorphism (`backdrop-blur-md bg-slate-900/80`).
 - **Icons & Alerts**: Lucide icons + Sonner toast notifications.
+- **ExcelJS Export Integration**: Export drawers in `/reports` handle client-side download streams for XLSX, CSV, and PDF formats.
