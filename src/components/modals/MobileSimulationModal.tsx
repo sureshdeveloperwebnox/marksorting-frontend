@@ -36,6 +36,8 @@ import { toast } from "sonner";
 interface ParsedSerial {
   barcode: string;
   used: boolean;
+  return_status?: 'Returned' | 'Not Returned';
+  acknowledge_status?: 'Acknowledged' | 'Pending';
 }
 
 const extractCleanRemarks = (remarks?: string | null): string => {
@@ -51,6 +53,52 @@ const extractCleanRemarks = (remarks?: string | null): string => {
   }
   cleaned = cleaned.replace(/[\(\)\|\s,]+$/, "").trim();
   return cleaned;
+};
+
+const splitSerialsString = (str: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let parenDepth = 0;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '(') {
+      parenDepth++;
+      current += char;
+    } else if (char === ')') {
+      if (parenDepth > 0) parenDepth--;
+      current += char;
+    } else if (char === ',' && parenDepth === 0) {
+      if (current.trim()) result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) {
+    result.push(current.trim());
+  }
+
+  return result.filter((s) => {
+    const t = s.trim();
+    const isOrphan = /^(RETURNED|NOT_RETURNED|ENG_ACK:|ADM_ACK:)/i.test(t);
+    return !isOrphan && t.length > 0;
+  });
+};
+
+const cleanBarcodeString = (str: string): string => {
+  let clean = str;
+  // Remove parenthesized content
+  clean = clean.replace(/\(.*?\)/g, '');
+  clean = clean.replace(/\[.*?\]/g, '');
+  // Remove unclosed/unopened tag keywords and everything after them
+  clean = clean.replace(
+    /(?:,\s*)?(?:RETURNED|NOT_RETURNED|ENG_ACK:[^,;)]+|ADM_ACK:[^,;)]+|RET:[^,;)]+|USED).*/gi,
+    ''
+  );
+  // Strip leftover punctuation
+  clean = clean.replace(/[()\[\];,:]+/g, ' ');
+  return clean.trim();
 };
 
 const parseSerialMapFromRemarks = (
@@ -77,15 +125,28 @@ const parseSerialMapFromRemarks = (
       const serialsStr = part.substring(colIdx + 1).trim();
       const bracketMatch = serialsStr.match(/\[(.*?)\]/);
       if (bracketMatch && bracketMatch[1]) {
-        const serials = bracketMatch[1]
-          .split(",")
+        const rawSerials = splitSerialsString(bracketMatch[1]);
+        const serials = rawSerials
           .map((s) => s.trim())
           .filter(Boolean)
           .map((s) => {
-            const isUsed = /\(USED\)/i.test(s);
-            const cleanCode = s.replace(/\s*\(USED\)/gi, "").trim();
-            return { barcode: cleanCode, used: isUsed };
-          });
+            const isUsed = /\(USED/i.test(s) || /USED/i.test(s);
+            const isNotReturned = /NOT_RETURNED|RET:Not Returned|Not Returned/i.test(s);
+            const engAckMatch = s.match(/ENG_ACK:(Acknowledged|Pending)/i);
+            const cleanCode = cleanBarcodeString(s);
+
+            return {
+              barcode: cleanCode,
+              used: isUsed,
+              return_status: isUsed
+                ? (isNotReturned ? ("Not Returned" as const) : ("Returned" as const))
+                : undefined,
+              acknowledge_status: isUsed
+                ? (engAckMatch ? (engAckMatch[1] as "Acknowledged" | "Pending") : "Acknowledged")
+                : undefined,
+            };
+          })
+          .filter((s) => s.barcode);
         map[matName] = serials;
       }
     }
@@ -106,12 +167,24 @@ const constructUpdatedRemarks = (
   currentSerialMap[currentMaterialName] = tableRows.map((r) => ({
     barcode: r.barcode,
     used: r.used,
+    return_status: r.used ? (r.return_status || "Returned") : undefined,
+    acknowledge_status: r.used ? (r.acknowledge_status || "Acknowledged") : undefined,
   }));
 
   const serialSummaries: string[] = [];
   Object.entries(currentSerialMap).forEach(([matName, items]) => {
     if (items.length > 0) {
-      const itemStrs = items.map((it) => (it.used ? `${it.barcode} (USED)` : it.barcode));
+      const itemStrs = items.map((it) => {
+        if (!it.used) return it.barcode;
+        const tags: string[] = ["USED"];
+        if (it.return_status) {
+          tags.push(`RET:${it.return_status}`);
+        }
+        if (it.acknowledge_status) {
+          tags.push(`ENG_ACK:${it.acknowledge_status}`);
+        }
+        return `${it.barcode} (${tags.join("; ")})`;
+      });
       serialSummaries.push(`${matName}: [${itemStrs.join(", ")}]`);
     }
   });
@@ -148,6 +221,8 @@ interface BarcodeRow {
   barcode: string;
   qty: number;
   used: boolean;
+  return_status?: "Returned" | "Not Returned";
+  acknowledge_status?: "Acknowledged" | "Pending";
 }
 
 interface MaterialTableState {
@@ -155,6 +230,7 @@ interface MaterialTableState {
   materialName: string;
   rows: BarcodeRow[];
 }
+
 
 /* ── main component ──────────────────────────────────── */
 
@@ -320,7 +396,34 @@ export function MobileSimulationModal({
     setTableState((prev) => {
       if (!prev) return prev;
       const rows = prev.rows.map((r, i) =>
-        i !== rowIdx ? r : { ...r, used: checked }
+        i !== rowIdx
+          ? r
+          : {
+              ...r,
+              used: checked,
+              return_status: checked ? (r.return_status || "Returned") : undefined,
+              acknowledge_status: checked ? (r.acknowledge_status || "Acknowledged") : undefined,
+            }
+      );
+      return { ...prev, rows };
+    });
+  };
+
+  const handleRowReturnStatusChange = (rowIdx: number, status: "Returned" | "Not Returned") => {
+    setTableState((prev) => {
+      if (!prev) return prev;
+      const rows = prev.rows.map((r, i) =>
+        i !== rowIdx ? r : { ...r, return_status: status }
+      );
+      return { ...prev, rows };
+    });
+  };
+
+  const handleRowAcknowledgeStatusChange = (rowIdx: number, status: "Acknowledged" | "Pending") => {
+    setTableState((prev) => {
+      if (!prev) return prev;
+      const rows = prev.rows.map((r, i) =>
+        i !== rowIdx ? r : { ...r, acknowledge_status: status }
       );
       return { ...prev, rows };
     });
@@ -330,6 +433,9 @@ export function MobileSimulationModal({
   const totalCount = tableState?.rows.length ?? 0;
   const newProductReturn = totalCount - usedCount;
   const oldProductReturn = usedCount;
+  const returnedCount = tableState?.rows.filter((r) => r.used && r.return_status === "Returned").length ?? 0;
+  const notReturnedCount = tableState?.rows.filter((r) => r.used && r.return_status === "Not Returned").length ?? 0;
+  const acknowledgedCount = tableState?.rows.filter((r) => r.used && r.acknowledge_status === "Acknowledged").length ?? 0;
 
   const handleCopyApiPayload = () => {
     if (!selectedStore || !tableState) return;
@@ -339,17 +445,36 @@ export function MobileSimulationModal({
       material_name: tableState.materialName,
       frame_number: selectedStore.frame_number,
       service_type: serviceType,
-      barcodes: tableState.rows.map((r) => ({
-        barcode: r.barcode,
-        qty: r.qty,
-        used: r.used,
-        ...(serviceType === "Replacement" ? { product_type: r.used ? "old_product_return" : "new_product_return" } : { product_type: "new_product_return" }),
-      })),
-      summary: {
-        total: totalCount,
-        used: oldProductReturn,
-        new_product_return: newProductReturn,
-        ...(serviceType === "Replacement" ? { old_product_return: oldProductReturn } : {}),
+      barcodes: tableState.rows.map((r) => {
+        if (r.used) {
+          return {
+            barcode: r.barcode,
+            qty: r.qty,
+            used: true,
+            return_status: r.return_status || "Returned",
+            acknowledge_status: r.acknowledge_status || "Acknowledged",
+            ...(serviceType === "Replacement" ? { product_type: "old_product_return" } : {}),
+          };
+        }
+        return {
+          barcode: r.barcode,
+          qty: r.qty,
+          used: false,
+          ...(serviceType === "Replacement" ? { product_type: "new_product_return" } : {}),
+        };
+      }),
+      quantity_summary: {
+        total_quantity: totalCount,
+        used_quantity: oldProductReturn,
+        unused_quantity: newProductReturn,
+        return_status_quantity: {
+          returned: returnedCount,
+          not_returned: notReturnedCount,
+        },
+        engineer_ack_quantity: {
+          acknowledged: acknowledgedCount,
+          pending: Math.max(0, usedCount - acknowledgedCount),
+        },
       },
       acknowledgement: {
         ...(serviceType === "Acknowledgement" ? { status: acknowledgementStatus } : {}),
@@ -370,17 +495,36 @@ export function MobileSimulationModal({
         material_name: tableState.materialName,
         frame_number: selectedStore.frame_number,
         service_type: serviceType,
-        barcodes: tableState.rows.map((r) => ({
-          barcode: r.barcode,
-          qty: r.qty,
-          used: r.used,
-          ...(serviceType === "Replacement" ? { product_type: r.used ? "old_product_return" : "new_product_return" } : { product_type: "new_product_return" }),
-        })),
-        summary: {
-          total: totalCount,
-          used: oldProductReturn,
-          new_product_return: newProductReturn,
-          ...(serviceType === "Replacement" ? { old_product_return: oldProductReturn } : {}),
+        barcodes: tableState.rows.map((r) => {
+          if (r.used) {
+            return {
+              barcode: r.barcode,
+              qty: r.qty,
+              used: true,
+              return_status: r.return_status || "Returned",
+              acknowledge_status: r.acknowledge_status || "Acknowledged",
+              ...(serviceType === "Replacement" ? { product_type: "old_product_return" } : {}),
+            };
+          }
+          return {
+            barcode: r.barcode,
+            qty: r.qty,
+            used: false,
+            ...(serviceType === "Replacement" ? { product_type: "new_product_return" } : {}),
+          };
+        }),
+        quantity_summary: {
+          total_quantity: totalCount,
+          used_quantity: oldProductReturn,
+          unused_quantity: newProductReturn,
+          return_status_quantity: {
+            returned: returnedCount,
+            not_returned: notReturnedCount,
+          },
+          engineer_ack_quantity: {
+            acknowledged: acknowledgedCount,
+            pending: Math.max(0, usedCount - acknowledgedCount),
+          },
         },
         acknowledgement: {
           ...(serviceType === "Acknowledgement" ? { status: acknowledgementStatus } : {}),
@@ -391,7 +535,7 @@ export function MobileSimulationModal({
       null,
       2
     );
-  }, [selectedStore, tableState, totalCount, usedCount, newProductReturn, oldProductReturn, acknowledgementStatus, courierName, trackingId, serviceType]);
+  }, [selectedStore, tableState, totalCount, usedCount, newProductReturn, oldProductReturn, returnedCount, notReturnedCount, acknowledgedCount, acknowledgementStatus, courierName, trackingId, serviceType]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -406,7 +550,7 @@ export function MobileSimulationModal({
               Mobile Flow Simulation
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-400 font-medium mt-0.5">
-              Simulate mobile app flow and generate API payload for the app developer.
+              Simulate mobile app flow with used-only return status and acknowledge status options.
             </DialogDescription>
           </div>
           <button
@@ -418,7 +562,6 @@ export function MobileSimulationModal({
         </div>
 
         {/* Body */}
-        {/* Body — two-column desktop layout */}
         <div className="flex-1 overflow-hidden flex min-h-0">
 
           {/* LEFT PANEL — Search & Selection */}
@@ -605,16 +748,16 @@ export function MobileSimulationModal({
                 </div>
 
                 {/* Summary chips */}
-                <div className={cn("grid gap-4", serviceType === "Replacement" ? "grid-cols-4" : "grid-cols-3")}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { label: "Total", value: totalCount, colorClass: "text-gray-700 bg-gray-100 dark:bg-white/5 dark:text-gray-300" },
                     { label: "Used", value: oldProductReturn, colorClass: "text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400" },
-                    { label: "New Product Return", value: newProductReturn, colorClass: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400" },
-                    ...(serviceType === "Replacement" ? [{ label: "Old Product Return", value: oldProductReturn, colorClass: "text-rose-600 bg-rose-50 dark:bg-rose-950/20 dark:text-rose-400" }] : []),
+                    { label: "New Return (Unused)", value: newProductReturn, colorClass: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400" },
+                    { label: "Returned (Used)", value: returnedCount, colorClass: "text-blue-600 bg-blue-50 dark:bg-blue-950/20 dark:text-blue-400" },
                   ].map((chip) => (
-                    <div key={chip.label} className={cn("flex flex-col items-center justify-center py-4 rounded-2xl text-center font-bold gap-1", chip.colorClass)}>
-                      <span className="text-3xl font-black">{chip.value}</span>
-                      <span className="text-[10px] uppercase tracking-wider font-bold opacity-70">{chip.label}</span>
+                    <div key={chip.label} className={cn("flex flex-col items-center justify-center py-3 px-2 rounded-2xl text-center font-bold gap-0.5", chip.colorClass)}>
+                      <span className="text-2xl font-black">{chip.value}</span>
+                      <span className="text-[10px] uppercase tracking-wider font-bold opacity-75">{chip.label}</span>
                     </div>
                   ))}
                 </div>
@@ -624,75 +767,128 @@ export function MobileSimulationModal({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/5">
-                        <th className="text-left px-5 py-3.5 text-[11px] font-black uppercase tracking-wider text-gray-400">
+                        <th className="text-left px-4 py-3.5 text-[11px] font-black uppercase tracking-wider text-gray-400">
                           <div className="flex items-center gap-1.5"><Barcode size={13} /> Barcode</div>
                         </th>
-                        <th className="text-center px-5 py-3.5 text-[11px] font-black uppercase tracking-wider text-gray-400">
+                        <th className="text-center px-2 py-3.5 text-[11px] font-black uppercase tracking-wider text-gray-400">
                           <div className="flex items-center justify-center gap-1.5"><Hash size={13} /> QTY</div>
                         </th>
-                        <th className="text-center px-5 py-3.5 text-[11px] font-black uppercase tracking-wider text-gray-400">
+                        <th className="text-center px-3 py-3.5 text-[11px] font-black uppercase tracking-wider text-amber-500">
                           <div className="flex items-center justify-center gap-1.5"><CheckCircle2 size={13} /> Used</div>
                         </th>
-                        <th className="text-center px-5 py-3.5 text-[11px] font-black uppercase tracking-wider text-emerald-500">
-                          <div className="flex items-center justify-center gap-1.5"><RefreshCw size={13} /> New Product Return</div>
+                        <th className="text-center px-4 py-3.5 text-[11px] font-black uppercase tracking-wider text-blue-500">
+                          <div className="flex items-center justify-center gap-1.5">Return Status (If Used)</div>
                         </th>
-                        {serviceType === "Replacement" && (
-                          <th className="text-center px-5 py-3.5 text-[11px] font-black uppercase tracking-wider text-rose-500">
-                            <div className="flex items-center justify-center gap-1.5"><ArrowLeftRight size={13} /> Old Product Return</div>
-                          </th>
-                        )}
+                        <th className="text-center px-4 py-3.5 text-[11px] font-black uppercase tracking-wider text-emerald-500">
+                          <div className="flex items-center justify-center gap-1.5">Engineer Acknowledge Status (If Used)</div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                       {tableState.rows.map((row, rIdx) => {
                         const isUsed = row.used;
-                        const newPR = isUsed ? 0 : 1;
-                        const oldPR = isUsed ? 1 : 0;
                         return (
                           <tr key={rIdx} className={cn("transition-colors", isUsed ? "bg-amber-50/40 dark:bg-amber-950/10" : "bg-white dark:bg-transparent hover:bg-gray-50/50 dark:hover:bg-white/[0.02]")}>
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                                  <Barcode size={16} className="text-primary" />
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                  <Barcode size={14} className="text-primary" />
                                 </div>
-                                <span className="font-mono text-sm font-bold text-gray-800 dark:text-gray-200">{row.barcode}</span>
+                                <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200">{row.barcode}</span>
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-center">
-                              <Badge variant="outline" className="text-xs font-bold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 mx-auto">
+                            <td className="px-2 py-3.5 text-center">
+                              <Badge variant="outline" className="text-[10px] font-bold border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 mx-auto">
                                 {row.qty}
                               </Badge>
                             </td>
-                            <td className="px-5 py-4 text-center">
-                              <div className="flex justify-center">
-                                <Checkbox checked={isUsed} onCheckedChange={(checked) => handleUsedToggle(rIdx, !!checked)} className="w-5 h-5 rounded-md border-gray-300 dark:border-white/20 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500" />
+                            <td className="px-3 py-3.5 text-center">
+                              <div className="flex justify-center items-center gap-1.5">
+                                <Checkbox
+                                  checked={isUsed}
+                                  onCheckedChange={(checked) => handleUsedToggle(rIdx, !!checked)}
+                                  className="w-5 h-5 rounded-md border-gray-300 dark:border-white/20 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                                />
+                                <span className={cn("text-[11px] font-bold", isUsed ? "text-amber-600" : "text-gray-400")}>
+                                  {isUsed ? "Yes" : "No"}
+                                </span>
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-center">
-                              <span className={cn("inline-flex items-center justify-center w-9 h-9 rounded-xl text-sm font-black mx-auto", newPR > 0 ? "bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" : "bg-gray-50 dark:bg-white/5 text-gray-300 dark:text-gray-600")}>
-                                {newPR}
-                              </span>
+                            <td className="px-4 py-3.5 text-center">
+                              {isUsed ? (
+                                <div className="inline-flex items-center p-0.5 bg-gray-100 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRowReturnStatusChange(rIdx, "Returned")}
+                                    className={cn(
+                                      "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all",
+                                      (row.return_status || "Returned") === "Returned"
+                                        ? "bg-emerald-500 text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                    )}
+                                  >
+                                    Returned
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRowReturnStatusChange(rIdx, "Not Returned")}
+                                    className={cn(
+                                      "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all",
+                                      row.return_status === "Not Returned"
+                                        ? "bg-rose-500 text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                    )}
+                                  >
+                                    Not Returned
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-300 dark:text-gray-600 font-mono">—</span>
+                              )}
                             </td>
-                            {serviceType === "Replacement" && (
-                              <td className="px-5 py-4 text-center">
-                                <span className={cn("inline-flex items-center justify-center w-9 h-9 rounded-xl text-sm font-black mx-auto", oldPR > 0 ? "bg-rose-100 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400" : "bg-gray-50 dark:bg-white/5 text-gray-300 dark:text-gray-600")}>
-                                  {oldPR}
-                                </span>
-                              </td>
-                            )}
+                            <td className="px-4 py-3.5 text-center">
+                              {isUsed ? (
+                                <div className="inline-flex items-center p-0.5 bg-gray-100 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRowAcknowledgeStatusChange(rIdx, "Acknowledged")}
+                                    className={cn(
+                                      "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all",
+                                      (row.acknowledge_status || "Acknowledged") === "Acknowledged"
+                                        ? "bg-emerald-500 text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                    )}
+                                  >
+                                    ✓ Acknowledged
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRowAcknowledgeStatusChange(rIdx, "Pending")}
+                                    className={cn(
+                                      "px-2.5 py-1 text-[10px] font-bold rounded-md transition-all",
+                                      row.acknowledge_status === "Pending"
+                                        ? "bg-amber-500 text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                    )}
+                                  >
+                                    ⏳ Pending
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-300 dark:text-gray-600 font-mono">—</span>
+                              )}
+                            </td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
                       <tr className="bg-gray-50/80 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5">
-                        <td className="px-5 py-3.5 text-xs font-black text-gray-500 uppercase tracking-wider">Totals</td>
-                        <td className="px-5 py-3.5 text-center"><span className="text-sm font-black text-gray-700 dark:text-gray-300">{totalCount}</span></td>
-                        <td className="px-5 py-3.5 text-center"><span className="text-sm font-black text-amber-500">{oldProductReturn} used</span></td>
-                        <td className="px-5 py-3.5 text-center"><span className="text-sm font-black text-emerald-500">{newProductReturn}</span></td>
-                        {serviceType === "Replacement" && (
-                          <td className="px-5 py-3.5 text-center"><span className="text-sm font-black text-rose-500">{oldProductReturn}</span></td>
-                        )}
+                        <td className="px-4 py-3 text-xs font-black text-gray-500 uppercase tracking-wider">Totals</td>
+                        <td className="px-2 py-3 text-center"><span className="text-xs font-black text-gray-700 dark:text-gray-300">{totalCount}</span></td>
+                        <td className="px-3 py-3 text-center"><span className="text-xs font-black text-amber-500">{oldProductReturn} used</span></td>
+                        <td className="px-4 py-3 text-center"><span className="text-xs font-black text-blue-500">{returnedCount} returned</span></td>
+                        <td className="px-4 py-3 text-center"><span className="text-xs font-black text-emerald-500">{acknowledgedCount} acknowledged</span></td>
                       </tr>
                     </tfoot>
                   </table>
@@ -700,20 +896,7 @@ export function MobileSimulationModal({
 
                 {/* Acknowledgement & Shipment Fields */}
                 <div className="space-y-4 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 p-5 rounded-2xl">
-                  <div className={cn("grid gap-5", serviceType === "Acknowledgement" ? "grid-cols-3" : "grid-cols-2")}>
-                    {serviceType === "Acknowledgement" && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">Acknowledgement Status</label>
-                        <div className="flex gap-2">
-                          <button type="button" onClick={() => setAcknowledgementStatus("Acknowledged")} className={cn("flex-1 h-11 rounded-xl text-sm font-bold border-2 transition-all", acknowledgementStatus === "Acknowledged" ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 hover:border-emerald-300")}>
-                            ✓ Acknowledged
-                          </button>
-                          <button type="button" onClick={() => setAcknowledgementStatus("Pending")} className={cn("flex-1 h-11 rounded-xl text-sm font-bold border-2 transition-all", acknowledgementStatus === "Pending" ? "bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-500/20" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 hover:border-amber-300")}>
-                            ⏳ Pending
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="space-y-2">
                       <label className="text-[11px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">Courier Service Name</label>
                       <Input value={courierName} onChange={(e) => setCourierName(e.target.value)} placeholder="e.g. DHL, FedEx, BlueDart..." className="h-11 rounded-xl border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-medium" />
@@ -757,6 +940,7 @@ export function MobileSimulationModal({
             )}
           </div>
         </div>
+
 
         {/* Footer */}
         <div className="shrink-0 px-8 py-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-4 bg-gray-50/30 dark:bg-black/[0.03]">

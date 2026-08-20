@@ -27,6 +27,7 @@ import {
   Barcode,
   Info,
   RefreshCw,
+  Truck,
 } from "lucide-react";
 import { PageHeaderControls } from "@/components/ui/page-header-controls";
 import {
@@ -59,6 +60,14 @@ import { Smartphone } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
+
+export interface MaterialUnitStatus {
+  barcode: string;
+  used: boolean;
+  return_status?: 'Returned' | 'Not Returned';
+  engineer_ack?: 'Acknowledged' | 'Pending';
+  admin_ack?: 'Acknowledged' | 'Pending';
+}
 
 const getWarrantyColors = (status: string) => {
   switch (status) {
@@ -228,6 +237,50 @@ export default function StoresPage() {
   const deleteStoreMutation = useDeleteStore();
   const updateStoreMutation = useUpdateStore();
 
+  const cleanBarcodeString = (str: string): string => {
+    let clean = str;
+    // Remove parenthesized content
+    clean = clean.replace(/\(.*?\)/g, '');
+    clean = clean.replace(/\[.*?\]/g, '');
+    // Remove unclosed/unopened tag keywords and everything after them
+    clean = clean.replace(/(?:,\s*)?(?:RETURNED|NOT_RETURNED|ENG_ACK:[^,;)]+|ADM_ACK:[^,;)]+|RET:[^,;)]+|USED).*/gi, '');
+    // Strip leftover punctuation
+    clean = clean.replace(/[()\[\];,:]+/g, ' ');
+    return clean.trim();
+  };
+
+  const splitSerialsString = (str: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let parenDepth = 0;
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      if (char === '(') {
+        parenDepth++;
+        current += char;
+      } else if (char === ')') {
+        if (parenDepth > 0) parenDepth--;
+        current += char;
+      } else if (char === ',' && parenDepth === 0) {
+        if (current.trim()) result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    if (current.trim()) {
+      result.push(current.trim());
+    }
+
+    // Filter out orphan fragments from past malformed comma splits
+    return result.filter((s) => {
+      const t = s.trim();
+      const isOrphan = /^(RETURNED|NOT_RETURNED|ENG_ACK:|ADM_ACK:)/i.test(t);
+      return !isOrphan && t.length > 0;
+    });
+  };
+
   const parseSerialMapFromRemarks = (remarks?: string | null): Record<string, string[]> => {
     if (!remarks) return {};
     const map: Record<string, string[]> = {};
@@ -249,7 +302,10 @@ export default function StoresPage() {
         const serialsStr = part.substring(colIdx + 1).trim();
         const bracketMatch = serialsStr.match(/\[(.*?)\]/);
         if (bracketMatch && bracketMatch[1]) {
-          const serials = bracketMatch[1].split(',').map((s) => s.trim().replace(/\s*\(USED\)/gi, '')).filter(Boolean);
+          const rawSerials = splitSerialsString(bracketMatch[1]);
+          const serials = rawSerials
+            .map((s) => cleanBarcodeString(s))
+            .filter(Boolean);
           map[matName] = serials;
         }
       }
@@ -257,10 +313,12 @@ export default function StoresPage() {
     return map;
   };
 
-  // Parse full serial info including (USED) flag for barcode table in view
-  const parseFullSerialMapFromRemarks = (remarks?: string | null): Record<string, { barcode: string; used: boolean }[]> => {
+  // Parse full serial info including Used, Return Status, Engineer Ack, and Admin Ack
+  const parseFullSerialMapFromRemarks = (
+    remarks?: string | null
+  ): Record<string, MaterialUnitStatus[]> => {
     if (!remarks) return {};
-    const map: Record<string, { barcode: string; used: boolean }[]> = {};
+    const map: Record<string, MaterialUnitStatus[]> = {};
     const serialNosIdx = remarks.indexOf('Serial Nos:');
     if (serialNosIdx === -1) return {};
 
@@ -279,17 +337,73 @@ export default function StoresPage() {
         const serialsStr = part.substring(colIdx + 1).trim();
         const bracketMatch = serialsStr.match(/\[(.*?)\]/);
         if (bracketMatch && bracketMatch[1]) {
-          const serials = bracketMatch[1].split(',').map((s) => {
-            const raw = s.trim();
-            const used = /\(USED\)/i.test(raw);
-            const barcode = raw.replace(/\s*\(USED\)/gi, '').trim();
-            return { barcode, used };
-          }).filter((s) => s.barcode);
+          const rawSerials = splitSerialsString(bracketMatch[1]);
+          const serials: MaterialUnitStatus[] = rawSerials
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .map((s) => {
+              const used = /\(USED/i.test(s) || /USED/i.test(s);
+              const isNotReturned = /NOT_RETURNED|RET:Not Returned|Not Returned/i.test(s);
+              const engAckMatch = s.match(/ENG_ACK:(Acknowledged|Pending)/i);
+              const admAckMatch = s.match(/ADM_ACK:(Acknowledged|Pending)/i);
+              const barcode = cleanBarcodeString(s);
+
+              return {
+                barcode,
+                used,
+                return_status: used
+                  ? (isNotReturned ? ('Not Returned' as const) : ('Returned' as const))
+                  : undefined,
+                engineer_ack: used
+                  ? (engAckMatch ? (engAckMatch[1] as 'Acknowledged' | 'Pending') : 'Acknowledged')
+                  : undefined,
+                admin_ack: used
+                  ? (admAckMatch ? (admAckMatch[1] as 'Acknowledged' | 'Pending') : 'Pending')
+                  : undefined,
+              };
+            })
+            .filter((s) => s.barcode);
           map[matName] = serials;
         }
       }
     });
     return map;
+  };
+
+  const serializeSerialMapToRemarks = (
+    existingRemarks: string | null | undefined,
+    updatedMap: Record<string, MaterialUnitStatus[]>,
+    serviceType: string
+  ): string => {
+    const cleanRemarks = extractCleanRemarks(existingRemarks);
+    const serialSummaries: string[] = [];
+
+    Object.entries(updatedMap).forEach(([matName, items]) => {
+      if (items.length > 0) {
+        const itemStrs = items.map((it) => {
+          if (!it.used) return it.barcode;
+          const tags: string[] = ['USED'];
+          if (it.return_status) {
+            tags.push(`RET:${it.return_status}`);
+          }
+          if (it.engineer_ack) tags.push(`ENG_ACK:${it.engineer_ack}`);
+          if (it.admin_ack) tags.push(`ADM_ACK:${it.admin_ack}`);
+          return `${it.barcode} (${tags.join('; ')})`;
+        });
+        serialSummaries.push(`${matName}: [${itemStrs.join(', ')}]`);
+      }
+    });
+
+    const extraParts: string[] = [];
+    if (serialSummaries.length > 0) {
+      extraParts.push(`Serial Nos: ${serialSummaries.join(' | ')}`);
+    }
+    if (serviceType) {
+      extraParts.push(`Service Type: ${serviceType}`);
+    }
+
+    const extraText = extraParts.join(' | ');
+    return cleanRemarks !== '—' && cleanRemarks ? `${cleanRemarks} (${extraText})` : `(${extraText})`;
   };
 
   const parseServiceTypeFromRemarks = (remarks?: string | null): string => {
@@ -341,6 +455,68 @@ export default function StoresPage() {
       setIsSavingReturnStatus(false);
     }
   };
+
+  const handleMaterialAdminAckChange = async (
+    matName: string,
+    unitIdx: number,
+    newAdminAck: 'Acknowledged' | 'Pending'
+  ) => {
+    if (!selectedViewStoreId || !viewStoreData) return;
+    const currentMap = parseFullSerialMapFromRemarks(viewStoreData.remarks);
+    if (!currentMap[matName] || !currentMap[matName][unitIdx]) return;
+
+    currentMap[matName][unitIdx].admin_ack = newAdminAck;
+    const currentServiceType = parseServiceTypeFromRemarks(viewStoreData.remarks);
+    const newRemarks = serializeSerialMapToRemarks(
+      viewStoreData.remarks,
+      currentMap,
+      currentServiceType
+    );
+
+    try {
+      await updateStoreMutation.mutateAsync({
+        id: selectedViewStoreId,
+        remarks: newRemarks,
+      });
+      await handleRefresh();
+      toast.success(`Admin acknowledge status updated to "${newAdminAck}"`);
+    } catch {
+      // toast handled in mutation
+    }
+  };
+
+  const handleMaterialAdminAckAll = async (
+    matName: string,
+    newAdminAck: 'Acknowledged' | 'Pending'
+  ) => {
+    if (!selectedViewStoreId || !viewStoreData) return;
+    const currentMap = parseFullSerialMapFromRemarks(viewStoreData.remarks);
+    if (!currentMap[matName]) return;
+
+    currentMap[matName] = currentMap[matName].map((u) =>
+      u.used ? { ...u, admin_ack: newAdminAck } : u
+    );
+
+    const currentServiceType = parseServiceTypeFromRemarks(viewStoreData.remarks);
+    const newRemarks = serializeSerialMapToRemarks(
+      viewStoreData.remarks,
+      currentMap,
+      currentServiceType
+    );
+
+    try {
+      await updateStoreMutation.mutateAsync({
+        id: selectedViewStoreId,
+        remarks: newRemarks,
+      });
+      await handleRefresh();
+      toast.success(`All used units of ${matName} updated to "${newAdminAck}"`);
+    } catch {
+      // toast handled in mutation
+    }
+  };
+
+
 
   const viewSections = React.useMemo(() => {
     if (!viewStoreData) return [];
@@ -501,6 +677,16 @@ export default function StoresPage() {
             ),
             icon: Wrench,
           },
+          ...(viewStoreData.provider_name ? [{
+            label: "Courier Service",
+            value: <span className="font-bold text-gray-800 dark:text-gray-200">{viewStoreData.provider_name}</span>,
+            icon: Truck,
+          }] : []),
+          ...(viewStoreData.invoice_number ? [{
+            label: "Tracking ID",
+            value: <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.invoice_number}</span>,
+            icon: Hash,
+          }] : []),
         ],
       },
       {
@@ -523,27 +709,44 @@ export default function StoresPage() {
           {
             label: "Materials",
             value: (
-              <div className="space-y-2.5 w-full">
+              <div className="space-y-3.5 w-full">
                 {viewStoreData.materials?.map((m) => {
-                  const serials = serialMap[m.material.name] || [];
+                  const fullSerialMap = parseFullSerialMapFromRemarks(viewStoreData.remarks);
+                  const units = fullSerialMap[m.material.name] || [];
+
+                  const totalQty = m.quantity || units.length || 1;
+                  const usedQty = units.filter((u) => u.used).length;
+                  const unusedQty = Math.max(0, totalQty - usedQty);
+                  const returnedQty = units.filter((u) => u.used && u.return_status === 'Returned').length;
+                  const notReturnedQty = units.filter((u) => u.used && u.return_status === 'Not Returned').length;
+                  const admAckQty = units.filter((u) => u.used && u.admin_ack === 'Acknowledged').length;
+                  const admPendingQty = units.filter((u) => u.used && u.admin_ack === 'Pending').length;
 
                   return (
                     <div
                       key={m.material.id}
-                      className="p-3 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl space-y-2"
+                      className="p-4 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl space-y-3"
                     >
+                      {/* Header */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Package size={14} className="text-primary/70 shrink-0" />
-                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
-                            {m.material.name}
-                          </span>
+                          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                            <Package size={15} className="text-primary" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-black text-gray-900 dark:text-white truncate block">
+                              {m.material.name}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              Material Details & Inventory Breakdown
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[10px] font-extrabold py-0.5 px-2 rounded-md uppercase",
+                              "text-[10px] font-extrabold py-0.5 px-2.5 rounded-lg uppercase",
                               m.stock_type === "From Store"
                                 ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
                                 : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
@@ -553,28 +756,189 @@ export default function StoresPage() {
                           </Badge>
                           <Badge
                             variant="outline"
-                            className="text-[10px] font-bold py-0.5 px-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10 text-primary rounded-md"
+                            className="text-xs font-black py-0.5 px-2.5 bg-primary/10 border-primary/20 text-primary rounded-lg"
                           >
-                            QTY: {m.quantity || 1}
+                            QTY: {totalQty}
                           </Badge>
                         </div>
                       </div>
 
-                      {serials.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1 border-t border-gray-100 dark:border-white/5">
-                          {serials.map((ser, sIdx) => (
-                            <div
-                              key={sIdx}
-                              className="flex items-center gap-2 bg-white dark:bg-gray-900 px-2.5 py-1.5 rounded-lg border border-gray-100 dark:border-white/5 text-xs"
-                            >
-                              <span className="text-[10px] font-extrabold text-primary/70 shrink-0">
-                                Unit {sIdx + 1}:
-                              </span>
-                              <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
-                                {ser}
-                              </span>
-                            </div>
-                          ))}
+                      {/* Quantity Status Breakdown Bar */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-white dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-white/5 text-[11px]">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-gray-400">Total Units</span>
+                          <span className="font-black text-gray-800 dark:text-gray-200 mt-0.5">{totalQty} Units Total</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-amber-500">Used / Unused</span>
+                          <span className="font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                            {usedQty} Used · {unusedQty} Unused
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-blue-500">Return Status</span>
+                          <span className="font-black text-blue-600 dark:text-blue-400 mt-0.5">
+                            {returnedQty} Returned · {notReturnedQty} Not Ret
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-emerald-500">Admin Acknowledge Status</span>
+                          <span className="font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            {admAckQty} Acknowledged · {admPendingQty} Pending
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Quick Bulk Admin Acknowledge Action if pending units exist */}
+                      {usedQty > 0 && admPendingQty > 0 && (
+                        <div className="flex items-center justify-between p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-900/30">
+                          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                            {admPendingQty} used {admPendingQty === 1 ? 'unit is' : 'units are'} pending admin acknowledgment
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleMaterialAdminAckAll(m.material.name, "Acknowledged")}
+                            className="text-[10px] font-black uppercase px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all shadow-sm shadow-emerald-500/20 flex items-center gap-1.5"
+                          >
+                            ✓ Acknowledge All ({admPendingQty})
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Units list */}
+                      {units.length > 0 && (
+                        <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-white/5">
+                          {units.map((unit, sIdx) => {
+                            const isUsed = unit.used;
+                            const admAck = unit.admin_ack || 'Pending';
+                            const engAck = unit.engineer_ack || 'Acknowledged';
+                            const retStatus = unit.return_status || 'Returned';
+
+                            return (
+                              <div
+                                key={sIdx}
+                                className={cn(
+                                  "p-3.5 rounded-2xl border transition-all space-y-3",
+                                  isUsed
+                                    ? "bg-amber-50/30 dark:bg-amber-950/15 border-amber-200/60 dark:border-amber-900/30 shadow-sm"
+                                    : "bg-white dark:bg-gray-900 border-gray-100 dark:border-white/5"
+                                )}
+                              >
+                                {/* Unit Header with Clean Barcode */}
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2.5">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] font-black uppercase px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md shrink-0"
+                                    >
+                                      Unit {sIdx + 1}
+                                    </Badge>
+                                    <div className="flex items-center gap-1.5 font-mono text-sm font-black text-gray-900 dark:text-white">
+                                      <Barcode size={15} className="text-primary/70 shrink-0" />
+                                      <span>{unit.barcode}</span>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    {isUsed ? (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[10px] font-black uppercase px-2.5 py-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 rounded-lg"
+                                      >
+                                        ⚠ Used Material
+                                      </Badge>
+                                    ) : (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[10px] font-black uppercase px-2.5 py-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 rounded-lg"
+                                      >
+                                        ✓ New Product Return (Unused)
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Status Details Bar (Shown only when Used) */}
+                                {isUsed && (
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-amber-200/40 dark:border-amber-900/20">
+                                    {/* Return Status */}
+                                    <div className="flex flex-col gap-1.5 p-3 bg-white/90 dark:bg-gray-900/70 rounded-xl border border-amber-100 dark:border-white/5">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        Return Status
+                                      </span>
+                                      <div>
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            "text-xs font-black uppercase px-3 py-1 rounded-lg border w-fit inline-flex items-center gap-1",
+                                            retStatus === "Returned"
+                                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50 shadow-sm"
+                                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300 border-rose-300/50 shadow-sm"
+                                          )}
+                                        >
+                                          {retStatus === "Returned" ? "✓ Returned" : "✕ Not Returned"}
+                                        </Badge>
+                                      </div>
+                                    </div>
+
+                                    {/* Engineer Acknowledge Status */}
+                                    <div className="flex flex-col gap-1.5 p-3 bg-white/90 dark:bg-gray-900/70 rounded-xl border border-amber-100 dark:border-white/5">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        Engineer Acknowledge Status
+                                      </span>
+                                      <div>
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            "text-xs font-black uppercase px-3 py-1 rounded-lg border w-fit inline-flex items-center gap-1",
+                                            engAck === "Acknowledged"
+                                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50 shadow-sm"
+                                              : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300/50 shadow-sm"
+                                          )}
+                                        >
+                                          {engAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}
+                                        </Badge>
+                                      </div>
+                                    </div>
+
+                                    {/* Admin Acknowledge Status */}
+                                    <div className="flex flex-col gap-1.5 p-3 bg-white/90 dark:bg-gray-900/70 rounded-xl border border-amber-100 dark:border-white/5">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        Admin Acknowledge Status
+                                      </span>
+                                      <Select
+                                        value={admAck}
+                                        onValueChange={(val) => {
+                                          if (val === "Acknowledged" || val === "Pending") {
+                                            handleMaterialAdminAckChange(m.material.name, sIdx, val);
+                                          }
+                                        }}
+                                      >
+                                        <SelectTrigger
+                                          className={cn(
+                                            "h-8 w-full px-3 text-xs font-black uppercase rounded-lg border focus:ring-2 focus:ring-primary/20",
+                                            admAck === "Acknowledged"
+                                              ? "bg-emerald-500 text-white border-emerald-600 shadow-sm shadow-emerald-500/20"
+                                              : "bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/20"
+                                          )}
+                                        >
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-2xl z-[9999]">
+                                          <SelectItem value="Acknowledged" className="font-bold py-2 text-xs text-emerald-600 cursor-pointer">
+                                            ✓ Acknowledged
+                                          </SelectItem>
+                                          <SelectItem value="Pending" className="font-bold py-2 text-xs text-amber-600 cursor-pointer">
+                                            ⏳ Pending
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -594,111 +958,6 @@ export default function StoresPage() {
           },
         ],
       },
-      // Show barcode table section when return_status is "In Progress", "Returned", "Not Returned", or "Completed"
-      ...(['In Progress', 'Returned', 'Not Returned', 'Completed'].includes(viewStoreData.return_status) ? [{
-        title: "Barcode / Return Details",
-        items: [
-          {
-            label: "Shipment",
-            icon: Barcode,
-            fullWidth: true,
-            value: (() => {
-              const fullSerialMap = parseFullSerialMapFromRemarks(viewStoreData.remarks);
-              const serviceType = parseServiceTypeFromRemarks(viewStoreData.remarks);
-              const allMats = viewStoreData.materials || [];
-              if (allMats.length === 0) return <span className="text-gray-400 text-xs">No barcode data available.</span>;
-              return (
-                <div className="w-full space-y-4">
-                  {/* Courier & Service Type / Acknowledgement details */}
-                  <div className="flex flex-wrap items-center gap-6 mb-3 p-3 bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl">
-                    {viewStoreData.provider_name ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Courier Service</span>
-                        <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.provider_name}</span>
-                      </div>
-                    ) : null}
-                    {viewStoreData.invoice_number ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Tracking ID</span>
-                        <span className="font-mono text-xs font-bold text-gray-800 dark:text-gray-200">{viewStoreData.invoice_number}</span>
-                      </div>
-                    ) : null}
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-extrabold text-primary/70 uppercase tracking-wide">Service Type</span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-xs font-extrabold py-0.5 px-2.5 rounded-lg border",
-                            serviceType.toLowerCase() === 'acknowledgement'
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                              : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                          )}
-                        >
-                          {serviceType.toLowerCase() === 'acknowledgement' ? '✓ Acknowledgement' : '🔄 Replacement'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  {allMats.map((m) => {
-                    const serials = fullSerialMap[m.material.name] || [];
-                    if (serials.length === 0) return null;
-                    return (
-                      <div key={m.material.id} className="rounded-xl border border-gray-100 dark:border-white/5 overflow-hidden">
-                        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5">
-                          <Package size={13} className="text-primary/70" />
-                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{m.material.name}</span>
-                          <span className="ml-auto text-[10px] font-bold text-primary/60">QTY: {serials.length}</span>
-                        </div>
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b border-gray-100 dark:border-white/5">
-                              <th className="text-left px-3 py-2 text-[10px] font-extrabold text-gray-500 uppercase">Barcode</th>
-                              <th className="text-center px-3 py-2 text-[10px] font-extrabold text-orange-500 uppercase">Used</th>
-                              <th className="text-center px-3 py-2 text-[10px] font-extrabold text-emerald-600 uppercase">New Return</th>
-                              {serviceType === 'Replacement' && (
-                                <th className="text-center px-3 py-2 text-[10px] font-extrabold text-rose-500 uppercase">Old Return</th>
-                              )}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {serials.map((s, idx) => {
-                              const newReturn = !s.used ? 1 : 0;
-                              const oldReturn = s.used && serviceType === 'Replacement' ? 1 : 0;
-                              return (
-                                <tr key={idx} className="border-b border-gray-50 dark:border-white/5 last:border-0">
-                                  <td className="px-3 py-2 font-mono font-bold text-gray-800 dark:text-gray-200">{s.barcode}</td>
-                                  <td className="px-3 py-2 text-center">
-                                    {s.used
-                                      ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-900/30"><svg className="w-3 h-3 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" clipRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" /></svg></span>
-                                      : <span className="inline-block w-4 h-4 rounded-full border-2 border-gray-200 dark:border-white/20" />}
-                                  </td>
-                                  <td className="px-3 py-2 text-center">
-                                    {newReturn > 0
-                                      ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-xs font-bold text-emerald-600">{newReturn}</span>
-                                      : <span className="text-gray-300 dark:text-gray-600">0</span>}
-                                  </td>
-                                  {serviceType === 'Replacement' && (
-                                    <td className="px-3 py-2 text-center">
-                                      {oldReturn > 0
-                                        ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-xs font-bold text-rose-500">{oldReturn}</span>
-                                        : <span className="text-gray-300 dark:text-gray-600">0</span>}
-                                    </td>
-                                  )}
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })(),
-          },
-        ],
-      }] : []),
       {
         title: "Metadata",
         items: [
@@ -883,26 +1142,6 @@ export default function StoresPage() {
         return (
           <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", getWarrantyColors(val))}>
             {val}
-          </Badge>
-        );
-      },
-    },
-    {
-      id: "service_type",
-      header: "Service Type",
-      cell: ({ row }) => {
-        const serviceType = parseServiceTypeFromRemarks(row.original.remarks);
-        return (
-          <Badge
-            variant="outline"
-            className={cn(
-              "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-              serviceType === 'Replacement'
-                ? "bg-blue-500/5 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400 border-blue-500/20"
-                : "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20"
-            )}
-          >
-            {serviceType}
           </Badge>
         );
       },
