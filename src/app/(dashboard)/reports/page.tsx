@@ -9,6 +9,7 @@ import {
     useReportsExpenses,
     useReportsMasterMills,
     useReportsStores,
+    useReportsMills,
     useReportsFilterOptions,
     downloadReportFile,
     ReportsServiceReport,
@@ -16,6 +17,7 @@ import {
     ReportsExpenseReport,
     ReportsMasterMill,
     ReportsStore,
+    ReportsMill,
 } from "@/services/reports-service";
 import useReportsStore from "@/store/useReportsStore";
 import { useServiceCategories } from "@/services/service-category-service";
@@ -47,6 +49,7 @@ import {
     AlertTriangle,
     RefreshCw,
     Building,
+    Building2,
     ShieldAlert,
     ShieldCheck,
     Package,
@@ -299,6 +302,18 @@ export default function ReportsPage() {
         dateTo: dateTo || undefined,
     });
 
+    const millsReportQuery = useReportsMills({
+        skip: pagination.pageIndex * pagination.pageSize,
+        take: pagination.pageSize,
+        search: search || undefined,
+        status: statusFilter || undefined,
+        customerId: storeCustomerFilter || undefined,
+        refNo: refNoFilter || undefined,
+        place: millNameFilter || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+    });
+
     // Fetch categories + lookup data for filter drawer
     const { data: serviceCategoriesData } = useServiceCategories({ skip: 0, take: 100 });
     const { data: expenseCategoriesData } = useExpenseCategories({ skip: 0, take: 100 });
@@ -488,6 +503,18 @@ export default function ReportsPage() {
         if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
         if (activeTab === "installations") return [statusField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
         if (activeTab === "master-mills") return [statusField, millField, millNameField, refNoField, frameNoField, dateFromField, dateToField];
+        if (activeTab === "mills") {
+            const customerField: FilterField = {
+                id: "storeCustomer",
+                label: "Customer",
+                placeholder: "All Customers",
+                options: [
+                    { value: "ALL", label: "All Customers" },
+                    ...(customersData?.customers ?? []).map((c) => ({ value: c.id, label: c.name })),
+                ],
+            };
+            return [statusField, customerField, refNoField, dateFromField, dateToField];
+        }
         if (activeTab === "stores") {
             const engineerField: FilterField = {
                 id: "technicianId",
@@ -1037,6 +1064,106 @@ export default function ReportsPage() {
         },
     ];
 
+    // 6. Mills Report Columns
+    const millColumns: ColumnDef<ReportsMill>[] = [
+        {
+            accessorKey: "ref_no",
+            header: "Ref No",
+            cell: ({ row }) => (
+                <span className="font-mono text-xs font-semibold text-gray-900 dark:text-white">
+                    {row.original.ref_no || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "name",
+            header: "Mill Name",
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">{row.original.name}</span>
+                    {row.original.email && (
+                        <span className="text-xs text-gray-400">{row.original.email}</span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "customer.name",
+            header: "Customer",
+            cell: ({ row }) => (
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                    {row.original.customer?.name || row.original.name || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "place",
+            header: "Place / City",
+            cell: ({ row }) => {
+                const place = row.original.place || row.original.city;
+                const city = row.original.city && row.original.city !== place ? row.original.city : null;
+                return (
+                    <div className="flex flex-col">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">{place || "—"}</span>
+                        {city && <span className="text-xs text-gray-400">{city}</span>}
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "phone",
+            header: "Contact",
+            cell: ({ row }) => (
+                <div className="flex flex-col text-xs font-mono">
+                    <span className="text-gray-700 dark:text-gray-300 font-semibold">{row.original.phone || "—"}</span>
+                    {row.original.phone_2 && <span className="text-gray-400">{row.original.phone_2}</span>}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "_count.masterMills",
+            header: "Machines",
+            cell: ({ row }) => {
+                const count = row.original._count?.masterMills ?? 0;
+                return (
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5">
+                        {count} {count === 1 ? "Machine" : "Machines"}
+                    </Badge>
+                );
+            },
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => {
+                const status = row.original.status;
+                const colors = status === "ACTIVE"
+                    ? "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-400/20"
+                    : "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500/20 dark:border-gray-400/20";
+                const dot = status === "ACTIVE"
+                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                    : "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
+                return (
+                    <div className="flex items-center gap-2 select-none">
+                        <div className={cn("w-1.5 h-1.5 rounded-full", dot)} />
+                        <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", colors)}>
+                            {status}
+                        </Badge>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "created_at",
+            header: "Created Date",
+            cell: ({ row }) => (
+                <span className="text-gray-500 dark:text-gray-400 text-xs">
+                    {row.original.created_at ? format(new Date(row.original.created_at), "dd-MM-yyyy") : "—"}
+                </span>
+            ),
+        },
+    ];
+
     // Determine current query loading state & response values
     const currentQuery =
         activeTab === "services"
@@ -1047,16 +1174,33 @@ export default function ReportsPage() {
             ? expensesQuery
             : activeTab === "master-mills"
             ? masterMillsQuery
-            : storesQuery;
+            : activeTab === "stores"
+            ? storesQuery
+            : millsReportQuery;
 
     const reportsData =
         activeTab === "stores"
             ? (currentQuery.data as any)?.stores || []
+            : activeTab === "mills"
+            ? (currentQuery.data as any)?.mills || []
             : (currentQuery.data as any)?.reports || [];
     const reportsTotal = currentQuery.data?.total || 0;
     const reportsMetrics = (currentQuery.data as any)?.metrics;
     const isReportsLoading = currentQuery.isLoading;
     const isRefreshing = currentQuery.isFetching;
+
+    const currentColumns =
+        activeTab === "services"
+            ? serviceColumns
+            : activeTab === "installations"
+            ? installationColumns
+            : activeTab === "expenses"
+            ? expenseColumns
+            : activeTab === "master-mills"
+            ? masterMillColumns
+            : activeTab === "stores"
+            ? storeColumns
+            : millColumns;
 
     const handleRefresh = async () => {
         await currentQuery.refetch();
@@ -1085,6 +1229,7 @@ export default function ReportsPage() {
                         { id: "expenses", label: "Expenses", icon: Receipt },
                         { id: "master-mills", label: "Masters", icon: Building },
                         { id: "stores", label: "Stores", icon: Package },
+                        { id: "mills", label: "Mills", icon: Building2 },
                     ].map((tab) => {
                         const Icon = tab.icon;
                         const isTabActive = activeTab === tab.id;
@@ -1244,6 +1389,45 @@ export default function ReportsPage() {
                             description="Completed return processing"
                         />
                     </>
+                ) : activeTab === "mills" ? (
+                    <>
+                        <StatsCard
+                            title="Total Mills"
+                            value={(reportsMetrics as any)?.totalCount}
+                            loading={isReportsLoading}
+                            icon={<Building2 size={18} className="text-primary" />}
+                            iconBg="bg-primary/10"
+                            gradient="bg-primary"
+                            description="Registered mill establishments"
+                        />
+                        <StatsCard
+                            title="Active Mills"
+                            value={(reportsMetrics as any)?.activeCount}
+                            loading={isReportsLoading}
+                            icon={<CheckCircle2 size={18} className="text-emerald-500" />}
+                            iconBg="bg-emerald-500/10"
+                            gradient="bg-emerald-500"
+                            description="Operational facilities"
+                        />
+                        <StatsCard
+                            title="Inactive Mills"
+                            value={(reportsMetrics as any)?.inactiveCount}
+                            loading={isReportsLoading}
+                            icon={<AlertTriangle size={18} className="text-amber-500" />}
+                            iconBg="bg-amber-500/10"
+                            gradient="bg-amber-500"
+                            description="Inactive/archived facilities"
+                        />
+                        <StatsCard
+                            title="Total Machines"
+                            value={(reportsMetrics as any)?.totalMachines}
+                            loading={isReportsLoading}
+                            icon={<Factory size={18} className="text-blue-500" />}
+                            iconBg="bg-blue-500/10"
+                            gradient="bg-blue-500"
+                            description="Total machines deployed"
+                        />
+                    </>
                 ) : (
                     <>
                         <StatsCard
@@ -1383,17 +1567,7 @@ export default function ReportsPage() {
                 {/* Paginated Reports Data Table */}
                 <div className="pt-2">
                     <DataTable
-                        columns={
-                            activeTab === "services"
-                                ? (serviceColumns as any)
-                                : activeTab === "installations"
-                                ? (installationColumns as any)
-                                : activeTab === "expenses"
-                                ? (expenseColumns as any)
-                                : activeTab === "master-mills"
-                                ? (masterMillColumns as any)
-                                : (storeColumns as any)
-                        }
+                        columns={currentColumns as any}
                         data={reportsData as any}
                         loading={isReportsLoading || isRefreshing}
                         pageCount={Math.ceil(reportsTotal / pagination.pageSize)}
@@ -1407,6 +1581,8 @@ export default function ReportsPage() {
                                 ? "expenses"
                                 : activeTab === "master-mills"
                                 ? "masters"
+                                : activeTab === "mills"
+                                ? "mills"
                                 : "store logs"
                         }
                         pagination={pagination}

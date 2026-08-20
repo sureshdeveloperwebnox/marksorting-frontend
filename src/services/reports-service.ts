@@ -147,6 +147,39 @@ export interface MasterMillsReportResponse {
     };
 }
 
+export interface ReportsMill {
+    id: string;
+    name: string;
+    ref_no?: string;
+    email?: string;
+    phone?: string;
+    phone_2?: string;
+    phone_3?: string;
+    address?: string;
+    city?: string;
+    place?: string;
+    status: string;
+    created_at?: string;
+    customer_id?: string;
+    customer?: { id: string; name: string };
+    _count?: {
+        masterMills: number;
+        serviceReports: number;
+        installationReports: number;
+    };
+}
+
+export interface MillsReportResponse {
+    mills: ReportsMill[];
+    total: number;
+    metrics: {
+        totalCount: number;
+        activeCount: number;
+        inactiveCount: number;
+        totalMachines: number;
+    };
+}
+
 
 export const useReportsServices = (params: {
     skip: number;
@@ -268,6 +301,28 @@ export const useReportsStores = (params: {
     });
 };
 
+export const useReportsMills = (params: {
+    skip: number;
+    take: number;
+    search?: string;
+    status?: string;
+    customerId?: string;
+    refNo?: string;
+    place?: string;
+    city?: string;
+    dateFrom?: string;
+    dateTo?: string;
+}) => {
+    return useQuery({
+        queryKey: ["reports", "mills", params],
+        queryFn: async () => {
+            const { data } = await api.get<MillsReportResponse>("/reports/mills", { params });
+            return data;
+        },
+        placeholderData: keepPreviousData,
+    });
+};
+
 export interface ReportsFilterOptions {
     refNos: string[];
     frameNos: string[];
@@ -287,7 +342,7 @@ export const useReportsFilterOptions = (type?: string) => {
 };
 
 export const downloadReportFile = async (
-    tab: "services" | "installations" | "expenses" | "master-mills" | "stores",
+    tab: "services" | "installations" | "expenses" | "master-mills" | "stores" | "mills",
     format: "pdf" | "csv" | "excel",
     params: Record<string, any>
 ) => {
