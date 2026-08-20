@@ -780,10 +780,10 @@ export function MasterMillFormDrawer() {
                   />
                 </div>
                 <div className="space-y-2 col-span-2 sm:col-span-1">
-                  <FieldLabel>Frame / W No</FieldLabel>
+                  <FieldLabel>Frame / W No (Optional)</FieldLabel>
                   <Input
                     {...register('frame_no')}
-                    placeholder="Frame or serial number"
+                    placeholder="Frame or serial number (optional)"
                     className="h-10 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium text-sm"
                   />
                 </div>
