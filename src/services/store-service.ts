@@ -41,7 +41,7 @@ export interface Store {
   };
   quantity: number;
   warranty_status: string;
-  frame_number: string;
+  frame_number?: string;
   return_status: string;
   inflow_status: string;
   stock_type?: string;
@@ -177,7 +177,7 @@ export const useCreateStore = () => {
       material_quantities?: { material_id: string; quantity: number; stock_type?: string }[];
       quantity: number;
       warranty_status: string;
-      frame_number: string;
+      frame_number?: string;
       return_status: string;
       inflow_status: string;
       stock_type?: string;

@@ -94,7 +94,7 @@ const storeSchema = z.object({
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   warranty_status: z.string().min(1, 'Warranty status is required'),
   service_type: z.string().optional().default('Acknowledgement'),
-  frame_number: z.string().min(1, 'Frame number is required'),
+  frame_number: z.string().optional().or(z.literal('')),
   return_status: z.string().min(1, 'Return status is required'),
   inflow_status: z.string().min(1, 'Stock status is required'),
   stock_type: z.string().optional().default('Inflow'),
@@ -2354,10 +2354,10 @@ export function StoreFormDrawer() {
                 <div data-field="frame_number" className="space-y-2">
                   <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <Hash size={15} strokeWidth={2.5} className="text-primary" />
-                    Frame Number
+                    Frame Number (Optional)
                   </Label>
                   <Input
-                    placeholder="e.g. FRM10245"
+                    placeholder="e.g. FRM10245 (optional)"
                     className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-bold"
                     {...register('frame_number')}
                   />
