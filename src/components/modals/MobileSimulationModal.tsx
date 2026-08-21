@@ -30,6 +30,7 @@ import {
 import { useStores, useMaterials, useUpdateStore, Store, Material } from "@/services/store-service";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { isAcknowledgeRequired } from "@/utils/store-warranty.utils";
 
 /* ── helpers ─────────────────────────────────────────── */
 
@@ -159,10 +160,12 @@ const constructUpdatedRemarks = (
   existingRemarks: string | null | undefined,
   currentMaterialName: string,
   tableRows: BarcodeRow[],
-  serviceType: "Replacement" | "Acknowledgement"
+  serviceType: "Replacement" | "Acknowledgement",
+  warrantyStatus?: string | null
 ): string => {
   const cleanRemarks = extractCleanRemarks(existingRemarks);
   const currentSerialMap = parseSerialMapFromRemarks(existingRemarks);
+  const ackRequired = isAcknowledgeRequired(warrantyStatus);
 
   currentSerialMap[currentMaterialName] = tableRows.map((r) => ({
     barcode: r.barcode,
@@ -180,7 +183,7 @@ const constructUpdatedRemarks = (
         if (it.return_status) {
           tags.push(`RET:${it.return_status}`);
         }
-        if (it.acknowledge_status) {
+        if (ackRequired && it.acknowledge_status) {
           tags.push(`ENG_ACK:${it.acknowledge_status}`);
         }
         return `${it.barcode} (${tags.join("; ")})`;
@@ -312,7 +315,13 @@ export function MobileSimulationModal({
       return;
     }
     const newRemarks = tableState
-      ? constructUpdatedRemarks(selectedStore.remarks, tableState.materialName, tableState.rows, serviceType)
+      ? constructUpdatedRemarks(
+          selectedStore.remarks,
+          tableState.materialName,
+          tableState.rows,
+          serviceType,
+          selectedStore.warranty_status
+        )
       : selectedStore.remarks;
 
     const shouldSetInProgress = courierName.trim() !== "" && trackingId.trim() !== "";

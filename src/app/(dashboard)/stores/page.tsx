@@ -61,6 +61,7 @@ import { TableTabs } from "@/components/ui/table-tabs";
 import { MobileSimulationModal } from "@/components/modals/MobileSimulationModal";
 import { Smartphone } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { isAcknowledgeRequired } from "@/utils/store-warranty.utils";
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
@@ -796,7 +797,10 @@ export default function StoresPage() {
                       </div>
 
                       {/* Quantity Status Breakdown Bar */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-white dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-white/5 text-[11px]">
+                      <div className={cn(
+                        "grid gap-2.5 p-3 bg-white dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-white/5 text-[11px]",
+                        isAcknowledgeRequired(viewStoreData.warranty_status) ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"
+                      )}>
                         <div className="flex flex-col">
                           <span className="text-[10px] font-semibold uppercase text-gray-400">Total Units</span>
                           <span className="font-semibold text-gray-800 dark:text-gray-200 mt-0.5">{totalQty} Units Total</span>
@@ -813,16 +817,18 @@ export default function StoresPage() {
                             {returnedQty} Returned · {notReturnedQty} Not Ret
                           </span>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-semibold uppercase text-emerald-500">Admin Acknowledge Status</span>
-                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                            {admAckQty} Acknowledged · {admPendingQty} Pending
-                          </span>
-                        </div>
+                        {isAcknowledgeRequired(viewStoreData.warranty_status) && (
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-semibold uppercase text-emerald-500">Admin Acknowledge Status</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                              {admAckQty} Acknowledged · {admPendingQty} Pending
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Quick Bulk Admin Acknowledge Action if pending units exist */}
-                      {usedQty > 0 && admPendingQty > 0 && (
+                      {isAcknowledgeRequired(viewStoreData.warranty_status) && usedQty > 0 && admPendingQty > 0 && (
                         <div className="flex items-center justify-between p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-900/30">
                           <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                             {admPendingQty} used {admPendingQty === 1 ? 'unit is' : 'units are'} pending admin acknowledgment
@@ -845,6 +851,7 @@ export default function StoresPage() {
                             const admAck = unit.admin_ack || 'Pending';
                             const engAck = unit.engineer_ack || 'Acknowledged';
                             const retStatus = unit.return_status || 'Returned';
+                            const isAckReq = isAcknowledgeRequired(viewStoreData.warranty_status);
 
                             return (
                               <div
@@ -892,7 +899,10 @@ export default function StoresPage() {
 
                                 {/* Status Details Bar (Shown only when Used) */}
                                 {isUsed && (
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2.5 border-t border-amber-200/30 dark:border-amber-900/20">
+                                  <div className={cn(
+                                    "gap-2.5 pt-2.5 border-t border-amber-200/30 dark:border-amber-900/20",
+                                    isAckReq ? "grid grid-cols-1 sm:grid-cols-3" : "grid grid-cols-1"
+                                  )}>
                                     {/* Return Status */}
                                     <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
                                       <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -913,59 +923,64 @@ export default function StoresPage() {
                                       </div>
                                     </div>
 
-                                    {/* Engineer Acknowledge Status */}
-                                    <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
-                                      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                        Engineer Acknowledge Status
-                                      </span>
-                                      <div>
-                                        <Badge
-                                          variant="outline"
-                                          className={cn(
-                                            "text-xs font-semibold px-2.5 py-0.5 rounded-md border w-fit inline-flex items-center gap-1",
-                                            engAck === "Acknowledged"
-                                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50"
-                                              : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300/50"
-                                          )}
-                                        >
-                                          {engAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}
-                                        </Badge>
-                                      </div>
-                                    </div>
+                                    {/* Engineer & Admin Acknowledge (Only for Non Warranty & AMC Without Spare) */}
+                                    {isAckReq && (
+                                      <>
+                                        {/* Engineer Acknowledge Status */}
+                                        <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
+                                          <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                            Engineer Acknowledge Status
+                                          </span>
+                                          <div>
+                                            <Badge
+                                              variant="outline"
+                                              className={cn(
+                                                "text-xs font-semibold px-2.5 py-0.5 rounded-md border w-fit inline-flex items-center gap-1",
+                                                engAck === "Acknowledged"
+                                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border-emerald-300/50"
+                                                  : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-300/50"
+                                              )}
+                                            >
+                                              {engAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}
+                                            </Badge>
+                                          </div>
+                                        </div>
 
-                                    {/* Admin Acknowledge Status */}
-                                    <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
-                                      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                        Admin Acknowledge Status
-                                      </span>
-                                      <Select
-                                        value={admAck}
-                                        onValueChange={(val) => {
-                                          if (val === "Acknowledged" || val === "Pending") {
-                                            handleMaterialAdminAckChange(m.material.name, sIdx, val);
-                                          }
-                                        }}
-                                      >
-                                        <SelectTrigger
-                                          className={cn(
-                                            "h-7.5 w-full px-2.5 text-xs font-semibold rounded-md border focus:ring-2 focus:ring-primary/20 cursor-pointer",
-                                            admAck === "Acknowledged"
-                                              ? "bg-emerald-500 text-white border-emerald-600"
-                                              : "bg-amber-500 text-white border-amber-600"
-                                          )}
-                                        >
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-2xl z-[9999]">
-                                          <SelectItem value="Acknowledged" className="font-semibold py-1.5 text-xs text-emerald-600 cursor-pointer">
-                                            ✓ Acknowledged
-                                          </SelectItem>
-                                          <SelectItem value="Pending" className="font-semibold py-1.5 text-xs text-amber-600 cursor-pointer">
-                                            ⏳ Pending
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
+                                        {/* Admin Acknowledge Status */}
+                                        <div className="flex flex-col gap-1 p-2.5 bg-white/90 dark:bg-gray-900/70 rounded-lg border border-amber-100 dark:border-white/5">
+                                          <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                            Admin Acknowledge Status
+                                          </span>
+                                          <Select
+                                            value={admAck}
+                                            onValueChange={(val) => {
+                                              if (val === "Acknowledged" || val === "Pending") {
+                                                handleMaterialAdminAckChange(m.material.name, sIdx, val);
+                                              }
+                                            }}
+                                          >
+                                            <SelectTrigger
+                                              className={cn(
+                                                "h-7.5 w-full px-2.5 text-xs font-semibold rounded-md border focus:ring-2 focus:ring-primary/20 cursor-pointer",
+                                                admAck === "Acknowledged"
+                                                  ? "bg-emerald-500 text-white border-emerald-600"
+                                                  : "bg-amber-500 text-white border-amber-600"
+                                              )}
+                                            >
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-2xl z-[9999]">
+                                              <SelectItem value="Acknowledged" className="font-semibold py-1.5 text-xs text-emerald-600 cursor-pointer">
+                                                ✓ Acknowledged
+                                              </SelectItem>
+                                              <SelectItem value="Pending" className="font-semibold py-1.5 text-xs text-amber-600 cursor-pointer">
+                                                ⏳ Pending
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1417,7 +1432,7 @@ export default function StoresPage() {
                           ? "NOT_RETURNED"
                           : "ALL"
                 }
-                onChange={(value) => {
+                onChange={(value: string) => {
                   if (value === "ALL") {
                     setReturnFilter("");
                   } else if (value === "PENDING") {

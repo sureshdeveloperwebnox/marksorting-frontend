@@ -46,6 +46,7 @@ import { StateSearchSelect } from '@/components/ui/state-search-select';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { cn, normalizePhoneNumber } from '@/lib/utils';
 import { DatePicker } from '@/components/ui/date-picker';
+import { isAcknowledgeRequired } from '@/utils/store-warranty.utils';
 
 const storeSchema = z.object({
   service_engineer_id: z.string().min(1, 'Service Engineer is required'),
@@ -243,24 +244,27 @@ const parseFullSerialMapFromRemarks = (
 const serializeSerialMapToRemarks = (
   existingRemarks: string | null | undefined,
   updatedMap: Record<string, MaterialUnitStatus[]>,
-  serviceType: string
+  serviceType: string,
+  warrantyStatus?: string | null
 ): string => {
   const cleanRemarks = extractCleanRemarks(existingRemarks);
+  const ackRequired = isAcknowledgeRequired(warrantyStatus);
   const serialSummaries: string[] = [];
 
   Object.entries(updatedMap).forEach(([matName, items]) => {
     if (items.length > 0) {
       const itemStrs = items.map((it) => {
-        if (!it.used && it.return_status === 'Returned' && it.engineer_ack === 'Acknowledged' && it.admin_ack === 'Acknowledged') {
+        if (!it.used) {
           return it.barcode;
         }
-        const tags: string[] = [];
-        if (it.used) tags.push('USED');
+        const tags: string[] = ['USED'];
         if (it.return_status) {
           tags.push(`RET:${it.return_status}`);
         }
-        if (it.engineer_ack) tags.push(`ENG_ACK:${it.engineer_ack}`);
-        if (it.admin_ack) tags.push(`ADM_ACK:${it.admin_ack}`);
+        if (ackRequired) {
+          if (it.engineer_ack) tags.push(`ENG_ACK:${it.engineer_ack}`);
+          if (it.admin_ack) tags.push(`ADM_ACK:${it.admin_ack}`);
+        }
         return `${it.barcode} (${tags.join('; ')})`;
       });
       serialSummaries.push(`${matName}: [${itemStrs.join(', ')}]`);
@@ -1061,7 +1065,8 @@ export function StoreFormDrawer() {
     const finalRemarks = serializeSerialMapToRemarks(
       data.remarks,
       fullUpdatedMap,
-      data.service_type || 'Acknowledgement'
+      data.service_type || 'Acknowledgement',
+      data.warranty_status
     );
 
     const payload = {
@@ -2162,63 +2167,68 @@ export function StoreFormDrawer() {
                                                       </Select>
                                                     </div>
 
-                                                    {/* Engineer Acknowledge Status */}
-                                                    <div className={cn(
-                                                      "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
-                                                      isUsed
-                                                        ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
-                                                        : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
-                                                    )}>
-                                                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">
-                                                        Engineer Acknowledgement
-                                                      </span>
-                                                      <Select
-                                                        value={engAck}
-                                                        onValueChange={(val) => val && handleUnitEngineerAckChange(item.material_id, unitIdx, val as any)}
-                                                      >
-                                                        <SelectTrigger className={cn(
-                                                          "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
-                                                          engAck === "Acknowledged"
-                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
-                                                            : "bg-amber-50 text-amber-700 border-amber-300/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                                    {/* Engineer & Admin Acknowledge Status (Only for Non Warranty & AMC Without Spare) */}
+                                                    {isAcknowledgeRequired(watch('warranty_status')) && (
+                                                      <>
+                                                        {/* Engineer Acknowledge Status */}
+                                                        <div className={cn(
+                                                          "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
+                                                          isUsed
+                                                            ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
+                                                            : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
                                                         )}>
-                                                          <span className="truncate">{engAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}</span>
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
-                                                          <SelectItem value="Acknowledged" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Acknowledged</SelectItem>
-                                                          <SelectItem value="Pending" className="font-semibold text-xs text-amber-600 cursor-pointer">⏳ Pending</SelectItem>
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
+                                                          <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">
+                                                            Engineer Acknowledgement
+                                                          </span>
+                                                          <Select
+                                                            value={engAck}
+                                                            onValueChange={(val) => val && handleUnitEngineerAckChange(item.material_id, unitIdx, val as any)}
+                                                          >
+                                                            <SelectTrigger className={cn(
+                                                              "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
+                                                              engAck === "Acknowledged"
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                                : "bg-amber-50 text-amber-700 border-amber-300/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                                            )}>
+                                                              <span className="truncate">{engAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}</span>
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
+                                                              <SelectItem value="Acknowledged" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Acknowledged</SelectItem>
+                                                              <SelectItem value="Pending" className="font-semibold text-xs text-amber-600 cursor-pointer">⏳ Pending</SelectItem>
+                                                            </SelectContent>
+                                                          </Select>
+                                                        </div>
 
-                                                    {/* Admin Acknowledge Status */}
-                                                    <div className={cn(
-                                                      "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
-                                                      isUsed
-                                                        ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
-                                                        : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
-                                                    )}>
-                                                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">
-                                                        Admin Acknowledgement
-                                                      </span>
-                                                      <Select
-                                                        value={admAck}
-                                                        onValueChange={(val) => val && handleUnitAdminAckChange(item.material_id, unitIdx, val as any)}
-                                                      >
-                                                        <SelectTrigger className={cn(
-                                                          "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
-                                                          admAck === "Acknowledged"
-                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
-                                                            : "bg-amber-50 text-amber-700 border-amber-300/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                                        {/* Admin Acknowledge Status */}
+                                                        <div className={cn(
+                                                          "flex flex-col gap-1.5 p-2.5 rounded-xl border min-w-0",
+                                                          isUsed
+                                                            ? "bg-white/90 dark:bg-gray-900/70 border-amber-100 dark:border-white/5"
+                                                            : "bg-gray-50/70 dark:bg-gray-900/70 border-gray-100 dark:border-white/5"
                                                         )}>
-                                                          <span className="truncate">{admAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}</span>
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
-                                                          <SelectItem value="Acknowledged" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Acknowledged</SelectItem>
-                                                          <SelectItem value="Pending" className="font-semibold text-xs text-amber-600 cursor-pointer">⏳ Pending</SelectItem>
-                                                        </SelectContent>
-                                                      </Select>
-                                                    </div>
+                                                          <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">
+                                                            Admin Acknowledgement
+                                                          </span>
+                                                          <Select
+                                                            value={admAck}
+                                                            onValueChange={(val) => val && handleUnitAdminAckChange(item.material_id, unitIdx, val as any)}
+                                                          >
+                                                            <SelectTrigger className={cn(
+                                                              "h-8.5 text-xs font-semibold rounded-lg border cursor-pointer px-2.5 w-full",
+                                                              admAck === "Acknowledged"
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-300/60 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                                                : "bg-amber-50 text-amber-700 border-amber-300/60 dark:bg-amber-950/30 dark:text-amber-300"
+                                                            )}>
+                                                              <span className="truncate">{admAck === "Acknowledged" ? "✓ Acknowledged" : "⏳ Pending"}</span>
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-xl border-gray-100 dark:border-white/10 shadow-xl z-[9999]">
+                                                              <SelectItem value="Acknowledged" className="font-semibold text-xs text-emerald-600 cursor-pointer">✓ Acknowledged</SelectItem>
+                                                              <SelectItem value="Pending" className="font-semibold text-xs text-amber-600 cursor-pointer">⏳ Pending</SelectItem>
+                                                            </SelectContent>
+                                                          </Select>
+                                                        </div>
+                                                      </>
+                                                    )}
                                                   </div>
                                                 )}
                                              </div>
