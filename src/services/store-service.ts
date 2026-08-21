@@ -177,6 +177,7 @@ export const useCreateStore = () => {
     mutationFn: async (storeData: {
       service_engineer_id: string;
       customer_id?: string;
+      mill_id?: string;
       material_ids: string[];
       material_quantities?: { material_id: string; quantity: number; stock_type?: string }[];
       quantity: number;
@@ -192,8 +193,20 @@ export const useCreateStore = () => {
       const { data } = await api.post("/stores", storeData);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["stores"] });
+    onSuccess: (newStore: any) => {
+      if (newStore && newStore.id) {
+        queryClient.setQueryData(["store", newStore.id], newStore);
+        queryClient.setQueriesData<StoresResponse>({ queryKey: ["stores"] }, (oldData) => {
+          if (!oldData || !Array.isArray(oldData.stores)) return oldData;
+          return {
+            ...oldData,
+            total: (oldData.total || 0) + 1,
+            stores: [newStore, ...oldData.stores.filter((s) => s.id !== newStore.id)],
+          };
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["stores"], refetchType: "all" });
+      queryClient.refetchQueries({ queryKey: ["stores"] });
       toast.success("Store record created successfully");
     },
     onError: (error: any) => {
@@ -282,7 +295,8 @@ export const useDeleteStore = () => {
       toast.error("Failed to delete store record");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["stores"] });
+      queryClient.invalidateQueries({ queryKey: ["stores"], refetchType: "all" });
+      queryClient.refetchQueries({ queryKey: ["stores"] });
     },
   });
 };

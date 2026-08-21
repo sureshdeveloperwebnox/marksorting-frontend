@@ -421,6 +421,16 @@ function PreviewStep({
                 </div>
             </div>
 
+            {/* Ref No Mandatory Notice if any rows are missing Ref No */}
+            {rows.some((r) => r.errors?.ref_no) && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                    <span>
+                        <strong className="font-bold text-rose-700 dark:text-rose-300">Ref No is mandatory:</strong> Some rows are missing Ref No (marked as <span className="font-bold uppercase px-1.5 py-0.5 bg-rose-200/80 dark:bg-rose-900/60 rounded text-[10px] text-rose-800 dark:text-rose-200">Missing</span>).
+                    </span>
+                </div>
+            )}
+
             {/* Tab bar */}
             <div className="flex gap-1">
                 <button type="button" className={tabClass('all')} onClick={() => setActiveTab('all')}>
@@ -481,8 +491,14 @@ function PreviewStep({
                                                 .join(' ')}
                                         >
                                             {errorMsg ? (
-                                                <div title={errorMsg} className="cursor-help">
-                                                    {cellValue || <span className="text-red-400 italic">missing</span>}
+                                                <div title={errorMsg} className="cursor-help flex items-center">
+                                                    {cellValue ? (
+                                                        <span className="font-bold text-rose-600 dark:text-rose-400">{cellValue}</span>
+                                                    ) : (
+                                                        <span className="font-bold text-rose-600 dark:text-rose-400 bg-rose-100/90 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-800/40 px-1.5 py-0.5 rounded text-[11px] uppercase tracking-wider">
+                                                            Missing
+                                                        </span>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 cellValue

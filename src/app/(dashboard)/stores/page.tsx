@@ -580,20 +580,6 @@ export default function StoresPage() {
             ),
             icon: Clock,
           },
-          {
-            label: "Service Type (Shared by Engineer)",
-            value: (
-              <span className={cn(
-                "font-semibold text-xs",
-                currentServiceType === 'Replacement'
-                  ? "text-blue-500 dark:text-blue-400"
-                  : "text-emerald-500 dark:text-emerald-400"
-              )}>
-                {currentServiceType}
-              </span>
-            ),
-            icon: Wrench,
-          },
         ],
       },
       {
@@ -692,23 +678,6 @@ export default function StoresPage() {
               </Badge>
             ),
             icon: Package,
-          },
-          {
-            label: "Service Type",
-            value: (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-                  currentServiceType === 'Replacement'
-                    ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                )}
-              >
-                {currentServiceType}
-              </Badge>
-            ),
-            icon: Wrench,
           },
           ...(viewStoreData.provider_name ? [{
             label: "Courier Service",

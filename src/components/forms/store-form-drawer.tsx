@@ -51,6 +51,7 @@ import { isAcknowledgeRequired } from '@/utils/store-warranty.utils';
 const storeSchema = z.object({
   service_engineer_id: z.string().min(1, 'Service Engineer is required'),
   customer_id: z.string().optional().or(z.literal('')),
+  mill_id: z.string().min(1, 'Mill selection is mandatory'),
   material_ids: z.array(z.string()).min(1, 'At least one material must be selected'),
   material_quantities: z
     .array(
@@ -94,7 +95,6 @@ const storeSchema = z.object({
     .optional(),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   warranty_status: z.string().min(1, 'Warranty status is required'),
-  service_type: z.string().optional().default('Acknowledgement'),
   frame_number: z.string().optional().or(z.literal('')),
   return_status: z.string().min(1, 'Return status is required'),
   inflow_status: z.string().min(1, 'Stock status is required'),
@@ -244,7 +244,6 @@ const parseFullSerialMapFromRemarks = (
 const serializeSerialMapToRemarks = (
   existingRemarks: string | null | undefined,
   updatedMap: Record<string, MaterialUnitStatus[]>,
-  serviceType: string,
   warrantyStatus?: string | null
 ): string => {
   const cleanRemarks = extractCleanRemarks(existingRemarks);
@@ -275,11 +274,11 @@ const serializeSerialMapToRemarks = (
   if (serialSummaries.length > 0) {
     extraParts.push(`Serial Nos: ${serialSummaries.join(' | ')}`);
   }
-  if (serviceType) {
-    extraParts.push(`Service Type: ${serviceType}`);
-  }
 
   const extraText = extraParts.join(' | ');
+  if (!extraText) {
+    return cleanRemarks !== '—' && cleanRemarks ? cleanRemarks : '';
+  }
   return cleanRemarks !== '—' && cleanRemarks ? `${cleanRemarks} (${extraText})` : `(${extraText})`;
 };
 
@@ -339,10 +338,10 @@ export function StoreFormDrawer() {
     defaultValues: {
       service_engineer_id: '',
       customer_id: '',
+      mill_id: '',
       material_ids: [],
       quantity: 1,
       warranty_status: 'Non Warranty',
-      service_type: 'Acknowledgement',
       frame_number: '',
       return_status: 'Pending',
       inflow_status: 'Available',
@@ -484,6 +483,7 @@ export function StoreFormDrawer() {
   React.useEffect(() => {
     if (selectedMachine?.mill_id) {
       setSelectedMillId(selectedMachine.mill_id);
+      setValue('mill_id', selectedMachine.mill_id, { shouldValidate: true, shouldDirty: true });
     }
     if (selectedMachine?.id && (!selectedMachineId || selectedMachineId !== selectedMachine.id)) {
       setSelectedMachineId(selectedMachine.id);
@@ -495,7 +495,7 @@ export function StoreFormDrawer() {
       setSelectedCustomerId('');
       setValue('customer_id', '');
     }
-  }, [selectedMachine]);
+  }, [selectedMachine, setValue]);
 
   // Mutations for quick creation
   const { mutateAsync: createCustomer } = useCreateCustomer();
@@ -564,14 +564,15 @@ export function StoreFormDrawer() {
         });
         setExpandedMaterials(initialExpanded);
 
+        const initialMillId = storeData.mill?.id || '';
         reset({
           service_engineer_id: storeData.service_engineer_id,
           customer_id: storeData.customer_id,
+          mill_id: initialMillId,
           material_ids: storeData.materials.map((m) => m.material.id),
           material_quantities: initialQuantities,
           quantity: storeData.quantity,
           warranty_status: storeData.warranty_status,
-          service_type: parseServiceTypeFromRemarks(storeData.remarks),
           frame_number: storeData.frame_number,
           return_status: storeData.return_status,
           inflow_status: storeData.inflow_status,
@@ -582,6 +583,7 @@ export function StoreFormDrawer() {
         });
 
         setSelectedCustomerId(storeData.customer_id);
+        setSelectedMillId(initialMillId);
         if (storeData.frame_number) {
           setMachineSearchQuery(storeData.frame_number);
           setDebouncedSearchQuery(storeData.frame_number);
@@ -591,11 +593,11 @@ export function StoreFormDrawer() {
         reset({
           service_engineer_id: '',
           customer_id: '',
+          mill_id: '',
           material_ids: [],
           material_quantities: [],
           quantity: 1,
           warranty_status: 'Non Warranty',
-          service_type: 'Acknowledgement',
           frame_number: '',
           return_status: 'Pending',
           inflow_status: 'Available',
@@ -1065,7 +1067,6 @@ export function StoreFormDrawer() {
     const finalRemarks = serializeSerialMapToRemarks(
       data.remarks,
       fullUpdatedMap,
-      data.service_type || 'Acknowledgement',
       data.warranty_status
     );
 
@@ -1309,12 +1310,12 @@ export function StoreFormDrawer() {
                     {errors.customer_id && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.customer_id.message}</p>}
                   </div>
 
-                  {/* Mill Selection (Optional helper) */}
-                  <div className="space-y-2">
+                  {/* Mill Selection (Mandatory) */}
+                  <div data-field="mill_id" className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                         <Building2 size={15} strokeWidth={2.5} className="text-primary" />
-                        Select Mill (Optional Helper)
+                        Select Mill
                       </Label>
                       <button
                         type="button"
@@ -1336,43 +1337,61 @@ export function StoreFormDrawer() {
                         Quick Add Mill
                       </button>
                     </div>
-                    {mills.length > 0 ? (
-                      <Select
-                        onValueChange={(val) => {
-                          setSelectedMillId(val === 'clear' ? '' : val || '');
-                        }}
-                        value={selectedMillId || ''}
-                        items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          {selectedMillId ? (
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {mills.find((m) => m.id === selectedMillId)?.name ?? (selectedMachine?.mill_id === selectedMillId ? selectedMachine?.mill?.name : null) ?? 'Unknown Mill'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
-                              Select a mill to filter machines...
-                            </span>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
-                          <SelectItem value="clear" className="font-bold py-3 text-gray-400">Clear Mill Filter</SelectItem>
-                          {filteredMills.length > 0 ? (
-                            filteredMills.map((mill) => (
-                              <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
-                                {mill.name}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
-                              No mills found
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="h-11 bg-gray-50/50 dark:bg-white/5 rounded-xl animate-pulse" />
-                    )}
+                    <Controller
+                      name="mill_id"
+                      control={control}
+                      render={({ field }) => (
+                        mills.length > 0 ? (
+                          <Select
+                            onValueChange={(val) => {
+                              const millVal = val === 'clear' ? '' : val || '';
+                              field.onChange(millVal);
+                              setSelectedMillId(millVal);
+                              if (millVal) {
+                                const foundMill = mills.find((m) => m.id === millVal);
+                                if (foundMill?.customer_id) {
+                                  setSelectedCustomerId(foundMill.customer_id);
+                                  setValue('customer_id', foundMill.customer_id);
+                                }
+                              }
+                            }}
+                            value={field.value || selectedMillId || ''}
+                            items={filteredMills.map(m => ({ value: m.id, label: m.name }))}
+                          >
+                            <SelectTrigger className={cn(
+                              "h-11 bg-gray-50/50 dark:bg-white/5 border rounded-xl focus:ring-2 focus:ring-primary/20 font-bold",
+                              errors.mill_id ? "border-rose-500/50" : "border-none"
+                            )}>
+                              {field.value || selectedMillId ? (
+                                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                  {mills.find((m) => m.id === (field.value || selectedMillId))?.name ?? (selectedMachine?.mill_id === (field.value || selectedMillId) ? selectedMachine?.mill?.name : null) ?? 'Unknown Mill'}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                                  Select a mill...
+                                </span>
+                              )}
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56">
+                              {filteredMills.length > 0 ? (
+                                filteredMills.map((mill) => (
+                                  <SelectItem key={mill.id} value={mill.id} className="font-bold py-3">
+                                    {mill.name}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no_mills" disabled className="py-3 text-gray-400 font-bold">
+                                  No mills found
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="h-11 bg-gray-50/50 dark:bg-white/5 rounded-xl animate-pulse" />
+                        )
+                      )}
+                    />
+                    {errors.mill_id && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.mill_id.message}</p>}
                   </div>
 
                   {/* Machine / Installation Record Helper Dropdown */}
@@ -1512,36 +1531,7 @@ export function StoreFormDrawer() {
                     {errors.warranty_status && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.warranty_status.message}</p>}
                   </div>
 
-                  {/* Service Type Dropdown (New Field) */}
-                  <div data-field="service_type" className="space-y-2">
-                    <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                      <Wrench size={15} strokeWidth={2.5} className="text-primary" />
-                      Service Type
-                    </Label>
-                    <Controller
-                      name="service_type"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || 'Acknowledgement'}
-                        >
-                          <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                            <SelectValue placeholder="Select Service Type..." />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-100 shadow-xl">
-                            <SelectItem value="Acknowledgement" className="font-bold py-3 text-emerald-600 dark:text-emerald-400">
-                              Acknowledgement
-                            </SelectItem>
-                            <SelectItem value="Replacement" className="font-bold py-3 text-blue-600 dark:text-blue-400">
-                              Replacement
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {errors.service_type && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.service_type.message}</p>}
-                  </div>
+
 
                   {/* Return Status */}
                   <div data-field="return_status" className="space-y-2">
@@ -2679,6 +2669,7 @@ export function StoreFormDrawer() {
                     // Update form selections
                     setSelectedCustomerId(customerId || '');
                     setSelectedMillId(millId || '');
+                    setValue('mill_id', millId || '', { shouldValidate: true, shouldDirty: true });
 
                     if (createdMasterMillId) {
                       setSelectedMachineId(createdMasterMillId);
