@@ -226,6 +226,7 @@ export const useUpdateStore = () => {
       id: string;
       service_engineer_id?: string;
       customer_id?: string;
+      mill_id?: string;
       material_ids?: string[];
       material_quantities?: { material_id: string; quantity: number; stock_type?: string }[];
       quantity?: number;
