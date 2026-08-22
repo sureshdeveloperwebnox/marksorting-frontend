@@ -421,12 +421,20 @@ function PreviewStep({
                 </div>
             </div>
 
-            {/* Ref No Mandatory Notice if any rows are missing Ref No */}
-            {rows.some((r) => r.errors?.ref_no) && (
+            {/* Error Banners */}
+            {rows.some((r) => r.errors?.ref_no && r.errors.ref_no.toLowerCase().includes('required')) && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-xs font-semibold text-rose-600 dark:text-rose-400">
                     <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
                     <span>
                         <strong className="font-bold text-rose-700 dark:text-rose-300">Ref No is mandatory:</strong> Some rows are missing Ref No (marked as <span className="font-bold uppercase px-1.5 py-0.5 bg-rose-200/80 dark:bg-rose-900/60 rounded text-[10px] text-rose-800 dark:text-rose-200">Missing</span>).
+                    </span>
+                </div>
+            )}
+            {rows.some((r) => r.errors?.ref_no && !r.errors.ref_no.toLowerCase().includes('required')) && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
+                    <span>
+                        <strong className="font-bold text-amber-800 dark:text-amber-300">Duplicate / Conflicting Records:</strong> Some rows contain Ref Nos that already exist under a different mill or are duplicated in the file. Hover over highlighted cells for details.
                     </span>
                 </div>
             )}
