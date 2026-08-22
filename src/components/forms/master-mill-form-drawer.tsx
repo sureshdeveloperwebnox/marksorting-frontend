@@ -248,6 +248,7 @@ export function MasterMillFormDrawer() {
     control,
     handleSubmit,
     setValue,
+    getValues,
     watch,
     reset,
     formState: { errors },
@@ -306,7 +307,6 @@ export function MasterMillFormDrawer() {
   }, [enteredRefNo, mills]);
 
   // Dynamic auto-calculation of Warranty Closing Date
-  const watchedInstallationDate = watch('installation_date');
   const watchedWarrantyStartDate = watch('warranty_start_date');
   const watchedWarrantyMonths = watch('warranty_months');
 
@@ -319,12 +319,16 @@ export function MasterMillFormDrawer() {
         date.setMonth(date.getMonth() + months);
         date.setDate(date.getDate() - 1);
         const formatted = date.toISOString().split('T')[0];
-        setValue('warranty_closing_date', formatted);
+        if (getValues('warranty_closing_date') !== formatted) {
+          setValue('warranty_closing_date', formatted);
+        }
+        return;
       }
-    } else {
+    }
+    if (getValues('warranty_closing_date')) {
       setValue('warranty_closing_date', '');
     }
-  }, [watchedWarrantyStartDate, watchedWarrantyMonths, setValue]);
+  }, [watchedWarrantyStartDate, watchedWarrantyMonths, setValue, getValues]);
 
   // Dynamic auto-calculation of AMC Closing Date
   const watchedAmcStartingDate = watch('amc_starting_date');
@@ -338,12 +342,16 @@ export function MasterMillFormDrawer() {
         date.setMonth(date.getMonth() + period);
         date.setDate(date.getDate() - 1);
         const formatted = date.toISOString().split('T')[0];
-        setValue('amc_closing_date', formatted);
+        if (getValues('amc_closing_date') !== formatted) {
+          setValue('amc_closing_date', formatted);
+        }
+        return;
       }
-    } else {
+    }
+    if (getValues('amc_closing_date')) {
       setValue('amc_closing_date', '');
     }
-  }, [watchedAmcStartingDate, watchedAmcPeriod, setValue]);
+  }, [watchedAmcStartingDate, watchedAmcPeriod, setValue, getValues]);
 
   // Suggestions matching the typed ref_no
   const suggestedMills = React.useMemo(() => {
