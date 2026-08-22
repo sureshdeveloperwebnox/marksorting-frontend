@@ -2812,7 +2812,6 @@ export function StoreFormDrawer() {
                       <SelectItem value="Non Warranty" className="font-bold py-2 text-xs">Non Warranty</SelectItem>
                       <SelectItem value="Under Warranty" className="font-bold py-2 text-xs">Under Warranty</SelectItem>
                       <SelectItem value="Under AMC" className="font-bold py-2 text-xs">Under AMC</SelectItem>
-                      <SelectItem value="Expired" className="font-bold py-2 text-xs">Expired</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

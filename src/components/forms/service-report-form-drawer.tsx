@@ -2456,7 +2456,7 @@ export function ServiceReportFormDrawer() {
                     <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                       <SelectItem value="Non Warranty" className="font-bold py-2 text-xs">Non Warranty</SelectItem>
                       <SelectItem value="Under Warranty" className="font-bold py-2 text-xs">Under Warranty</SelectItem>
-                      <SelectItem value="Expired" className="font-bold py-2 text-xs">Expired</SelectItem>
+                      <SelectItem value="Under AMC" className="font-bold py-2 text-xs">Under AMC</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

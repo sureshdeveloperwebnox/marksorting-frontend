@@ -583,7 +583,7 @@ export default function ReportsPage() {
 
             return [engineerField, customerField, materialField, warrantyStatusField, returnStatusField, inflowStatusField, dateFromField, dateToField];
         }
-        return [statusField, expenseCategoryField, millField, millNameField, refNoField, frameNoField, techField, expenseDateFromField, expenseDateToField, createdDateFromField, createdDateToField];
+        return [statusField, expenseCategoryField, millField, refNoField, frameNoField, techField, expenseDateFromField, expenseDateToField, createdDateFromField, createdDateToField];
     }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData, customersData, materialsData, filterOptionsData]);
 
     const filterActiveValues: Record<string, string> = {

@@ -74,8 +74,8 @@ const getWarrantyColors = (type: string) => {
   switch (type) {
     case "Under Warranty":
       return "bg-emerald-500/8 text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
-    case "Expired":
-      return "bg-rose-500/8 text-rose-600 dark:text-rose-400 border-rose-500/30";
+    case "Under AMC":
+      return "bg-amber-500/8 text-amber-600 dark:text-amber-400 border-amber-500/30";
     default:
       return "bg-gray-500/8 text-gray-500 dark:text-gray-400 border-gray-500/30";
   }
@@ -84,7 +84,7 @@ const getWarrantyColors = (type: string) => {
 const getWarrantyDot = (type: string) => {
   switch (type) {
     case "Under Warranty": return "bg-emerald-500";
-    case "Expired": return "bg-rose-500";
+    case "Under AMC": return "bg-amber-500";
     default: return "bg-gray-400";
   }
 };
@@ -111,7 +111,6 @@ const filterFields: FilterField[] = [
       { value: "Under Warranty", label: "Under Warranty", iconColor: "bg-emerald-500", animatePulse: true },
       { value: "Under AMC", label: "Under AMC", iconColor: "bg-amber-500" },
       { value: "Non Warranty", label: "Non Warranty", iconColor: "bg-gray-400" },
-      { value: "Expired", label: "Expired", iconColor: "bg-rose-500" },
     ],
   },
   {
@@ -275,10 +274,10 @@ export default function MasterMillsPage() {
                 variant="outline"
                 className={cn(
                   "rounded-md font-bold text-[10px] uppercase tracking-[0.1em] px-2 py-0.5 shadow-sm",
-                  getWarrantyColors(viewMillData.all_warranty || "Non Warranty")
+                  getWarrantyColors(viewMillData.all_warranty === "Expired" ? "Non Warranty" : (viewMillData.all_warranty || "Non Warranty"))
                 )}
               >
-                {viewMillData.all_warranty || "Non Warranty"}
+                {viewMillData.all_warranty === "Expired" ? "Non Warranty" : (viewMillData.all_warranty || "Non Warranty")}
               </Badge>
             ),
             icon: ShieldCheck,
@@ -527,7 +526,8 @@ export default function MasterMillsPage() {
         const totalMonths = (months > 0 ? months : years * 12);
         const period = totalMonths > 0 ? `${totalMonths} Months` : null;
 
-        const type = row.original.all_warranty || "Non Warranty";
+        const rawType = row.original.all_warranty || "Non Warranty";
+        const type = (rawType === "Expired" || rawType === "Non Warranty") ? "Non Warranty" : rawType;
         const millId = row.original.id;
         const expired = isExpired(row.original.warranty_closing_date);
         const closingDate = formatDateSafe(row.original.warranty_closing_date);
@@ -546,13 +546,6 @@ export default function MasterMillsPage() {
             border: "border-amber-200 dark:border-amber-800/50",
             text: "text-amber-700 dark:text-amber-400",
             dot: "bg-amber-500",
-            pulse: false,
-          },
-          "Expired": {
-            bg: "bg-rose-50 dark:bg-rose-950/40",
-            border: "border-rose-200 dark:border-rose-800/50",
-            text: "text-rose-600 dark:text-rose-400",
-            dot: "bg-rose-500",
             pulse: false,
           },
           "Non Warranty": {
