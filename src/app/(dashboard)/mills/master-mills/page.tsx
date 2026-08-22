@@ -300,7 +300,7 @@ export default function MasterMillsPage() {
           {
             label: "Warranty Closing Date",
             value:
-              (viewMillData.warranty_start_date || viewMillData.installation_date) && viewMillData.warranty_closing_date ? (
+              viewMillData.warranty_start_date && viewMillData.warranty_closing_date ? (
                 <span
                   className={cn(
                     "font-bold",

@@ -311,7 +311,7 @@ export function MasterMillFormDrawer() {
   const watchedWarrantyMonths = watch('warranty_months');
 
   React.useEffect(() => {
-    const baseDate = watchedWarrantyStartDate || watchedInstallationDate;
+    const baseDate = watchedWarrantyStartDate;
     if (baseDate) {
       const date = new Date(baseDate);
       if (!isNaN(date.getTime())) {
@@ -324,7 +324,7 @@ export function MasterMillFormDrawer() {
     } else {
       setValue('warranty_closing_date', '');
     }
-  }, [watchedInstallationDate, watchedWarrantyStartDate, watchedWarrantyMonths, setValue]);
+  }, [watchedWarrantyStartDate, watchedWarrantyMonths, setValue]);
 
   // Dynamic auto-calculation of AMC Closing Date
   const watchedAmcStartingDate = watch('amc_starting_date');
