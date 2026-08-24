@@ -324,15 +324,12 @@ export function MobileSimulationModal({
         )
       : selectedStore.remarks;
 
-    const shouldSetInProgress = courierName.trim() !== "" && trackingId.trim() !== "";
-
     try {
       const res: any = await updateStoreMutation.mutateAsync({
         id: selectedStore.id,
         provider_name: courierName || undefined,
         invoice_number: trackingId || undefined,
         remarks: newRemarks || undefined,
-        ...(shouldSetInProgress ? { return_status: "In Progress" } : {}),
       });
       const updatedStoreObj = res?.after || res;
       if (updatedStoreObj && updatedStoreObj.id) {
@@ -361,11 +358,7 @@ export function MobileSimulationModal({
         });
       }
 
-      if (shouldSetInProgress) {
-        toast.success("Store record saved! Status changed to In Progress.");
-      } else {
-        toast.success("Store record and barcode used status saved to database!");
-      }
+      toast.success("Store record and barcode used status saved to database!");
     } catch (error) {
       // error handled by mutation toast
     }
