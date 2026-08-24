@@ -1118,15 +1118,6 @@ export default function ReportsPage() {
                 <span className="font-mono text-xs text-gray-600 dark:text-gray-400">{row.original.barcode || "—"}</span>
             ),
         },
-        {
-            accessorKey: "created_at",
-            header: "Created At",
-            cell: ({ row }) => (
-                <span className="text-gray-500 dark:text-gray-400">
-                    {row.original.created_at ? format(new Date(row.original.created_at), "dd-MM-yyyy") : "—"}
-                </span>
-            ),
-        },
     ];
 
     // 6. Mills Report Columns
@@ -1632,6 +1623,7 @@ export default function ReportsPage() {
                 {/* Paginated Reports Data Table */}
                 <div className="pt-2">
                     <DataTable
+                        key={activeTab}
                         columns={currentColumns as any}
                         data={reportsData as any}
                         loading={isReportsLoading || isRefreshing}
