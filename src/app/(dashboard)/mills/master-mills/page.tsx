@@ -122,10 +122,16 @@ const filterFields: FilterField[] = [
     ],
   },
   {
-    id: "dateRange",
-    label: "Installation Date",
-    type: "date-range",
-    placeholder: "Select date range...",
+    id: "dateFrom",
+    label: "Invoice Date From",
+    type: "date",
+    placeholder: "Invoice Date From",
+  },
+  {
+    id: "dateTo",
+    label: "Invoice Date To",
+    type: "date",
+    placeholder: "Invoice Date To",
   },
 ];
 
@@ -788,24 +794,14 @@ export default function MasterMillsPage() {
           activeValues={{
             all_warranty: warrantyFilter || "ALL",
             state: stateFilter || "ALL",
-            dateRange: dateFrom && dateTo ? JSON.stringify({ startDate: dateFrom, endDate: dateTo, label: "Custom Range" }) : "",
+            dateFrom: dateFrom || "",
+            dateTo: dateTo || "",
           }}
           onApply={(values) => {
             setWarrantyFilter(values.all_warranty === "ALL" ? "" : values.all_warranty);
             setStateFilter(values.state === "ALL" ? "" : values.state);
-            if (values.dateRange) {
-              try {
-                const range = JSON.parse(values.dateRange);
-                setDateFrom(range.startDate || "");
-                setDateTo(range.endDate || range.startDate || "");
-              } catch {
-                setDateFrom("");
-                setDateTo("");
-              }
-            } else {
-              setDateFrom("");
-              setDateTo("");
-            }
+            setDateFrom(values.dateFrom || "");
+            setDateTo(values.dateTo || "");
           }}
           onReset={() => {
             setWarrantyFilter("");
