@@ -850,7 +850,7 @@ export default function ReportsPage() {
         },
         {
             accessorKey: "visit_date",
-            header: "Visit Date",
+            header: "Expense Date",
             cell: ({ row }) => (
                 <span className="text-gray-700 dark:text-gray-300 font-semibold">
                     {row.original.visit_date ? format(new Date(row.original.visit_date), "dd-MM-yyyy") : "—"}

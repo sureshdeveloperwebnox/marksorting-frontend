@@ -103,15 +103,10 @@ const masterMillSchema = z.object({
   address: z.string().optional().or(z.literal('')),
   place: z.string().optional().or(z.literal('')),
   state: z.string().optional().or(z.literal('')),
-  phone_no: z
-    .string()
-    .optional()
-    .refine((val) => !val || isValidPhoneNumber(val), {
-      message: 'Please enter a valid phone number',
-    }),
+  phone_no: z.string().optional().or(z.literal('')),
   mc_model: z.string().optional().or(z.literal('')),
   frame_no: z.string().optional().or(z.literal('')),
-  mfg_date: z.string().min(1, 'Manufacturing date is required'),
+  mfg_date: z.string().optional().or(z.literal('')),
   warranty_years: z.coerce.number().min(0).optional(),
   warranty_months: z.coerce.number().min(0).optional(),
   installation_date: z.string().optional().or(z.literal('')),
@@ -526,6 +521,16 @@ export function MasterMillFormDrawer() {
     }
   };
 
+  const onFormError = (fieldErrors: any) => {
+    console.error('Master Mill form validation errors:', fieldErrors);
+    const keys = Object.keys(fieldErrors);
+    if (keys.length > 0) {
+      const firstKey = keys[0];
+      const firstError = fieldErrors[firstKey];
+      toast.error(firstError?.message || `Please check ${firstKey.replace('_', ' ')}`);
+    }
+  };
+
   const isLoading = isEdit && recordLoading;
   const isSubmitting = isCreating || isUpdating;
 
@@ -565,7 +570,7 @@ export function MasterMillFormDrawer() {
           ) : (
             <form
               id="master-mill-form"
-              onSubmit={handleSubmit(onSubmit)}
+              onSubmit={handleSubmit(onSubmit, onFormError)}
               className="space-y-1"
             >
 
@@ -798,7 +803,7 @@ export function MasterMillFormDrawer() {
                 <div className="space-y-2 col-span-2 sm:col-span-1">
                   <FieldLabel>
                     <Calendar size={12} />
-                    Mfg Date *
+                    Mfg Date
                   </FieldLabel>
                   <Controller
                     name="mfg_date"

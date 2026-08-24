@@ -480,16 +480,16 @@ export default function MasterMillsPage() {
       accessorKey: "mill",
       header: "Mill Name",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 max-w-[220px]">
+        <div className="flex items-center gap-2.5 max-w-[200px] min-w-0">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 dark:from-white/10 dark:to-white/5 flex items-center justify-center text-primary font-black text-xs border border-primary/10 flex-shrink-0">
             {(row.original.mill?.name || row.original.mc_model || "?").charAt(0)}
           </div>
-          <div className="min-w-0">
-            <p className="font-bold text-sm text-gray-900 dark:text-white truncate">
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-sm text-gray-900 dark:text-white truncate" title={row.original.mill?.name || undefined}>
               {row.original.mill?.name || <span className="text-gray-400">—</span>}
             </p>
             {row.original.place && (
-              <p className="text-[11px] text-gray-400 truncate">
+              <p className="text-[11px] text-gray-400 truncate" title={`${row.original.place}${row.original.state ? `, ${row.original.state}` : ""}`}>
                 {row.original.place}{row.original.state ? `, ${row.original.state}` : ""}
               </p>
             )}
@@ -501,12 +501,15 @@ export default function MasterMillsPage() {
       accessorKey: "mc_model",
       header: "MC Model",
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 max-w-[180px]">
-          <p className="font-bold text-sm text-gray-700 dark:text-gray-300 leading-tight">
+        <div className="flex flex-col gap-1 max-w-[220px] min-w-0">
+          <p
+            className="font-bold text-sm text-gray-700 dark:text-gray-300 leading-snug break-words"
+            title={row.original.mc_model || undefined}
+          >
             {row.original.mc_model || "—"}
           </p>
           {row.original.frame_no && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50">
                 <Hash className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />
                 <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 leading-none">
@@ -560,7 +563,7 @@ export default function MasterMillsPage() {
         const cfg = typeConfig[type as keyof typeof typeConfig] ?? typeConfig["Non Warranty"];
 
         return (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-[150px] max-w-[180px]">
 
             {/* ── Warranty Type badge — label based value ── */}
             <div className={cn(
