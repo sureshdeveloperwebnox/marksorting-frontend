@@ -54,12 +54,14 @@ export function ExportReportDrawer({
     }
   }, [isOpen, initialDateFrom, initialDateTo]);
 
+  const isDateFilterOptional = activeTab === "master-mills";
+
   const handleExport = async () => {
-    if (!dateFrom || !dateTo) {
+    if (!isDateFilterOptional && (!dateFrom || !dateTo)) {
       toast.error("Please select both From Date and To Date to export reports");
       return;
     }
-    if (new Date(dateFrom) > new Date(dateTo)) {
+    if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
       toast.error("From Date cannot be after To Date");
       return;
     }
@@ -153,14 +155,21 @@ export function ExportReportDrawer({
 
           {/* Date Filter Fields */}
           <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70 dark:text-primary/60">
-              Date Range Filters
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70 dark:text-primary/60">
+                Date Range Filters {isDateFilterOptional && <span className="text-[10px] lowercase font-normal text-gray-400 dark:text-gray-500">(optional)</span>}
+              </h4>
+              {isDateFilterOptional && (
+                <span className="text-[11px] text-gray-400 dark:text-gray-500 italic">
+                  Leave blank to export all
+                </span>
+              )}
+            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  From Date
+                  From Date {isDateFilterOptional && <span className="text-gray-400 font-normal text-[10px]">(Optional)</span>}
                 </Label>
                 <DatePicker
                   value={dateFrom}
@@ -171,7 +180,7 @@ export function ExportReportDrawer({
 
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  To Date
+                  To Date {isDateFilterOptional && <span className="text-gray-400 font-normal text-[10px]">(Optional)</span>}
                 </Label>
                 <DatePicker
                   value={dateTo}
