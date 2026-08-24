@@ -490,6 +490,20 @@ export default function ReportsPage() {
             placeholder: "To Date",
         };
 
+        const invoiceDateFromField: FilterField = {
+            id: "dateFrom",
+            label: "Invoice Date From",
+            type: "date",
+            placeholder: "Invoice Date From",
+        };
+
+        const invoiceDateToField: FilterField = {
+            id: "dateTo",
+            label: "Invoice Date To",
+            type: "date",
+            placeholder: "Invoice Date To",
+        };
+
         const createdDateFromField: FilterField = {
             id: "createdDateFrom",
             label: "Created Date From",
@@ -520,7 +534,7 @@ export default function ReportsPage() {
 
         if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, refNoField, frameNoField, techField, createdDateFromField, createdDateToField];
         if (activeTab === "installations") return [statusField, millField, millNameField, refNoField, frameNoField, techField, createdDateFromField, createdDateToField];
-        if (activeTab === "master-mills") return [statusField, millField, millNameField, refNoField, frameNoField, createdDateFromField, createdDateToField];
+        if (activeTab === "master-mills") return [statusField, millField, millNameField, refNoField, frameNoField, invoiceDateFromField, invoiceDateToField];
         if (activeTab === "mills") {
             const customerField: FilterField = {
                 id: "storeCustomer",
@@ -826,10 +840,19 @@ export default function ReportsPage() {
             ),
         },
         {
+            accessorKey: "created_at",
+            header: "Created Date",
+            cell: ({ row }) => (
+                <span className="text-gray-500 dark:text-gray-400">
+                    {row.original.created_at ? format(new Date(row.original.created_at), "dd-MM-yyyy") : "—"}
+                </span>
+            ),
+        },
+        {
             accessorKey: "visit_date",
             header: "Visit Date",
             cell: ({ row }) => (
-                <span className="text-gray-500 dark:text-gray-400">
+                <span className="text-gray-700 dark:text-gray-300 font-semibold">
                     {row.original.visit_date ? format(new Date(row.original.visit_date), "dd-MM-yyyy") : "—"}
                 </span>
             ),
@@ -909,6 +932,15 @@ export default function ReportsPage() {
             ),
         },
         {
+            accessorKey: "invoice_date",
+            header: "Invoice Date",
+            cell: ({ row }) => (
+                <span className="text-gray-700 dark:text-gray-300 font-semibold">
+                    {row.original.invoice_date ? format(new Date(row.original.invoice_date), "dd-MM-yyyy") : "—"}
+                </span>
+            ),
+        },
+        {
             accessorKey: "mill.name",
             header: "Mill Name",
             cell: ({ row }) => (
@@ -977,6 +1009,15 @@ export default function ReportsPage() {
             cell: ({ row }) => (
                 <span className="font-mono text-xs font-bold text-primary dark:text-primary-foreground tracking-tight">
                     {row.original.store_number || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "created_at",
+            header: "Created Date",
+            cell: ({ row }) => (
+                <span className="text-gray-500 dark:text-gray-400">
+                    {row.original.created_at ? format(new Date(row.original.created_at), "dd-MM-yyyy") : "—"}
                 </span>
             ),
         },

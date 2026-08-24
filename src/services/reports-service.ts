@@ -40,6 +40,7 @@ export interface ReportsExpenseReport {
     place?: string;
     others?: string;
     visit_date: string;
+    created_at?: string;
     amount: string;
     admin_amount?: string;
     status: string;
