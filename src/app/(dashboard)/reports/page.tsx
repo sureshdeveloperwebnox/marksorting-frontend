@@ -218,6 +218,33 @@ export default function ReportsPage() {
     const [localSearch, setLocalSearch] = React.useState(search);
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
 
+    // Dynamic search placeholder based on active tab
+    const searchPlaceholder = React.useMemo(() => {
+        switch (activeTab) {
+            case "services":
+                return "Search report no, mill, model, frame no, technician...";
+            case "installations":
+                return "Search report no, mill, model, frame no, technician...";
+            case "expenses":
+                return "Search expense no, mill, category, technician, place...";
+            case "master-mills":
+                return "Search invoice no, ref/frame no, mill, model, place...";
+            case "stores":
+                return "Search store ID, frame no, customer, material, engineer...";
+            case "mills":
+                return "Search mill name, ref no, customer, place, phone...";
+            default:
+                return "Search logs...";
+        }
+    }, [activeTab]);
+
+    // Reset pagination to page 1 on search or tab change
+    React.useEffect(() => {
+        if (pagination.pageIndex !== 0) {
+            setPagination({ pageIndex: 0, pageSize: pagination.pageSize });
+        }
+    }, [search, activeTab, pagination.pageIndex, pagination.pageSize, setPagination]);
+
     // Debounce search input
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -581,11 +608,13 @@ export default function ReportsPage() {
             const warrantyStatusField: FilterField = {
                 id: "storeWarranty",
                 label: "Warranty Status",
-                placeholder: "All Warranty Statuses",
+                placeholder: "All Warranty",
                 options: [
-                    { value: "ALL", label: "All Warranty Statuses" },
-                    { value: "Under Warranty", label: "Under Warranty" },
-                    { value: "Out of Warranty", label: "Out of Warranty" },
+                    { value: "ALL", label: "All Warranty" },
+                    { value: "Warranty", label: "Warranty", iconColor: "bg-emerald-500" },
+                    { value: "Non Warranty", label: "Non Warranty", iconColor: "bg-rose-500" },
+                    { value: "AMC With Spare", label: "AMC With Spare", iconColor: "bg-teal-500" },
+                    { value: "AMC Without Spare", label: "AMC Without Spare", iconColor: "bg-amber-500" },
                 ],
             };
 
@@ -1552,11 +1581,21 @@ export default function ReportsPage() {
                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Search logs..."
+                                placeholder={searchPlaceholder}
                                 value={localSearch}
                                 onChange={(e) => setLocalSearch(e.target.value)}
-                                className="pl-10 pr-4 h-11 w-full bg-gray-50/50 dark:bg-white/5 border border-transparent rounded-xl text-sm font-semibold text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:bg-white dark:focus:bg-gray-900 focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all outline-none shadow-inner"
+                                className="pl-10 pr-9 h-11 w-full bg-gray-50/50 dark:bg-white/5 border border-transparent rounded-xl text-sm font-semibold text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:bg-white dark:focus:bg-gray-900 focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all outline-none shadow-inner"
                             />
+                            {localSearch && (
+                                <button
+                                    type="button"
+                                    onClick={() => setLocalSearch("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all cursor-pointer"
+                                    title="Clear search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
                         </div>
 
                         {/* Visit From Date */}
