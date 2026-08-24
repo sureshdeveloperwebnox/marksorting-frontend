@@ -192,6 +192,8 @@ export const useReportsServices = (params: {
     categoryId?: string;
     dateFrom?: string;
     dateTo?: string;
+    createdDateFrom?: string;
+    createdDateTo?: string;
     millId?: string;
     technicianId?: string;
     millName?: string;
@@ -215,6 +217,8 @@ export const useReportsInstallations = (params: {
     status?: string;
     dateFrom?: string;
     dateTo?: string;
+    createdDateFrom?: string;
+    createdDateTo?: string;
     millId?: string;
     technicianId?: string;
     millName?: string;
@@ -266,6 +270,8 @@ export const useReportsMasterMills = (params: {
     status?: string;
     dateFrom?: string;
     dateTo?: string;
+    createdDateFrom?: string;
+    createdDateTo?: string;
     millId?: string;
     millName?: string;
     frameNo?: string;
@@ -293,6 +299,8 @@ export const useReportsStores = (params: {
     inflowStatus?: string;
     dateFrom?: string;
     dateTo?: string;
+    createdDateFrom?: string;
+    createdDateTo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "stores", params],
@@ -315,6 +323,8 @@ export const useReportsMills = (params: {
     city?: string;
     dateFrom?: string;
     dateTo?: string;
+    createdDateFrom?: string;
+    createdDateTo?: string;
 }) => {
     return useQuery({
         queryKey: ["reports", "mills", params],

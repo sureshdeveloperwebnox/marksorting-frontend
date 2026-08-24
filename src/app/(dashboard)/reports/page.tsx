@@ -235,6 +235,8 @@ export default function ReportsPage() {
         categoryId: categoryFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        createdDateFrom: createdDateFrom || undefined,
+        createdDateTo: createdDateTo || undefined,
         millId: millFilter || undefined,
         technicianId: technicianFilter || undefined,
         millName: millNameFilter || undefined,
@@ -249,6 +251,8 @@ export default function ReportsPage() {
         status: statusFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        createdDateFrom: createdDateFrom || undefined,
+        createdDateTo: createdDateTo || undefined,
         millId: millFilter || undefined,
         technicianId: technicianFilter || undefined,
         millName: millNameFilter || undefined,
@@ -282,6 +286,8 @@ export default function ReportsPage() {
         status: statusFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        createdDateFrom: createdDateFrom || undefined,
+        createdDateTo: createdDateTo || undefined,
         millId: millFilter || undefined,
         millName: millNameFilter || undefined,
         frameNo: frameNoFilter || undefined,
@@ -300,6 +306,8 @@ export default function ReportsPage() {
         inflowStatus: storeInflowFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        createdDateFrom: createdDateFrom || undefined,
+        createdDateTo: createdDateTo || undefined,
     });
 
     const millsReportQuery = useReportsMills({
@@ -312,6 +320,8 @@ export default function ReportsPage() {
         place: millNameFilter || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        createdDateFrom: createdDateFrom || undefined,
+        createdDateTo: createdDateTo || undefined,
     });
 
     // Fetch categories + lookup data for filter drawer
@@ -332,6 +342,10 @@ export default function ReportsPage() {
         categoryFilter ||
         dateFrom ||
         dateTo ||
+        createdDateFrom ||
+        createdDateTo ||
+        expenseDateFrom ||
+        expenseDateTo ||
         millFilter ||
         technicianFilter ||
         millNameFilter ||
@@ -350,6 +364,10 @@ export default function ReportsPage() {
         technicianFilter,
         dateFrom,
         dateTo,
+        createdDateFrom,
+        createdDateTo,
+        expenseDateFrom,
+        expenseDateTo,
         millNameFilter,
         frameNoFilter,
         refNoFilter,
@@ -500,9 +518,9 @@ export default function ReportsPage() {
             placeholder: "Expense Date To",
         };
 
-        if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
-        if (activeTab === "installations") return [statusField, millField, millNameField, refNoField, frameNoField, techField, dateFromField, dateToField];
-        if (activeTab === "master-mills") return [statusField, millField, millNameField, refNoField, frameNoField, dateFromField, dateToField];
+        if (activeTab === "services") return [statusField, serviceCategoryField, millField, millNameField, refNoField, frameNoField, techField, createdDateFromField, createdDateToField];
+        if (activeTab === "installations") return [statusField, millField, millNameField, refNoField, frameNoField, techField, createdDateFromField, createdDateToField];
+        if (activeTab === "master-mills") return [statusField, millField, millNameField, refNoField, frameNoField, createdDateFromField, createdDateToField];
         if (activeTab === "mills") {
             const customerField: FilterField = {
                 id: "storeCustomer",
@@ -513,7 +531,7 @@ export default function ReportsPage() {
                     ...(customersData?.customers ?? []).map((c) => ({ value: c.id, label: c.name })),
                 ],
             };
-            return [statusField, customerField, refNoField, dateFromField, dateToField];
+            return [statusField, customerField, refNoField, createdDateFromField, createdDateToField];
         }
         if (activeTab === "stores") {
             const engineerField: FilterField = {
@@ -581,7 +599,7 @@ export default function ReportsPage() {
                 ],
             };
 
-            return [engineerField, customerField, materialField, warrantyStatusField, returnStatusField, inflowStatusField, dateFromField, dateToField];
+            return [engineerField, customerField, materialField, warrantyStatusField, returnStatusField, inflowStatusField, createdDateFromField, createdDateToField];
         }
         return [statusField, expenseCategoryField, millField, refNoField, frameNoField, techField, expenseDateFromField, expenseDateToField, createdDateFromField, createdDateToField];
     }, [activeTab, millsData, techniciansData, serviceCategoriesData, expenseCategoriesData, customersData, materialsData, filterOptionsData]);
@@ -945,27 +963,6 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-1.5 text-gray-500 font-medium text-xs">
                         <ShieldAlert size={14} />
                         Non Warranty
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: "status",
-            header: "Status",
-            cell: ({ row }) => {
-                const status = row.original.status;
-                const colors = status === "ACTIVE"
-                    ? "bg-emerald-500/5 dark:bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-400/20"
-                    : "bg-gray-500/5 dark:bg-gray-500/10 text-gray-500 dark:text-gray-400 border-gray-500/20 dark:border-gray-400/20";
-                const dot = status === "ACTIVE"
-                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                    : "bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.5)]";
-                return (
-                    <div className="flex items-center gap-2 select-none">
-                        <div className={cn("w-1.5 h-1.5 rounded-full", dot)} />
-                        <Badge variant="outline" className={cn("rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm", colors)}>
-                            {status}
-                        </Badge>
                     </div>
                 );
             },
@@ -1649,6 +1646,10 @@ export default function ReportsPage() {
                             categoryId: categoryFilter || undefined,
                             dateFrom: from || undefined,
                             dateTo: to || undefined,
+                            createdDateFrom: createdDateFrom || undefined,
+                            createdDateTo: createdDateTo || undefined,
+                            expenseDateFrom: expenseDateFrom || undefined,
+                            expenseDateTo: expenseDateTo || undefined,
                             millId: millFilter || undefined,
                             technicianId: technicianFilter || undefined,
                             millName: millNameFilter || undefined,
