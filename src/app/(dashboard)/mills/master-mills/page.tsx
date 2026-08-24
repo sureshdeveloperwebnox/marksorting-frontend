@@ -467,17 +467,12 @@ export default function MasterMillsPage() {
               </span>
             </div>
           )}
-          {row.original.invoice_date ? (
+          {row.original.invoice_date && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/50 text-[10px] font-bold text-gray-600 dark:text-gray-400 w-fit">
               <Calendar className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
               {formatDateSafe(row.original.invoice_date)}
             </span>
-          ) : row.original.created_at ? (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/50 text-[10px] font-bold text-sky-600 dark:text-sky-400 w-fit">
-              <Clock className="w-2.5 h-2.5 flex-shrink-0 text-sky-400" />
-              {formatDateSafe(row.original.created_at)}
-            </span>
-          ) : null}
+          )}
         </div>
       ),
     },
