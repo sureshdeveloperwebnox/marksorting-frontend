@@ -128,6 +128,7 @@ const getInflowDotColors = (status: string) => {
 
 
 
+
 /* ─── Page ──────────────────────────────────────────────────────── */
 
 export default function StoresPage() {
@@ -643,41 +644,6 @@ export default function StoresPage() {
               </Badge>
             ),
             icon: ShieldAlert,
-          },
-          {
-            label: "Stock Status",
-            value: (
-              <div className="flex items-center gap-1.5">
-                <div className={cn("w-2 h-2 rounded-full", getInflowDotColors(viewStoreData.inflow_status))} />
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-                    getInflowColors(viewStoreData.inflow_status)
-                  )}
-                >
-                  {viewStoreData.inflow_status}
-                </Badge>
-              </div>
-            ),
-            icon: StoreIcon,
-          },
-          {
-            label: "Stock Type",
-            value: (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-md font-semibold text-[10px] uppercase px-2 py-0.5 shadow-sm",
-                  viewStoreData.stock_type === "From Store"
-                    ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
-                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                )}
-              >
-                {viewStoreData.stock_type || "Inflow"}
-              </Badge>
-            ),
-            icon: Package,
           },
           ...(viewStoreData.provider_name ? [{
             label: "Courier Service",
