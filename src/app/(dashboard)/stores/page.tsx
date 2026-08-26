@@ -1115,7 +1115,7 @@ export default function StoresPage() {
               {storeNum}
             </span>
             {createdAt && (
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">
+              <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 tracking-tight whitespace-nowrap">
                 {format(new Date(createdAt), "dd-MM-yyyy")}
               </span>
             )}
