@@ -174,15 +174,22 @@ export default function StoresPage() {
   // Apply filters from URL query param (set when navigating from Dashboard or other views)
   const searchParams = useSearchParams();
   React.useEffect(() => {
-    const qDateFrom = searchParams.get("dateFrom");
+    const qDateFrom =
+      searchParams.get("dateFrom") ||
+      searchParams.get("startDate") ||
+      searchParams.get("start_date");
     if (qDateFrom) {
       setDateFrom(qDateFrom);
     }
-    const qDateTo = searchParams.get("dateTo");
+    const qDateTo =
+      searchParams.get("dateTo") ||
+      searchParams.get("endDate") ||
+      searchParams.get("end_date");
     if (qDateTo) {
       setDateTo(qDateTo);
     }
-    const qReturnStatus = searchParams.get("return_status");
+    const qReturnStatus =
+      searchParams.get("return_status") || searchParams.get("returnStatus");
     if (qReturnStatus) {
       setReturnFilter(qReturnStatus);
     }
@@ -1041,11 +1048,41 @@ export default function StoresPage() {
     },
   ], [techniciansData, customersData]);
 
-  const dateRangeValue: DateRangeValue = React.useMemo(() => ({
-    startDate: dateFrom || "",
-    endDate: dateTo || "",
-    label: dateFrom && dateTo ? "Custom Range" : "",
-  }), [dateFrom, dateTo]);
+  const dateRangeValue: DateRangeValue = React.useMemo(() => {
+    let label = "";
+    if (dateFrom && dateTo) {
+      if (dateFrom === dateTo) {
+        try {
+          label = format(new Date(dateFrom), "dd MMM yyyy");
+        } catch {
+          label = dateFrom;
+        }
+      } else {
+        try {
+          label = `${format(new Date(dateFrom), "dd MMM")} - ${format(new Date(dateTo), "dd MMM yyyy")}`;
+        } catch {
+          label = `${dateFrom} - ${dateTo}`;
+        }
+      }
+    } else if (dateFrom) {
+      try {
+        label = `From ${format(new Date(dateFrom), "dd MMM yyyy")}`;
+      } catch {
+        label = `From ${dateFrom}`;
+      }
+    } else if (dateTo) {
+      try {
+        label = `Until ${format(new Date(dateTo), "dd MMM yyyy")}`;
+      } catch {
+        label = `Until ${dateTo}`;
+      }
+    }
+    return {
+      startDate: dateFrom || "",
+      endDate: dateTo || "",
+      label,
+    };
+  }, [dateFrom, dateTo]);
 
   const handleDateRangeChange = (val: DateRangeValue) => {
     setDateFrom(val.startDate || "");
@@ -1069,11 +1106,22 @@ export default function StoresPage() {
     {
       accessorKey: "store_number",
       header: "Store ID",
-      cell: ({ row }) => (
-        <span className="font-mono text-xs font-bold text-primary dark:text-primary-foreground tracking-tight">
-          {row.original.store_number || "—"}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const storeNum = row.original.store_number || "—";
+        const createdAt = row.original.created_at;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-mono text-xs font-bold text-primary dark:text-primary-foreground tracking-tight">
+              {storeNum}
+            </span>
+            {createdAt && (
+              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">
+                {format(new Date(createdAt), "dd-MM-yyyy")}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "ref_no",
@@ -1278,7 +1326,10 @@ export default function StoresPage() {
     setInflowFilter(values.inflow_status === "ALL" ? "" : values.inflow_status || "");
     if (values.dateRange) {
       try {
-        const range = JSON.parse(values.dateRange);
+        const range =
+          typeof values.dateRange === "string"
+            ? JSON.parse(values.dateRange)
+            : values.dateRange;
         setDateFrom(range.startDate || "");
         setDateTo(range.endDate || range.startDate || "");
       } catch {
