@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Upload, Download, FileSpreadsheet, CheckCircle2, AlertCircle, X, Columns3 } from 'lucide-react'
+import { Upload, Download, FileSpreadsheet, CheckCircle2, AlertCircle, X, Columns3, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -107,16 +107,16 @@ function UploadStep({ templateEndpoint, previewEndpoint, onPreviewReady }: Uploa
         uploadPreviewMutation.mutate(selectedFile, {
             onSuccess: (data) => {
                 const rowCount = data.totalRows || data.rows?.length || 0
-                if (rowCount > 5000) {
-                    setSizeError('We cannot handle more than 5000 rows, so kindly separate and upload.')
+                if (rowCount > 25000) {
+                    setSizeError('We cannot handle more than 25,000 rows, so kindly separate and upload.')
                     return
                 }
                 onPreviewReady(data)
             },
             onError: (err: any) => {
                 const msg = err.response?.data?.message || err.message
-                if (msg && msg.toLowerCase().includes('5000')) {
-                    setSizeError('We cannot handle more than 5000 rows, so kindly separate and upload.')
+                if (msg && (msg.toLowerCase().includes('25000') || msg.toLowerCase().includes('5000'))) {
+                    setSizeError('We cannot handle more than 25,000 rows in a single file, so kindly separate and upload.')
                 } else if (msg) {
                     setSizeError(msg)
                 }
@@ -270,6 +270,8 @@ function PreviewStep({
     onCancel,
 }: PreviewStepProps) {
     const [activeTab, setActiveTab] = useState<PreviewTab>('all')
+    const [currentPage, setCurrentPage] = useState<number>(1)
+    const [pageSize, setPageSize] = useState<number>(50)
     const [visibleKeys, setVisibleKeys] = useState<Set<string>>(
         () => new Set(columnConfig.map((c) => c.key as string)),
     )
@@ -299,6 +301,18 @@ function PreviewStep({
                 ? rows.filter((r) => !r.isValid)
                 : rows
 
+    // Pagination computations
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
+    const safePage = Math.min(Math.max(1, currentPage), totalPages)
+    const startIndex = (safePage - 1) * pageSize
+    const endIndex = Math.min(startIndex + pageSize, filteredRows.length)
+    const pagedRows = filteredRows.slice(startIndex, endIndex)
+
+    const handleTabChange = (tab: PreviewTab) => {
+        setActiveTab(tab)
+        setCurrentPage(1)
+    }
+
     const visibleColumns = columnConfig.filter((c) => visibleKeys.has(c.key as string))
 
     const toggleColumn = (key: string) => {
@@ -326,7 +340,7 @@ function PreviewStep({
         [
             'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer',
             activeTab === tab
-                ? 'bg-primary text-white'
+                ? 'bg-primary text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5',
         ].join(' ')
 
@@ -439,25 +453,44 @@ function PreviewStep({
                 </div>
             )}
 
-            {/* Tab bar */}
-            <div className="flex gap-1">
-                <button type="button" className={tabClass('all')} onClick={() => setActiveTab('all')}>
-                    All Rows
-                </button>
-                <button type="button" className={tabClass('valid')} onClick={() => setActiveTab('valid')}>
-                    Valid Rows Only
-                </button>
-                <button type="button" className={tabClass('errors')} onClick={() => setActiveTab('errors')}>
-                    Errors Only
-                </button>
+            {/* Tab bar and Page Size Selector */}
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex gap-1">
+                    <button type="button" className={tabClass('all')} onClick={() => handleTabChange('all')}>
+                        All Rows ({rows.length})
+                    </button>
+                    <button type="button" className={tabClass('valid')} onClick={() => handleTabChange('valid')}>
+                        Valid Rows ({validCount})
+                    </button>
+                    <button type="button" className={tabClass('errors')} onClick={() => handleTabChange('errors')}>
+                        Errors ({invalidCount})
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span>Rows per page:</span>
+                    <select
+                        value={pageSize}
+                        onChange={(e) => {
+                            setPageSize(Number(e.target.value))
+                            setCurrentPage(1)
+                        }}
+                        className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-md px-2 py-1 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={250}>250</option>
+                    </select>
+                </div>
             </div>
 
             {/* Table */}
-            <div className="overflow-auto max-h-[55vh] rounded-xl border border-gray-100 dark:border-white/5">
+            <div className="overflow-auto max-h-[50vh] rounded-xl border border-gray-100 dark:border-white/5">
                 <table className="w-full text-xs border-collapse min-w-max">
                     <thead className="sticky top-0 bg-gray-50 dark:bg-gray-900 z-10">
                         <tr>
-                            <th className="px-2 py-2 text-left font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-white/5 w-10">
+                            <th className="px-2 py-2 text-left font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-white/5 w-12">
                                 #
                             </th>
                             {visibleColumns.map((col) => (
@@ -472,7 +505,7 @@ function PreviewStep({
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredRows.map((row) => (
+                        {pagedRows.map((row) => (
                             <tr
                                 key={row.rowIndex}
                                 className={
@@ -481,7 +514,7 @@ function PreviewStep({
                                         : 'hover:bg-red-50/50 dark:hover:bg-red-950/10'
                                 }
                             >
-                                <td className="px-2 py-1.5 text-gray-400 border-b border-gray-50 dark:border-white/3">
+                                <td className="px-2 py-1.5 text-gray-400 border-b border-gray-50 dark:border-white/3 font-mono text-[11px]">
                                     {row.rowIndex + 1}
                                 </td>
                                 {visibleColumns.map((col) => {
@@ -516,7 +549,7 @@ function PreviewStep({
                                 })}
                             </tr>
                         ))}
-                        {filteredRows.length === 0 && (
+                        {pagedRows.length === 0 && (
                             <tr>
                                 <td
                                     colSpan={visibleColumns.length + 1}
@@ -530,8 +563,63 @@ function PreviewStep({
                 </table>
             </div>
 
+            {/* Pagination Controls Toolbar */}
+            {filteredRows.length > 0 && (
+                <div className="flex items-center justify-between px-1 py-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div>
+                        Showing <strong className="font-semibold text-gray-700 dark:text-gray-200">{startIndex + 1}</strong> to{' '}
+                        <strong className="font-semibold text-gray-700 dark:text-gray-200">{endIndex}</strong> of{' '}
+                        <strong className="font-semibold text-gray-700 dark:text-gray-200">{filteredRows.length}</strong> rows
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            disabled={safePage <= 1}
+                            onClick={() => setCurrentPage(1)}
+                            className="p-1 rounded-md border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none"
+                            title="First page"
+                        >
+                            <ChevronsLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={safePage <= 1}
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            className="p-1 rounded-md border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none"
+                            title="Previous page"
+                        >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+
+                        <span className="px-2 font-medium">
+                            Page <strong className="text-gray-800 dark:text-gray-100">{safePage}</strong> of {totalPages}
+                        </span>
+
+                        <button
+                            type="button"
+                            disabled={safePage >= totalPages}
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            className="p-1 rounded-md border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none"
+                            title="Next page"
+                        >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={safePage >= totalPages}
+                            onClick={() => setCurrentPage(totalPages)}
+                            className="p-1 rounded-md border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none"
+                            title="Last page"
+                        >
+                            <ChevronsRight className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Actions */}
-            <div className="flex items-center justify-between gap-3 mt-1">
+            <div className="flex items-center justify-between gap-3 mt-1 pt-2 border-t border-gray-100 dark:border-white/5">
                 <Button variant="outline" size="sm" onClick={onCancel}>
                     Cancel
                 </Button>
@@ -540,7 +628,7 @@ function PreviewStep({
                     data-testid="import-button"
                     disabled={validCount === 0 || confirmImportMutation.isPending}
                     onClick={handleImport}
-                    className="gap-2"
+                    className="gap-2 bg-primary hover:bg-primary/90 text-white font-medium"
                 >
                     {confirmImportMutation.isPending ? (
                         <>
@@ -548,7 +636,7 @@ function PreviewStep({
                             Starting…
                         </>
                     ) : (
-                        `Import Valid Rows Only (${validCount})`
+                        `Import Valid Rows (${validCount})`
                     )}
                 </Button>
             </div>
