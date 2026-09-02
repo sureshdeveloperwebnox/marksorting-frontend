@@ -146,6 +146,14 @@ export function MillFormDrawer() {
   const onSubmit: SubmitHandler<MillFormValues> = async (data) => {
     const payload = {
       ...data,
+      email: data.email || undefined,
+      ref_no: data.ref_no || undefined,
+      address: data.address || undefined,
+      place: data.place || undefined,
+      city: data.city || undefined,
+      phone: data.phone || undefined,
+      phone_2: data.phone_2 || undefined,
+      phone_3: data.phone_3 || undefined,
       customer_id: data.customer_id || undefined,
     };
     try {
@@ -223,6 +231,7 @@ export function MillFormDrawer() {
                   <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                     <Mail size={14} className="text-primary/70" />
                     Email Address
+                    <span className="text-gray-400 font-normal normal-case tracking-normal text-[11px]">(Optional)</span>
                   </Label>
                   <Input
                     {...register('email')}

@@ -7,11 +7,11 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:4010/api/v1/:path*';
+    const backendBase = process.env.BACKEND_API_URL || 'http://localhost:4010';
     return [
       {
         source: '/api/v1/:path*',
-        destination: backendUrl,
+        destination: `${backendBase}/api/v1/:path*`,
       },
     ];
   },

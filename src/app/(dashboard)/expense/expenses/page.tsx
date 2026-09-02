@@ -892,7 +892,7 @@ export default function ExpensesPage() {
               <PageFilterToolbar
                 searchValue={localSearch}
                 onSearchChange={setLocalSearch}
-                searchPlaceholder="Search expenses..."
+                searchPlaceholder="Search by expense no, mill, engineer..."
                 dateRangePicker={
                   <DateRangePicker
                     value={dateRangeValue}
