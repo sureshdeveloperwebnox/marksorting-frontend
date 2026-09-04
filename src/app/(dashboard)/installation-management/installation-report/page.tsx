@@ -609,15 +609,30 @@ export default function InstallationReportPage() {
             label: "Running Channel Combination",
             value:
               viewReportData.running_channel_combination !== undefined && viewReportData.running_channel_combination !== null
-                ? String(viewReportData.running_channel_combination)
+                ? `${viewReportData.running_channel_combination} Active Channel${viewReportData.running_channel_combination > 1 ? 's' : ''}`
                 : "—",
             icon: Gauge,
           },
           {
             label: "Running Channel Combination Value",
-            value: viewReportData.running_channel_combination_value
-              ? viewReportData.running_channel_combination_value.replace(/_/g, " ")
-              : "—",
+            value: (() => {
+              const val = viewReportData.running_channel_combination_value;
+              if (!val) return "—";
+              try {
+                const parsed = JSON.parse(val);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  return parsed
+                    .map((item: any) => {
+                      const ch = item.channel ?? item.key ?? "";
+                      const v = (item.value || "").replace(/_/g, " ");
+                      return ch ? `Ch ${ch} (${v})` : v;
+                    })
+                    .filter(Boolean)
+                    .join(", ");
+                }
+              } catch {}
+              return val.replace(/_/g, " ");
+            })(),
             icon: Settings,
           },
           {

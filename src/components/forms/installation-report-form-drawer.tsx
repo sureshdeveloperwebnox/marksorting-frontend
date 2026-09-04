@@ -42,6 +42,7 @@ import {
   RotateCcw,
   CheckCircle2,
   XCircle,
+  X,
 } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -116,12 +117,131 @@ const RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS = [
   { value: 'SPLIT', label: 'Split' },
 ] as const;
 
-type RunningChannelCombinationValueOption = (typeof RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS)[number]['value'];
+export type RunningChannelCombinationValueOption = (typeof RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS)[number]['value'];
 
-const normalizeRunningChannelCombinationValue = (value?: string | null | undefined): RunningChannelCombinationValueOption | '' => {
+export const CHANNEL_ROLE_METADATA: Record<
+  RunningChannelCombinationValueOption,
+  {
+    label: string;
+    bgBadge: string;
+    textBadge: string;
+    borderBadge: string;
+    dotColor: string;
+    cardBorder: string;
+    cardBg: string;
+    buttonHover: string;
+  }
+> = {
+  PRIMARY: {
+    label: 'Primary',
+    bgBadge: 'bg-emerald-50 dark:bg-emerald-950/60',
+    textBadge: 'text-emerald-700 dark:text-emerald-300',
+    borderBadge: 'border-emerald-200 dark:border-emerald-800/80',
+    dotColor: 'bg-emerald-500',
+    cardBorder: 'border-emerald-500/80 dark:border-emerald-600/80',
+    cardBg: 'bg-emerald-50/30 dark:bg-emerald-950/20',
+    buttonHover: 'hover:border-emerald-500 hover:bg-emerald-500 hover:text-white',
+  },
+  SECONDARY: {
+    label: 'Secondary',
+    bgBadge: 'bg-blue-50 dark:bg-blue-950/60',
+    textBadge: 'text-blue-700 dark:text-blue-300',
+    borderBadge: 'border-blue-200 dark:border-blue-800/80',
+    dotColor: 'bg-blue-500',
+    cardBorder: 'border-blue-500/80 dark:border-blue-600/80',
+    cardBg: 'bg-blue-50/30 dark:bg-blue-950/20',
+    buttonHover: 'hover:border-blue-500 hover:bg-blue-500 hover:text-white',
+  },
+  REJECTION_1: {
+    label: 'Rejection 1',
+    bgBadge: 'bg-amber-50 dark:bg-amber-950/60',
+    textBadge: 'text-amber-700 dark:text-amber-300',
+    borderBadge: 'border-amber-200 dark:border-amber-800/80',
+    dotColor: 'bg-amber-500',
+    cardBorder: 'border-amber-500/80 dark:border-amber-600/80',
+    cardBg: 'bg-amber-50/30 dark:bg-amber-950/20',
+    buttonHover: 'hover:border-amber-500 hover:bg-amber-500 hover:text-white',
+  },
+  REJECTION_2: {
+    label: 'Rejection 2',
+    bgBadge: 'bg-rose-50 dark:bg-rose-950/60',
+    textBadge: 'text-rose-700 dark:text-rose-300',
+    borderBadge: 'border-rose-200 dark:border-rose-800/80',
+    dotColor: 'bg-rose-500',
+    cardBorder: 'border-rose-500/80 dark:border-rose-600/80',
+    cardBg: 'bg-rose-50/30 dark:bg-rose-950/20',
+    buttonHover: 'hover:border-rose-500 hover:bg-rose-500 hover:text-white',
+  },
+  SPLIT: {
+    label: 'Split',
+    bgBadge: 'bg-purple-50 dark:bg-purple-950/60',
+    textBadge: 'text-purple-700 dark:text-purple-300',
+    borderBadge: 'border-purple-200 dark:border-purple-800/80',
+    dotColor: 'bg-purple-500',
+    cardBorder: 'border-purple-500/80 dark:border-purple-600/80',
+    cardBg: 'bg-purple-50/30 dark:bg-purple-950/20',
+    buttonHover: 'hover:border-purple-500 hover:bg-purple-500 hover:text-white',
+  },
+};
+
+export interface ChannelCombinationEntry {
+  channel: number;
+  value: RunningChannelCombinationValueOption;
+}
+
+export const normalizeRunningChannelCombinationValue = (value?: string | null | undefined): RunningChannelCombinationValueOption | '' => {
   return RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.some((option) => option.value === value)
     ? (value as RunningChannelCombinationValueOption)
     : '';
+};
+
+export const parseChannelCombinations = (
+  rawVal?: string | null,
+  rawCountOrIndex?: number | null
+): ChannelCombinationEntry[] => {
+  if (!rawVal && !rawCountOrIndex) return [];
+  if (rawVal) {
+    try {
+      const parsed = JSON.parse(rawVal);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+          .filter((item) => item && typeof item.channel === 'number')
+          .map((item) => ({
+            channel: Number(item.channel),
+            value: (normalizeRunningChannelCombinationValue(item.value) || 'PRIMARY') as RunningChannelCombinationValueOption,
+          }))
+          .sort((a, b) => a.channel - b.channel);
+      }
+    } catch {
+      // not json
+    }
+    // Check if comma-separated / colon format: e.g. "1:PRIMARY, 7:SECONDARY"
+    if (rawVal.includes(':') || rawVal.includes(',')) {
+      const entries: ChannelCombinationEntry[] = [];
+      rawVal.split(',').forEach((part) => {
+        const [ch, v] = part.split(':').map((s) => s.trim());
+        const chNum = Number(ch);
+        if (chNum >= 1 && chNum <= 12) {
+          entries.push({
+            channel: chNum,
+            value: (normalizeRunningChannelCombinationValue(v) || 'PRIMARY') as RunningChannelCombinationValueOption,
+          });
+        }
+      });
+      if (entries.length > 0) {
+        return entries.sort((a, b) => a.channel - b.channel);
+      }
+    }
+    // Legacy single value with channel
+    const singleNorm = normalizeRunningChannelCombinationValue(rawVal);
+    if (singleNorm && rawCountOrIndex && rawCountOrIndex >= 1 && rawCountOrIndex <= 12) {
+      return [{ channel: rawCountOrIndex, value: singleNorm }];
+    }
+  }
+  if (rawCountOrIndex && rawCountOrIndex >= 1 && rawCountOrIndex <= 12) {
+    return [{ channel: rawCountOrIndex, value: 'PRIMARY' }];
+  }
+  return [];
 };
 
 const installationReportSchema = z.object({
@@ -167,8 +287,8 @@ const installationReportSchema = z.object({
   compressor_details: z.string().optional().or(z.literal('')),
   air_drier_details: z.string().optional().or(z.literal('')),
   ground_earth_provided: z.string().min(1, 'Ground Earth status is required'),
-  running_channel_combination: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(1).max(12).optional()),
-  running_channel_combination_value: z.enum(['PRIMARY', 'SECONDARY', 'REJECTION_1', 'REJECTION_2', 'SPLIT']).optional().or(z.literal('')),
+  running_channel_combination: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0).max(12).optional()),
+  running_channel_combination_value: z.string().optional().or(z.literal('')),
   no_of_filters_installed: z.preprocess((val) => val === '' || val === null || val === undefined ? undefined : Number(val), z.number().min(0).optional()),
   oil_filter_condition: z.string().optional().or(z.literal('')),
   line_filter_condition: z.string().optional().or(z.literal('')),
@@ -470,6 +590,54 @@ export function InstallationReportFormDrawer() {
     return () => clearTimeout(timer);
   }, [machineSearchQuery]);
 
+  // Multi-Channel Combinations State
+  const [channelCombinations, setChannelCombinations] = React.useState<ChannelCombinationEntry[]>([]);
+
+  const handleUpdateChannelCombinations = React.useCallback((newEntries: ChannelCombinationEntry[]) => {
+    setChannelCombinations(newEntries);
+    if (newEntries.length === 0) {
+      setValue('running_channel_combination', undefined, { shouldDirty: true, shouldValidate: true });
+      setValue('running_channel_combination_value', '', { shouldDirty: true, shouldValidate: true });
+    } else {
+      setValue('running_channel_combination', newEntries.length, { shouldDirty: true, shouldValidate: true });
+      setValue('running_channel_combination_value', JSON.stringify(newEntries), { shouldDirty: true, shouldValidate: true });
+    }
+  }, [setValue]);
+
+  const toggleChannel = React.useCallback((channelNumber: number) => {
+    const exists = channelCombinations.some((c) => c.channel === channelNumber);
+    let next: ChannelCombinationEntry[];
+    if (exists) {
+      next = channelCombinations.filter((c) => c.channel !== channelNumber);
+    } else {
+      const newEntry: ChannelCombinationEntry = { channel: channelNumber, value: 'PRIMARY' };
+      next = [...channelCombinations, newEntry].sort((a, b) => a.channel - b.channel);
+    }
+    handleUpdateChannelCombinations(next);
+  }, [channelCombinations, handleUpdateChannelCombinations]);
+
+  const setSingleChannelValue = React.useCallback((channelNumber: number, val: RunningChannelCombinationValueOption) => {
+    const next = channelCombinations.map((c) => (c.channel === channelNumber ? { ...c, value: val } : c));
+    handleUpdateChannelCombinations(next);
+  }, [channelCombinations, handleUpdateChannelCombinations]);
+
+  const setAllChannelsValue = React.useCallback((val: RunningChannelCombinationValueOption) => {
+    const next = channelCombinations.map((c) => ({ ...c, value: val }));
+    handleUpdateChannelCombinations(next);
+  }, [channelCombinations, handleUpdateChannelCombinations]);
+
+  const selectAllChannels = React.useCallback(() => {
+    const next: ChannelCombinationEntry[] = Array.from({ length: 12 }, (_, i) => ({
+      channel: i + 1,
+      value: (channelCombinations.find((c) => c.channel === i + 1)?.value || 'PRIMARY') as RunningChannelCombinationValueOption,
+    }));
+    handleUpdateChannelCombinations(next);
+  }, [channelCombinations, handleUpdateChannelCombinations]);
+
+  const clearAllChannels = React.useCallback(() => {
+    handleUpdateChannelCombinations([]);
+  }, [handleUpdateChannelCombinations]);
+
   // Query master mills matching search term (global search, not mill_id restricted)
   const trimmedSearchQuery = debouncedSearchQuery.trim();
   const { data: searchMasterMillsData, isLoading: searchMasterMillsLoading } = useMasterMillsPrefill(
@@ -680,7 +848,7 @@ export function InstallationReportFormDrawer() {
           air_drier_details: reportData.air_drier_details || '',
           ground_earth_provided: reportData.ground_earth_provided ? 'YES' : 'NO',
           running_channel_combination: reportData.running_channel_combination ?? undefined,
-          running_channel_combination_value: normalizeRunningChannelCombinationValue(reportData.running_channel_combination_value),
+          running_channel_combination_value: reportData.running_channel_combination_value || '',
           no_of_filters_installed: reportData.no_of_filters_installed ?? undefined,
           oil_filter_condition: reportData.oil_filter_condition || '',
           line_filter_condition: reportData.line_filter_condition || '',
@@ -691,10 +859,12 @@ export function InstallationReportFormDrawer() {
           customer_signature: reportData.customer_signature,
           status: reportData.status || 'PENDING',
         });
+        setChannelCombinations(parseChannelCombinations(reportData.running_channel_combination_value, reportData.running_channel_combination));
       } else if (!isEdit) {
         setSelectedCustomerId('');
         setSelectedMachineId('');
         setSelectedStatus('PENDING');
+        setChannelCombinations([]);
         reset({
           technician_ids: [],
           mill_id: '',
@@ -779,7 +949,7 @@ export function InstallationReportFormDrawer() {
       case 'air_drier_details': return reportData.air_drier_details || '';
       case 'ground_earth_provided': return reportData.ground_earth_provided ? 'YES' : 'NO';
       case 'running_channel_combination': return reportData.running_channel_combination ?? undefined;
-      case 'running_channel_combination_value': return normalizeRunningChannelCombinationValue(reportData.running_channel_combination_value);
+      case 'running_channel_combination_value': return reportData.running_channel_combination_value || '';
       case 'no_of_filters_installed': return reportData.no_of_filters_installed ?? undefined;
       case 'oil_filter_condition': return reportData.oil_filter_condition || '';
       case 'line_filter_condition': return reportData.line_filter_condition || '';
@@ -2040,92 +2210,235 @@ export function InstallationReportFormDrawer() {
                       <FieldError message={errors.ground_earth_provided?.message} />
                     </div>
 
-                    <div className="space-y-2" data-error={errors.running_channel_combination ? 'true' : undefined}>
-                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                        <Cpu size={14} className="text-primary/70" />
-                        Running Channel Combination (1 - 12)
-                      </Label>
-                      <div
-                        className="grid grid-cols-3 gap-3 rounded-xl bg-gray-50/50 p-3 dark:bg-white/5 sm:grid-cols-4"
-                      >
+                    <div className="space-y-4 rounded-2xl border border-gray-200/80 bg-gradient-to-b from-gray-50/70 to-white/90 p-4 shadow-sm dark:border-white/10 dark:from-white/[0.03] dark:to-white/[0.01]" data-error={errors.running_channel_combination ? 'true' : undefined}>
+                      {/* Section Header */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3 dark:border-white/5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-xs">
+                            <Cpu size={16} />
+                          </div>
+                          <div>
+                            <Label className="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-gray-100">
+                              Running Channel Combination (1 – 12)
+                            </Label>
+                            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                                {channelCombinations.length === 0
+                                  ? 'No channels active. Click channels below to configure.'
+                                  : `${channelCombinations.length} of 12 channels active`}
+                              </span>
+                              {channelCombinations.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.map((opt) => {
+                                    const count = channelCombinations.filter((c) => c.value === opt.value).length;
+                                    if (count === 0) return null;
+                                    const meta = CHANNEL_ROLE_METADATA[opt.value];
+                                    return (
+                                      <span
+                                        key={opt.value}
+                                        className={cn(
+                                          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold shadow-xs",
+                                          meta.bgBadge,
+                                          meta.textBadge,
+                                          meta.borderBadge
+                                        )}
+                                      >
+                                        <span className={cn("h-1.5 w-1.5 rounded-full", meta.dotColor)} />
+                                        {count} {opt.label}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Top Toolbar Action Buttons */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={selectAllChannels}
+                            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all dark:border-white/10 dark:bg-gray-900 dark:text-gray-300"
+                          >
+                            Select All (1–12)
+                          </button>
+                          {channelCombinations.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={clearAllChannels}
+                              className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 hover:border-red-300 transition-all dark:border-red-900/40 dark:bg-gray-900 dark:text-red-400"
+                            >
+                              Clear All
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 12 Channels Interactive Grid */}
+                      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                         {Array.from({ length: 12 }).map((_, i) => {
-                          const value = i + 1;
-                          const selected = watch('running_channel_combination') === value;
-                          const disabled = false;
+                          const channelNum = i + 1;
+                          const activeEntry = channelCombinations.find((c) => c.channel === channelNum);
+                          const isSelected = !!activeEntry;
+                          const meta = activeEntry ? CHANNEL_ROLE_METADATA[activeEntry.value] : null;
 
                           return (
                             <button
-                              key={value}
+                              key={channelNum}
                               type="button"
-                              disabled={disabled}
-                              onClick={() => {
-                                setValue(
-                                  'running_channel_combination',
-                                  selected ? undefined : value,
-                                  { shouldDirty: true, shouldValidate: true }
-                                );
-                              }}
+                              onClick={() => toggleChannel(channelNum)}
                               className={cn(
-                                "flex min-h-12 items-center justify-center gap-2 rounded-lg border bg-white px-3 text-sm font-black transition-all dark:bg-gray-950",
-                                selected
-                                  ? "border-primary bg-primary/10 text-primary shadow-sm"
-                                  : "border-gray-200 text-gray-700 hover:border-primary/40 hover:text-primary dark:border-white/10 dark:text-gray-300",
-                                disabled && "cursor-not-allowed hover:border-gray-200 hover:text-gray-700 dark:hover:border-white/10 dark:hover:text-gray-300"
+                                "group relative flex min-h-[74px] flex-col justify-between rounded-xl border p-2.5 text-left transition-all duration-150 cursor-pointer",
+                                isSelected && meta
+                                  ? cn("shadow-sm ring-1 ring-black/5 dark:ring-white/5", meta.cardBorder, meta.cardBg)
+                                  : "border-gray-200/90 bg-white hover:border-primary/40 hover:bg-gray-50/80 dark:border-white/10 dark:bg-gray-950 dark:hover:bg-white/5"
                               )}
                               role="checkbox"
-                              aria-checked={selected}
-                              aria-label={`Running channel combination ${value}`}
+                              aria-checked={isSelected}
+                              aria-label={`Toggle Channel ${channelNum}`}
                             >
-                              <span
-                                className={cn(
-                                  "flex h-4 w-4 items-center justify-center rounded border transition-colors",
-                                  selected ? "border-primary bg-primary text-white" : "border-gray-300 dark:border-white/20"
+                              {/* Top row: Checkbox + Channel Number */}
+                              <div className="flex w-full items-center justify-between">
+                                <span
+                                  className={cn(
+                                    "flex h-4.5 w-4.5 items-center justify-center rounded-md border text-[10px] transition-all",
+                                    isSelected
+                                      ? "border-primary bg-primary text-white shadow-xs"
+                                      : "border-gray-300 group-hover:border-primary/60 dark:border-white/20"
+                                  )}
+                                >
+                                  {isSelected && <Check size={12} strokeWidth={3} />}
+                                </span>
+                                <span className={cn("text-xs font-black tracking-tight", isSelected ? "text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300")}>
+                                  Channel {channelNum}
+                                </span>
+                              </div>
+
+                              {/* Bottom row: Full Name Badge */}
+                              <div className="mt-2 w-full">
+                                {isSelected && meta ? (
+                                  <span
+                                    className={cn(
+                                      "inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-bold shadow-xs truncate",
+                                      meta.bgBadge,
+                                      meta.textBadge,
+                                      meta.borderBadge
+                                    )}
+                                  >
+                                    <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", meta.dotColor)} />
+                                    <span className="truncate">{meta.label}</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex w-full items-center justify-center rounded-md border border-transparent px-2 py-1 text-[11px] font-medium text-gray-400 group-hover:text-gray-600 dark:text-gray-500">
+                                    Off
+                                  </span>
                                 )}
-                              >
-                                {selected && <Check size={11} strokeWidth={3} />}
-                              </span>
-                              {value}
+                              </div>
                             </button>
                           );
                         })}
                       </div>
-                      <p className="text-[11px] font-medium text-gray-400">
-                        Select one checked value.
-                      </p>
-                      <FieldError message={errors.running_channel_combination?.message} />
-                    </div>
 
-                    <div className="space-y-2" data-error={errors.running_channel_combination_value ? 'true' : undefined}>
-                      <Label className="text-xs font-medium text-primary uppercase tracking-widest flex items-center gap-2">
-                        <ShieldCheck size={14} className="text-primary/70" />
-                        Running Channel Combination Value
-                      </Label>
-                      <Select
-                        onValueChange={(val) => setValue('running_channel_combination_value', normalizeRunningChannelCombinationValue(val), { shouldDirty: true, shouldValidate: true })}
-                        value={watch('running_channel_combination_value') || ''}
-                        items={RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.map((option) => ({
-                          value: option.value,
-                          label: option.label,
-                        }))}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-medium">
-                          <SelectValue placeholder="Select Primary / Secondary / Rejection / Split" />
-                        </SelectTrigger>
-                        <SelectContent
-                          alignItemWithTrigger={false}
-                          className="rounded-xl border-gray-100 shadow-xl"
-                        >
-                          {RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value} className="font-medium py-3">
-                              <div className="flex items-center gap-3">
-                                <span className="h-4 w-4 rounded border-2 border-primary bg-primary/90" />
-                                {option.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FieldError message={errors.running_channel_combination_value?.message} />
+                      {/* Active Channels Management Section */}
+                      {channelCombinations.length > 0 ? (
+                        <div className="space-y-3.5 rounded-xl border border-gray-200/90 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-gray-950/90">
+                          {/* Batch Assign Toolbar with Full Names and Color Dots */}
+                          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-gray-100 pb-3 dark:border-white/5">
+                            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">
+                              <ShieldCheck size={14} className="text-primary" />
+                              Batch Set All Checked ({channelCombinations.length}):
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.map((opt) => {
+                                const meta = CHANNEL_ROLE_METADATA[opt.value];
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setAllChannelsValue(opt.value)}
+                                    className={cn(
+                                      "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold transition-all shadow-xs",
+                                      "border-gray-200 bg-gray-50/80 text-gray-700 hover:scale-105 active:scale-95",
+                                      "dark:border-white/10 dark:bg-white/5 dark:text-gray-200",
+                                      meta.buttonHover
+                                    )}
+                                  >
+                                    <span className={cn("h-2 w-2 rounded-full", meta.dotColor)} />
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Individual Channel Adjustments */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+                                Individual Channel Assignments
+                              </Label>
+                              <span className="text-[11px] text-gray-400">
+                                Change specific channel values below:
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {channelCombinations.map((item) => {
+                                const meta = CHANNEL_ROLE_METADATA[item.value];
+                                return (
+                                  <div
+                                    key={item.channel}
+                                    className={cn(
+                                      "flex items-center justify-between gap-2 rounded-xl border p-2 transition-all shadow-xs",
+                                      meta ? meta.cardBorder : "border-gray-200",
+                                      meta ? meta.cardBg : "bg-white"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-black text-white shadow-xs">
+                                        {item.channel}
+                                      </span>
+                                      <span className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">
+                                        Channel {item.channel}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <select
+                                        value={item.value}
+                                        onChange={(e) => setSingleChannelValue(item.channel, e.target.value as RunningChannelCombinationValueOption)}
+                                        className={cn(
+                                          "h-8 rounded-lg border px-2.5 text-xs font-bold shadow-xs focus:ring-2 focus:ring-primary/20 focus:outline-none cursor-pointer transition-all",
+                                          meta.bgBadge,
+                                          meta.textBadge,
+                                          meta.borderBadge
+                                        )}
+                                      >
+                                        {RUNNING_CHANNEL_COMBINATION_VALUE_OPTIONS.map((opt) => (
+                                          <option key={opt.value} value={opt.value} className="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 font-medium">
+                                            {opt.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleChannel(item.channel)}
+                                        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                                        title={`Remove Channel ${item.channel}`}
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <FieldError message={errors.running_channel_combination?.message || errors.running_channel_combination_value?.message} />
                     </div>
                   </div>
                   {/* Filters installed */}
