@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { GenericFilterDrawer, FilterField } from "@/components/ui/filter-drawer";
 import { ExportReportDrawer } from "@/components/forms/export-report-drawer";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
     TrendingUp,
     FileText,
@@ -53,6 +54,7 @@ import {
     ShieldAlert,
     ShieldCheck,
     Package,
+    Cpu,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -822,13 +824,198 @@ export default function ReportsPage() {
             ),
         },
         {
+            id: "channels",
+            header: "Channels",
+            cell: ({ row }) => {
+                const count = row.original.running_channel_combination;
+                const rawVal = row.original.running_channel_combination_value;
+                if (!rawVal && (!count || count === 0)) {
+                    return <span className="text-gray-400 text-xs">—</span>;
+                }
+
+                const roleMapping: Record<string, string> = {
+                    PRIMARY: "Primary",
+                    SECONDARY: "Secondary",
+                    REJECTION_1: "Rejection 1",
+                    REJECTION_2: "Rejection 2",
+                    SPLIT: "Split",
+                };
+
+                type ChannelItem = {
+                    channelNum: number;
+                    channelName: string;
+                    role: string;
+                };
+
+                let items: ChannelItem[] = [];
+                let singleLabel = "";
+
+                // 1. Attempt JSON parse
+                if (rawVal) {
+                    try {
+                        const parsed = JSON.parse(rawVal);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            items = parsed
+                                .map((item: any) => {
+                                    const num = Number(item.channel ?? item.key ?? 0);
+                                    const rawRole = String(item.value || "").toUpperCase().trim();
+                                    const roleKey = rawRole.replace(/\s+/g, "_");
+                                    const role = roleMapping[roleKey] || (item.value ? String(item.value).replace(/_/g, " ") : "Configured");
+                                    return {
+                                        channelNum: num,
+                                        channelName: num > 0 ? `Channel ${num}` : "Channel",
+                                        role,
+                                    };
+                                })
+                                .filter((it) => it.channelNum > 0);
+                        }
+                    } catch {}
+                }
+
+                // 2. Delimited string format (e.g. "Channel 1 (Secondary), Channel 2 (Primary)..." or "Channel 1: Primary...")
+                if (items.length === 0 && rawVal) {
+                    if (rawVal.includes(":") || rawVal.includes(",")) {
+                        const parts = rawVal.split(",");
+                        const parsedItems: ChannelItem[] = [];
+                        for (const p of parts) {
+                            const trimmed = p.trim();
+                            if (!trimmed) continue;
+                            const match = trimmed.match(/(?:channel|ch)?\s*(\d+)\s*[:(]\s*([^)]+)\)?/i);
+                            if (match) {
+                                const num = Number(match[1]);
+                                const rawRole = match[2].trim().toUpperCase();
+                                const roleKey = rawRole.replace(/\s+/g, "_");
+                                const role = roleMapping[roleKey] || match[2].trim().replace(/_/g, " ");
+                                parsedItems.push({
+                                    channelNum: num,
+                                    channelName: `Channel ${num}`,
+                                    role,
+                                });
+                            }
+                        }
+                        if (parsedItems.length > 0) {
+                            items = parsedItems;
+                        }
+                    }
+                }
+
+                // Sort channels numerically (e.g. Channel 1, Channel 2, Channel 10...)
+                if (items.length > 0) {
+                    items.sort((a, b) => a.channelNum - b.channelNum);
+                } else {
+                    // 3. Fallback: single preset or channel count
+                    if (rawVal) {
+                        const singleClean = rawVal.trim().toUpperCase().replace(/_/g, " ");
+                        const roleKey = rawVal.trim().toUpperCase().replace(/\s+/g, "_");
+                        const mapped = roleMapping[roleKey] || rawVal.trim();
+                        if (mapped.includes("Channel") || mapped.includes("(") || mapped.includes(")")) {
+                            singleLabel = mapped;
+                        } else if (count && count > 0) {
+                            singleLabel = `${mapped} (${count} Channels)`;
+                        } else {
+                            singleLabel = mapped;
+                        }
+                    } else if (count && count > 0) {
+                        singleLabel = `${count} Channel${count > 1 ? "s" : ""}`;
+                    }
+                }
+
+                // Render Multi-Channel with Tooltip if >= 2 channels
+                if (items.length >= 2) {
+                    return (
+                        <div className="min-w-0 max-w-[210px]">
+                            <Tooltip>
+                                <TooltipTrigger
+                                    render={
+                                        <div className="inline-flex items-center gap-1.5 min-w-0 max-w-[210px] cursor-pointer group select-none">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-orange-50 dark:bg-orange-950/40 text-orange-800 dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60 shadow-xs truncate max-w-[130px] group-hover:border-orange-400 transition-colors">
+                                                <Cpu size={12} className="text-orange-600 dark:text-orange-400 shrink-0" />
+                                                <span className="font-bold shrink-0">{items[0].channelName}:</span>
+                                                <span className="truncate font-medium text-orange-600 dark:text-orange-400">{items[0].role}</span>
+                                            </span>
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-700 border border-gray-200/80 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 group-hover:bg-orange-100 dark:group-hover:bg-orange-950/60 group-hover:text-orange-800 dark:group-hover:text-orange-300 transition-colors shrink-0 shadow-xs">
+                                                +{items.length - 1} more
+                                            </span>
+                                        </div>
+                                    }
+                                />
+                                <TooltipContent className="p-3 w-[280px] max-w-sm shadow-2xl rounded-xl">
+                                    <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-2 mb-2">
+                                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                            <Cpu size={13} className="text-orange-400" />
+                                            Configured Channels
+                                        </span>
+                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                                            {items.length} Channels
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto pr-1 scrollbar-thin">
+                                        {items.map((it, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[11px] border border-white/10"
+                                            >
+                                                <span className="font-semibold text-gray-200">{it.channelName}</span>
+                                                <span className="text-[10px] font-bold text-orange-400 bg-orange-500/15 px-1 py-0.5 rounded shrink-0">
+                                                    {it.role}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                    );
+                }
+
+                // Render Single Item
+                if (items.length === 1) {
+                    const it = items[0];
+                    return (
+                        <div className="flex items-center min-w-0 max-w-[210px]">
+                            <Badge
+                                variant="outline"
+                                className="text-[11px] font-medium border-orange-200/80 dark:border-orange-500/20 bg-orange-50/70 dark:bg-orange-500/10 text-orange-800 dark:text-orange-300 px-2 py-0.5 rounded-lg truncate max-w-full inline-flex items-center gap-1 shadow-xs"
+                                title={`${it.channelName}: ${it.role}`}
+                            >
+                                <Cpu size={12} className="text-orange-600 dark:text-orange-400 shrink-0" />
+                                <span className="font-bold shrink-0">{it.channelName}:</span>
+                                <span className="text-orange-600 dark:text-orange-400 font-medium truncate">{it.role}</span>
+                            </Badge>
+                        </div>
+                    );
+                }
+
+                // Render Single Preset (e.g. "Split (6 Channels)")
+                if (singleLabel) {
+                    return (
+                        <div className="flex items-center min-w-0 max-w-[210px]">
+                            <Badge
+                                variant="outline"
+                                className="text-[11px] font-medium border-orange-200/80 dark:border-orange-500/20 bg-orange-50/70 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300 px-2.5 py-0.5 rounded-lg truncate max-w-full inline-flex items-center gap-1.5 shadow-xs"
+                                title={singleLabel}
+                            >
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                                <span className="truncate">{singleLabel}</span>
+                            </Badge>
+                        </div>
+                    );
+                }
+
+                return <span className="text-gray-400 text-xs">—</span>;
+            },
+        },
+        {
             id: "technicians",
             header: "Technicians",
-            cell: ({ row }) => (
-                <span className="text-gray-600 dark:text-gray-300 font-medium">
-                    {row.original.technicians?.map(t => t.technician?.full_name).join(", ") || "—"}
-                </span>
-            ),
+            cell: ({ row }) => {
+                const names = row.original.technicians?.map(t => t.technician?.full_name).filter(Boolean).join(", ");
+                return (
+                    <span className="text-gray-600 dark:text-gray-300 font-medium max-w-[180px] truncate block" title={names || "—"}>
+                        {names || "—"}
+                    </span>
+                );
+            },
         },
         {
             accessorKey: "status",

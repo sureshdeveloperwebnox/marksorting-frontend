@@ -26,10 +26,15 @@ export interface ReportsInstallationReport {
     report_number: string;
     place: string;
     visit_date: string;
+    visit_time?: string;
+    call_registered_date?: string;
     created_at?: string;
     machine_model: string;
     serial_or_frame_no: string;
     status: string;
+    commodity?: string;
+    running_channel_combination?: number;
+    running_channel_combination_value?: string;
     mill: { id: string; name: string };
     technicians: ReportTechnicianEntry[];
 }

@@ -48,7 +48,9 @@ import {
   Gauge,
   Wind,
   Upload,
+  FileDown,
 } from "lucide-react";
+import { downloadReportFile } from "@/services/reports-service";
 import { BulkUploadDialog } from "@/components/modals/BulkUploadDialog";
 import type { InstallationReportColumnConfig } from "@/types/bulk-upload";
 import {
@@ -154,6 +156,27 @@ export default function InstallationReportPage() {
   const [bulkDeleteToDate, setBulkDeleteToDate] = React.useState("");
 
   const bulkDeleteMutation = useBulkDeleteInstallationReportsByDate();
+  const [isExporting, setIsExporting] = React.useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      await downloadReportFile("installations", "excel", {
+        search: search || undefined,
+        status: statusFilter || undefined,
+        millId: millFilter || undefined,
+        technicianId: technicianFilter || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+      });
+      toast.success("Excel report downloaded successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export Excel report");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleConfirmBulkDelete = async () => {
     if (!bulkDeleteFromDate && !bulkDeleteToDate) return;
@@ -625,7 +648,7 @@ export default function InstallationReportPage() {
                     .map((item: any) => {
                       const ch = item.channel ?? item.key ?? "";
                       const v = (item.value || "").replace(/_/g, " ");
-                      return ch ? `Ch ${ch} (${v})` : v;
+                      return ch ? `Channel ${ch} (${v})` : v;
                     })
                     .filter(Boolean)
                     .join(", ");
@@ -957,6 +980,21 @@ export default function InstallationReportPage() {
                 isRefreshing={isRefreshing}
                 renderExtraControls={() => (
                   <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleExportExcel}
+                      disabled={isExporting}
+                      className={cn(
+                        "relative h-10 px-4 gap-2 inline-flex items-center rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer shrink-0",
+                        "bg-transparent border border-gray-200 dark:border-white/10",
+                        "text-gray-600 dark:text-gray-400",
+                        "hover:border-primary/50 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",
+                        "disabled:opacity-50"
+                      )}
+                    >
+                      {isExporting ? <Loader2 size={14} className="animate-spin text-primary" /> : <FileDown size={14} />}
+                      Export Excel
+                    </button>
                     <button
                       type="button"
                       onClick={() => setBulkDeleteOpen(true)}
