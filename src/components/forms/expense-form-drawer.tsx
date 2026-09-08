@@ -255,24 +255,38 @@ export function ExpenseFormDrawer() {
     selectedId || undefined
   );
 
-  // Clear stale report linkage when the primary technician changes (admin changing engineer selection)
-  const prevPrimaryTechIdRef = React.useRef<string | undefined>(undefined);
-  React.useEffect(() => {
-    if (!isFormDrawerOpen) return;
-    if (prevPrimaryTechIdRef.current !== undefined && prevPrimaryTechIdRef.current !== primaryTechId) {
-      setValue('service_report_id', '');
-      setValue('installation_report_id', '');
-      setReportTypeRadio(isServiceEngineer ? 'service' : 'none');
-    }
-    prevPrimaryTechIdRef.current = primaryTechId;
-  }, [primaryTechId, isFormDrawerOpen, setValue, isServiceEngineer]);
-
   const eligibleReports = React.useMemo(() => {
     return {
       serviceReports: eligibilityData?.serviceReports || [],
       installationReports: eligibilityData?.installationReports || [],
     };
   }, [eligibilityData]);
+
+  // Clear stale report linkage when the primary technician changes (admin changing engineer selection)
+  const prevPrimaryTechIdRef = React.useRef<string | undefined>(undefined);
+  const isSelectingReportRef = React.useRef<boolean>(false);
+  React.useEffect(() => {
+    if (!isFormDrawerOpen) return;
+    if (isSelectingReportRef.current) {
+      isSelectingReportRef.current = false;
+      prevPrimaryTechIdRef.current = primaryTechId;
+      return;
+    }
+    if (prevPrimaryTechIdRef.current !== undefined && prevPrimaryTechIdRef.current !== primaryTechId) {
+      // If primary technician changed manually, check if the current report still belongs to the new technician
+      const currentServiceReport = eligibleReports.serviceReports.find((r: any) => r.id === watch('service_report_id'));
+      const currentInstallReport = eligibleReports.installationReports.find((r: any) => r.id === watch('installation_report_id'));
+      const reportHasTech =
+        (currentServiceReport?.technicians?.some((t: any) => t.id === primaryTechId)) ||
+        (currentInstallReport?.technicians?.some((t: any) => t.id === primaryTechId));
+      if (!reportHasTech && primaryTechId !== undefined) {
+        setValue('service_report_id', '');
+        setValue('installation_report_id', '');
+        setReportTypeRadio(isServiceEngineer ? 'service' : 'none');
+      }
+    }
+    prevPrimaryTechIdRef.current = primaryTechId;
+  }, [primaryTechId, isFormDrawerOpen, setValue, isServiceEngineer, eligibleReports, watch]);
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>('');
   const [selectedMachineId, setSelectedMachineId] = React.useState<string>('');
@@ -863,11 +877,16 @@ export function ExpenseFormDrawer() {
                               setValue('installation_report_id', '');
                               return;
                             }
+                            isSelectingReportRef.current = true;
                             if (reportTypeRadio === 'service') {
                               setValue('service_report_id', val);
                               setValue('installation_report_id', '');
                               const report = eligibleReports.serviceReports.find((r) => r.id === val);
                               if (report) {
+                                if (report.technicians && report.technicians.length > 0) {
+                                  const techIds = report.technicians.map((t: any) => t.id || t.technician_id);
+                                  setValue('technician_ids', techIds, { shouldValidate: true });
+                                }
                                 if (report.mill_id) {
                                   setValue('mill_id', report.mill_id);
                                   const mill = mills.find((m) => m.id === report.mill_id);
@@ -875,13 +894,21 @@ export function ExpenseFormDrawer() {
                                 }
                                 if (report.place) setValue('place', report.place);
                                 if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
-                                toast.success('Service report details prefilled!');
+                                toast.success(
+                                  report.technicians && report.technicians.length > 0
+                                    ? `Service report & ${report.technicians.length} assigned engineer(s) prefilled!`
+                                    : 'Service report details prefilled!'
+                                );
                               }
                             } else {
                               setValue('service_report_id', '');
                               setValue('installation_report_id', val);
                               const report = eligibleReports.installationReports.find((r) => r.id === val);
                               if (report) {
+                                if (report.technicians && report.technicians.length > 0) {
+                                  const techIds = report.technicians.map((t: any) => t.id || t.technician_id);
+                                  setValue('technician_ids', techIds, { shouldValidate: true });
+                                }
                                 if (report.mill_id) {
                                   setValue('mill_id', report.mill_id);
                                   const mill = mills.find((m) => m.id === report.mill_id);
@@ -889,7 +916,11 @@ export function ExpenseFormDrawer() {
                                 }
                                 if (report.place) setValue('place', report.place);
                                 if (report.visit_date) setValue('visit_date', report.visit_date.split('T')[0]);
-                                toast.success('Installation report details prefilled!');
+                                toast.success(
+                                  report.technicians && report.technicians.length > 0
+                                    ? `Installation report & ${report.technicians.length} assigned engineer(s) prefilled!`
+                                    : 'Installation report details prefilled!'
+                                );
                               }
                             }
                           }}

@@ -204,6 +204,10 @@ export interface EligibilityResponse {
         place: string;
         visit_date: string;
         mill_name: string;
+        technicians?: Array<{
+            id: string;
+            full_name: string;
+        }>;
     }>;
     installationReports: Array<{
         id: string;
@@ -212,6 +216,10 @@ export interface EligibilityResponse {
         place: string;
         visit_date: string;
         mill_name: string;
+        technicians?: Array<{
+            id: string;
+            full_name: string;
+        }>;
     }>;
 }
 
@@ -233,6 +241,6 @@ export const useExpenseEligibility = (technicianId?: string, excludeExpenseId?: 
             const { data } = await api.get<EligibilityResponse>(endpoint, { params });
             return data;
         },
-        enabled: isServiceEngineer || !!technicianId,
+        enabled: true,
     });
 };

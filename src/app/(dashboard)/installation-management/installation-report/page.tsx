@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { downloadReportFile } from "@/services/reports-service";
 import { BulkUploadDialog } from "@/components/modals/BulkUploadDialog";
+import { ChannelConfigurationView } from "@/components/installation/channel-configuration-view";
 import type { InstallationReportColumnConfig } from "@/types/bulk-upload";
 import {
   DropdownMenu,
@@ -629,36 +630,6 @@ export default function InstallationReportPage() {
             icon: Settings,
           },
           {
-            label: "Running Channel Combination",
-            value:
-              viewReportData.running_channel_combination !== undefined && viewReportData.running_channel_combination !== null
-                ? `${viewReportData.running_channel_combination} Active Channel${viewReportData.running_channel_combination > 1 ? 's' : ''}`
-                : "—",
-            icon: Gauge,
-          },
-          {
-            label: "Running Channel Combination Value",
-            value: (() => {
-              const val = viewReportData.running_channel_combination_value;
-              if (!val) return "—";
-              try {
-                const parsed = JSON.parse(val);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                  return parsed
-                    .map((item: any) => {
-                      const ch = item.channel ?? item.key ?? "";
-                      const v = (item.value || "").replace(/_/g, " ");
-                      return ch ? `Channel ${ch} (${v})` : v;
-                    })
-                    .filter(Boolean)
-                    .join(", ");
-                }
-              } catch {}
-              return val.replace(/_/g, " ");
-            })(),
-            icon: Settings,
-          },
-          {
             label: "Auto Drain Valve",
             value: boolField(viewReportData.auto_drain_valve_working),
             icon: Settings,
@@ -691,6 +662,21 @@ export default function InstallationReportPage() {
             label: "Line Filter Condition",
             value: viewReportData.line_filter_condition || "—",
             icon: Settings,
+          },
+        ],
+      },
+      {
+        title: "Running Channel Configuration (1 – 12)",
+        items: [
+          {
+            label: "",
+            value: (
+              <ChannelConfigurationView
+                combinationCount={viewReportData.running_channel_combination}
+                combinationValue={viewReportData.running_channel_combination_value}
+              />
+            ),
+            fullWidth: true,
           },
         ],
       },
