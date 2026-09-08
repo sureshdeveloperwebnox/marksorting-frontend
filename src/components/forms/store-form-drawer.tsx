@@ -58,7 +58,7 @@ const storeSchema = z.object({
       z.object({
         material_id: z.string(),
         quantity: z.number().min(1, 'Quantity must be at least 1'),
-        stock_type: z.string().optional().default('Inflow'),
+        stock_type: z.string().optional().default('From Store'),
         serial_numbers: z.array(z.string()).optional(),
       })
     )
@@ -98,7 +98,7 @@ const storeSchema = z.object({
   frame_number: z.string().optional().or(z.literal('')),
   return_status: z.string().min(1, 'Return status is required'),
   inflow_status: z.string().min(1, 'Stock status is required'),
-  stock_type: z.string().optional().default('Inflow'),
+  stock_type: z.string().optional().default('From Store'),
   barcode: z.string().optional().or(z.literal('')),
   provider_name: z.string().optional().or(z.literal('')),
   invoice_number: z.string().optional().or(z.literal('')),
@@ -345,6 +345,7 @@ export function StoreFormDrawer() {
       frame_number: '',
       return_status: 'Pending',
       inflow_status: 'Available',
+      stock_type: 'From Store',
       barcode: '',
       provider_name: '',
       invoice_number: '',
@@ -550,7 +551,7 @@ export function StoreFormDrawer() {
           return {
             material_id: m.material.id,
             quantity: qty,
-            stock_type: m.stock_type || 'Inflow',
+            stock_type: m.stock_type || 'From Store',
             serial_numbers: fullSerials,
           };
         });
@@ -576,6 +577,7 @@ export function StoreFormDrawer() {
           frame_number: storeData.frame_number,
           return_status: storeData.return_status,
           inflow_status: storeData.inflow_status,
+          stock_type: storeData.stock_type || 'From Store',
           barcode: storeData.barcode || '',
           provider_name: storeData.provider_name || '',
           invoice_number: storeData.invoice_number || '',
@@ -601,6 +603,7 @@ export function StoreFormDrawer() {
           frame_number: '',
           return_status: 'Pending',
           inflow_status: 'Available',
+          stock_type: 'From Store',
           barcode: '',
           provider_name: '',
           invoice_number: '',
@@ -627,7 +630,7 @@ export function StoreFormDrawer() {
     // Add any new materialIdsWatch that are not yet in material_quantities
     const newItems = materialIdsWatch
       .filter(id => !filtered.some(q => q.material_id === id))
-      .map(id => ({ material_id: id, quantity: 1, stock_type: 'Inflow', serial_numbers: [''] }));
+      .map(id => ({ material_id: id, quantity: 1, stock_type: 'From Store', serial_numbers: [''] }));
     
     if (newItems.length > 0) {
       const newlyAddedExp: Record<string, boolean> = {};
@@ -1070,8 +1073,10 @@ export function StoreFormDrawer() {
       data.warranty_status
     );
 
+    const primaryStockType = data.material_quantities?.[0]?.stock_type || data.stock_type || 'From Store';
     const payload = {
       ...data,
+      stock_type: primaryStockType,
       customer_id: data.customer_id || undefined,
       remarks: finalRemarks || undefined,
       barcode: data.barcode || undefined,
@@ -1742,20 +1747,20 @@ export function StoreFormDrawer() {
                                         'material_quantities',
                                         current.map((q) =>
                                           q.material_id === item.material_id
-                                            ? { ...q, stock_type: val || 'Inflow' }
+                                            ? { ...q, stock_type: val || 'From Store' }
                                             : q
                                         ),
                                         { shouldDirty: true }
                                       );
                                     }}
-                                    value={item.stock_type || 'Inflow'}
+                                    value={item.stock_type || 'From Store'}
                                   >
                                     <SelectTrigger className="h-8 w-32 bg-gray-50/80 dark:bg-white/5 border-none rounded-lg focus:ring-1 focus:ring-primary/20 font-bold text-xs">
                                       <SelectValue placeholder="Stock Type" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl border-gray-100 shadow-xl z-[9999]">
-                                      <SelectItem value="Inflow" className="font-bold text-xs py-2 text-emerald-500">Inflow</SelectItem>
                                       <SelectItem value="From Store" className="font-bold text-xs py-2 text-purple-500">From Store</SelectItem>
+                                      <SelectItem value="Inflow" className="font-bold text-xs py-2 text-emerald-500">Inflow</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>

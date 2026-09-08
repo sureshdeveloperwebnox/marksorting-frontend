@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/Textarea';
 import {
   Select,
   SelectContent,
@@ -1376,16 +1377,19 @@ export function ExpenseFormDrawer() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -6 }}
                           transition={{ duration: 0.15 }}
-                          className="border border-gray-100 dark:border-white/5 rounded-xl p-3 bg-gray-50/40 dark:bg-gray-950/40 hover:border-primary/20 transition-all space-y-2.5"
+                          className="border border-gray-200/90 dark:border-white/10 rounded-2xl p-3.5 sm:p-4 bg-white/80 dark:bg-gray-950/60 shadow-sm hover:border-primary/30 hover:shadow-md transition-all space-y-3"
                         >
-                          {/* Row 1 (4-Column Layout): Category (4 cols), Amount (2 cols), Remarks (5 cols), Action/Delete (1 col) */}
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-start">
-                            {/* Category Select - 4 cols */}
-                            <div className="md:col-span-4 space-y-1">
-                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1">
-                                <Tag size={11} className="text-primary/70" />
-                                Category *
-                              </Label>
+                          {/* Tier 1: Category, Amount & Action */}
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2.5">
+                            {/* Category Selection */}
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                  <Tag size={12} className="text-primary/80" />
+                                  Category *
+                                </Label>
+                                <span className="text-[10px] font-semibold text-gray-400">Item #{index + 1}</span>
+                              </div>
                               <Select
                                 value={item.expense_category_id || ''}
                                 onValueChange={(val) => {
@@ -1394,10 +1398,10 @@ export function ExpenseFormDrawer() {
                                   setValue('expense_items', updated, { shouldValidate: true });
                                 }}
                               >
-                                <SelectTrigger className="h-9 bg-white dark:bg-gray-900 border-none rounded-lg focus:ring-2 focus:ring-primary/20 font-bold text-xs">
+                                <SelectTrigger className="h-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-primary/20 font-bold text-xs shadow-sm">
                                   {chosenCat ? (
-                                    <span className="flex items-center gap-1.5 text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
-                                      <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[9px] shrink-0">
+                                    <span className="flex items-center gap-2 text-xs font-bold text-gray-800 dark:text-gray-200 truncate">
+                                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
                                         {chosenCat.name.charAt(0).toUpperCase()}
                                       </div>
                                       {chosenCat.name}
@@ -1408,7 +1412,7 @@ export function ExpenseFormDrawer() {
                                     </span>
                                   )}
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto">
+                                <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-56 overflow-y-auto z-[9999]">
                                   {availableCategories.map((c) => (
                                     <SelectItem key={c.id} value={c.id} className="font-bold py-2 text-xs">
                                       {c.name}
@@ -1419,58 +1423,38 @@ export function ExpenseFormDrawer() {
                               <FieldError message={itemErrors?.expense_category_id?.message} />
                             </div>
 
-                            {/* Amount - 2 cols */}
-                            <div className="md:col-span-2 space-y-1">
-                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1">
-                                <DollarSign size={11} className="text-primary/70" />
+                            {/* Amount Input */}
+                            <div className="w-full sm:w-36 md:w-44 space-y-1">
+                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                <DollarSign size={12} className="text-primary/80" />
                                 Amount (₹) *
                               </Label>
-                              <Input
-                                type="number"
-                                step="1"
-                                value={item.amount || ''}
-                                onChange={(e) => {
-                                  if (isEdit) return;
-                                  const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                  const updated = [...(watch('expense_items') || [])];
-                                  updated[index].amount = val;
-                                  setValue('expense_items', updated, { shouldValidate: true });
-                                }}
-                                placeholder="0"
-                                readOnly={isEdit}
-                                className={cn(
-                                  "h-9 bg-white dark:bg-gray-900 border-none rounded-lg font-bold text-xs",
-                                  isEdit ? "cursor-default opacity-70 select-none focus-visible:ring-0" : "focus-visible:ring-2 focus-visible:ring-primary/20"
-                                )}
-                              />
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  value={item.amount || ''}
+                                  onChange={(e) => {
+                                    if (isEdit) return;
+                                    const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                    const updated = [...(watch('expense_items') || [])];
+                                    updated[index].amount = val;
+                                    setValue('expense_items', updated, { shouldValidate: true });
+                                  }}
+                                  placeholder="0"
+                                  readOnly={isEdit}
+                                  className={cn(
+                                    "h-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-xs shadow-sm pl-7",
+                                    isEdit ? "cursor-default bg-gray-50/80 dark:bg-white/[0.04] text-gray-800 dark:text-gray-200 select-none focus-visible:ring-0" : "focus-visible:ring-2 focus-visible:ring-primary/20"
+                                  )}
+                                />
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 font-bold text-xs pointer-events-none">₹</span>
+                              </div>
                               <FieldError message={itemErrors?.amount?.message} />
                             </div>
 
-                            {/* Remarks - 5 cols */}
-                            <div className="md:col-span-5 space-y-1">
-                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1">
-                                <FileText size={11} className="text-primary/70" />
-                                Remarks
-                              </Label>
-                              <Input
-                                value={item.remarks || ''}
-                                onChange={(e) => {
-                                  if (isEdit) return;
-                                  const updated = [...(watch('expense_items') || [])];
-                                  updated[index].remarks = e.target.value;
-                                  setValue('expense_items', updated, { shouldValidate: true });
-                                }}
-                                placeholder="Remarks / notes…"
-                                readOnly={isEdit}
-                                className={cn(
-                                  "h-9 bg-white dark:bg-gray-900 border-none rounded-lg font-bold text-xs",
-                                  isEdit ? "cursor-default opacity-70 select-none focus-visible:ring-0" : "focus-visible:ring-2 focus-visible:ring-primary/20"
-                                )}
-                              />
-                            </div>
-
-                            {/* Delete Button - 1 col */}
-                            <div className="md:col-span-1 flex justify-end md:justify-center pt-1 md:pt-5">
+                            {/* Delete Category Button */}
+                            <div className="flex sm:flex-col justify-end pt-1 sm:pt-6">
                               <button
                                 type="button"
                                 title="Remove this category"
@@ -1478,26 +1462,59 @@ export function ExpenseFormDrawer() {
                                   const current = watch('expense_items') || [];
                                   setValue('expense_items', current.filter((_, i) => i !== index), { shouldValidate: true });
                                 }}
-                                className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                className="p-2 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-transparent hover:border-rose-200 dark:hover:border-rose-500/20 transition-all cursor-pointer shrink-0"
                               >
-                                <X size={15} />
+                                <X size={16} />
                               </button>
                             </div>
                           </div>
 
-                          {/* Row 2: Compact Receipts Strip & Admin Details */}
-                          <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                            {/* Receipts Thumbnail Strip */}
+                          {/* Tier 2: Dedicated Full-Width Submitter Remarks Box */}
+                          <div className="space-y-1.5 w-full">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
+                                <FileText size={12} className="text-primary/80" />
+                                Remarks / Description
+                              </Label>
+                              {isEdit && (
+                                <span className="text-[10px] font-semibold text-gray-400">Employee Description</span>
+                              )}
+                            </div>
+                            <div className="relative w-full">
+                              <Textarea
+                                rows={2}
+                                value={item.remarks || ''}
+                                onChange={(e) => {
+                                  if (isEdit) return;
+                                  const updated = [...(watch('expense_items') || [])];
+                                  updated[index].remarks = e.target.value;
+                                  setValue('expense_items', updated, { shouldValidate: true });
+                                }}
+                                placeholder={isEdit ? "No remarks provided" : "Enter detailed description of expense (e.g., travel route, purpose, vendor notes)…"}
+                                readOnly={isEdit}
+                                className={cn(
+                                  "min-h-[48px] w-full rounded-xl border text-xs font-semibold leading-relaxed shadow-sm p-3 transition-all resize-y break-words break-all",
+                                  isEdit
+                                    ? "bg-gray-50/90 dark:bg-white/[0.04] border-gray-200 dark:border-white/10 text-gray-800 dark:text-gray-100 cursor-default select-text focus-visible:ring-0"
+                                    : "bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-100 focus-visible:ring-2 focus-visible:ring-primary/20"
+                                )}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Tier 3: Receipts Strip & Admin Audit Review Panel */}
+                          <div className="pt-2.5 border-t border-gray-100 dark:border-white/5 flex flex-col gap-3">
+                            {/* Receipts Row */}
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                                <ImageIcon size={11} /> Receipts:
+                              <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+                                <ImageIcon size={12} className="text-gray-400" /> Receipts:
                               </span>
                               {(item.expense_images || []).map((img, imgIdx) => {
                                 const src = img.startsWith('http') || img.startsWith('data:')
                                   ? img
                                   : `https://webnox.blr1.digitaloceanspaces.com/${img.split('/').map(encodeURIComponent).join('/')}`;
                                 return (
-                                  <div key={imgIdx} className="relative w-8 h-8 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 group">
+                                  <div key={imgIdx} className="relative w-8 h-8 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 group shadow-sm">
                                     <img src={src} alt={`Receipt ${imgIdx}`} className="w-full h-full object-cover" />
                                     <button
                                       type="button"
@@ -1511,7 +1528,7 @@ export function ExpenseFormDrawer() {
                               })}
 
                               <label className={cn(
-                                'h-8 px-2.5 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-primary text-gray-500 hover:text-primary transition-colors flex items-center gap-1.5 bg-white dark:bg-gray-900 text-[11px] font-bold cursor-pointer',
+                                'h-8 px-2.5 border border-dashed border-gray-300 dark:border-white/20 rounded-lg hover:border-primary text-gray-500 hover:text-primary transition-colors flex items-center gap-1.5 bg-white dark:bg-gray-900 text-[11px] font-bold cursor-pointer shadow-sm',
                                 isUploading && activeUploadIndex === index && 'pointer-events-none opacity-60'
                               )}>
                                 <input
@@ -1540,35 +1557,58 @@ export function ExpenseFormDrawer() {
 
                             {/* Admin Adjustments (if admin role) */}
                             {!isServiceEngineer && (
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Admin ₹:</span>
-                                  <Input
-                                    type="number"
-                                    step="1"
-                                    value={item.admin_amount || ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                      const updated = [...(watch('expense_items') || [])];
-                                      updated[index].admin_amount = val;
-                                      setValue('expense_items', updated, { shouldValidate: true });
-                                    }}
-                                    placeholder="0"
-                                    className="h-7 w-20 bg-white dark:bg-gray-900 border-none rounded-md font-bold text-xs"
-                                  />
+                              <div className="bg-amber-50/50 dark:bg-amber-500/[0.04] border border-amber-200/70 dark:border-amber-500/20 rounded-xl p-2.5 sm:p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                                    <Shield size={12} className="text-amber-600 dark:text-amber-400" />
+                                    Admin Verification & Audit Note
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-amber-600/70 dark:text-amber-400/60 hidden sm:inline">
+                                    Office use only
+                                  </span>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Note:</span>
-                                  <Input
-                                    value={item.admin_remarks || ''}
-                                    onChange={(e) => {
-                                      const updated = [...(watch('expense_items') || [])];
-                                      updated[index].admin_remarks = e.target.value;
-                                      setValue('expense_items', updated, { shouldValidate: true });
-                                    }}
-                                    placeholder="Admin note…"
-                                    className="h-7 w-32 bg-white dark:bg-gray-900 border-none rounded-md font-bold text-xs"
-                                  />
+
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2.5">
+                                  {/* Admin Approved Amount */}
+                                  <div className="w-full sm:w-36 md:w-40 flex-shrink-0 space-y-1">
+                                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">
+                                      Approved ₹:
+                                    </span>
+                                    <div className="relative">
+                                      <Input
+                                        type="number"
+                                        step="1"
+                                        value={item.admin_amount || ''}
+                                        onChange={(e) => {
+                                          const val = e.target.value === '' ? 0 : Number(e.target.value);
+                                          const updated = [...(watch('expense_items') || [])];
+                                          updated[index].admin_amount = val;
+                                          setValue('expense_items', updated, { shouldValidate: true });
+                                        }}
+                                        placeholder="0"
+                                        className="h-9 w-full bg-white dark:bg-gray-900 border border-amber-200/80 dark:border-amber-500/30 rounded-xl font-bold text-xs pl-6 shadow-sm focus-visible:ring-1 focus-visible:ring-amber-500/40"
+                                      />
+                                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 font-bold text-xs pointer-events-none">₹</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Admin Remarks / Note - Fully Responsive & Expandable Textarea */}
+                                  <div className="flex-1 min-w-0 space-y-1">
+                                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block">
+                                      Admin Note / Reason (Expandable):
+                                    </span>
+                                    <Textarea
+                                      rows={2}
+                                      value={item.admin_remarks || ''}
+                                      onChange={(e) => {
+                                        const updated = [...(watch('expense_items') || [])];
+                                        updated[index].admin_remarks = e.target.value;
+                                        setValue('expense_items', updated, { shouldValidate: true });
+                                      }}
+                                      placeholder="Reason for deduction, approval justification, or audit remark…"
+                                      className="min-h-[48px] w-full bg-white dark:bg-gray-900 border border-amber-200/80 dark:border-amber-500/30 rounded-xl font-medium text-xs shadow-sm focus-visible:ring-1 focus-visible:ring-amber-500/40 text-gray-900 dark:text-gray-100 resize-y p-2.5 break-words break-all leading-relaxed transition-all"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                             )}
