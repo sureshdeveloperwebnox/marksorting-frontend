@@ -23,6 +23,7 @@ import { useCustomers, useCreateCustomer } from '@/services/customer-service';
 import { useMills, useCreateMill } from '@/services/mill-service';
 import { useMasterMills, useCreateMasterMill } from '@/services/master-mill-service';
 import { CustomerSearchSelect } from '@/components/ui/customer-search-select';
+import { TechnicianSearchSelect } from '@/components/ui/technician-search-select';
 import { MaterialMultiSelect } from '@/components/ui/material-multi-select';
 import { toast } from 'sonner';
 import { useStoreItemStore } from '@/store/useStoreItemStore';
@@ -1138,37 +1139,18 @@ export function StoreFormDrawer() {
                 <div data-field="service_engineer_id" className="space-y-2">
                   <Label className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                     <Wrench size={15} strokeWidth={2.5} className="text-primary" />
-                    Service Engineer
+                    Service Engineer *
                   </Label>
                   <Controller
                     name="service_engineer_id"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
+                      <TechnicianSearchSelect
                         value={field.value || ''}
-                        items={technicians.map((tech) => ({
-                          value: tech.id,
-                          label: tech.full_name,
-                        }))}
-                      >
-                        <SelectTrigger className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus:ring-2 focus:ring-primary/20 font-bold">
-                          {field.value ? (
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {technicians.find((t) => t.id === field.value)?.full_name ?? 'Unknown Engineer'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-600 text-sm font-medium">Select service engineer...</span>
-                          )}
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-100 shadow-xl max-h-[300px] overflow-y-auto">
-                          {technicians.map((tech) => (
-                            <SelectItem key={tech.id} value={tech.id} className="font-bold py-3">
-                              {tech.full_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={field.onChange}
+                        placeholder="Search service engineer by name, phone, or email..."
+                        error={Boolean(errors.service_engineer_id)}
+                      />
                     )}
                   />
                   {errors.service_engineer_id && <p className="text-[11px] text-rose-500 font-bold ml-1">{errors.service_engineer_id.message}</p>}

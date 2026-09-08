@@ -21,6 +21,7 @@ import {
     useTicket,
 } from "@/services/ticket-service";
 import { useTechnicians } from "@/services/technician-service";
+import { TechnicianSearchSelect } from "@/components/ui/technician-search-select";
 import { useCustomers, useCreateCustomer } from "@/services/customer-service";
 import { useMills, useCreateMill } from "@/services/mill-service";
 import { useMasterMills, useCreateMasterMill } from "@/services/master-mill-service";
@@ -268,22 +269,12 @@ export function TicketFormDrawer() {
                     ) : (
                         <form id="ticket-form" onSubmit={handleSubmit} className="space-y-5">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold uppercase tracking-widest text-primary/70">Service Engineer</label>
-                                <select
-                                    required
+                                <label className="text-xs font-bold uppercase tracking-widest text-primary/70">Service Engineer *</label>
+                                <TechnicianSearchSelect
                                     value={form.service_engineer_id}
-                                    onChange={(e) => setForm((f) => ({ ...f, service_engineer_id: e.target.value }))}
-                                    className="w-full h-12 px-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
-                                >
-                                    <option value="" disabled>
-                                        {isLoadingTechnicians ? "Loading engineers..." : "Select Service Engineer..."}
-                                    </option>
-                                    {technicians.map((engineer) => (
-                                        <option key={engineer.id} value={engineer.id} className="bg-white dark:bg-gray-900">
-                                            {engineer.full_name}{engineer.email ? ` (${engineer.email})` : ""}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={(id) => setForm((f) => ({ ...f, service_engineer_id: id }))}
+                                    placeholder="Search and select service engineer..."
+                                />
                             </div>
 
                             {/* Search Machine by Ref No / Frame No / Customer / Mill directly */}
