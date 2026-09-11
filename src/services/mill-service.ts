@@ -125,3 +125,19 @@ export const useDeleteMill = () => {
     },
   });
 };
+
+export interface CheckRefNoResponse {
+  available: boolean;
+  existingMillName?: string;
+}
+
+export const checkMillRefNo = async (
+  refNo: string,
+  excludeId?: string,
+): Promise<CheckRefNoResponse> => {
+  const { data } = await api.get<CheckRefNoResponse>("/mills/check-ref-no", {
+    params: { ref_no: refNo, exclude_id: excludeId },
+  });
+  return data;
+};
+

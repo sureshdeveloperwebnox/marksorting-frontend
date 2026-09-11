@@ -11,15 +11,16 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Save, Loader2, Mail, Phone, Factory, MapPin, RefreshCcw, Users, Hash, Plus, Trash2 } from 'lucide-react';
+import { Save, Loader2, Mail, Phone, Factory, MapPin, RefreshCcw, Users, Hash, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils';
-import { useCreateMill, useUpdateMill, useMill } from '@/services/mill-service';
+import { useCreateMill, useUpdateMill, useMill, checkMillRefNo } from '@/services/mill-service';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { useMillStore } from '@/store/useMillStore';
+import { toast } from 'sonner';
 import {
   Sheet,
   SheetContent,
@@ -73,6 +74,9 @@ export function MillFormDrawer() {
   const [showPhone2, setShowPhone2] = React.useState(false);
   const [showPhone3, setShowPhone3] = React.useState(false);
 
+  const [refNoError, setRefNoError] = React.useState<string | null>(null);
+  const [isCheckingRefNo, setIsCheckingRefNo] = React.useState(false);
+
   const { data: millData, isLoading: millLoading } = useMill(selectedMillId);
   const { data: customersData } = useCustomers({ skip: 0, take: 500, status: 'ACTIVE' });
   const { mutateAsync: createMill, isPending: isCreating } = useCreateMill();
@@ -105,8 +109,12 @@ export function MillFormDrawer() {
     }
   });
 
+  const watchedRefNo = watch('ref_no');
+
   React.useEffect(() => {
     if (isFormDrawerOpen) {
+      setRefNoError(null);
+      setIsCheckingRefNo(false);
       if (isEdit && millData) {
         reset({
           name: millData.name,
@@ -143,7 +151,53 @@ export function MillFormDrawer() {
     }
   }, [isFormDrawerOpen, millData, reset, isEdit]);
 
+  // Live duplicate check for Ref No
+  React.useEffect(() => {
+    const trimmed = watchedRefNo?.trim();
+    if (!trimmed) {
+      setRefNoError(null);
+      setIsCheckingRefNo(false);
+      return;
+    }
+
+    // In edit mode, if ref_no is unchanged, it is valid
+    if (
+      isEdit &&
+      millData?.ref_no &&
+      millData.ref_no.trim().toLowerCase() === trimmed.toLowerCase()
+    ) {
+      setRefNoError(null);
+      setIsCheckingRefNo(false);
+      return;
+    }
+
+    setIsCheckingRefNo(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await checkMillRefNo(trimmed, selectedMillId || undefined);
+        if (!res.available) {
+          setRefNoError(
+            `Ref No "${trimmed}" is already assigned to mill "${res.existingMillName}".`
+          );
+        } else {
+          setRefNoError(null);
+        }
+      } catch (err) {
+        // Fallback gracefully on network issues
+      } finally {
+        setIsCheckingRefNo(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [watchedRefNo, isEdit, millData?.ref_no, selectedMillId]);
+
   const onSubmit: SubmitHandler<MillFormValues> = async (data) => {
+    if (refNoError) {
+      toast.error(refNoError);
+      return;
+    }
+
     const payload = {
       ...data,
       email: data.email || undefined,
@@ -214,16 +268,36 @@ export function MillFormDrawer() {
 
                 {/* Ref No Field */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
-                    <Hash size={14} className="text-primary/70" />
-                    Ref No
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Hash size={14} className="text-primary/70" />
+                      Ref No
+                    </Label>
+                    {isCheckingRefNo && (
+                      <span className="text-[10px] text-gray-400 flex items-center gap-1 font-medium">
+                        <Loader2 size={10} className="animate-spin text-primary" />
+                        Checking...
+                      </span>
+                    )}
+                  </div>
                   <Input
                     {...register('ref_no')}
                     placeholder="Enter reference number (Optional)"
-                    className="h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 font-medium"
+                    className={cn(
+                      "h-11 bg-gray-50/50 dark:bg-white/5 border-none rounded-xl focus-visible:ring-2 font-medium transition-all",
+                      refNoError
+                        ? "ring-2 ring-rose-500/50 focus-visible:ring-rose-500 bg-rose-50/30 dark:bg-rose-950/10"
+                        : "focus-visible:ring-primary/20"
+                    )}
                   />
-                  {errors.ref_no && <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.ref_no.message}</p>}
+                  {refNoError ? (
+                    <p className="text-[11px] text-rose-500 font-semibold ml-1 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <AlertCircle size={12} className="shrink-0" />
+                      {refNoError}
+                    </p>
+                  ) : errors.ref_no ? (
+                    <p className="text-[11px] text-rose-500 font-medium ml-1">{errors.ref_no.message}</p>
+                  ) : null}
                 </div>
 
                 {/* Email Field */}
@@ -488,8 +562,8 @@ export function MillFormDrawer() {
             <Button
               type="submit"
               form="mill-form"
-              disabled={isSubmitting || isLoading}
-              className="flex-1 rounded-xl h-11 bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20 gap-2"
+              disabled={isSubmitting || isLoading || !!refNoError || isCheckingRefNo}
+              className="flex-1 rounded-xl h-11 bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
               {isEdit ? 'Update Mill' : 'Save Mill'}
