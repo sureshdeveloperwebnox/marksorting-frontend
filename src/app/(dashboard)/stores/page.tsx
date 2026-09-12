@@ -7,6 +7,7 @@ import { useStores, Store, useDeleteStore, useUpdateStore, useStore } from "@/se
 import { useStoreItemStore } from "@/store/useStoreItemStore";
 import { useTechnicians } from "@/services/technician-service";
 import { useCustomers } from "@/services/customer-service";
+import { useMills } from "@/services/mill-service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -141,6 +142,8 @@ export default function StoresPage() {
     setServiceEngineerFilter,
     customerFilter,
     setCustomerFilter,
+    millFilter,
+    setMillFilter,
     materialFilter,
     setMaterialFilter,
     warrantyFilter,
@@ -208,6 +211,7 @@ export default function StoresPage() {
     search,
     service_engineer_id: serviceEngineerFilter || undefined,
     customer_id: customerFilter || undefined,
+    mill_id: millFilter || undefined,
     material_id: materialFilter || undefined,
     warranty_status: warrantyFilter || undefined,
     return_status: returnFilter || undefined,
@@ -222,6 +226,7 @@ export default function StoresPage() {
     search,
     service_engineer_id: serviceEngineerFilter || undefined,
     customer_id: customerFilter || undefined,
+    mill_id: millFilter || undefined,
     material_id: materialFilter || undefined,
     warranty_status: warrantyFilter || undefined,
     stock_type: stockTypeFilter || undefined,
@@ -243,6 +248,7 @@ export default function StoresPage() {
 
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
   const { data: customersData } = useCustomers({ skip: 0, take: 500 });
+  const { data: millsData } = useMills({ skip: 0, take: 500 });
 
   const { data: viewStoreData, isLoading: isViewStoreLoading } = useStore(selectedViewStoreId);
 
@@ -985,17 +991,19 @@ export default function StoresPage() {
     {
       id: "service_engineer_id",
       label: "Service Engineer",
+      searchable: true,
       options: [
         { value: "ALL", label: "All Engineers" },
         ...(techniciansData?.technicians ?? []).map((t) => ({ value: t.id, label: t.full_name })),
       ],
     },
     {
-      id: "customer_id",
-      label: "Customer",
+      id: "mill_id",
+      label: "Mill Name",
+      searchable: true,
       options: [
-        { value: "ALL", label: "All Customers" },
-        ...(customersData?.customers ?? []).map((c) => ({ value: c.id, label: c.name })),
+        { value: "ALL", label: "All Mills" },
+        ...(millsData?.mills ?? []).map((m) => ({ value: m.id, label: m.name })),
       ],
     },
     {
@@ -1046,7 +1054,7 @@ export default function StoresPage() {
       type: "date-range",
       placeholder: "Select date range...",
     },
-  ], [techniciansData, customersData]);
+  ], [techniciansData, millsData]);
 
   const dateRangeValue: DateRangeValue = React.useMemo(() => {
     let label = "";
@@ -1091,7 +1099,7 @@ export default function StoresPage() {
 
   const activeFiltersCount = [
     serviceEngineerFilter,
-    customerFilter,
+    millFilter,
     materialFilter,
     warrantyFilter,
     returnFilter,
@@ -1103,6 +1111,15 @@ export default function StoresPage() {
 
   /* ── Table columns ── */
   const columns: ColumnDef<Store>[] = [
+    {
+      id: "sno",
+      header: "S.No",
+      cell: ({ row }) => (
+        <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
+          {pagination.pageIndex * pagination.pageSize + row.index + 1}
+        </span>
+      ),
+    },
     {
       accessorKey: "store_number",
       header: "Store ID",
@@ -1319,7 +1336,7 @@ export default function StoresPage() {
 
   const handleFilterApply = (values: Record<string, string>) => {
     setServiceEngineerFilter(values.service_engineer_id === "ALL" ? "" : values.service_engineer_id || "");
-    setCustomerFilter(values.customer_id === "ALL" ? "" : values.customer_id || "");
+    setMillFilter(values.mill_id === "ALL" ? "" : values.mill_id || "");
     setStockTypeFilter(values.stock_type === "ALL" ? "" : values.stock_type || "");
     setWarrantyFilter(values.warranty_status === "ALL" ? "" : values.warranty_status || "");
     setReturnFilter(values.return_status === "ALL" ? "" : values.return_status || "");
@@ -1344,7 +1361,7 @@ export default function StoresPage() {
 
   const filterActiveValues = {
     service_engineer_id: serviceEngineerFilter || "ALL",
-    customer_id: customerFilter || "ALL",
+    mill_id: millFilter || "ALL",
     stock_type: stockTypeFilter || "ALL",
     warranty_status: warrantyFilter || "ALL",
     return_status: returnFilter || "ALL",
@@ -1436,7 +1453,7 @@ export default function StoresPage() {
               <PageFilterToolbar
                 searchValue={localSearch}
                 onSearchChange={setLocalSearch}
-                searchPlaceholder="Search store records..."
+                searchPlaceholder="Search by mill, store, customer, frame..."
                 dateRangePicker={
                   <DateRangePicker
                     value={dateRangeValue}
@@ -1462,7 +1479,7 @@ export default function StoresPage() {
                 onPaginationChange={setPagination}
                 onGlobalFilterChange={setSearch}
                 globalFilterValue={search}
-                searchPlaceholder="Search store records..."
+                searchPlaceholder="Search by mill, store, customer, frame..."
                 onFilterClick={() => setIsFilterDrawerOpen(true)}
                 activeFiltersCount={activeFiltersCount}
                 hideToolbar
@@ -1481,6 +1498,7 @@ export default function StoresPage() {
           onReset={() => {
             setServiceEngineerFilter("");
             setCustomerFilter("");
+            setMillFilter("");
             setStockTypeFilter("");
             setWarrantyFilter("");
             setReturnFilter("");

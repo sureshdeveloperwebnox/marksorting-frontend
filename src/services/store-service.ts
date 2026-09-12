@@ -141,6 +141,7 @@ export const useStores = (params: {
   search?: string;
   service_engineer_id?: string;
   customer_id?: string;
+  mill_id?: string;
   material_id?: string;
   warranty_status?: string;
   return_status?: string;

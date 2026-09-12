@@ -8,6 +8,7 @@ interface StoreItemState {
   search: string;
   serviceEngineerFilter: string;
   customerFilter: string;
+  millFilter: string;
   materialFilter: string;
   warrantyFilter: string;
   returnFilter: string;
@@ -19,6 +20,7 @@ interface StoreItemState {
   setSearch: (search: string) => void;
   setServiceEngineerFilter: (val: string) => void;
   setCustomerFilter: (val: string) => void;
+  setMillFilter: (val: string) => void;
   setMaterialFilter: (val: string) => void;
   setWarrantyFilter: (val: string) => void;
   setReturnFilter: (val: string) => void;
@@ -49,6 +51,7 @@ export const useStoreItemStore = create<StoreItemState>((set) => ({
   search: "",
   serviceEngineerFilter: "",
   customerFilter: "",
+  millFilter: "",
   materialFilter: "",
   warrantyFilter: "",
   returnFilter: "",
@@ -70,6 +73,11 @@ export const useStoreItemStore = create<StoreItemState>((set) => ({
   setCustomerFilter: (val) =>
     set((state) => ({
       customerFilter: val,
+      pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
+    })),
+  setMillFilter: (val) =>
+    set((state) => ({
+      millFilter: val,
       pagination: { pageIndex: 0, pageSize: state.pagination.pageSize },
     })),
   setMaterialFilter: (val) =>
@@ -113,6 +121,7 @@ export const useStoreItemStore = create<StoreItemState>((set) => ({
       search: "",
       serviceEngineerFilter: "",
       customerFilter: "",
+      millFilter: "",
       materialFilter: "",
       warrantyFilter: "",
       returnFilter: "",

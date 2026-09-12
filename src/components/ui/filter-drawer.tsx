@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
-import { RotateCcw, ShieldCheck } from "lucide-react";
+import { RotateCcw, ShieldCheck, ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
@@ -43,6 +43,169 @@ export interface FilterField {
   disabledHint?: string;
   /** When set, this field is automatically disabled when the referenced field's value is "ALL" or empty */
   dependsOnField?: string;
+  /** When true, renders a searchable dropdown with a filter search box at the top */
+  searchable?: boolean;
+}
+
+function FilterDrawerSearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select option...",
+  disabled = false,
+  label = "",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: FilterOption[];
+  placeholder?: string;
+  disabled?: boolean;
+  label?: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  React.useEffect(() => {
+    if (open) {
+      setTimeout(() => searchRef.current?.focus(), 50);
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [open]);
+
+  const selectedOption =
+    options.find((o) => o.value === value) ||
+    (value === "ALL" || !value ? options.find((o) => o.value === "ALL") : undefined);
+
+  const filteredOptions = React.useMemo(() => {
+    if (!search.trim()) return options;
+    const q = search.toLowerCase().trim();
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        opt.value.toLowerCase().includes(q)
+    );
+  }, [options, search]);
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((prev) => !prev)}
+        className={cn(
+          "w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl font-bold flex items-center justify-between px-4 transition-all duration-300 shadow-sm text-gray-700 dark:text-gray-300 text-sm outline-none text-left",
+          disabled
+            ? "cursor-not-allowed bg-gray-100/60 dark:bg-white/[0.02]"
+            : "cursor-pointer hover:border-gray-200 dark:hover:border-white/10",
+          open && "ring-2 ring-primary/20 border-primary/50"
+        )}
+      >
+        <div className="flex items-center gap-2 truncate min-w-0">
+          {selectedOption?.iconColor && (
+            <span className={cn("w-2 h-2 rounded-full shrink-0", selectedOption.iconColor)} />
+          )}
+          <span className="truncate">
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={cn(
+            "text-gray-400 transition-transform duration-200 shrink-0 ml-2",
+            open && "rotate-180 text-primary"
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-[9999] top-full left-0 right-0 mt-1.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+          {/* Search Header */}
+          <div className="p-2.5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
+            <div className="relative">
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+              <input
+                ref={searchRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Search ${label.toLowerCase()}...`}
+                className="w-full h-9 pl-9 pr-7 text-xs bg-white dark:bg-gray-950 border border-gray-200 dark:border-white/10 rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 font-semibold transition-all shadow-inner"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 cursor-pointer"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center justify-between px-1 pt-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              <span>{label || "Options"}</span>
+              <span>{filteredOptions.length} results</span>
+            </div>
+          </div>
+
+          {/* Options List */}
+          <div className="max-h-56 overflow-y-auto p-1.5 scrollbar-thin">
+            {filteredOptions.length === 0 ? (
+              <div className="py-6 text-center text-xs text-gray-400 font-semibold">
+                No matching results found
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = (value || "ALL") === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors text-left cursor-pointer",
+                      isSelected
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      {opt.iconColor && (
+                        <span className={cn("w-2 h-2 rounded-full shrink-0", opt.iconColor)} />
+                      )}
+                      <span className="truncate">{opt.label}</span>
+                    </div>
+                    {isSelected && <Check size={14} className="text-primary shrink-0 ml-2" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface GenericFilterDrawerProps {
@@ -222,6 +385,15 @@ export function GenericFilterDrawer({
                     placeholder={field.placeholder || "Enter search term..."}
                     className="w-full h-12 bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-2 focus:ring-primary/20 font-bold px-4 transition-all duration-300 shadow-sm text-gray-700 dark:text-gray-300"
                     disabled={isDisabled}
+                  />
+                ) : field.searchable ? (
+                  <FilterDrawerSearchableSelect
+                    value={currentValue || "ALL"}
+                    onChange={(val) => { if (!isDisabled) handleValueChange(field.id, val); }}
+                    options={field.options || []}
+                    placeholder={field.placeholder}
+                    disabled={isDisabled}
+                    label={field.label}
                   />
                 ) : (
                   <Select
