@@ -7,7 +7,9 @@ import { useStores, Store, useDeleteStore, useUpdateStore, useStore } from "@/se
 import { useStoreItemStore } from "@/store/useStoreItemStore";
 import { useTechnicians } from "@/services/technician-service";
 import { useCustomers } from "@/services/customer-service";
-import { useMills } from "@/services/mill-service";
+import { useMills, useMill, Mill } from "@/services/mill-service";
+import api from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -248,7 +250,8 @@ export default function StoresPage() {
 
   const { data: techniciansData } = useTechnicians({ skip: 0, take: 500 });
   const { data: customersData } = useCustomers({ skip: 0, take: 500 });
-  const { data: millsData } = useMills({ skip: 0, take: 500 });
+  const { data: millsData } = useMills({ skip: 0, take: 25, status: 'ACTIVE' });
+  const { data: selectedMill } = useMill(millFilter && millFilter !== "ALL" ? millFilter : null);
 
   const { data: viewStoreData, isLoading: isViewStoreLoading } = useStore(selectedViewStoreId);
 
@@ -1003,8 +1006,29 @@ export default function StoresPage() {
       searchable: true,
       options: [
         { value: "ALL", label: "All Mills" },
+        ...(selectedMill && !(millsData?.mills ?? []).some((m) => m.id === selectedMill.id)
+          ? [{ value: selectedMill.id, label: selectedMill.name }]
+          : []),
         ...(millsData?.mills ?? []).map((m) => ({ value: m.id, label: m.name })),
       ],
+      onSearch: async (searchTerm: string) => {
+        const cleanTerm = searchTerm.trim();
+        if (!cleanTerm) return [];
+        try {
+          const user = useAuthStore.getState().user;
+          const endpoint = user?.role === "Service Engineer" ? "/mobile/mills" : "/mills";
+          const res = await api.get<{ mills: Mill[] }>(endpoint, {
+            params: { search: cleanTerm, take: 50 },
+          });
+          return (res.data?.mills ?? []).map((m) => ({
+            value: m.id,
+            label: m.name,
+          }));
+        } catch (err) {
+          console.error("Failed to search mills:", err);
+          return [];
+        }
+      },
     },
     {
       id: "stock_type",
@@ -1054,7 +1078,7 @@ export default function StoresPage() {
       type: "date-range",
       placeholder: "Select date range...",
     },
-  ], [techniciansData, millsData]);
+  ], [techniciansData, millsData, selectedMill]);
 
   const dateRangeValue: DateRangeValue = React.useMemo(() => {
     let label = "";
@@ -1160,16 +1184,11 @@ export default function StoresPage() {
     },
     {
       accessorKey: "mill.name",
-      header: "Mill / Customer",
+      header: "Mill Name",
       cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-            {row.original.mill?.name || row.original.customer?.name || "—"}
-          </span>
-          {row.original.customer?.name && row.original.mill?.name && row.original.customer.name !== row.original.mill.name && (
-            <span className="text-xs text-gray-400">{row.original.customer.name}</span>
-          )}
-        </div>
+        <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+          {row.original.mill?.name || "—"}
+        </span>
       ),
     },
     {

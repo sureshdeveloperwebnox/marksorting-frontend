@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
-import { RotateCcw, ShieldCheck, ChevronDown, Check, Search, X } from "lucide-react";
+import { RotateCcw, ShieldCheck, ChevronDown, Check, Search, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
@@ -45,6 +45,8 @@ export interface FilterField {
   dependsOnField?: string;
   /** When true, renders a searchable dropdown with a filter search box at the top */
   searchable?: boolean;
+  /** Optional async search handler to dynamically fetch matching options from the server as user types */
+  onSearch?: (query: string) => Promise<FilterOption[]>;
 }
 
 function FilterDrawerSearchableSelect({
@@ -54,6 +56,7 @@ function FilterDrawerSearchableSelect({
   placeholder = "Select option...",
   disabled = false,
   label = "",
+  onSearch,
 }: {
   value: string;
   onChange: (val: string) => void;
@@ -61,17 +64,48 @@ function FilterDrawerSearchableSelect({
   placeholder?: string;
   disabled?: boolean;
   label?: string;
+  onSearch?: (query: string) => Promise<FilterOption[]>;
 }) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const [asyncOptions, setAsyncOptions] = React.useState<FilterOption[] | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [optionsCache, setOptionsCache] = React.useState<Record<string, FilterOption>>({});
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
+
+  // Maintain cache of any options seen or loaded
+  React.useEffect(() => {
+    if (options && options.length > 0) {
+      setOptionsCache((prev) => {
+        const next = { ...prev };
+        options.forEach((opt) => {
+          next[opt.value] = opt;
+        });
+        return next;
+      });
+    }
+  }, [options]);
+
+  React.useEffect(() => {
+    if (asyncOptions && asyncOptions.length > 0) {
+      setOptionsCache((prev) => {
+        const next = { ...prev };
+        asyncOptions.forEach((opt) => {
+          next[opt.value] = opt;
+        });
+        return next;
+      });
+    }
+  }, [asyncOptions]);
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
         setSearch("");
+        setAsyncOptions(null);
+        setIsLoading(false);
       }
     };
     if (open) {
@@ -84,14 +118,72 @@ function FilterDrawerSearchableSelect({
     if (open) {
       setTimeout(() => searchRef.current?.focus(), 50);
       containerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } else {
+      setSearch("");
+      setAsyncOptions(null);
+      setIsLoading(false);
     }
   }, [open]);
 
+  const onSearchRef = React.useRef(onSearch);
+  React.useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  // Debounced server search when onSearch is supplied (depends ONLY on search, immune to parent re-renders)
+  React.useEffect(() => {
+    if (!onSearchRef.current) return;
+    const term = search.trim();
+    if (!term) {
+      setAsyncOptions(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        if (!onSearchRef.current) return;
+        const results = await onSearchRef.current(term);
+        setAsyncOptions(results || []);
+      } catch (err) {
+        console.error("Filter search error:", err);
+        setAsyncOptions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const selectedOption =
     options.find((o) => o.value === value) ||
+    (asyncOptions ? asyncOptions.find((o) => o.value === value) : undefined) ||
+    optionsCache[value] ||
     (value === "ALL" || !value ? options.find((o) => o.value === "ALL") : undefined);
 
-  const filteredOptions = React.useMemo(() => {
+  const displayOptions = React.useMemo(() => {
+    if (onSearch) {
+      if (!search.trim()) {
+        const base = [...options];
+        if (
+          selectedOption &&
+          selectedOption.value !== "ALL" &&
+          !base.some((o) => o.value === selectedOption.value)
+        ) {
+          // Insert selected option after "ALL" if present
+          if (base.length > 0 && base[0].value === "ALL") {
+            base.splice(1, 0, selectedOption);
+          } else {
+            base.unshift(selectedOption);
+          }
+        }
+        return base;
+      }
+      return asyncOptions ?? [];
+    }
+
     if (!search.trim()) return options;
     const q = search.toLowerCase().trim();
     return options.filter(
@@ -99,7 +191,7 @@ function FilterDrawerSearchableSelect({
         opt.label.toLowerCase().includes(q) ||
         opt.value.toLowerCase().includes(q)
     );
-  }, [options, search]);
+  }, [onSearch, search, options, asyncOptions, selectedOption]);
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -152,7 +244,10 @@ function FilterDrawerSearchableSelect({
               {search && (
                 <button
                   type="button"
-                  onClick={() => setSearch("")}
+                  onClick={() => {
+                    setSearch("");
+                    setAsyncOptions(null);
+                  }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0.5 cursor-pointer"
                 >
                   <X size={12} />
@@ -161,18 +256,23 @@ function FilterDrawerSearchableSelect({
             </div>
             <div className="flex items-center justify-between px-1 pt-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               <span>{label || "Options"}</span>
-              <span>{filteredOptions.length} results</span>
+              <span>{isLoading ? "Searching..." : `${displayOptions.length} results`}</span>
             </div>
           </div>
 
           {/* Options List */}
           <div className="max-h-56 overflow-y-auto p-1.5 scrollbar-thin">
-            {filteredOptions.length === 0 ? (
+            {isLoading ? (
+              <div className="py-6 flex flex-col items-center justify-center gap-2 text-xs text-gray-400 font-semibold">
+                <Loader2 size={16} className="animate-spin text-primary" />
+                <span>Searching {label.toLowerCase()}...</span>
+              </div>
+            ) : displayOptions.length === 0 ? (
               <div className="py-6 text-center text-xs text-gray-400 font-semibold">
                 No matching results found
               </div>
             ) : (
-              filteredOptions.map((opt) => {
+              displayOptions.map((opt) => {
                 const isSelected = (value || "ALL") === opt.value;
                 return (
                   <button
@@ -182,6 +282,7 @@ function FilterDrawerSearchableSelect({
                       onChange(opt.value);
                       setOpen(false);
                       setSearch("");
+                      setAsyncOptions(null);
                     }}
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors text-left cursor-pointer",
@@ -394,6 +495,7 @@ export function GenericFilterDrawer({
                     placeholder={field.placeholder}
                     disabled={isDisabled}
                     label={field.label}
+                    onSearch={field.onSearch}
                   />
                 ) : (
                   <Select
